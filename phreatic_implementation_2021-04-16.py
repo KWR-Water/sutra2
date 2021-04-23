@@ -38,7 +38,7 @@ try:
 except ModuleNotFoundError:
     from project_path import module_path
 
-from test.test_transatomic import *
+from testing.test_transatomic import *
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
 
