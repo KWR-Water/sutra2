@@ -6,7 +6,7 @@ def read(fname):
         return f.read()
 
 setup(
-    name='hgc',
+    name='greta',
     version='0.2.3',
     packages=find_packages(exclude=['tests*']),
     license='MIT',
@@ -24,26 +24,19 @@ setup(
     ],
     python_requires='>=3.6',
     project_urls={
-    'Source': 'https://github.com/KWR-Water/hgc',
-    'Documentation': 'http://hgc.readthedocs.io/en/latest/',
-    'Tracker': 'https://github.com/KWR-Water/hgc/issues',
-    'Help': 'https://stackoverflow.com/questions/tagged/hgc'
+    'Source': 'https://github.com/KWR-Water/greta',
+    'Documentation': 'http://greta.readthedocs.io/en/latest/',
+    'Tracker': 'https://github.com/KWR-Water/greta/issues',
+    'Help': 'https://github.com/KWR-Water/greta/issues',
+    # 'Help': 'https://stackoverflow.com/questions/tagged/hgc'
     },
     install_requires=[
         'pandas>=0.23',
-        'openpyxl>=3.0.0',
-        'cloudpickle==1.2.2',
-        'xlrd>=1.0.0',
-        'phreeqpython>=1.3.2',  # TODO: possibly this can be made an optional dependency but we need to figure out how to do this properly
-        'scipy', # TODO: temporarily require SciPy. This is actually a dep of phreeqpython, which however, doesn't correctly require it
-        # 'fuzzywuzzy>=1.0',
-        'googletrans',
-        'pubchempy',
         'molmass',
 
         ],
     include_package_data=True,
-    url='https://github.com/KWR-Water/hgc',
+    url='https://github.com/KWR-Water/greta',
     author='KWR Water Research Institute',
-    author_email='martin.korevaar@kwrwater.nl, martin.van.der.schans@kwrwater.nl, erwin.vonk@kwrwater.nl',
+    author_email='martin.korevaar@kwrwater.nl, martin.van.der.schans@kwrwater.nl, alex.hocking@kwrwater.nl, steven.ros@kwrwater.nl',
 )
