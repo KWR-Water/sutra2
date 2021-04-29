@@ -271,7 +271,7 @@ class AnalyticalWell():
     """ Compute travel time distribution using analytical well functions."""
 
 
-    def __init__(self, schematisation_instance):
+    def __init__(self, schematisation: HydroChemicalSchematisation): #change schematisation_instance to schematization
         """ 'unpack/parse' all the variables from the hydrogeochemical schematizization """
         # AH can i pass the instance of the schematisation? Then I can use the
         # instance.parameter to get all the values I want...
@@ -301,7 +301,10 @@ class AnalyticalWell():
         # self.test_variable = None #AH test variable here to see if errors are caught....
         # AH can I replace this whole thing, by inheriting the HydroChemicalSchematisation class?
 
-        self.schematisation = schematisation_instance.schematisation
+        # AH change schematization to schematization_type
+        self.schematisation = schematisation
+
+        # AH delete htis and change hte way it is called later
         self.thickness_vadose_zone = schematisation_instance.thickness_vadose_zone
         self.thickness_shallow_aquifer = schematisation_instance.thickness_shallow_aquifer
         self.thickness_target_aquifer = schematisation_instance.thickness_target_aquifer
@@ -351,7 +354,9 @@ class AnalyticalWell():
         self.removal_function = schematisation_instance.removal_function
         self.dz_well = schematisation_instance.dz_well
 
-        # left off here, need to figure out how to extract these values for each of the dictionaries...
+        #AH delete until here
+
+        # AH alternative: extract these values for each of the dictionaries...
         # d = input_schematisation_dict['geo_parameters']['geolayer1']
         #     for key,val in d.items():
         #     exec(key + '=val')
@@ -359,8 +364,10 @@ class AnalyticalWell():
     def _check_init_phreatic(self):
         # check the variables that we need for the individual aquifer types are not NONE aka set by the user
 
-        required_variables = [self.schematisation,
-                              self.thickness_vadose_zone,
+        # AH make this a dictionary
+
+        required_variables = ["schematisation_type", #repeat for all
+                              "thickness_vadose_zone",
                               self.thickness_shallow_aquifer,
                               self.thickness_target_aquifer,
                               self.porosity_vadose_zone,
@@ -378,12 +385,14 @@ class AnalyticalWell():
 
         #AH how to check this and raise error correctly??
         for req_var in required_variables:
-            if req_var is None:
-                raise KeyError('Error, somehow print the name of the variable and the value here!!')
+            value = getattr(self, req_var)
+            if value is None:
+                raise KeyError(f'Error, required variable {req_var} is not defined.')
 
     def _check_init_confined(self):
         # check the variables that we need for the individual aquifer types are not NONE aka set by the user
 
+        # ah make this a function from the example abvoe for phreatic case, passqa  list of re variables and check them
         required_variables = [self.schematisation,
                               self.thickness_vadose_zone,
                               self.thickness_shallow_aquifer,
@@ -410,9 +419,9 @@ class AnalyticalWell():
         ''' Calculate the radial distance from a well,
         specifying the aquifer type (semi-confined, phreatic)
         '''
-        self.percent_flux = np.array([0.001, 0.01, 0.1, 0.5])
-        self.percent_flux = np.append(self.percent_flux, np.arange(1, 100, 1))
-        self.percent_flux = np.append(self.percent_flux, [99.5, 99.99])
+        percent_flux = np.array([0.001, 0.01, 0.1, 0.5])
+        percent_flux = np.append(percent_flux, np.arange(1, 100, 1))
+        self.percent_flux = np.append(percent_flux, [99.5, 99.99])
 
         self.radial_distance = self.radial_distance_recharge * \
             np.sqrt(self.percent_flux / 100)
@@ -424,7 +433,8 @@ class AnalyticalWell():
                                     (self.radial_distance[-1] + 2 *
                                     ((self.spreading_length * 3) - self.radial_distance[-1]) / 3),
                                         (self.spreading_length * 3)])
-
+        
+        self.radial_distance =radial_distance
         return self.radial_distance, self.percent_flux
 
 
@@ -709,7 +719,8 @@ class AnalyticalWell():
                                                  'redox_zone', 'temperature', 
                                                  'thickness_layer', 'porosity_layer', 
                                                  'dissolved_organic_carbon', 
-                                                 'pH', 'fraction_organic_carbon'])
+                                                 'pH', 'fraction_organic_carbon', 
+                                                 'input_concentration'])
 
         df = self.df_particle.copy()
 
@@ -717,7 +728,10 @@ class AnalyticalWell():
             flowline_id = i+1
             df.loc[0] = [flowline_id, 0, self.radial_distance[i],
                          0, None, self.temperature, None, None, None, 
-                         None, None,]
+                         None, None,None,]
+
+            # AH, RETURN TO this when we have variable input concentration?
+            input_concentration = self.input_concentration #df_flowline.loc[self.df_flowline['flowline_id'] == 1, 'input_concentration'].values[0]
 
             if self.schematisation == 'phreatic':
                 vadose_zone = self.thickness_vadose_zone[i]
@@ -734,7 +748,8 @@ class AnalyticalWell():
                          self.porosity_vadose_zone,
                          self.dissolved_organic_carbon_vadose_zone,
                          self.pH_vadose_zone,
-                         self.fraction_organic_carbon_vadose_zone
+                         self.fraction_organic_carbon_vadose_zone,
+                         input_concentration
                          ]
 
             df.loc[2] = [flowline_id,
@@ -747,7 +762,8 @@ class AnalyticalWell():
                          self.porosity_shallow_aquifer,
                          self.dissolved_organic_carbon_shallow_aquifer,
                         self.pH_shallow_aquifer,
-                         self.fraction_organic_carbon_shallow_aquifer
+                         self.fraction_organic_carbon_shallow_aquifer,
+                         input_concentration
                          ]
 
             df.loc[3] = [flowline_id, self.total_travel_time[i],
@@ -758,7 +774,9 @@ class AnalyticalWell():
                          self.porosity_target_aquifer,
                          self.dissolved_organic_carbon_target_aquifer,
                          self.pH_target_aquifer,
-                         self.fraction_organic_carbon_target_aquifer
+                         self.fraction_organic_carbon_target_aquifer,
+                         input_concentration
+                         
                          ]
 
             self.df_particle = self.df_particle.append(df, ignore_index=True)
@@ -848,6 +866,14 @@ class AnalyticalWell():
         plt.grid()
         plt.savefig('travel_time_versus_cumulative_percent_abstracted_water_'+self.schematisation+'.png', dpi=300, bbox_inches='tight')  # save_results_to + '/
 
+class Substance:
+    def __init__(self, name, ):
+    """ """
+        self.name = name
+    
+    def get_Kow(self):
+        """ """
+
 
 class Concentration():
     """ Returns concentration in a groundwater well for a given Organic Micro Pollutant or microbial species.
@@ -877,11 +903,12 @@ class Concentration():
     Returns
     -------    
     """
-    def __init__(self, analytical_instance): #, substance, df_particle, df_flowline):
+    def __init__(self, analytical_instance, substance): #, substance, df_particle, df_flowline):
         # def __init__(self, substance: Substance, df_particle, df_flowline, removel_function?):
         self.omp_inialized = False
         self.df_particle = analytical_instance.df_particle
         self.df_flowline = analytical_instance.df_flowline
+        self.substance = substance
 
 
     def _init_omp(self):
@@ -889,10 +916,19 @@ class Concentration():
         if self.omp_inialized:
             pass
         else:
+            # AH calls from the new Substance class with some example dictionaries of substance paramters
+
+            # AH -> change the redox zones to be the actual names
             # self.df_part['Kow'] = self.df_part['redox_zone'].apply(lambda x: substance.get_Kow(x)
+
             #PLACEHOLDER to get some values for the Kow to test the rest of the function, FAKE VALUES
-            self.df_particle['log_Koc'] = 1.92  # Koc for benzene PLACEHOLDER VALUE
+            self.df_particle['log_Koc'] = self.substance.get_Koc()# 1.92  # Koc for benzene PLACEHOLDER VALUE
             self.df_particle['pKa'] = 99        # pKa for benzene PLACEHOLDER VALUE
+
+            # AH NEED TO PULL THE CORRECT HALFLIFE VALUE BASED ON THE REDOX ZONE
+            self.df_particle['omp_half_life'] = 10.5 # for benzene PLACEHOLDER VALUE suboxic 
+            # self.df_particle['omp_half_life'] = 420 # for benzene PLACEHOLDER VALUE anoxic 
+            # self.df_particle['omp_half_life'] = 1E+99 # for benzene PLACEHOLDER VALUE deeply anoxic 
 
             # self.df_particle['log_Koc'] = -0.36 # Koc for AMPA PLACEHOLDER VALUE
             # self.df_particle['pKa'] = 0.4       # pKa for AMPA PLACEHOLDER VALUE
@@ -933,12 +969,14 @@ class Concentration():
         # and (ii) OMP ionization (dissociation) according to Schellenberg et al. (1984)
         # Equation 4.8-4.10 in in report
 
-        # AH how are we incorporating the OMP database sheet into the model?
         # temperature correction for Koc
         '''Assuming the relation to be similar to the Van ‘t Hoff equation and equally performing for other OMPs yields:'''
 
+        # AH also make this easier to read, long functions are bad
         self.df_particle['Koc_temperature_correction'] = 10 **self.df_particle.log_Koc * 10 ** (1913 * (1 / (self.df_particle.temperature + 273.15) - 1 / (20 + 273.15)))
 
+        # AH make a little function here to make this more readable
+        pH = self.df_particle.pH
         self.df_particle['retardation'] = (1 + (1 / (1 + 10 ** (self.df_particle.pH - self.df_particle.pKa)) * self.df_particle.density_aquifer / 1000
                             * (1 - self.df_particle.porosity_layer)
                             * self.df_particle.fraction_organic_carbon * self.df_particle.Koc_temperature_correction)
@@ -946,8 +984,14 @@ class Concentration():
                                                             * 0.2 * self.df_particle.dissolved_organic_carbon * 0.000001))))
 
         # self.df_part...
-            # LEFT OFF HERE, retardation works, need to add the rest to calculate concentration
+        # LEFT OFF HERE, retardation works, need to add the rest to calculate concentration
 
+        #AH need to account for the redox conditions here... for the half life AND the steady state concentration
+        self.df_particle['omp_half_life_temperature_corrected'] = self.df_particle['omp_half_life'] * 10 ** (-63000 / (2.303 * 8.314) * (1 / (20 + 273.15) - 1 / (self.df_particle.temperature + 273.15)))
+
+        # 1e99 substituted here for the travel time of the water after '60 years' in the excel sheet, long time so assume steady state
+        self.df_particle['steady_state_concentration_vadose_zone'] = self.df_particle.input_concentration / (2 ** (1e99 * self.df_particle.retardation/self.df_particle.omp_half_life_temperature_corrected))
+        
     def compute_microbiology_removal(self):
         pass
 

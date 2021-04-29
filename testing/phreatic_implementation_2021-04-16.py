@@ -74,7 +74,8 @@ scheme1 = HydroChemicalSchematisation(schematisation='phreatic',
                                       dissolved_organic_carbon_target_aquifer=2,
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
-                                      fraction_organic_carbon_target_aquifer=0.0005)
+                                      fraction_organic_carbon_target_aquifer=0.0005, 
+                                      input_concentration = 100,)
 
 
 # phreatic_dict = scheme1.make_dictionary()  
@@ -85,7 +86,9 @@ df_particle
 
 conc1 = Concentration(well1) #, df_particle, df_flowline)
 conc1.compute_omp_removal()
-conc1.df_particle.retardation
+conc1.df_particle.input_concentration #.omp_half_life_temperature_corrected
+conc1.df_particle.steady_state_concentration_vadose_zone
+
 # %%
 well1.plot_travel_time_versus_radial_distance(xlim=[0, 4000])
 

@@ -288,6 +288,16 @@ class ModPathWell():
 
 		def 
 
+class Substance:
+    def __init__(self, name, ):
+    """ """
+        self.name = name
+    
+    def get_Kow(self):
+        """ """
+        
+
+
 
 
 class Concentration():
