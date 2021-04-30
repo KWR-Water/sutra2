@@ -29,14 +29,14 @@ from tqdm import tqdm  # tqdm gives a progress bar for the simultation
 # import pyarrow.parquet as pq
 import math
 from scipy.special import kn as besselk
-from draft_transport_function import *
-
 
 from pathlib import Path
 try:
     from project_path import module_path #the dot says looik in the current folder, this project_path.py file must be in the folder here
 except ModuleNotFoundError:
     from project_path import module_path
+
+from greta.draft_transport_function import *
 
 from testing.test_transatomic import *
 # get directory of this file
@@ -47,10 +47,10 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 
 #%%
 # Test
-# test_travel_time_distribution_phreatic()
+test_travel_time_distribution_phreatic()
 
 # %%
-scheme1 = HydroChemicalSchematisation(schematisation='phreatic',
+scheme1 = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       well_discharge_m3hour=319.4,
                                       vertical_resistance_aquitard=500,
                                       porosity_vadose_zone=0.38,
@@ -63,9 +63,9 @@ scheme1 = HydroChemicalSchematisation(schematisation='phreatic',
                                       thickness_target_aquifer=40,
                                       KD=1400,
                                       thickness_full_capillary_fringe=0.4,
-                                      redox_vadose_zone=0.,
-                                      redox_shallow_aquifer=0.,
-                                      redox_target_aquifer=0.,
+                                      redox_vadose_zone='anoxic', #'suboxic',
+                                      redox_shallow_aquifer='anoxic',
+                                      redox_target_aquifer='deeply_anoxic',
                                       pH_vadose_zone=5,
                                       pH_shallow_aquifer=6,
                                       pH_target_aquifer=7,
@@ -75,7 +75,8 @@ scheme1 = HydroChemicalSchematisation(schematisation='phreatic',
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
                                       fraction_organic_carbon_target_aquifer=0.0005, 
-                                      input_concentration = 100,)
+                                      input_concentration = 100,
+                                      )
 
 
 # phreatic_dict = scheme1.make_dictionary()  
@@ -84,10 +85,11 @@ well1.phreatic()
 df_flowline, df_particle = well1.export_to_df(what_to_export = 'omp_parameters')
 df_particle
 
-conc1 = Concentration(well1) #, df_particle, df_flowline)
+conc1 = Concentration(well1, substance = 'benzene') #, df_particle, df_flowline)
 conc1.compute_omp_removal()
-conc1.df_particle.input_concentration #.omp_half_life_temperature_corrected
-conc1.df_particle.steady_state_concentration_vadose_zone
+conc1.df_particle #.steady_state_concentration
+
+#%%
 
 # %%
 well1.plot_travel_time_versus_radial_distance(xlim=[0, 4000])

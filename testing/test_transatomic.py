@@ -11,7 +11,7 @@ try:
 except ModuleNotFoundError:
     from project_path import module_path
 
-from draft_transport_function import *
+from greta.draft_transport_function import *
 
 from pandas._testing import assert_frame_equal
 
@@ -25,7 +25,7 @@ output_phreatic = pd.read_csv(path / 'phreatic_output.csv')
 
 
 def test_travel_time_distribution_phreatic():
-    test_ = HydroChemicalSchematisation(schematisation='phreatic',
+    test_ = HydroChemicalSchematisation(schematisation_type='phreatic',
                                         well_discharge_m3hour=319.4,
                                         vertical_resistance_aquitard=500,
                                         porosity_vadose_zone=0.38,
@@ -59,7 +59,7 @@ output_semiconfined = pd.read_csv(path / 'semiconfined_output.csv')
 
 
 def test_travel_time_distribution_semiconfined():
-    test_ = HydroChemicalSchematisation(schematisation='semi-confined',
+    test_ = HydroChemicalSchematisation(schematisation_type='semi-confined',
                                                 well_discharge_m3hour=319.4,
                                                 vertical_resistance_aquitard=500,
                                                 porosity_vadose_zone=0.38,
@@ -87,3 +87,5 @@ def test_travel_time_distribution_semiconfined():
         print("Assertion Exception Raised.")
     else:
         print("Success, no error!")
+
+# %%
