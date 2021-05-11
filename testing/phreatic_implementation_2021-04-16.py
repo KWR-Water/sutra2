@@ -42,7 +42,6 @@ from testing.test_transatomic import *
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
 
-
 # path = os.getcwd()  # path of working directory
 
 #%%
@@ -58,6 +57,7 @@ scheme1 = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       porosity_target_aquifer=0.35,
                                       recharge_rate=0.3,
                                       soil_moisture_content_vadose_zone=0.15,
+                                      groundwater_level_ASL = 17,
                                       thickness_vadose_zone=5,
                                       thickness_shallow_aquifer=10,
                                       thickness_target_aquifer=40,
@@ -82,6 +82,13 @@ scheme1 = HydroChemicalSchematisation(schematisation_type='phreatic',
 # phreatic_dict = scheme1.make_dictionary()  
 well1 = AnalyticalWell(scheme1)
 well1.phreatic()     
+output = well1.phreatic()
+# output = output[["total_travel_time", "travel_time_unsaturated",
+#                     "travel_time_shallow_aquifer", "travel_time_target_aquifer",
+#                     "radial_distance", ]]
+# output = output.round(7)
+# output.to_excel("phreatic_output_python.xlsx")  
+
 df_flowline, df_particle = well1.export_to_df(what_to_export = 'omp_parameters')
 df_particle
 
@@ -89,8 +96,9 @@ conc1 = Concentration(well1, substance = 'benzene') #, df_particle, df_flowline)
 conc1.compute_omp_removal()
 conc1.df_particle #.steady_state_concentration
 
-#%%
-
+plt.plot(conc1.df_flowline.flowline_id, df_flowline.total_breakthrough_travel_time)
+plt.xlabel('Flowline ID')
+plt.ylabel('Breakthrough time (years')
 # %%
 well1.plot_travel_time_versus_radial_distance(xlim=[0, 4000])
 

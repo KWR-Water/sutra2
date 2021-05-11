@@ -1,0 +1,9 @@
+{
+    "python.testing.pytestArgs": [
+        "testing"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "python.pythonPath": "C:\\Users\\hockial\\Anaconda3\\envs\\greta\\python.exe"
+}

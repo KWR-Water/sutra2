@@ -20,11 +20,10 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 
 
 #%%
-
-output_phreatic = pd.read_csv(path / 'phreatic_output.csv')
-
-
 def test_travel_time_distribution_phreatic():
+    output_phreatic = pd.read_csv(path / 'phreatic_output.csv')
+    output_phreatic = output_phreatic.round(7) #round to 7 digits (or any digit), keep same as for the output for the model to compare
+
     test_ = HydroChemicalSchematisation(schematisation_type='phreatic',
                                         well_discharge_m3hour=319.4,
                                         vertical_resistance_aquitard=500,
@@ -33,6 +32,7 @@ def test_travel_time_distribution_phreatic():
                                         porosity_target_aquifer=0.35,
                                         recharge_rate=0.3,
                                         soil_moisture_content_vadose_zone=0.15,
+                                        groundwater_level_ASL = 17,
                                         thickness_vadose_zone=5,
                                         thickness_shallow_aquifer=10,
                                         thickness_target_aquifer=40,
@@ -43,11 +43,11 @@ def test_travel_time_distribution_phreatic():
     output = output[["total_travel_time", "travel_time_unsaturated",
                      "travel_time_shallow_aquifer", "travel_time_target_aquifer",
                      "radial_distance", ]]
+    output = output.round(7)
 
     try:
         # assert output == output_phreatic
-        assert_frame_equal(output, output_phreatic,
-                           check_dtype=False, check_less_precise=2)
+        assert_frame_equal(output, output_phreatic,check_dtype=False)
 
     except AssertionError:
         print("Assertion Exception Raised.")
@@ -55,10 +55,11 @@ def test_travel_time_distribution_phreatic():
         print("Success, no error!")
 
 # %%
-output_semiconfined = pd.read_csv(path / 'semiconfined_output.csv')
 
 
 def test_travel_time_distribution_semiconfined():
+    output_semiconfined = pd.read_csv(path / 'semiconfined_output.csv')
+    output_semiconfined = output_semiconfined.round(7)
     test_ = HydroChemicalSchematisation(schematisation_type='semi-confined',
                                                 well_discharge_m3hour=319.4,
                                                 vertical_resistance_aquitard=500,
@@ -67,6 +68,7 @@ def test_travel_time_distribution_semiconfined():
                                                 porosity_target_aquifer=0.35,
                                                 recharge_rate=0.3,
                                                 soil_moisture_content_vadose_zone=0.15,
+                                                groundwater_level_ASL = 17,
                                                 thickness_vadose_zone=5,
                                                 thickness_shallow_aquifer=10,
                                                 thickness_target_aquifer=40,
@@ -81,7 +83,7 @@ def test_travel_time_distribution_semiconfined():
     try:
         # assert output == output_semiconfirned
         assert_frame_equal(output, output_semiconfined, 
-                        check_dtype=False, check_less_precise=2)
+                        check_dtype=False)
 
     except AssertionError:
         print("Assertion Exception Raised.")

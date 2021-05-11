@@ -1,3 +1,4 @@
+python = 3.6
 pandas>=0.23
 sphinx_rtd_theme
 openpyxl>=3.0.0
@@ -10,6 +11,13 @@ fuzzywuzzy
 googletrans
 pubchempy 
 molmass
+
+matplotlib
+tqdm
+numpy
+os
+math
+scipy
 
 # developers:
 # numpydoc
