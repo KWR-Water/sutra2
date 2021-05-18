@@ -396,7 +396,7 @@ class AnalyticalWell():
 
     def _calculate_travel_time_aquitard_zone1(self):
         ''' Calculate the travel time in zone 1 (aquitard in semi-confined case)
-        using the the Peters (1985) solution
+        using the the Peters (1985) solution( eq. 8.8 in Peters \cite{Peters1985})
         Equation A.12 in report
         '''                                   
 
@@ -413,7 +413,7 @@ class AnalyticalWell():
     def _calculate_travel_time_target_aquifer(self):
         '''Calculate the travel time in zone 2 (aquifer with the production well)
         using the the Peters (1985) solution
-        Equation A.13 in report
+        Equation A.13/A.14 in report
 
         '''
         # porosity_target_aquifer, AH #we keep this number for camparing to excel, but will change later to be the user defined porosities
@@ -522,14 +522,16 @@ class AnalyticalWell():
 
         self.radial_distance, self.percent_flux = self._create_radial_distance_array()
 
-        self.head = (self.schematisation.groundwater_level - self.schematisation.well_discharge_m3hour * 24 / (2 * math.pi * self.schematisation.KD) 
-                * np.log(self.radial_distance_recharge / self.radial_distance))
+        self.head = (self.schematisation.groundwater_level - self.schematisation.well_discharge_m3hour * 24 
+                    / (2 * math.pi * self.schematisation.KD) 
+                    * np.log(self.radial_distance_recharge / self.radial_distance))
 
         self.depth_bottom_vadose_aquifer = self.schematisation.thickness_vadose_zone #no drawdown
         self.depth_bottom_shallow_aquifer = self.schematisation.thickness_vadose_zone + self.schematisation.thickness_shallow_aquifer
         self.depth_bottom_target_aquifer = self.schematisation.thickness_vadose_zone + self.schematisation.thickness_shallow_aquifer + self.schematisation.thickness_target_aquifer
 
-        self.thickness_vadose_zone_drawdown = (self.schematisation.groundwater_level + self.schematisation.thickness_vadose_zone) - self.head
+        self.thickness_vadose_zone_drawdown = (self.schematisation.groundwater_level 
+                                              + self.schematisation.thickness_vadose_zone) - self.head
 
         self.travel_time_unsaturated = self._calculate_travel_time_unsaturated_zone()
 
@@ -824,6 +826,7 @@ class Substance:
         """
         self.name = name
     
+        # Substance dict here as placeholder for the actual database
         substances_dict = { 
             'benzene': {
                 'log_Koc': 1.92,
