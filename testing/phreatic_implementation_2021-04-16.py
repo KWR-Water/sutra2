@@ -50,18 +50,18 @@ test_travel_time_distribution_phreatic()
 
 # %%
 scheme1 = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                      well_discharge_m3hour=319.4,
+                                      well_discharge=319.4*24,
                                       vertical_resistance_aquitard=500,
                                       porosity_vadose_zone=0.38,
                                       porosity_shallow_aquifer=0.35,
                                       porosity_target_aquifer=0.35,
-                                      recharge_rate=0.3,
+                                      recharge_rate=0.3/365.25,
                                       soil_moisture_content_vadose_zone=0.15,
-                                      groundwater_level_ASL = 17,
-                                      thickness_vadose_zone=5,
+                                      ground_surface = 22,
+                                      thickness_vadose_zone_at_boundary=5,
                                       thickness_shallow_aquifer=10,
                                       thickness_target_aquifer=40,
-                                      KD=1400,
+                                      hor_permeability_target_aquifer=35,
                                       thickness_full_capillary_fringe=0.4,
                                       redox_vadose_zone='anoxic', #'suboxic',
                                       redox_shallow_aquifer='anoxic',
@@ -76,16 +76,28 @@ scheme1 = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
                                       fraction_organic_carbon_target_aquifer=0.0005, 
                                       input_concentration = 100,
+                                      temperature=11,
+                                      solid_density_vadose_zone= 2.650, 
+                                      solid_density_shallow_aquifer= 2.650, 
+                                      solid_density_target_aquifer= 2.650, 
+                                      diameter_borehole = 0.75,
+
                                       )
 
 
 # phreatic_dict = scheme1.make_dictionary()  
 well1 = AnalyticalWell(scheme1)
 well1.phreatic()     
-output = well1.phreatic()
+# output = well1.phreatic()
 # output = output[["total_travel_time", "travel_time_unsaturated",
 #                     "travel_time_shallow_aquifer", "travel_time_target_aquifer",
 #                     "radial_distance", ]]
+
+# output_phreatic = pd.read_csv(path / 'phreatic_test.csv')
+# output_phreatic = output_phreatic.round(7) #round to 7 digits (or any digit), keep same as for the output for the model to compare
+
+# assert_frame_equal(output, output_phreatic,check_dtype=False)
+
 # output = output.round(7)
 # output.to_excel("phreatic_output_python.xlsx")  
 
@@ -96,9 +108,9 @@ conc1 = Concentration(well1, substance = 'benzene') #, df_particle, df_flowline)
 conc1.compute_omp_removal()
 conc1.df_particle #.steady_state_concentration
 
-plt.plot(conc1.df_flowline.flowline_id, df_flowline.total_breakthrough_travel_time)
+plt.plot(conc1.df_flowline.flowline_id, df_flowline.total_breakthrough_travel_time/365.25)
 plt.xlabel('Flowline ID')
-plt.ylabel('Breakthrough time (years')
+plt.ylabel('Breakthrough time (years)')
 # %%
 well1.plot_travel_time_versus_radial_distance(xlim=[0, 4000])
 

@@ -18,6 +18,7 @@ numpy
 os
 math
 scipy
+autopep8
 
 # developers:
 # numpydoc
