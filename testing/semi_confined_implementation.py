@@ -29,8 +29,6 @@ from tqdm import tqdm  # tqdm gives a progress bar for the simultation
 # import pyarrow.parquet as pq
 import math
 from scipy.special import kn as besselk
-from draft_transport_function import *
-
 
 from pathlib import Path
 try:
@@ -38,35 +36,63 @@ try:
 except ModuleNotFoundError:
     from project_path import module_path
 
+from greta.draft_transport_function import *
+
 from testing.test_transatomic import *
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
 
 #%%
 # Test
-test_travel_time_distribution_semiconfined()
+# test_travel_time_distribution_semiconfined()
 
 #%%
-scheme1 = HydroChemicalSchematisation(schematisation='semi-confined',
-                                      well_discharge_m3hour=319.4,
+scheme1 = HydroChemicalSchematisation(schematisation_type='semi-confined',
+                                    what_to_export='omp_parameters',
+                                    # biodegradation_sorbed_phase = False,
+                                      well_discharge=319.4*24,
                                       vertical_resistance_aquitard=500,
                                       porosity_vadose_zone=0.38,
                                       porosity_shallow_aquifer=0.35,
                                       porosity_target_aquifer=0.35,
-                                      recharge_rate=0.3,
-                                      soil_moisture_content_vadose_zone=0.15,
-                                      thickness_vadose_zone=5,
+                                      recharge_rate=0.3/365.25,
+                                      moisture_content_vadose_zone=0.15,
+                                      ground_surface = 22,
+                                      thickness_vadose_zone_at_boundary=5,
                                       thickness_shallow_aquifer=10,
                                       thickness_target_aquifer=40,
-                                      KD=1400,
-                                      thickness_full_capillary_fringe=0.4,)
+                                      hor_permeability_target_aquifer=35,
+                                      thickness_full_capillary_fringe=0.4,
+                                      redox_vadose_zone='anoxic', #'suboxic',
+                                      redox_shallow_aquifer='anoxic',
+                                      redox_target_aquifer='deeply_anoxic',
+                                      pH_vadose_zone=5,
+                                      pH_shallow_aquifer=6,
+                                      pH_target_aquifer=7,
+                                      dissolved_organic_carbon_vadose_zone=10, 
+                                      dissolved_organic_carbon_shallow_aquifer=4, 
+                                      dissolved_organic_carbon_target_aquifer=2,
+                                      fraction_organic_carbon_vadose_zone=0.001,
+                                      fraction_organic_carbon_shallow_aquifer=0.0005,
+                                      fraction_organic_carbon_target_aquifer=0.0005, 
+                                      input_concentration = 100,
+                                      temperature=11,
+                                      solid_density_vadose_zone= 2.650, 
+                                      solid_density_shallow_aquifer= 2.650, 
+                                      solid_density_target_aquifer= 2.650, 
+                                      diameter_borehole = 0.75,
+                                    )
 
 
 # phreatic_dict = scheme1.make_dictionary()  
 well1 = AnalyticalWell(scheme1) #.semiconfined()
 well1.semiconfined()   
-df_flowline, df_particle = well1.export_to_df()
-df_particle
+conc1 = Concentration(well1, substance = 'benzene')
+# conc1 = Concentration(well1, substance = 'benzo(a)pyrene')
+# conc1 = Concentration(well1, substance = 'AMPA')
+conc1.compute_omp_removal()
+conc1.df_particle #.steady_state_concentration
+
 # %%
 well1.plot_travel_time_versus_radial_distance(xlim=[0, 4000])
 well1.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 100])

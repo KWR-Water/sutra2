@@ -47,16 +47,21 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 #%%
 # Test
 test_travel_time_distribution_phreatic()
-
+test_retardation_temp_koc_correction()
+test_steady_concentration_temp_koc_correction(substance='benzene')
+test_steady_concentration_temp_koc_correction(substance='benzo(a)pyrene')
+test_steady_concentration_temp_koc_correction(substance='AMPA')
 # %%
 scheme1 = HydroChemicalSchematisation(schematisation_type='phreatic',
+                                    what_to_export='omp_parameters',
+                                    # biodegradation_sorbed_phase = False,
                                       well_discharge=319.4*24,
                                       vertical_resistance_aquitard=500,
                                       porosity_vadose_zone=0.38,
                                       porosity_shallow_aquifer=0.35,
                                       porosity_target_aquifer=0.35,
                                       recharge_rate=0.3/365.25,
-                                      soil_moisture_content_vadose_zone=0.15,
+                                      moisture_content_vadose_zone=0.15,
                                       ground_surface = 22,
                                       thickness_vadose_zone_at_boundary=5,
                                       thickness_shallow_aquifer=10,
@@ -81,7 +86,6 @@ scheme1 = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       solid_density_shallow_aquifer= 2.650, 
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 0.75,
-
                                       )
 
 
@@ -101,16 +105,18 @@ well1.phreatic()
 # output = output.round(7)
 # output.to_excel("phreatic_output_python.xlsx")  
 
-df_flowline, df_particle = well1.export_to_df(what_to_export = 'omp_parameters')
-df_particle
+# df_flowline, df_particle = well1.export_to_df(what_to_export = 'omp_parameters')
+# df_particle
 
-conc1 = Concentration(well1, substance = 'benzene') #, df_particle, df_flowline)
+conc1 = Concentration(well1, substance = 'benzene')
+# conc1 = Concentration(well1, substance = 'benzo(a)pyrene')
+# conc1 = Concentration(well1, substance = 'AMPA')
 conc1.compute_omp_removal()
 conc1.df_particle #.steady_state_concentration
 
-plt.plot(conc1.df_flowline.flowline_id, df_flowline.total_breakthrough_travel_time/365.25)
-plt.xlabel('Flowline ID')
-plt.ylabel('Breakthrough time (years)')
+# plt.plot(conc1.df_flowline.flowline_id, conc1.df_flowline.total_breakthrough_travel_time/365.25)
+# plt.xlabel('Flowline ID')
+# plt.ylabel('Breakthrough time (years)')
 # %%
 well1.plot_travel_time_versus_radial_distance(xlim=[0, 4000])
 
