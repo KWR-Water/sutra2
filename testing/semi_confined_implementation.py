@@ -44,7 +44,7 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 
 #%%
 # Test
-# test_travel_time_distribution_semiconfined()
+test_travel_time_distribution_semiconfined()
 
 #%%
 scheme1 = HydroChemicalSchematisation(schematisation_type='semi-confined',

@@ -167,9 +167,7 @@ class HydroChemicalSchematisation:
                 head_boundary=None,
 
                 thickness_shallow_aquifer=10,
-                # bottom_shallow_aquifer=None,
                 thickness_target_aquifer=10,
-                # bottom_target_aquifer=None,
                 thickness_full_capillary_fringe=0,
                 porosity_vadose_zone=0.35,
                 porosity_shallow_aquifer=0.35,
@@ -256,7 +254,6 @@ class HydroChemicalSchematisation:
                  discharge_point_contamination=None,
 
                  source_area_radius=None,
-                #  spreading_distance=None, @MartinvdS this is computed right, not input?
                  number_of_spreading_distance=None,
                  model_radius=None,
                  model_width=None,
@@ -286,7 +283,7 @@ class HydroChemicalSchematisation:
         # Porous Medium
         self.ground_surface = ground_surface
         self.thickness_vadose_zone_at_boundary = thickness_vadose_zone_at_boundary
-        self.bottom_vadose_zone_at_boundary = bottom_vadose_zone_at_boundary
+        self.bottom_vadose_zone_at_boundary = ground_surface - thickness_vadose_zone_at_boundary # bottom_vadose_zone_at_boundary
         self.head_boundary = head_boundary
 
         self.thickness_shallow_aquifer = thickness_shallow_aquifer
@@ -383,7 +380,6 @@ class HydroChemicalSchematisation:
 
         # Model size
         self.source_area_radius = source_area_radius
-        # self.spreading_distance = spreading_distance @MartinvdS this is computed right, not input?
         self.number_of_spreading_distance = number_of_spreading_distance
         self.model_radius = model_radius
         self.model_width = model_width
@@ -396,7 +392,7 @@ class HydroChemicalSchematisation:
         self.vertical_resistance_aquitard = vertical_resistance_aquitard
         self.KD = hor_permeability_target_aquifer*thickness_target_aquifer
         self.groundwater_level =self.ground_surface-self.thickness_vadose_zone_at_boundary # self.groundwater_level_ASL # 0-self.thickness_vadose_zone
-
+        
         # Temperature 
         if self.temperature_vadose_zone is None:
             self.temperature_vadose_zone = self.temperature
@@ -419,7 +415,8 @@ class HydroChemicalSchematisation:
         self.input_concentration = input_concentration
         self.particle_release_date = particle_release_date
 
-        # Modpath ...? AH Is this the correct location for this? for the dictionaries 
+        # @MartinvdS Modpath things. 
+        # AH Is this the correct location for this? for the dictionaries 
         # so move to the dictionaries section or the Modpath class?
         if schematisation_type == 'modpath':
           
@@ -438,6 +435,17 @@ class HydroChemicalSchematisation:
                 self.top_clayseal = self.ground_surface
             if bottom_clayseal is None: 
                 self.bottom_clayseal = top_target_aquifer
+
+            #other default params
+            if hor_permebility_gravelpack is None: 
+                self.hor_permebility_gravelpack = 1000
+            if hor_permeability_clayseal is None: 
+                self.hor_permeability_clayseal = 0.001
+            if vertical_anistropy_gravelpack is None: 
+                self.vertical_anistropy_gravelpack = 1
+            if vertical_anistropy_clayseal is None: 
+                self.vertical_anistropy_clayseal = 1
+
 
             # @MartinvdS how to compute the following...
             # if model_radius is None: 
@@ -477,7 +485,7 @@ class HydroChemicalSchematisation:
                 },
             'geolayer1': {
                 'top': self.thickness_vadose_zone_at_boundary,
-                'bot': self.bottom_target_aquifer,
+                'bot': self.bottom_shallow_aquifer,
                 'rmin': self.diameter_gravelpack,
                 'rmax': self.model_radius,
                 'porosity': self.porosity_shallow_aquifer,
@@ -590,10 +598,49 @@ class HydroChemicalSchematisation:
         self.pollution_parameters = pollution_parameters
         self.bas_parameters = bas_parameters
 
+    def _create_radial_distance_array(self):
+
+        ''' Calculate the radial distance from a well,
+        specifying the aquifer type (semi-confined, phreatic)
+        '''
+        percent_flux = np.array([0.001, 0.01, 0.1, 0.5])
+        percent_flux = np.append(percent_flux, np.arange(1, 100, 1))
+        self.percent_flux = np.append(percent_flux, [99.5, 99.99])
+
+        radial_distance = self.radial_distance_recharge * \
+            np.sqrt(self.percent_flux / 100)
+
+        if self.schematisation_type == 'semi-confined':
+
+            radial_distance = np.append(radial_distance,
+                                    [(radial_distance[-1] + ((self.spreading_distance * 3) - radial_distance[-1]) / 3),
+                                    (radial_distance[-1] + 2 *
+                                    ((self.spreading_distance * 3) - radial_distance[-1]) / 3),
+                                        (self.spreading_distance * 3)])
+        
+        self.radial_distance = radial_distance
+
     def _calculate_travel_time_unsaturated_zone(self):
+
+        ''' Calculating the unsaturated zone travel time'''
+
+        self.spreading_distance = math.sqrt(self.vertical_resistance_aquitard * self.KD)
+
+        self.radial_distance_recharge = (math.sqrt(self.well_discharge
+                                                    / (math.pi * self.recharge_rate )))
+      
+        self._create_radial_distance_array()
+
         '''Equation A.11 in report '''
 
         if self.schematisation_type =='phreatic':
+            self.head = (self.groundwater_level - self.well_discharge
+                    / (2 * math.pi * self.KD) 
+                    * np.log(self.radial_distance_recharge / self.radial_distance))
+
+            self.thickness_vadose_zone_drawdown = (self.groundwater_level 
+                                              + self.thickness_vadose_zone_at_boundary) - self.head
+
             travel_time_unsaturated = ((((self.groundwater_level + self.thickness_vadose_zone_drawdown)
                                         - self.groundwater_level
                                         - self.thickness_full_capillary_fringe)
@@ -694,52 +741,6 @@ class AnalyticalWell():
                             ]
         self._check_required_variables(required_variables)
 
-    def _create_radial_distance_array(self):
-
-        ''' Calculate the radial distance from a well,
-        specifying the aquifer type (semi-confined, phreatic)
-        '''
-        percent_flux = np.array([0.001, 0.01, 0.1, 0.5])
-        percent_flux = np.append(percent_flux, np.arange(1, 100, 1))
-        self.percent_flux = np.append(percent_flux, [99.5, 99.99])
-
-        radial_distance = self.radial_distance_recharge * \
-            np.sqrt(self.percent_flux / 100)
-
-        if self.schematisation.schematisation_type == 'semi-confined':
-
-            radial_distance = np.append(radial_distance,
-                                    [(radial_distance[-1] + ((self.spreading_distance * 3) - radial_distance[-1]) / 3),
-                                    (radial_distance[-1] + 2 *
-                                    ((self.spreading_distance * 3) - radial_distance[-1]) / 3),
-                                        (self.spreading_distance * 3)])
-        
-        self.radial_distance = radial_distance
-        return self.radial_distance, self.percent_flux
-
-    def _calculate_travel_time_unsaturated_zone(self):
-        '''Equation A.11 in report '''
-
-        if self.schematisation.schematisation_type =='phreatic':
-            self.travel_time_unsaturated = ((((self.schematisation.groundwater_level + self.thickness_vadose_zone_drawdown)
-                                        - self.schematisation.groundwater_level
-                                        - self.schematisation.thickness_full_capillary_fringe)
-                                        * self.schematisation.moisture_content_vadose_zone
-                                        + self.schematisation.thickness_full_capillary_fringe
-                                        * self.schematisation.porosity_vadose_zone)
-                                    / self.schematisation.recharge_rate)
-
-        elif self.schematisation.schematisation_type == 'semi-confined':
-            self.travel_time_unsaturated =(((self.schematisation.ground_surface 
-                                        - self.schematisation.groundwater_level 
-                                        - self.schematisation.thickness_full_capillary_fringe)
-                                        * self.schematisation.moisture_content_vadose_zone
-                                        + self.schematisation.thickness_full_capillary_fringe
-                                        * self.schematisation.porosity_vadose_zone)
-                                    / self.schematisation.recharge_rate)
-        return self.travel_time_unsaturated
-
-
     def _calculate_travel_time_aquitard_zone1(self):
         ''' Calculate the travel time in zone 1 (aquitard in semi-confined case)
         using the the Peters (1985) solution( eq. 8.8 in Peters \cite{Peters1985})
@@ -756,7 +757,7 @@ class AnalyticalWell():
         return self.travel_time_shallow_aquifer
 
 
-    def _calculate_travel_time_target_aquifer(self):
+    def _calculate_travel_time_target_aquifer_semi_confined(self):
         '''Calculate the travel time in zone 2 (aquifer with the production well)
         using the the Peters (1985) solution
         Equation A.13/A.14 in report
@@ -780,10 +781,11 @@ class AnalyticalWell():
 
 
     def _calculuate_hydraulic_head(self):
-        '''Calculate the hydraulic head in meters above sea level '''
+        '''Calculate the hydraulic head in meters above sea level for the 
+        semi-confined case (AH confirm?)'''
 
         self.head = (-self.schematisation.well_discharge / (2 * math.pi * self.schematisation.KD)
-                * besselk(0, self.radial_distance / self.spreading_distance)
+                * besselk(0, self.schematisation.radial_distance / self.schematisation.spreading_distance)
                 + self.schematisation.groundwater_level)
 
         return self.head
@@ -854,25 +856,18 @@ class AnalyticalWell():
             input_concentration = self.schematisation.input_concentration #df_flowline.loc[self.df_flowline['flowline_id'] == 1, 'input_concentration'].values[0]
 
             df.loc[0] = [flowline_id, None, 0, 0, self.radial_distance[i],
-                         0, None, self.schematisation.temperature, None, None, None, 
+                         self.schematisation.ground_surface, None, self.schematisation.temperature, None, None, None, 
                          None, None,input_concentration, input_concentration, None]
-
-            if self.schematisation == 'phreatic':
-                vadose_zone = self.schematisation.thickness_vadose_zone_at_boundary[i]
-                bottom_vadose = self.depth_bottom_vadose_aquifer
-            else: 
-                vadose_zone = self.schematisation.thickness_vadose_zone_at_boundary
-                bottom_vadose = self.schematisation.thickness_vadose_zone_at_boundary
 
             df.loc[1] = [flowline_id, 
                          "vadose_zone",
                          self.travel_time_unsaturated[i],
                          self.travel_time_unsaturated[i],
                          self.radial_distance[i],
-                         -1*vadose_zone,
+                         self.schematisation.bottom_vadose_zone_at_boundary,
                          self.schematisation.redox_vadose_zone, 
                          self.schematisation.temperature,
-                         bottom_vadose,
+                         self.schematisation.thickness_vadose_zone_at_boundary,
                          self.schematisation.porosity_vadose_zone,
                          self.schematisation.dissolved_organic_carbon_vadose_zone,
                          self.schematisation.pH_vadose_zone,
@@ -885,7 +880,7 @@ class AnalyticalWell():
             df.loc[2] = [flowline_id, "shallow_aquifer", self.travel_time_shallow_aquifer[i],
                          self.travel_time_unsaturated[i] + self.travel_time_shallow_aquifer[i],
                          self.radial_distance[i],
-                         -1*(self.depth_bottom_shallow_aquifer),
+                         self.schematisation.bottom_shallow_aquifer,
                          self.schematisation.redox_shallow_aquifer, 
                          self.schematisation.temperature,
                          self.schematisation.thickness_shallow_aquifer,
@@ -901,7 +896,7 @@ class AnalyticalWell():
             df.loc[3] = [flowline_id, "target_aquifer",  self.travel_time_target_aquifer[i],
                          self.total_travel_time[i],
                          self.schematisation.diameter_borehole/2, #@MartinvdS what here? borehole radius now...
-                         -1*(self.depth_bottom_target_aquifer),
+                         self.schematisation.bottom_target_aquifer,
                          self.schematisation.redox_target_aquifer, 
                          self.schematisation.temperature,
                          self.schematisation.thickness_target_aquifer,
@@ -1011,42 +1006,29 @@ class AnalyticalWell():
                                         from site X within and any site on the groundwater divide
         '''
 
-        self.spreading_distance = math.sqrt(self.schematisation.vertical_resistance_aquitard * self.schematisation.KD)
+        # travel time unsaturated now calculated in the HydrochemicalSchematisation class
+        self.schematisation._calculate_travel_time_unsaturated_zone()
 
-        self.radial_distance_recharge = (math.sqrt(self.schematisation.well_discharge
-                                                    / (math.pi * self.schematisation.recharge_rate )))
+        self.travel_time_unsaturated = self.schematisation.travel_time_unsaturated
 
-        self.radial_distance, self.percent_flux = self._create_radial_distance_array()
-
-        self.head = (self.schematisation.groundwater_level - self.schematisation.well_discharge
-                    / (2 * math.pi * self.schematisation.KD) 
-                    * np.log(self.radial_distance_recharge / self.radial_distance))
-
-        self.depth_bottom_vadose_aquifer = self.schematisation.thickness_vadose_zone_at_boundary #no drawdown
-        self.depth_bottom_shallow_aquifer = self.schematisation.thickness_vadose_zone_at_boundary + self.schematisation.thickness_shallow_aquifer
-        self.depth_bottom_target_aquifer = self.schematisation.thickness_vadose_zone_at_boundary + self.schematisation.thickness_shallow_aquifer + self.schematisation.thickness_target_aquifer
-
-        self.thickness_vadose_zone_drawdown = (self.schematisation.groundwater_level 
-                                              + self.schematisation.thickness_vadose_zone_at_boundary) - self.head
-
-        self.travel_time_unsaturated = self._calculate_travel_time_unsaturated_zone()
+        self.head = self.schematisation.head
+        self.radial_distance = self.schematisation.radial_distance
 
         self.travel_time_shallow_aquifer = ((self.schematisation.thickness_shallow_aquifer - (self.schematisation.groundwater_level - self.head))
                             * self.schematisation.porosity_shallow_aquifer / self.schematisation.recharge_rate)
 
         self.travel_time_target_aquifer = (self.schematisation.porosity_target_aquifer * self.schematisation.thickness_target_aquifer / self.schematisation.recharge_rate
-                            * np.log(1 / (1 - 0.01 * self.percent_flux)))
+                            * np.log(1 / (1 - 0.01 * self.schematisation.percent_flux)))
 
         self.total_travel_time = (self.travel_time_unsaturated + self.travel_time_shallow_aquifer
                             + self.travel_time_target_aquifer)
         
-        self.cumulative_percent_abstracted_water = self.percent_flux
+        self.cumulative_percent_abstracted_water = self.schematisation.percent_flux
 
         self.df_output = self._create_output_dataframe()
 
         self._export_to_df()
-        # self.df_flowline, self.df_particle
-        # return self.df_output
+
 
     def semiconfined(self):
         self._check_init_confined
@@ -1087,28 +1069,20 @@ class AnalyticalWell():
                                         from site X within and any site on the groundwater divide
 
         '''
+        # travel time unsaturated now calculated in the HydrochemicalSchematisation class
+        self.schematisation._calculate_travel_time_unsaturated_zone()
 
-        self.spreading_distance = math.sqrt(self.schematisation.vertical_resistance_aquitard * self.schematisation.KD)
+        self.travel_time_unsaturated = self.schematisation.travel_time_unsaturated
 
-        self.radial_distance_recharge_semiconfined = self.spreading_distance * 3
-
-        self.radial_distance_recharge = (math.sqrt(self.schematisation.well_discharge
-                                                    / (math.pi * self.schematisation.recharge_rate)))
-
-        self.radial_distance, self.percent_flux = self._create_radial_distance_array()
-        
-        self.depth_bottom_shallow_aquifer = self.schematisation.thickness_vadose_zone_at_boundary + self.schematisation.thickness_shallow_aquifer
-        self.depth_bottom_target_aquifer = self.schematisation.thickness_vadose_zone_at_boundary + self.schematisation.thickness_shallow_aquifer + self.schematisation.thickness_target_aquifer
-
-        # calculate the travel times in unsaturated zone, shallow aquifer and target aquifer in days
-        self.travel_time_unsaturated = self._calculate_travel_time_unsaturated_zone()
+        self.radial_distance = self.schematisation.radial_distance
+        self.spreading_distance = self.schematisation.spreading_distance
 
         # travel time in semi-confined is one value, make it array by repeating the value
         self.travel_time_unsaturated = [self.travel_time_unsaturated] * (len(self.radial_distance))
 
         self.travel_time_shallow_aquifer = self._calculate_travel_time_aquitard_zone1()
 
-        self.travel_time_target_aquifer = self._calculate_travel_time_target_aquifer() 
+        self.travel_time_target_aquifer = self._calculate_travel_time_target_aquifer_semi_confined() 
 
         self.total_travel_time = self.travel_time_unsaturated + \
             self.travel_time_shallow_aquifer + self.travel_time_target_aquifer
@@ -1233,10 +1207,14 @@ class Substance:
         name: String, 
             name of the substance (for now limited dictionary to 'benzene', 'AMPA', 'benzo(a)pyrene'
         substance_dict: dictionary
-            log Koc: distribution coefficient of organic carbon and water ([-]
-            molar_mass: molar mass of substance [g/mol]
-            pKa: disassociation constant for acic H-OMP [-]
-            omp_half_life: per redox zone, [days]) 
+            log Koc: float
+                distribution coefficient of organic carbon and water ([-]
+            molar_mass: float
+                molar mass of substance [g/mol]
+            pKa: float
+                disassociation constant for acic H-OMP [-]
+            omp_half_life: float
+                per redox zone, [days]) 
         """
         self.name = name
     

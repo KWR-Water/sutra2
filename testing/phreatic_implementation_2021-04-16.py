@@ -92,21 +92,6 @@ scheme1 = HydroChemicalSchematisation(schematisation_type='phreatic',
 # phreatic_dict = scheme1.make_dictionary()  
 well1 = AnalyticalWell(scheme1)
 well1.phreatic()     
-# output = well1.phreatic()
-# output = output[["total_travel_time", "travel_time_unsaturated",
-#                     "travel_time_shallow_aquifer", "travel_time_target_aquifer",
-#                     "radial_distance", ]]
-
-# output_phreatic = pd.read_csv(path / 'phreatic_test.csv')
-# output_phreatic = output_phreatic.round(7) #round to 7 digits (or any digit), keep same as for the output for the model to compare
-
-# assert_frame_equal(output, output_phreatic,check_dtype=False)
-
-# output = output.round(7)
-# output.to_excel("phreatic_output_python.xlsx")  
-
-# df_flowline, df_particle = well1.export_to_df(what_to_export = 'omp_parameters')
-# df_particle
 
 conc1 = Concentration(well1, substance = 'benzene')
 # conc1 = Concentration(well1, substance = 'benzo(a)pyrene')
