@@ -45,13 +45,18 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 #%%
 # Test
 test_travel_time_distribution_semiconfined()
+test_retardation_temp_koc_correction_semiconfined()
+test_steady_concentration_temp_koc_correction_semiconfined(substance='benzene')
+test_steady_concentration_temp_koc_correction_semiconfined(substance='benzo(a)pyrene')
+test_steady_concentration_temp_koc_correction_semiconfined(substance='AMPA')
 
 #%%
-scheme1 = HydroChemicalSchematisation(schematisation_type='semi-confined',
+
+semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semi-confined',
                                     what_to_export='omp_parameters',
                                     # biodegradation_sorbed_phase = False,
                                       well_discharge=319.4*24,
-                                      vertical_resistance_aquitard=500,
+                                      # vertical_resistance_aquitard=500,
                                       porosity_vadose_zone=0.38,
                                       porosity_shallow_aquifer=0.35,
                                       porosity_target_aquifer=0.35,
@@ -62,6 +67,8 @@ scheme1 = HydroChemicalSchematisation(schematisation_type='semi-confined',
                                       thickness_shallow_aquifer=10,
                                       thickness_target_aquifer=40,
                                       hor_permeability_target_aquifer=35,
+                                      hor_permeability_shallow_aquifer = 0.02,
+                                      vertical_anistropy_shallow_aquifer = (10/(0.02*500)),
                                       thickness_full_capillary_fringe=0.4,
                                       redox_vadose_zone='anoxic', #'suboxic',
                                       redox_shallow_aquifer='anoxic',
@@ -85,15 +92,15 @@ scheme1 = HydroChemicalSchematisation(schematisation_type='semi-confined',
 
 
 # phreatic_dict = scheme1.make_dictionary()  
-well1 = AnalyticalWell(scheme1) #.semiconfined()
-well1.semiconfined()   
-conc1 = Concentration(well1, substance = 'benzene')
+semiconfined_well = AnalyticalWell(semiconfined_scheme) #.semiconfined()
+semiconfined_well.semiconfined()   
+semiconfined_conc = Concentration(semiconfined_well, substance = 'benzene')
 # conc1 = Concentration(well1, substance = 'benzo(a)pyrene')
 # conc1 = Concentration(well1, substance = 'AMPA')
-conc1.compute_omp_removal()
-conc1.df_particle #.steady_state_concentration
+semiconfined_conc.compute_omp_removal()
+semiconfined_conc.df_particle #.steady_state_concentration
 
 # %%
-well1.plot_travel_time_versus_radial_distance(xlim=[0, 4000])
-well1.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 100])
+semiconfined_well.plot_travel_time_versus_radial_distance(xlim=[0, 4000], ylim=[1e3, 1e6])
+semiconfined_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 100], ylim=[1e3, 1e6])
 #%%

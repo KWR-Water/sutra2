@@ -52,11 +52,12 @@ test_steady_concentration_temp_koc_correction(substance='benzene')
 test_steady_concentration_temp_koc_correction(substance='benzo(a)pyrene')
 test_steady_concentration_temp_koc_correction(substance='AMPA')
 # %%
-scheme1 = HydroChemicalSchematisation(schematisation_type='phreatic',
+phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                     what_to_export='omp_parameters',
                                     # biodegradation_sorbed_phase = False,
                                       well_discharge=319.4*24,
-                                      vertical_resistance_aquitard=500,
+                                    #   vertical_resistance_aquitard=500,
+                                    vertical_anistropy_shallow_aquifer = (10/(35*500)),
                                       porosity_vadose_zone=0.38,
                                       porosity_shallow_aquifer=0.35,
                                       porosity_target_aquifer=0.35,
@@ -90,20 +91,20 @@ scheme1 = HydroChemicalSchematisation(schematisation_type='phreatic',
 
 
 # phreatic_dict = scheme1.make_dictionary()  
-well1 = AnalyticalWell(scheme1)
-well1.phreatic()     
+phreatic_well = AnalyticalWell(phreatic_scheme)
+phreatic_well.phreatic()     
 
-conc1 = Concentration(well1, substance = 'benzene')
+phreatic_conc = Concentration(phreatic_well, substance = 'benzene')
 # conc1 = Concentration(well1, substance = 'benzo(a)pyrene')
 # conc1 = Concentration(well1, substance = 'AMPA')
-conc1.compute_omp_removal()
-conc1.df_particle #.steady_state_concentration
+phreatic_conc.compute_omp_removal()
+phreatic_conc.df_particle #.steady_state_concentration
 
 # plt.plot(conc1.df_flowline.flowline_id, conc1.df_flowline.total_breakthrough_travel_time/365.25)
 # plt.xlabel('Flowline ID')
 # plt.ylabel('Breakthrough time (years)')
 # %%
-well1.plot_travel_time_versus_radial_distance(xlim=[0, 4000])
+phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 4000], ylim=[1e3, 1e6])
 
-well1.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 100])
+phreatic_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 100], ylim=[1e3, 1e6])
 #%%

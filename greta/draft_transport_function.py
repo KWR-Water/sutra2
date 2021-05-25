@@ -15,21 +15,20 @@
 # things which must be checked indicated in comments with AH
 # specific questions flagged for;
 # @MartinvdS // @steven //@martinK
-####
 
-# LEFT OFF: MAY 18
-# added the updated list of parameters to the hydrpchemical schematisation
-# need to create the modflow dictionaries which Martin has specified in SSTR naming excel
-# need to incorporate the point/diffuse if/else statements
-# need to update the semi-confined case with (everything!) like the phreatic case --> watch out with semi-confined case, also need to update the test cvs to be days (years now)
+# LEFT OFF: MAY 19
+# moved calculation of travel time unsaturated zone (and linked functions/params)
+# to the hydrochemicalSchematisation class (from the AnalyticalWell class). Working.
+# added the updated list of parameters to the hydrochemical schematisation and 
+# dicitonaries from excel sheet
 
 #To Do
- # test for the concentration/retardation cases
- # how to add the default values based on the schematisation?
+# test for the concentration/retardation semi-confined case
+# need to incorporate the point/diffuse if/else statements
+# Go through the questions/red marks in the SSTR spreadsheet w/MartinvdS
+# @MartinK the testing functionality went away... worked for a few days just fine then stopped working today
 
-# LEFT OFF : APRIL 29 
-# -> finished adding the breakthrough concentration calculations (time and concentrations at each layer) 
-# for the phreatic case. Confim with Martin vd S about the inidividual questions marked in code and next steps
+####
 
 #%% ----------------------------------------------------------------------------
 # INITIALISATION OF PYTHON e.g. packages, etc.
@@ -51,20 +50,6 @@ import math
 from scipy.special import kn as besselk
 
 path = os.getcwd()  # path of working directory
-
-#%% 
-
-# ------------------------------------------------------------------------------
-# Questions
-# ------------------------------------------------------------------------------
-
-# 1. How to structure the input parameters?
-
-# ------------------------------------------------------------------------------
-# Phreatic and Semi-Confined Aquifer Functions
-# ------------------------------------------------------------------------------
-
-
 
 
 #%%
@@ -233,8 +218,6 @@ class HydroChemicalSchematisation:
                 vertical_anistropy_gravelpack=None,
                 vertical_anistropy_clayseal=None,
 
-                 vertical_resistance_aquitard=None,  # AH how to calculate this from the other params? @MartinvdS
-
                  substance=None,
                  partition_coefficient_water_organic_carbon=None,
                  dissociation_constant=None,
@@ -287,9 +270,9 @@ class HydroChemicalSchematisation:
         self.head_boundary = head_boundary
 
         self.thickness_shallow_aquifer = thickness_shallow_aquifer
-        self.bottom_shallow_aquifer = ground_surface-thickness_vadose_zone_at_boundary-thickness_shallow_aquifer
+        self.bottom_shallow_aquifer = ground_surface - thickness_vadose_zone_at_boundary - thickness_shallow_aquifer
         self.thickness_target_aquifer = thickness_target_aquifer
-        self.bottom_target_aquifer = self.bottom_shallow_aquifer-thickness_target_aquifer
+        self.bottom_target_aquifer = self.bottom_shallow_aquifer - thickness_target_aquifer
         self.thickness_full_capillary_fringe = thickness_full_capillary_fringe
         self.porosity_vadose_zone = porosity_vadose_zone
         self.porosity_shallow_aquifer = porosity_shallow_aquifer
@@ -357,6 +340,9 @@ class HydroChemicalSchematisation:
         self.vertical_anistropy_gravelpack = vertical_anistropy_gravelpack
         self.vertical_anistropy_clayseal = vertical_anistropy_clayseal
 
+        # AH add an if statement here, only need this for the semi-confined case, not for phreatic
+        self.vertical_resistance_aquitard = thickness_shallow_aquifer / (hor_permeability_shallow_aquifer *vertical_anistropy_shallow_aquifer)
+
         # Substance
         self.substance = substance
         self.partition_coefficient_water_organic_carbon = partition_coefficient_water_organic_carbon
@@ -388,8 +374,6 @@ class HydroChemicalSchematisation:
         self.relative_position_starting_points_outside_basin = relative_position_starting_points_outside_basin
 
         ''' Default? calculations, calcs which should be done for all '''
-        # AH @Martin,vertical_resistance_aquitard labelled 'compute' in excel naming convention, but need the conductivity clay layer...
-        self.vertical_resistance_aquitard = vertical_resistance_aquitard
         self.KD = hor_permeability_target_aquifer*thickness_target_aquifer
         self.groundwater_level =self.ground_surface-self.thickness_vadose_zone_at_boundary # self.groundwater_level_ASL # 0-self.thickness_vadose_zone
         
@@ -415,9 +399,6 @@ class HydroChemicalSchematisation:
         self.input_concentration = input_concentration
         self.particle_release_date = particle_release_date
 
-        # @MartinvdS Modpath things. 
-        # AH Is this the correct location for this? for the dictionaries 
-        # so move to the dictionaries section or the Modpath class?
         if schematisation_type == 'modpath':
           
             top_shallow_aquifer = self.bottom_vadose_zone_at_boundary
@@ -446,14 +427,41 @@ class HydroChemicalSchematisation:
             if vertical_anistropy_clayseal is None: 
                 self.vertical_anistropy_clayseal = 1
 
-
-            # @MartinvdS how to compute the following...
             # if model_radius is None: 
-                # self.model_radius = #compute source area radius
+                # self.model_radius = #AH SA*recharge = well_discharge
+                #  AH this is the Re in the transatomic spreadsheet
 
     def make_dictionary(self,):
         ''' Dicitonaries of the different paramters '''
+        
+        # @MartinvdS -> is this how to implement these for the different 
+        # schematisations?
+        if self.schematisation_type == 'phreatic':
+            compute_thickness_vadose_zone = True # @MartinvdS what is this for?
+            
+            # only outer_boundary for phreatic
+            ibound_parameters = {
+                'outer_boundary':{
+                    'head': self.bottom_vadose_zone_at_boundary,
+                    'top': self.bottom_shallow_aquifer,
+                    'bot': self.bottom_target_aquifer,
+                    'rmin': self.model_radius,
+                    'rmax': self.model_radius,
+                        },
+                    }
+        #@MartinvdS -> these parameters listed as compute in excel
+        # how to compute them?
+        elif self.schematisation_type == 'semi-confined':
+            compute_thickness_vadose_zone = False # @MartinvdS what is this for?
 
+            # only top_boundary for semi-confined 
+            ibound_parameters = {
+                'top_boundary1': {
+                    'head': self.bottom_vadose_zone_at_boundary,
+                    'rmin': self.diameter_gravelpack,
+                    'rmax': self.model_radius,
+                        },
+                    }
         # make dictionaries of each grouping of parameters
         simulation_paramters = {
             'schematisation_type': self.schematisation_type,
@@ -497,7 +505,7 @@ class HydroChemicalSchematisation:
                 'T': self.temperature_shallow_aquifer,
                 'Khor': self.hor_permeability_shallow_aquifer,
                 'VANI': self.vertical_anistropy_shallow_aquifer,
-                # 'nlayer': self.nlayer_shallow_aquifer, # THIS PARAM IN MODPATH CLASS? @MartinvdS
+                # 'nlayer': self.nlayer_shallow_aquifer, # AH come back to this, do we want to define here or inthe modpath class @MartinK
                 },
             'geolayer2': {
                 'top': self.thickness_target_aquifer,
@@ -513,7 +521,7 @@ class HydroChemicalSchematisation:
                 'T': self.temperature_target_aquifer,
                 'Khor': self.hor_permeability_target_aquifer,
                 'VANI': self.vertical_anistropy_target_aquifer,
-                # 'nlayer': self.nlayer_target_aquifer, # THIS PARAM IN MODPATH CLASS? @MartinvdS
+                # 'nlayer': self.nlayer_target_aquifer, # AH come back to this, do we want to define here or inthe modpath class @MartinK
                 },
             'gravelpack1': {
                 'top': self.top_gravelpack,
@@ -524,7 +532,7 @@ class HydroChemicalSchematisation:
                 'VANI': self.vertical_anistropy_gravelpack,
                 },
             'clayseal1':{
-              'top': self.top_clayseal,
+                'top': self.top_clayseal,
                 'bot': self.bottom_clayseal,
                 'rmax': self.diameter_clayseal,
                 'rmin': self.diameter_filterscreen,
@@ -533,30 +541,6 @@ class HydroChemicalSchematisation:
                 },
             }
         
-        # fixed heads
-        ibound_parameters = {
-            'outer_boudnary':{
-                'head': self.bottom_vadose_zone_at_boundary,
-                'top': self.bottom_shallow_aquifer,
-                'bot': self.bottom_target_aquifer,
-                'rmin': self.model_radius,
-                'rmax': self.model_radius,
-                },
-            }
-
-        #@MartinvdS what to do with source2?
-        recharge_parameters = {
-            'source1': { # source1 -> recharge & diffuse pollution sources
-                'Recharge': self.recharge_rate,
-                'rmin': self.diameter_gravelpack,
-                'rmax': self.model_radius,
-                'DOC': self.dissolved_organic_carbon_infiltration_water,
-                'TOC': self.total_organic_carbon_infiltration_water,
-                'c_in': self.diffuse_input_concentration,
-                },
-            # 'source2' :{}> surface water (BAR & RBF)
-        }
-
         well_parameters = {
             'well1': {
                 'Q': self.well_discharge,
@@ -565,44 +549,74 @@ class HydroChemicalSchematisation:
                 'rmax': self.diameter_filterscreen,
                 'rmin': self.inner_diameter_filterscreen,
                 },
-            }    
+            }  
 
+        #AH_todo implement the point source and come back to this
+        # @MartinvdS if/else here for the source or pass both dictionaries?
+        if self.diffuse_input_concentration > 0:
+            c_in = self.diffuse_input_concentration
+        elif self.concentration_point_contamination > 0:
+            c_in = self.concentration_point_contamination
+
+        recharge_parameters = {
+            'source1': { # source1 -> recharge & diffuse pollution sources
+                'name': self.substance,
+                'Recharge': self.recharge_rate,
+                'rmin': self.diameter_gravelpack,
+                'rmax': self.model_radius,
+                'DOC': self.dissolved_organic_carbon_infiltration_water,
+                'TOC': self.total_organic_carbon_infiltration_water,
+                'c_in': c_in, # self.diffuse_input_concentration, # @MartinvdS confirm how to implement?
+                },
+            # 'source2' :{}> surface water (BAR & RBF) #@MartinvdS what to do with source2?
+        }
+
+        #only if point source
+        # empty dictionary is point is None
+        # passs {} dictionary, not None parametters in the dictionary AH_todo
         point_parameters= {
             'point1': {
                 'name': self.substance,
-                'c_in': self.concentration_point_contamination,
+                'c_in': c_in, #self.concentration_point_contamination, # @MartinvdS confirm how to implement?
                 'r_start': self.distance_point_contamination_from_well,
                 'z_start': self.depth_point_contamination,
                 'q_point': self.discharge_point_contamination,
             }, #  -> point pollution sources
         }
 
-        #@MartinvdS what do you want in this dictionary?
-        pollution_parameters = {
+        #@MartinvdS "default=None; if None -> computed by QSAR"
+        # here option for ourselves to specify the params AH_todo
+        # add the half_life etc params which are otherwise called
+        substance_parameters = {
             'substance': {}
          } # -> properties of substance
 
-        # @MartinvdS, the rest of the params are in the Modpath class?
+        # @MartinvdS, the rest of the params are in the Modpath class, 
+        # so make dictionary here or not?
+        # bas = basic package modflow
         bas_parameters = {
-            'rmax': self.model_radius,
+            'rmax': self.model_radius, # same as for the other modpath paramters, do we specify here or layer @MartinK 
             }
 
-        # AH how do we want the dictionary output, 
-        # returned from function or as attribute of function? @MartinvdS
+        # returned as attribute of function
         self.simulation_paramters = simulation_paramters
         self.geo_parameters = geo_parameters
         self.ibound_parameters = ibound_parameters
         self.recharge_parameters = recharge_parameters
         self.well_parameters = well_parameters
         self.point_parameters = point_parameters
-        self.pollution_parameters = pollution_parameters
+        self.substance_parameters = substance_parameters
         self.bas_parameters = bas_parameters
 
+    # functions to calculate the travel time through vadose zone, shared functions for
+    # Analytical and Modflow models
     def _create_radial_distance_array(self):
 
         ''' Calculate the radial distance from a well,
         specifying the aquifer type (semi-confined, phreatic)
         '''
+
+        #ah_todo change this to single array of 0.001 to 100
         percent_flux = np.array([0.001, 0.01, 0.1, 0.5])
         percent_flux = np.append(percent_flux, np.arange(1, 100, 1))
         self.percent_flux = np.append(percent_flux, [99.5, 99.99])
@@ -745,7 +759,10 @@ class AnalyticalWell():
         ''' Calculate the travel time in zone 1 (aquitard in semi-confined case)
         using the the Peters (1985) solution( eq. 8.8 in Peters \cite{Peters1985})
         Equation A.12 in report
-        '''                                   
+        '''          
+
+        # AH_todo add the porosity of the shallow aquifer, n' from the equation
+        # update the tests                         
 
         self.travel_time_shallow_aquifer = (2 * math.pi * self.schematisation.KD * self.schematisation.vertical_resistance_aquitard
                             / (self.schematisation.well_discharge)
@@ -763,7 +780,7 @@ class AnalyticalWell():
         Equation A.13/A.14 in report
 
         '''
-        # porosity_target_aquifer, AH #we keep this number for camparing to excel, but will change later to be the user defined porosities
+        # porosity_target_aquifer, AH #we keep this number for comparing to excel, but will change later to be the user defined porosities
         porosity_target_aquifer=0.32  
         thickness_target_aquifer=95
 
@@ -804,10 +821,10 @@ class AnalyticalWell():
         return self.flux_fraction
 
     def _create_output_dataframe(self):
-        # AH, confirm this is how to calculate the discharge of each flowline?
         # Percent flux ( array of 1,,23,....,99,99.5,99.9), row 7 in TTD phreatic, difference between cells divided by the well discharge
-        # @MartinvdS
-        self.flowline_discharge = (np.diff( np.insert(self.cumulative_percent_abstracted_water,0,0., axis=0))/100)*self.schematisation.well_discharge
+        #AH change cumulative percent_abstracted_water -> changename to cumulative_fraction_abstracted water (also the value!)
+        # AH_todo
+        self.flowline_discharge = (np.diff(np.insert(self.cumulative_percent_abstracted_water,0,0., axis=0))/100)*self.schematisation.well_discharge
 
         column_names = ["total_travel_time", "travel_time_unsaturated", 
                         "travel_time_shallow_aquifer", "travel_time_target_aquifer",
@@ -841,6 +858,7 @@ class AnalyticalWell():
         #------------------------------
         df_particle = pd.DataFrame(columns=['flowline_id', 'zone', 'travel_time_zone', 'total_travel_time', 
                                                 #  'xcoord','ycoord', # AH convert from radial distance? @MartinvdS
+                                                # AH x = radial_distcnace, y = the width of the cell .. default = 1 m #AH_todo
                                                  "radial_distance",
                                                  'zcoord',
                                                  'redox_zone', 'temperature', 
@@ -895,7 +913,7 @@ class AnalyticalWell():
 
             df.loc[3] = [flowline_id, "target_aquifer",  self.travel_time_target_aquifer[i],
                          self.total_travel_time[i],
-                         self.schematisation.diameter_borehole/2, #@MartinvdS what here? borehole radius now...
+                         self.schematisation.diameter_borehole/2, #at the well
                          self.schematisation.bottom_target_aquifer,
                          self.schematisation.redox_target_aquifer, 
                          self.schematisation.temperature,
@@ -928,8 +946,10 @@ class AnalyticalWell():
         df_flowline['flowline_id'] =  df_flowline.index + 1
         df_flowline['particle_release_date'] = self.schematisation.particle_release_date
         df_flowline['input_concentration'] = self.schematisation.input_concentration
-        # #AH what is this? is this id zero? @MartinvdS
-        # df_flowline['endpoint_id'] = self.endpoint_id
+        # #AH what is this? is this id zero? 
+        # df_flowline['endpoint_id'] = self.endpoint_id 
+        # the well number -> key of well dictionary
+        # AH_todo
         
         # AH which parameters for the 'microbial_parameters' option? @MartinvdS or @steven
 
@@ -1094,19 +1114,17 @@ class AnalyticalWell():
 
         self.flux_fraction = self._calculate_flux_fraction()
 
-        # [%], AH 1.1369 comes form pg. 52 in report, describes cutting off the 
-        # recharge_rate distance at 3 labda, need to increase the percent abstracted from ~87%
-        # to 99.9% so multiply by 1.1369 to get to that
+        ''' Calculate the cumulative_percent_abstracted_water
+        1.1369 comes form pg. 52 in report, describes cutting off the 
+        recharge_rate distance at 3 labda, need to increase the percent abstracted from ~87%
+        to 99.9% so multiply by 1.1369 to get to that
+        Equation A.16 in report'''
         # AH, may want to change this, to eg. 6 labda or something else, adjust this number
-        # equation A.16 in report
         self.cumulative_percent_abstracted_water = 1.1369 * 100 * (1 - self.flux_fraction)
 
         self.df_output = self._create_output_dataframe()
 
         self._export_to_df()
-
-        # return self.df_output
-
 
     def plot_travel_time_versus_radial_distance(self,
                                                 xlim=[0, 4000],
@@ -1145,7 +1163,7 @@ class AnalyticalWell():
         plt.savefig('travel_time_versus_cumulative_percent_abstracted_water_'+self.schematisation.schematisation_type+'.png', dpi=300, bbox_inches='tight')  # save_results_to + '/
 
 class Modpath():
-    """ @Steven writing this one? 
+    """ @Steven @MartinvdS writing this one? 
         ncols_filterscreen: int 
         ncols_gravelpack: int 
         ncols_near_well: int 
@@ -1192,10 +1210,9 @@ class Modpath():
         self.delz_fixed_head = delz_fixed_head
         self.tracking_direction = tracking_direction
 
-        # @MartingvdS how to compute this? what is meant here
+        # steven will sort this out
         # if delc is None: 
             # self.delc = self. compute -> concatenate delr/ncols …..
-                # @MartinvdS check if this is what you meant by "roundup(top - bot)"
         # if nlayer_shallow_aquifer is None: 
         #     self.nlayer_shallow_aquifer = math.ceil(top_shallow_aquifer - bottom_shallow_aquifer) 
         # if nlayer_target_aquifer is None: 
@@ -1359,18 +1376,18 @@ class Concentration():
                 if self.df_particle.omp_half_life.loc[i+1] == 1e99:
                     self.df_particle.at[i+1, 'steady_state_concentration'] = self.df_particle.steady_state_concentration.loc[i]
                 
+                # ah look into the runtime error, otherwise leave the full calculation, remove the 300 limit
                 # AH @MartinvdS why 300 the limit here? just to avoid very small numnbers?
                 # Column O in Phreatic excel sheet
-                elif (self.df_particle.travel_time_zone.loc[i+1] * self.df_particle.retardation.loc[i+1]
-                # elif (self.df_particle.travel_time_zone.loc[i+1] * 365.25 * self.df_particle.retardation.loc[i+1]
-                                                                            / self.df_particle.omp_half_life_temperature_corrected.loc[i+1]) >300:
-                    self.df_particle.at[i+1, 'steady_state_concentration'] = 0
+                # AH test remove this 300 limit, 
+                # elif (self.df_particle.travel_time_zone.loc[i+1] * self.df_particle.retardation.loc[i+1]
+                #                                                             / self.df_particle.omp_half_life_temperature_corrected.loc[i+1]) >300:
+                #     self.df_particle.at[i+1, 'steady_state_concentration'] = 0
 
                 # otherwise, calculate the outcoming concentration from the zone, given the input concentration to the zone. 
                 # in the case of the vadose zone, the incoming concentration is the initial concentration
                 else:
                     self.df_particle.at[i+1, 'steady_state_concentration'] = (self.df_particle.steady_state_concentration.loc[i]
-                                                                            # / (2 ** (self.df_particle.travel_time_zone.loc[i+1] * 365.25 * self.df_particle.retardation.loc[i+1]
                                                                             / (2 ** (self.df_particle.travel_time_zone.loc[i+1] * self.df_particle.retardation.loc[i+1]
                                                                             / self.df_particle.omp_half_life_temperature_corrected.loc[i+1])))
 
@@ -1775,17 +1792,3 @@ def travel_time_distribution_BAR(length,
 
     return aquifer_dictionary
 
-
-
-
-#%%
-
-#%%
-
-#   QUESITONS
-# 2. input permeability, thickness seperately?
-# 4. naming conventions: zone 1, zone 2, zone 3 or unsaturated zone, zone 1, zone 2 .. 
-#   gets more complicated in the BAR (basin, phreatic/first/upper aquifer, deep/aquitard/second aquifer)
-# 5. error in spreadsheet in "Peter's t2 fit", does not seem to take into account changes in the thickness of the aquifer and porosity (fixed n2 = 0.32 and D2 = 95)...?
-# 6. Calculating the well_discharge (q) for ech streamline, Phreatic %Qrx*Q, Semi-confinded: Qr/Qx*Qx?? see notes and df_output for each
-# %%
