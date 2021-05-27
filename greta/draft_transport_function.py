@@ -23,7 +23,7 @@
 # dicitonaries from excel sheet
 
 #To Do
-# test for the concentration/retardation semi-confined case
+# test for the concentration/retardation semiconfined case
 # need to incorporate the point/diffuse if/else statements
 # Go through the questions/red marks in the SSTR spreadsheet w/MartinvdS
 # @MartinK the testing functionality went away... worked for a few days just fine then stopped working today
@@ -60,7 +60,7 @@ class HydroChemicalSchematisation:
     Parameters
     ----------
     schematisation_type: string
-        'phreatic', 'semi-confined', 'riverbankfiltration', 'basinfiltration'
+        'phreatic', 'semiconfined', 'riverbankfiltration', 'basinfiltration'
     computation_method: string
         'analytical', 'modpath'
     removal_function: string
@@ -134,7 +134,7 @@ class HydroChemicalSchematisation:
     recharge_rate: float 
         m/d
     """
-    #everything initialized to None to start...
+    # initialize non-defaults to None to start...
     def __init__(self,
                 schematisation_type= None, #'phreatic',
 
@@ -239,7 +239,7 @@ class HydroChemicalSchematisation:
                  source_area_radius=None,
                  number_of_spreading_distance=None,
                  model_radius=None,
-                 model_width=None,
+                 model_width=1, #AH @MartinvdS for the ycoord? cell width, see def _export_to_df(self, ):
                  relative_position_starting_points_radial=None,
                  relative_position_starting_points_in_basin=None,
                  relative_position_starting_points_outside_basin=None,
@@ -340,7 +340,7 @@ class HydroChemicalSchematisation:
         self.vertical_anistropy_gravelpack = vertical_anistropy_gravelpack
         self.vertical_anistropy_clayseal = vertical_anistropy_clayseal
 
-        # AH add an if statement here, only need this for the semi-confined case, not for phreatic
+        # AH add an if statement here, only need this for the semiconfined case, not for phreatic
         self.vertical_resistance_aquitard = thickness_shallow_aquifer / (hor_permeability_shallow_aquifer *vertical_anistropy_shallow_aquifer)
 
         # Substance
@@ -351,8 +351,11 @@ class HydroChemicalSchematisation:
         self.halflife_anoxic = halflife_anoxic
         self.halflife_deeply_anoxic = halflife_deeply_anoxic
 
-        # Diffuse contamination
-        self.diffuse_input_concentration = diffuse_input_concentration
+        # Diffuse contamination override if point contamination specified
+        if concentration_point_contamination is None:
+            self.diffuse_input_concentration = diffuse_input_concentration
+        else: 
+            self.diffuse_input_concentration = 0 
         self.start_date_well = start_date_well
         self.start_date_contamination = start_date_contamination
         self.end_date_contamination = end_date_contamination
@@ -449,12 +452,13 @@ class HydroChemicalSchematisation:
                     'rmax': self.model_radius,
                         },
                     }
+
         #@MartinvdS -> these parameters listed as compute in excel
         # how to compute them?
-        elif self.schematisation_type == 'semi-confined':
+        elif self.schematisation_type == 'semiconfined':
             compute_thickness_vadose_zone = False # @MartinvdS what is this for?
 
-            # only top_boundary for semi-confined 
+            # only top_boundary for semiconfined 
             ibound_parameters = {
                 'top_boundary1': {
                     'head': self.bottom_vadose_zone_at_boundary,
@@ -552,44 +556,46 @@ class HydroChemicalSchematisation:
             }  
 
         #AH_todo implement the point source and come back to this
-        # @MartinvdS if/else here for the source or pass both dictionaries?
-        if self.diffuse_input_concentration > 0:
-            c_in = self.diffuse_input_concentration
-        elif self.concentration_point_contamination > 0:
-            c_in = self.concentration_point_contamination
-
         recharge_parameters = {
-            'source1': { # source1 -> recharge & diffuse pollution sources
+            'source1': { # source1 -> recharge & diffuse sources
                 'name': self.substance,
                 'Recharge': self.recharge_rate,
                 'rmin': self.diameter_gravelpack,
                 'rmax': self.model_radius,
                 'DOC': self.dissolved_organic_carbon_infiltration_water,
                 'TOC': self.total_organic_carbon_infiltration_water,
-                'c_in': c_in, # self.diffuse_input_concentration, # @MartinvdS confirm how to implement?
+                'c_in': self.diffuse_input_concentration, # @MartinvdS confirm how to implement?
                 },
-            # 'source2' :{}> surface water (BAR & RBF) #@MartinvdS what to do with source2?
+            # 'source2' :{}> surface water (BAR & RBF) #@MartinvdS come back to this when we start this module
         }
 
-        #only if point source
-        # empty dictionary is point is None
-        # passs {} dictionary, not None parametters in the dictionary AH_todo
-        point_parameters= {
-            'point1': {
-                'name': self.substance,
-                'c_in': c_in, #self.concentration_point_contamination, # @MartinvdS confirm how to implement?
-                'r_start': self.distance_point_contamination_from_well,
-                'z_start': self.depth_point_contamination,
-                'q_point': self.discharge_point_contamination,
-            }, #  -> point pollution sources
-        }
+        # Create point diciontary if point source concentration specified, 
+        # otherwise pass empty dictionary
+        if self.concentration_point_contamination is None:
+            point_parameters= {}
+        else:
+            point_parameters= {
+                'point1': { 
+                    'name': self.substance,
+                    'c_in': self.concentration_point_contamination, # @MartinvdS confirm how to implement?
+                    'r_start': self.distance_point_contamination_from_well,
+                    'z_start': self.depth_point_contamination,
+                    'q_point': self.discharge_point_contamination,
+                    },
+                }
 
-        #@MartinvdS "default=None; if None -> computed by QSAR"
-        # here option for ourselves to specify the params AH_todo
-        # add the half_life etc params which are otherwise called
+        #AH eventially to be computed by QSAR"
         substance_parameters = {
-            'substance': {}
-         } # -> properties of substance
+            # self.substance: {
+                'log_Koc': self.partition_coefficient_water_organic_carbon,
+                'pKa': self.dissociation_constant,
+                'omp_half_life': {
+                    'suboxic': self.halflife_oxic,
+                    'anoxic': self.halflife_anoxic,
+                    'deeply_anoxic': self.halflife_deeply_anoxic,
+                    },
+                # }
+            }
 
         # @MartinvdS, the rest of the params are in the Modpath class, 
         # so make dictionary here or not?
@@ -613,7 +619,7 @@ class HydroChemicalSchematisation:
     def _create_radial_distance_array(self):
 
         ''' Calculate the radial distance from a well,
-        specifying the aquifer type (semi-confined, phreatic)
+        specifying the aquifer type (semiconfined, phreatic)
         '''
 
         #ah_todo change this to single array of 0.001 to 100
@@ -624,7 +630,7 @@ class HydroChemicalSchematisation:
         radial_distance = self.radial_distance_recharge * \
             np.sqrt(self.percent_flux / 100)
 
-        if self.schematisation_type == 'semi-confined':
+        if self.schematisation_type == 'semiconfined':
 
             radial_distance = np.append(radial_distance,
                                     [(radial_distance[-1] + ((self.spreading_distance * 3) - radial_distance[-1]) / 3),
@@ -663,7 +669,7 @@ class HydroChemicalSchematisation:
                                         * self.porosity_vadose_zone)
                                     / self.recharge_rate)
                                     
-        elif self.schematisation_type == 'semi-confined':
+        elif self.schematisation_type == 'semiconfined':
             travel_time_unsaturated =(((self.ground_surface 
                                         - self.groundwater_level 
                                         - self.thickness_full_capillary_fringe)
@@ -673,6 +679,7 @@ class HydroChemicalSchematisation:
                                     / self.recharge_rate)
         
         self.travel_time_unsaturated = travel_time_unsaturated
+    
 
 #%%
 class AnalyticalWell():
@@ -706,6 +713,10 @@ class AnalyticalWell():
         # self.test_variable = None #AH test variable here to see if errors are caught....
 
         self.schematisation = schematisation
+        
+        #Make dictionaries
+        # @MartinK if we make the dictionaries for all cases, do we need it as a seprate function?
+        self.schematisation.make_dictionary()
 
     def _check_required_variables(self,required_variables):
         for req_var in required_variables:
@@ -715,7 +726,7 @@ class AnalyticalWell():
 
     def _check_init_phreatic(self):
         '''check the variables that we need for the individual aquifer types are not NONE aka set by the user'''
-
+        #AH_to update these
         required_variables = ["schematisation_type", #repeat for all
                               "thickness_vadose_zone_at_boundary",
                               "thickness_shallow_aquifer",
@@ -756,15 +767,15 @@ class AnalyticalWell():
         self._check_required_variables(required_variables)
 
     def _calculate_travel_time_aquitard_zone1(self):
-        ''' Calculate the travel time in zone 1 (aquitard in semi-confined case)
+        ''' Calculate the travel time in zone 1 (aquitard in semiconfined case)
         using the the Peters (1985) solution( eq. 8.8 in Peters \cite{Peters1985})
-        Equation A.12 in report
+
+        Equation A.12 in report BUT now implemented with n' (fraction of aquitard 
+        contacted, to account for gaps in aquitard [-] = porosity of the shallow 
+        aquifer (aquitard))
         '''          
 
-        # AH_todo add the porosity of the shallow aquifer, n' from the equation
-        # update the tests                         
-
-        self.travel_time_shallow_aquifer = (2 * math.pi * self.schematisation.KD * self.schematisation.vertical_resistance_aquitard
+        self.travel_time_shallow_aquifer = self.schematisation.porosity_shallow_aquifer * (2 * math.pi * self.schematisation.KD * self.schematisation.vertical_resistance_aquitard
                             / (self.schematisation.well_discharge)
                             * (self.schematisation.thickness_shallow_aquifer
                                 / besselk(0, self.radial_distance
@@ -774,7 +785,7 @@ class AnalyticalWell():
         return self.travel_time_shallow_aquifer
 
 
-    def _calculate_travel_time_target_aquifer_semi_confined(self):
+    def _calculate_travel_time_target_aquifer_semiconfined(self):
         '''Calculate the travel time in zone 2 (aquifer with the production well)
         using the the Peters (1985) solution
         Equation A.13/A.14 in report
@@ -799,7 +810,7 @@ class AnalyticalWell():
 
     def _calculuate_hydraulic_head(self):
         '''Calculate the hydraulic head in meters above sea level for the 
-        semi-confined case (AH confirm?)'''
+        semiconfined case (AH confirm?)'''
 
         self.head = (-self.schematisation.well_discharge / (2 * math.pi * self.schematisation.KD)
                 * besselk(0, self.schematisation.radial_distance / self.schematisation.spreading_distance)
@@ -857,9 +868,9 @@ class AnalyticalWell():
         # Make df_particle
         #------------------------------
         df_particle = pd.DataFrame(columns=['flowline_id', 'zone', 'travel_time_zone', 'total_travel_time', 
-                                                #  'xcoord','ycoord', # AH convert from radial distance? @MartinvdS
-                                                # AH x = radial_distcnace, y = the width of the cell .. default = 1 m #AH_todo
-                                                 "radial_distance",
+                                                #  'xcoord'= radial_distcnace, ycoord = the width of the cell .. default = 1 m #AH_todo
+                                                 'xcoord',
+                                                 'ycoord',
                                                  'zcoord',
                                                  'redox_zone', 'temperature', 
                                                  'thickness_layer', 'porosity_layer', 
@@ -873,15 +884,30 @@ class AnalyticalWell():
             flowline_id = i+1
             input_concentration = self.schematisation.input_concentration #df_flowline.loc[self.df_flowline['flowline_id'] == 1, 'input_concentration'].values[0]
 
-            df.loc[0] = [flowline_id, None, 0, 0, self.radial_distance[i],
-                         self.schematisation.ground_surface, None, self.schematisation.temperature, None, None, None, 
-                         None, None,input_concentration, input_concentration, None]
+            df.loc[0] = [flowline_id, 
+                        None, 
+                        0, 
+                        0, 
+                        self.radial_distance[i],
+                        self.schematisation.model_width,
+                         self.schematisation.ground_surface, 
+                         None, 
+                         self.schematisation.temperature, 
+                         None, 
+                         None, 
+                         None, 
+                         None, 
+                         None,
+                         input_concentration, 
+                         input_concentration, 
+                         None]
 
             df.loc[1] = [flowline_id, 
                          "vadose_zone",
                          self.travel_time_unsaturated[i],
                          self.travel_time_unsaturated[i],
                          self.radial_distance[i],
+                         self.schematisation.model_width,
                          self.schematisation.bottom_vadose_zone_at_boundary,
                          self.schematisation.redox_vadose_zone, 
                          self.schematisation.temperature,
@@ -898,6 +924,7 @@ class AnalyticalWell():
             df.loc[2] = [flowline_id, "shallow_aquifer", self.travel_time_shallow_aquifer[i],
                          self.travel_time_unsaturated[i] + self.travel_time_shallow_aquifer[i],
                          self.radial_distance[i],
+                         self.schematisation.model_width,
                          self.schematisation.bottom_shallow_aquifer,
                          self.schematisation.redox_shallow_aquifer, 
                          self.schematisation.temperature,
@@ -914,6 +941,7 @@ class AnalyticalWell():
             df.loc[3] = [flowline_id, "target_aquifer",  self.travel_time_target_aquifer[i],
                          self.total_travel_time[i],
                          self.schematisation.diameter_borehole/2, #at the well
+                         self.schematisation.model_width,
                          self.schematisation.bottom_target_aquifer,
                          self.schematisation.redox_target_aquifer, 
                          self.schematisation.temperature,
@@ -946,10 +974,13 @@ class AnalyticalWell():
         df_flowline['flowline_id'] =  df_flowline.index + 1
         df_flowline['particle_release_date'] = self.schematisation.particle_release_date
         df_flowline['input_concentration'] = self.schematisation.input_concentration
-        # #AH what is this? is this id zero? 
-        # df_flowline['endpoint_id'] = self.endpoint_id 
-        # the well number -> key of well dictionary
-        # AH_todo
+        # #AH  Temporary solution here, @MartinK @MartinvdS, do we want to automatically 
+        # make the dictionaries for modpath when running the analytical model? 
+        # so far this is the only use for hte dicitonaries so they are made here
+        self.schematisation.make_dictionary()
+        endpoint_id = list(self.schematisation.well_parameters.items())[0][0]
+        df_flowline['endpoint_id'] = endpoint_id 
+        # AH_todo 
         
         # AH which parameters for the 'microbial_parameters' option? @MartinvdS or @steven
 
@@ -1051,7 +1082,7 @@ class AnalyticalWell():
 
 
     def semiconfined(self):
-        self._check_init_confined
+        # self._check_init_confined() #AH_todo this is not implemented correctly fix!
 
         '''
         "The transit time distribution (TTD), also called hydrological response
@@ -1097,12 +1128,12 @@ class AnalyticalWell():
         self.radial_distance = self.schematisation.radial_distance
         self.spreading_distance = self.schematisation.spreading_distance
 
-        # travel time in semi-confined is one value, make it array by repeating the value
+        # travel time in semiconfined is one value, make it array by repeating the value
         self.travel_time_unsaturated = [self.travel_time_unsaturated] * (len(self.radial_distance))
 
         self.travel_time_shallow_aquifer = self._calculate_travel_time_aquitard_zone1()
 
-        self.travel_time_target_aquifer = self._calculate_travel_time_target_aquifer_semi_confined() 
+        self.travel_time_target_aquifer = self._calculate_travel_time_target_aquifer_semiconfined() 
 
         self.total_travel_time = self.travel_time_unsaturated + \
             self.travel_time_shallow_aquifer + self.travel_time_target_aquifer
@@ -1270,8 +1301,8 @@ class Substance:
             }
 
         self.substance_dict = substances_dict[name]
-        self.log_Koc = self.substance_dict['log_Koc']
-        self.pKa = self.substance_dict['pKa']
+        # self.log_Koc = self.substance_dict['log_Koc']
+        # self.pKa = self.substance_dict['pKa']
 
 class Concentration():
     """ Returns concentration in a groundwater well for a given Organic Micro Pollutant or microbial species.
@@ -1307,15 +1338,39 @@ class Concentration():
         self.omp_inialized = False
         self.df_particle = schematisation.df_particle
         self.df_flowline = schematisation.df_flowline
-        self.substance = Substance(substance)
+        self.substance = Substance(substance) 
+
+        # @MartinK - need to make sure here that the substance passed is the same, e.g. comapre the dictionaries BUT ALSO
+        # make sure that user doesn't call one substance in the hydrochemicalschematisation class and another in the concentration class
+        # probably only a problem for ourselves, this should be written into a larger "run" class for the model which could avoid this
+        if self.substance.name == self.schematisation.schematisation.substance:
+            # Compare the dictionaries and override the default values if the user inputs a value
+            # assumes that default dict contains the substance input by the user (we only have three right now though!)
+            default_substance_dict = self.substance.substance_dict
+            user_substance_dict = self.schematisation.schematisation.substance_parameters #user input dictionary of values
+
+            # iterate through the dicitonary keys
+            for key, value in user_substance_dict .items():
+                if type(value) is dict:
+                    for tkey, cvalue in value.items():
+                        if cvalue is None: #reassign the value from the default dict if not input by the user
+                            user_substance_dict[key][tkey] = default_substance_dict[key][tkey] 
+                else:
+                    if value is None:
+                        user_substance_dict [key] = default_substance_dict[key]
+
+            self.substance_dict = user_substance_dict #assign updated dict as attribute of the class to be able to access later
+        else:
+            self.substance_dict = self.substance.substance_dict
 
     def _init_omp(self):
         if self.omp_inialized:
             pass
         else:
-            self.df_particle['omp_half_life'] = self.df_particle['redox_zone'].map(self.substance.substance_dict['omp_half_life'])
-            self.df_particle['log_Koc'] = self.substance.log_Koc
-            self.df_particle['pKa'] = self.substance.pKa
+            self.df_particle['omp_half_life'] = self.df_particle['redox_zone'].map(self.substance_dict['omp_half_life'])
+            self.df_particle['log_Koc'] = self.substance_dict['log_Koc']
+            self.df_particle['pKa'] = self.substance_dict['pKa']
+
         self.omp_inialized = True
 
 
@@ -1376,10 +1431,8 @@ class Concentration():
                 if self.df_particle.omp_half_life.loc[i+1] == 1e99:
                     self.df_particle.at[i+1, 'steady_state_concentration'] = self.df_particle.steady_state_concentration.loc[i]
                 
-                # ah look into the runtime error, otherwise leave the full calculation, remove the 300 limit
-                # AH @MartinvdS why 300 the limit here? just to avoid very small numnbers?
+                # AH 300 limit only to avoid very small numnbers, makes no difference for other calculations therefore removed
                 # Column O in Phreatic excel sheet
-                # AH test remove this 300 limit, 
                 # elif (self.df_particle.travel_time_zone.loc[i+1] * self.df_particle.retardation.loc[i+1]
                 #                                                             / self.df_particle.omp_half_life_temperature_corrected.loc[i+1]) >300:
                 #     self.df_particle.at[i+1, 'steady_state_concentration'] = 0
