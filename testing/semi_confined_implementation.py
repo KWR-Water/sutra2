@@ -46,11 +46,11 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 # Test
 test_travel_time_distribution_semiconfined()
 test_retardation_temp_koc_correction(substance='benzene', schematisation_type='semiconfined')
-# test_retardation_temp_koc_correction(substance='benzo(a)pyrene', schematisation_type='semiconfined')
-# test_retardation_temp_koc_correction(substance='AMPA', schematisation_type='semiconfined')
+test_retardation_temp_koc_correction(substance='benzo(a)pyrene', schematisation_type='semiconfined')
+test_retardation_temp_koc_correction(substance='AMPA', schematisation_type='semiconfined')
 test_steady_concentration_temp_koc_correction_semiconfined(substance='benzene')
-# test_steady_concentration_temp_koc_correction_semiconfined(substance='benzo(a)pyrene')
-# test_steady_concentration_temp_koc_correction_semiconfined(substance='AMPA')
+test_steady_concentration_temp_koc_correction_semiconfined(substance='benzo(a)pyrene')
+test_steady_concentration_temp_koc_correction_semiconfined(substance='AMPA')
 
 #%%
 
@@ -107,11 +107,11 @@ semiconfined_conc = Concentration(semiconfined_well, substance = 'benzene')
 semiconfined_conc.compute_omp_removal()
 # semiconfined_conc.df_particle #.steady_state_concentration
 semiconfined_conc.df_particle
-semiconfined_conc.substance_dict
+# semiconfined_conc.substance_dict
 
 # %%
 semiconfined_well.plot_travel_time_versus_radial_distance(xlim=[0, 4000], ylim=[1e3, 1e6])
-semiconfined_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 100], ylim=[1e3, 1e6])
+semiconfined_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
 #%%
 substance_parameters = {
     'benzene': {

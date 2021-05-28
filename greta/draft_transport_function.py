@@ -16,16 +16,22 @@
 # specific questions flagged for;
 # @MartinvdS // @steven //@martinK
 
-# LEFT OFF: MAY 19
+# LEFT OFF: MAY 27
+# add a dict with user input substance aprams which checks and updates dict if needed
+# just finished changing percent to flux, delete percent lines #todo
+# still need to do the RST file, point injection and others....
+
+# May 19
 # moved calculation of travel time unsaturated zone (and linked functions/params)
 # to the hydrochemicalSchematisation class (from the AnalyticalWell class). Working.
 # added the updated list of parameters to the hydrochemical schematisation and 
 # dicitonaries from excel sheet
 
 #To Do
-# test for the concentration/retardation semiconfined case
+# RST file/explanation of how to use the model
+# comments ah_todo
+# point injection
 # need to incorporate the point/diffuse if/else statements
-# Go through the questions/red marks in the SSTR spreadsheet w/MartinvdS
 # @MartinK the testing functionality went away... worked for a few days just fine then stopped working today
 
 ####
@@ -621,15 +627,14 @@ class HydroChemicalSchematisation:
         ''' Calculate the radial distance from a well,
         specifying the aquifer type (semiconfined, phreatic)
         '''
-
         #ah_todo change this to single array of 0.001 to 100
-        percent_flux = np.array([0.001, 0.01, 0.1, 0.5])
-        percent_flux = np.append(percent_flux, np.arange(1, 100, 1))
-        self.percent_flux = np.append(percent_flux, [99.5, 99.99])
+        fraction_flux = np.array([0.00001, 0.0001, 0.001, 0.005])
+        fraction_flux = np.append(fraction_flux, np.arange(0.01, 1, 0.01))
+        self.fraction_flux = np.append(fraction_flux, [0.995, 0.9999])
 
         radial_distance = self.radial_distance_recharge * \
-            np.sqrt(self.percent_flux / 100)
-
+            np.sqrt(self.fraction_flux)
+            
         if self.schematisation_type == 'semiconfined':
 
             radial_distance = np.append(radial_distance,
@@ -832,21 +837,20 @@ class AnalyticalWell():
         return self.flux_fraction
 
     def _create_output_dataframe(self):
-        # Percent flux ( array of 1,,23,....,99,99.5,99.9), row 7 in TTD phreatic, difference between cells divided by the well discharge
-        #AH change cumulative percent_abstracted_water -> changename to cumulative_fraction_abstracted water (also the value!)
-        # AH_todo
-        self.flowline_discharge = (np.diff(np.insert(self.cumulative_percent_abstracted_water,0,0., axis=0))/100)*self.schematisation.well_discharge
+        # fraction flux ( array of 1,,23,....,99,99.5,99.9), row 7 in TTD phreatic, difference between cells divided by the well discharge
+        self.flowline_discharge = (np.diff(np.insert(self.cumulative_fraction_abstracted_water,0,0., axis=0)))*self.schematisation.well_discharge
+
 
         column_names = ["total_travel_time", "travel_time_unsaturated", 
                         "travel_time_shallow_aquifer", "travel_time_target_aquifer",
-                        "radial_distance", "head", "cumulative_percent_abstracted_water", 
+                        "radial_distance", "head", "cumulative_fraction_abstracted_water", 
                         "flowline_discharge"
                         ]
 
         # AH check the well_discharge calculations for the streamline... Pr*Q? 
         data = [self.total_travel_time, self.travel_time_unsaturated, 
                     self.travel_time_shallow_aquifer, self.travel_time_target_aquifer,
-                    self.radial_distance, self.head, self.cumulative_percent_abstracted_water, 
+                    self.radial_distance, self.head, self.cumulative_fraction_abstracted_water,  
                     self.flowline_discharge
                     ]
 
@@ -980,7 +984,6 @@ class AnalyticalWell():
         self.schematisation.make_dictionary()
         endpoint_id = list(self.schematisation.well_parameters.items())[0][0]
         df_flowline['endpoint_id'] = endpoint_id 
-        # AH_todo 
         
         # AH which parameters for the 'microbial_parameters' option? @MartinvdS or @steven
 
@@ -1069,12 +1072,12 @@ class AnalyticalWell():
                             * self.schematisation.porosity_shallow_aquifer / self.schematisation.recharge_rate)
 
         self.travel_time_target_aquifer = (self.schematisation.porosity_target_aquifer * self.schematisation.thickness_target_aquifer / self.schematisation.recharge_rate
-                            * np.log(1 / (1 - 0.01 * self.schematisation.percent_flux)))
+                            * np.log(1 / (1 -self.schematisation.fraction_flux)))
 
         self.total_travel_time = (self.travel_time_unsaturated + self.travel_time_shallow_aquifer
                             + self.travel_time_target_aquifer)
         
-        self.cumulative_percent_abstracted_water = self.schematisation.percent_flux
+        self.cumulative_fraction_abstracted_water = self.schematisation.fraction_flux 
 
         self.df_output = self._create_output_dataframe()
 
@@ -1145,13 +1148,14 @@ class AnalyticalWell():
 
         self.flux_fraction = self._calculate_flux_fraction()
 
-        ''' Calculate the cumulative_percent_abstracted_water
+        ''' Calculate the cumulative_fraction_abstracted_water
         1.1369 comes form pg. 52 in report, describes cutting off the 
-        recharge_rate distance at 3 labda, need to increase the percent abstracted from ~87%
+        recharge_rate distance at 3 labda, need to increase the fraction abstracted from ~87%
         to 99.9% so multiply by 1.1369 to get to that
         Equation A.16 in report'''
         # AH, may want to change this, to eg. 6 labda or something else, adjust this number
-        self.cumulative_percent_abstracted_water = 1.1369 * 100 * (1 - self.flux_fraction)
+        self.cumulative_fraction_abstracted_water = 1.1369 * (1 - self.flux_fraction)
+
 
         self.df_output = self._create_output_dataframe()
 
@@ -1182,16 +1186,16 @@ class AnalyticalWell():
         ''' Plot the travel time versus the cumulative abstracted water '''
 
         fig = plt.figure(figsize=[10, 5])
-        plt.plot(self.cumulative_percent_abstracted_water, self.total_travel_time, 'r', label=self.schematisation.schematisation_type)
+        plt.plot(self.cumulative_fraction_abstracted_water, self.total_travel_time, 'r', label=self.schematisation.schematisation_type)
         # plt.plot(radial_distance, total_travel_time, 'b', label = 'Phreatic')
         plt.xlim(xlim)  # [0.01,10000])
         plt.ylim(ylim) 
         plt.yscale('log')
-        plt.xlabel('Cumulative percentage of abstracted water [%]')
+        plt.xlabel('Cumulative fraction of abstracted water')
         plt.ylabel('Total travel time (days)')
         plt.title('Aquifer type: ' + self.schematisation.schematisation_type)
         plt.grid()
-        plt.savefig('travel_time_versus_cumulative_percent_abstracted_water_'+self.schematisation.schematisation_type+'.png', dpi=300, bbox_inches='tight')  # save_results_to + '/
+        plt.savefig('travel_time_versus_cumulative_fraction_abstracted_water_'+self.schematisation.schematisation_type+'.png', dpi=300, bbox_inches='tight')  # save_results_to + '/
 
 class Modpath():
     """ @Steven @MartinvdS writing this one? 
