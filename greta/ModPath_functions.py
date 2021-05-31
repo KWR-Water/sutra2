@@ -397,10 +397,13 @@ class ModPathWell():
         # Create "delr" attribute: column widths (m)
         self.delr = np.zeros((self.ncols), dtype = 'float')
         for idx in range(len(delr_list)):
-            self.delr[sum(ncol_list[idx]):sum(ncol_list[idx+1])] = np.logspace(sum(delr_list[idx]),
-                                                                               sum(delr_list[idx+1],
-                                                                               num = ncol_list[idx])
-
+            if idx == 0: 
+                self.delr[0:ncol_list[idx]] = np.diff(np.linspace(0.,delr_list[idx], 
+                                                       num = ncol_list[idx] + 1))
+            else:
+                self.delr[sum(ncol_list[:idx]):sum(ncol_list[:idx+1])] = np.diff(np.logspace(np.log10(sum(delr_list[:idx])),
+                                                                    np.log10(sum(delr_list[:idx+1])),
+                                                                    num = ncol_list[idx] + 1))
   
    		def make_vertical_discretisation()
   			""" Generate top's and bot's of MODFLOW layers.
