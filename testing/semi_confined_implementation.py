@@ -45,13 +45,20 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 #%%
 # Test
 test_travel_time_distribution_semiconfined()
+test_retardation_temp_koc_correction(substance='benzene', schematisation_type='semiconfined')
+test_retardation_temp_koc_correction(substance='benzo(a)pyrene', schematisation_type='semiconfined')
+test_retardation_temp_koc_correction(substance='AMPA', schematisation_type='semiconfined')
+test_steady_concentration_temp_koc_correction_semiconfined(substance='benzene')
+test_steady_concentration_temp_koc_correction_semiconfined(substance='benzo(a)pyrene')
+test_steady_concentration_temp_koc_correction_semiconfined(substance='AMPA')
 
 #%%
-scheme1 = HydroChemicalSchematisation(schematisation_type='semi-confined',
+
+semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfined',
                                     what_to_export='omp_parameters',
                                     # biodegradation_sorbed_phase = False,
                                       well_discharge=319.4*24,
-                                      vertical_resistance_aquitard=500,
+                                      # vertical_resistance_aquitard=500,
                                       porosity_vadose_zone=0.38,
                                       porosity_shallow_aquifer=0.35,
                                       porosity_target_aquifer=0.35,
@@ -62,6 +69,8 @@ scheme1 = HydroChemicalSchematisation(schematisation_type='semi-confined',
                                       thickness_shallow_aquifer=10,
                                       thickness_target_aquifer=40,
                                       hor_permeability_target_aquifer=35,
+                                      hor_permeability_shallow_aquifer = 0.02,
+                                      vertical_anistropy_shallow_aquifer = (10/(0.02*500)),
                                       thickness_full_capillary_fringe=0.4,
                                       redox_vadose_zone='anoxic', #'suboxic',
                                       redox_shallow_aquifer='anoxic',
@@ -81,19 +90,94 @@ scheme1 = HydroChemicalSchematisation(schematisation_type='semi-confined',
                                       solid_density_shallow_aquifer= 2.650, 
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 0.75,
+                                      # substance = 'benzo(a)pyrene',
+                                      # substance = 'benzene',
+                                      # halflife_oxic=600,
+                                      # partition_coefficient_water_organic_carbon = 3.3,
                                     )
 
 
 # phreatic_dict = scheme1.make_dictionary()  
-well1 = AnalyticalWell(scheme1) #.semiconfined()
-well1.semiconfined()   
-conc1 = Concentration(well1, substance = 'benzene')
-# conc1 = Concentration(well1, substance = 'benzo(a)pyrene')
-# conc1 = Concentration(well1, substance = 'AMPA')
-conc1.compute_omp_removal()
-conc1.df_particle #.steady_state_concentration
+semiconfined_well = AnalyticalWell(semiconfined_scheme) #.semiconfined()
+semiconfined_well.semiconfined()   
+# semiconfined_conc = Concentration(semiconfined_well, substance = 'benzo(a)pyrene')
+semiconfined_conc = Concentration(semiconfined_well, substance = 'benzene')
+
+
+semiconfined_conc.compute_omp_removal()
+# semiconfined_conc.df_particle #.steady_state_concentration
+semiconfined_conc.df_particle
+# semiconfined_conc.substance_dict
 
 # %%
-well1.plot_travel_time_versus_radial_distance(xlim=[0, 4000])
-well1.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 100])
+semiconfined_well.plot_travel_time_versus_radial_distance(xlim=[0, 4000], ylim=[1e3, 1e6])
+semiconfined_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
 #%%
+substance_parameters = {
+    'benzene': {
+        'log_Koc': 7,
+        'pKa': None,
+        'omp_half_life': {
+            'suboxic': 450,
+            'anoxic': 620,
+            'deeply_anoxic': None
+            },
+        }
+    }
+# Substance dict here as placeholder for the actual database
+substances_dict = { 
+    'benzene': {
+        'log_Koc': 1.92,
+        'molar_mass': 78.1, 
+        'pKa': 99,
+        'omp_half_life': {
+            'suboxic': 10.5,
+            'anoxic': 420,
+            'deeply_anoxic': 1e99,
+            },
+        },
+    'AMPA': {
+        'log_Koc': -0.36,
+        'molar_mass': 111.04 , 
+        'pKa': 0.4,
+        'omp_half_life': {
+            'suboxic': 46,
+            'anoxic': 46,
+            'deeply_anoxic': 1e99,
+            },
+        },
+    'benzo(a)pyrene': {
+        'log_Koc': 6.43,
+        'molar_mass': 252.3, 
+        'pKa': 99,
+        'omp_half_life': {
+            'suboxic': 530,
+            'anoxic': 2120,
+            'deeply_anoxic': 2120,
+            },
+        },
+    }
+
+#%%
+substance = 'benzene'
+old = substance_parameters.copy()
+new = substances_dict[substance].copy() #['benzene'].copy()
+
+# old.update( (k,v) for k,v in new.items() if v is None)
+
+old
+
+# %%
+for key1, value1 in old.items():
+  if old[key1] == new[key1]:
+    for key, value in old.items():
+      if type(value) is dict:
+        for tkey, cvalue in value.items():
+          if cvalue is None:
+              old[key][tkey]= new[key][tkey]
+      else:
+          if value is None:
+            old[key] = new[key]
+
+old
+# %%
