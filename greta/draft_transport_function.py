@@ -254,6 +254,13 @@ class HydroChemicalSchematisation:
                  recharge_concentration=None,
                  input_concentration=None,
                  particle_release_date=None,
+                
+                #AH modpath params
+                 ncols_near_well = 20,
+                 ncols_far_well = 30,
+                 nlayers_shallow_aquifer = None, 
+                 nlayers_target_aquifer = None,
+
                  ):
         
         ''' Assign the parameters to be attributes of the class'''
@@ -272,7 +279,7 @@ class HydroChemicalSchematisation:
         # Porous Medium
         self.ground_surface = ground_surface
         self.thickness_vadose_zone_at_boundary = thickness_vadose_zone_at_boundary
-        self.bottom_vadose_zone_at_boundary = ground_surface - thickness_vadose_zone_at_boundary # bottom_vadose_zone_at_boundary
+        self.bottom_vadose_zone_at_boundary = ground_surface - thickness_vadose_zone_at_boundary 
         self.head_boundary = head_boundary
 
         self.thickness_shallow_aquifer = thickness_shallow_aquifer
@@ -384,7 +391,7 @@ class HydroChemicalSchematisation:
 
         ''' Default? calculations, calcs which should be done for all '''
         self.KD = hor_permeability_target_aquifer*thickness_target_aquifer
-        self.groundwater_level =self.ground_surface-self.thickness_vadose_zone_at_boundary # self.groundwater_level_ASL # 0-self.thickness_vadose_zone
+        self.groundwater_level =self.ground_surface-self.thickness_vadose_zone_at_boundary 
         
         # Temperature 
         if self.temperature_vadose_zone is None:
@@ -407,6 +414,19 @@ class HydroChemicalSchematisation:
         self.recharge_concentration = recharge_concentration
         self.input_concentration = input_concentration
         self.particle_release_date = particle_release_date
+
+        #Modpath params
+        self.ncols_near_well = ncols_near_well
+        self.ncols_far_well = ncols_far_well
+        if nlayers_shallow_aquifer	is None:
+            self.nlayers_shallow_aquifer = int(self.thickness_shallow_aquifer)
+        else: 
+            self.nlayers_shallow_aquifer =nlayers_shallow_aquifer
+
+        if nlayers_target_aquifer is None:
+            self.nlayers_target_aquifer = int(self.thickness_target_aquifer)
+        else: 
+            self.nlayers_target_aquifer = nlayers_target_aquifer
 
         if schematisation_type == 'modpath':
           
@@ -440,6 +460,13 @@ class HydroChemicalSchematisation:
                 # self.model_radius = #AH SA*recharge = well_discharge
                 #  AH this is the Re in the transatomic spreadsheet
 
+
+
+        # check when initialization
+        # thickness <=0 check, for all but the vadose zone
+        # vadose zone can be 0, but the others should not
+
+
     def make_dictionary(self,):
         ''' Dicitonaries of the different paramters '''
         
@@ -448,14 +475,18 @@ class HydroChemicalSchematisation:
         if self.schematisation_type == 'phreatic':
             compute_thickness_vadose_zone = True # @MartinvdS what is this for?
             
-            # only outer_boundary for phreatic
+            # additional meter added to the model radius for the fixed head boundary
+            # only for the phreatic case, not for the semiconfined case
+            self.model_radius_computed = self.model_radius + 1
+
+            # only outer_boundary for phreatic 
             ibound_parameters = {
                 'outer_boundary':{
                     'head': self.bottom_vadose_zone_at_boundary,
                     'top': self.bottom_shallow_aquifer,
                     'bot': self.bottom_target_aquifer,
                     'rmin': self.model_radius,
-                    'rmax': self.model_radius,
+                    'rmax': self.model_radius_computed,
                         },
                     }
 
@@ -464,12 +495,15 @@ class HydroChemicalSchematisation:
         elif self.schematisation_type == 'semiconfined':
             compute_thickness_vadose_zone = False # @MartinvdS what is this for?
 
+            # ibound at the model radius (no additional meter added)
+            self.model_radius_computed = self.model_radius
+
             # only top_boundary for semiconfined 
             ibound_parameters = {
                 'top_boundary1': {
                     'head': self.bottom_vadose_zone_at_boundary,
                     'rmin': self.diameter_gravelpack,
-                    'rmax': self.model_radius,
+                    'rmax': self.model_radius_computed,
                         },
                     }
         # make dictionaries of each grouping of parameters
@@ -488,6 +522,7 @@ class HydroChemicalSchematisation:
         # Aquifer parameters dcitionary
         geo_parameters  = {
             'vadose': {
+                'vadose': True,
                 'top': self.ground_surface,
                 'bot': self.ground_surface - self.thickness_vadose_zone_at_boundary,
                 'rmin': self.diameter_gravelpack,
@@ -501,11 +536,11 @@ class HydroChemicalSchematisation:
                 'pH': self.pH_vadose_zone,
                 'T': self.temperature_vadose_zone,
                 },
-            'geolayer1': {
+            'layer1': {
                 'top': self.thickness_vadose_zone_at_boundary,
                 'bot': self.bottom_shallow_aquifer,
                 'rmin': self.diameter_gravelpack,
-                'rmax': self.model_radius,
+                'rmax': self.model_radius_computed,
                 'porosity': self.porosity_shallow_aquifer,
                 'solid_density': self.solid_density_shallow_aquifer,
                 'f_oc': self.fraction_organic_carbon_shallow_aquifer,
@@ -515,13 +550,13 @@ class HydroChemicalSchematisation:
                 'T': self.temperature_shallow_aquifer,
                 'Khor': self.hor_permeability_shallow_aquifer,
                 'VANI': self.vertical_anistropy_shallow_aquifer,
-                # 'nlayer': self.nlayer_shallow_aquifer, # AH come back to this, do we want to define here or inthe modpath class @MartinK
+                'nlayer': self.nlayers_shallow_aquifer, 
                 },
-            'geolayer2': {
+            'layer2': {
                 'top': self.thickness_target_aquifer,
                 'bot': self.bottom_shallow_aquifer - self.thickness_target_aquifer,
                 'rmin': self.diameter_gravelpack,
-                'rmax': self.model_radius,
+                'rmax': self.model_radius_computed,
                 'porosity': self.porosity_target_aquifer,
                 'solid_density': self.solid_density_target_aquifer,
                 'f_oc': self.fraction_organic_carbon_target_aquifer,
@@ -531,24 +566,34 @@ class HydroChemicalSchematisation:
                 'T': self.temperature_target_aquifer,
                 'Khor': self.hor_permeability_target_aquifer,
                 'VANI': self.vertical_anistropy_target_aquifer,
-                # 'nlayer': self.nlayer_target_aquifer, # AH come back to this, do we want to define here or inthe modpath class @MartinK
+                'nlayer': self.nlayers_target_aquifer, 
                 },
             'gravelpack1': {
                 'top': self.top_gravelpack,
                 'bot': self.bottom_gravelpack,
-                'rmax': self.diameter_gravelpack,
                 'rmin': self.diameter_filterscreen,
+                'rmax': self.diameter_gravelpack,
                 'Khor': self.hor_permebility_gravelpack,
                 'VANI': self.vertical_anistropy_gravelpack,
                 },
             'clayseal1':{
                 'top': self.top_clayseal,
                 'bot': self.bottom_clayseal,
-                'rmax': self.diameter_clayseal,
                 'rmin': self.diameter_filterscreen,
+                'rmax': self.diameter_clayseal,
                 'Khor': self.hor_permeability_clayseal,
                 'VANI': self.vertical_anistropy_clayseal,
                 },
+            'mesh_refinement1': {
+            'rmin': self.diameter_gravelpack, 
+            'rmax': self.thickness_target_aquifer,
+            'ncols': self.ncols_near_well, #indicates the number of columns close to the well
+                },
+            'mesh_refinement2': {
+            'rmin': self.diameter_gravelpack, 
+            'rmax': self.model_radius, #mesh boundary at the model raidus, must line up AH
+            'ncols': self.ncols_far_well #indicates the number of columns far from the well
+                }, 
             }
         
         well_parameters = {
@@ -872,9 +917,8 @@ class AnalyticalWell():
         # Make df_particle
         #------------------------------
         df_particle = pd.DataFrame(columns=['flowline_id', 'zone', 'travel_time_zone', 'total_travel_time', 
-                                                #  'xcoord'= radial_distcnace, ycoord = the width of the cell .. default = 1 m #AH_todo
-                                                 'xcoord',
-                                                 'ycoord',
+                                                 'xcoord', #= radial_distcance,
+                                                 'ycoord', #= the width of the cell .. default = 1 m 
                                                  'zcoord',
                                                  'redox_zone', 'temperature', 
                                                  'thickness_layer', 'porosity_layer', 
