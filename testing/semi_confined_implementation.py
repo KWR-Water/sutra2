@@ -29,6 +29,7 @@ from tqdm import tqdm  # tqdm gives a progress bar for the simultation
 # import pyarrow.parquet as pq
 import math
 from scipy.special import kn as besselk
+import ast
 
 from pathlib import Path
 try:
@@ -97,7 +98,7 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                     )
 
 
-# phreatic_dict = scheme1.make_dictionary()  
+semiconfined_well_dict = semiconfined_scheme.make_dictionary()  
 semiconfined_well = AnalyticalWell(semiconfined_scheme) #.semiconfined()
 semiconfined_well.semiconfined()   
 # semiconfined_conc = Concentration(semiconfined_well, substance = 'benzo(a)pyrene')
@@ -113,71 +114,28 @@ semiconfined_conc.df_particle
 semiconfined_well.plot_travel_time_versus_radial_distance(xlim=[0, 4000], ylim=[1e3, 1e6])
 semiconfined_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
 #%%
-substance_parameters = {
-    'benzene': {
-        'log_Koc': 7,
-        'pKa': None,
-        'omp_half_life': {
-            'suboxic': 450,
-            'anoxic': 620,
-            'deeply_anoxic': None
-            },
-        }
-    }
-# Substance dict here as placeholder for the actual database
-substances_dict = { 
-    'benzene': {
-        'log_Koc': 1.92,
-        'molar_mass': 78.1, 
-        'pKa': 99,
-        'omp_half_life': {
-            'suboxic': 10.5,
-            'anoxic': 420,
-            'deeply_anoxic': 1e99,
-            },
-        },
-    'AMPA': {
-        'log_Koc': -0.36,
-        'molar_mass': 111.04 , 
-        'pKa': 0.4,
-        'omp_half_life': {
-            'suboxic': 46,
-            'anoxic': 46,
-            'deeply_anoxic': 1e99,
-            },
-        },
-    'benzo(a)pyrene': {
-        'log_Koc': 6.43,
-        'molar_mass': 252.3, 
-        'pKa': 99,
-        'omp_half_life': {
-            'suboxic': 530,
-            'anoxic': 2120,
-            'deeply_anoxic': 2120,
-            },
-        },
-    }
+# Export dicts for steven
 
+all_dicts = { 'simulation_paramters' : semiconfined_scheme.simulation_paramters,
+        'geo_parameters' : semiconfined_scheme.geo_parameters,
+        'ibound_parameters' : semiconfined_scheme.ibound_parameters,
+        'recharge_parameters' : semiconfined_scheme.recharge_parameters,
+        'well_parameters' : semiconfined_scheme.well_parameters,
+        'point_parameters' : semiconfined_scheme.point_parameters,
+        'substance_parameters' : semiconfined_scheme.substance_parameters,
+        'bas_parameters' : semiconfined_scheme.bas_parameters,
+    
+}
+
+
+f = open("semiconfined_dict.txt","w")
+f.write( str(all_dicts))
+f.close()
 #%%
-substance = 'benzene'
-old = substance_parameters.copy()
-new = substances_dict[substance].copy() #['benzene'].copy()
+# import the dictionary
+file = open("semiconfined_dict.txt", "r")
+contents = file.read()
+dictionary = ast.literal_eval(contents)
+file.close()
 
-# old.update( (k,v) for k,v in new.items() if v is None)
-
-old
-
-# %%
-for key1, value1 in old.items():
-  if old[key1] == new[key1]:
-    for key, value in old.items():
-      if type(value) is dict:
-        for tkey, cvalue in value.items():
-          if cvalue is None:
-              old[key][tkey]= new[key][tkey]
-      else:
-          if value is None:
-            old[key] = new[key]
-
-old
-# %%
+# recharge_parameters = dictionary['recharge_parameters']
