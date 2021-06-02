@@ -99,20 +99,20 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
 
 
 semiconfined_well_dict = semiconfined_scheme.make_dictionary()  
-semiconfined_well = AnalyticalWell(semiconfined_scheme) #.semiconfined()
-semiconfined_well.semiconfined()   
-# semiconfined_conc = Concentration(semiconfined_well, substance = 'benzo(a)pyrene')
-semiconfined_conc = Concentration(semiconfined_well, substance = 'benzene')
+# semiconfined_well = AnalyticalWell(semiconfined_scheme) #.semiconfined()
+# semiconfined_well.semiconfined()   
+# # semiconfined_conc = Concentration(semiconfined_well, substance = 'benzo(a)pyrene')
+# semiconfined_conc = Concentration(semiconfined_well, substance = 'benzene')
 
 
-semiconfined_conc.compute_omp_removal()
-# semiconfined_conc.df_particle #.steady_state_concentration
-semiconfined_conc.df_particle
+# semiconfined_conc.compute_omp_removal()
+# # semiconfined_conc.df_particle #.steady_state_concentration
+# semiconfined_conc.df_particle
 # semiconfined_conc.substance_dict
 
 # %%
-semiconfined_well.plot_travel_time_versus_radial_distance(xlim=[0, 4000], ylim=[1e3, 1e6])
-semiconfined_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
+# semiconfined_well.plot_travel_time_versus_radial_distance(xlim=[0, 4000], ylim=[1e3, 1e6])
+# semiconfined_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
 #%%
 # Export dicts for steven
 
@@ -124,7 +124,6 @@ all_dicts = { 'simulation_paramters' : semiconfined_scheme.simulation_paramters,
         'point_parameters' : semiconfined_scheme.point_parameters,
         'substance_parameters' : semiconfined_scheme.substance_parameters,
         'bas_parameters' : semiconfined_scheme.bas_parameters,
-    
 }
 
 
@@ -138,4 +137,6 @@ contents = file.read()
 dictionary = ast.literal_eval(contents)
 file.close()
 
+dictionary
 # recharge_parameters = dictionary['recharge_parameters']
+#%%
