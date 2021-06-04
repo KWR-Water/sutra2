@@ -54,6 +54,8 @@ from tqdm import tqdm  # tqdm gives a progress bar for the simultation
 # import pyarrow.parquet as pq
 import math
 from scipy.special import kn as besselk
+import datetime
+from datetime import timedelta  
 
 path = os.getcwd()  # path of working directory
 
@@ -152,14 +154,14 @@ class HydroChemicalSchematisation:
                 biodegradation_sorbed_phase=True,
                 compute_thickness_vadose_zone=True,
 
-                ground_surface=0,
+                ground_surface=0.0,
                 thickness_vadose_zone_at_boundary=1,
                 bottom_vadose_zone_at_boundary=None,
                 head_boundary=None,
 
-                thickness_shallow_aquifer=10,
-                thickness_target_aquifer=10,
-                thickness_full_capillary_fringe=0,
+                thickness_shallow_aquifer=10.0,
+                thickness_target_aquifer=10.0,
+                thickness_full_capillary_fringe=0.0,
                 porosity_vadose_zone=0.35,
                 porosity_shallow_aquifer=0.35,
                 porosity_target_aquifer=0.35,
@@ -174,21 +176,21 @@ class HydroChemicalSchematisation:
                 redox_vadose_zone='oxic',
                 redox_shallow_aquifer='anoxic',
                 redox_target_aquifer='deeply_anoxic',
-                dissolved_organic_carbon_vadose_zone=0,
-                dissolved_organic_carbon_shallow_aquifer=0,
-                dissolved_organic_carbon_target_aquifer=0,
-                dissolved_organic_carbon_infiltration_water=0,
-                total_organic_carbon_infiltration_water=0,
-                pH_vadose_zone=7,
-                pH_shallow_aquifer=7,
-                pH_target_aquifer=7,
-                temperature=10,
+                dissolved_organic_carbon_vadose_zone=0.0,
+                dissolved_organic_carbon_shallow_aquifer=0.0,
+                dissolved_organic_carbon_target_aquifer=0.0,
+                dissolved_organic_carbon_infiltration_water=0.0,
+                total_organic_carbon_infiltration_water=0.0,
+                pH_vadose_zone=7.0,
+                pH_shallow_aquifer=7.0,
+                pH_target_aquifer=7.0,
+                temperature=10.0,
                 temperature_vadose_zone=None,
                 temperature_shallow_aquifer=None,
                 temperature_target_aquifer=None,
 
                 recharge_rate=0.001,
-                well_discharge=-1000,
+                well_discharge=-1000.0,
                 basin_length=None, # BAR params \/
                 basin_width=None,
                 basin_xmin=None,
@@ -215,12 +217,12 @@ class HydroChemicalSchematisation:
                 top_clayseal=None,
                 bottom_clayseal=None,
                 diameter_clayseal=None,
-                hor_permeability_shallow_aquifer=1,
-                hor_permeability_target_aquifer=10,
+                hor_permeability_shallow_aquifer=1.0,
+                hor_permeability_target_aquifer=10.0,
                 hor_permebility_gravelpack=None,
                 hor_permeability_clayseal=None,
-                vertical_anistropy_shallow_aquifer=1,
-                vertical_anistropy_target_aquifer=1,
+                vertical_anistropy_shallow_aquifer=1.0,
+                vertical_anistropy_target_aquifer=1.0,
                 vertical_anistropy_gravelpack=None,
                 vertical_anistropy_clayseal=None,
 
@@ -232,9 +234,9 @@ class HydroChemicalSchematisation:
                  halflife_deeply_anoxic=None,
 
                 diffuse_input_concentration=1,
-                start_date_well=1950,
+                start_date_well='1950-01-01', #("Enter date in YYYY-MM-DD format")
                 start_date_contamination=None,
-                end_date_contamination=None,
+                end_date_contamination='2000-01-01', #("Enter date in YYYY-MM-DD format")None, #AH my own default
                 compute_contamination_for_date=None,
 
                  concentration_point_contamination=None,
@@ -254,6 +256,13 @@ class HydroChemicalSchematisation:
                  recharge_concentration=None,
                  input_concentration=None,
                  particle_release_date=None,
+                
+                #AH modpath params
+                 ncols_near_well = 20,
+                 ncols_far_well = 30,
+                 nlayers_shallow_aquifer = None, 
+                 nlayers_target_aquifer = None,
+
                  ):
         
         ''' Assign the parameters to be attributes of the class'''
@@ -272,7 +281,7 @@ class HydroChemicalSchematisation:
         # Porous Medium
         self.ground_surface = ground_surface
         self.thickness_vadose_zone_at_boundary = thickness_vadose_zone_at_boundary
-        self.bottom_vadose_zone_at_boundary = ground_surface - thickness_vadose_zone_at_boundary # bottom_vadose_zone_at_boundary
+        self.bottom_vadose_zone_at_boundary = ground_surface - thickness_vadose_zone_at_boundary 
         self.head_boundary = head_boundary
 
         self.thickness_shallow_aquifer = thickness_shallow_aquifer
@@ -362,15 +371,33 @@ class HydroChemicalSchematisation:
             self.diffuse_input_concentration = diffuse_input_concentration
         else: 
             self.diffuse_input_concentration = 0 
-        self.start_date_well = start_date_well
-        self.start_date_contamination = start_date_contamination
-        self.end_date_contamination = end_date_contamination
-        self.compute_contamination_for_date = compute_contamination_for_date
+
+        def date_to_datetime(date):
+            '''convert str input of date to datetime'''
+            year, month, day = map(int, date.split('-'))
+            date = datetime.date(year, month, day)
+            return date
+
+        self.start_date_well = date_to_datetime(start_date_well)
+        self.end_date_contamination = date_to_datetime(end_date_contamination)
+
+
+        # Contamination
+        if start_date_contamination is None: 
+            self.start_date_contamination = self.start_date_well
+        else: 
+            self.start_date_contamination = date_to_datetime(start_date_contamination)
+        if compute_contamination_for_date is None: 
+            self.compute_contamination_for_date = self.start_date_well + timedelta(days=100)
+        else:
+            self.compute_contamination_for_date = date_to_datetime(compute_contamination_for_date)
+        if depth_point_contamination is None: 
+            self.depth_point_contamination = self.ground_surface
+
 
         # Point Contamination
         self.concentration_point_contamination = concentration_point_contamination
         self.distance_point_contamination_from_well = distance_point_contamination_from_well
-        self.depth_point_contamination = depth_point_contamination
         self.discharge_point_contamination = discharge_point_contamination
 
         # Model size
@@ -384,7 +411,7 @@ class HydroChemicalSchematisation:
 
         ''' Default? calculations, calcs which should be done for all '''
         self.KD = hor_permeability_target_aquifer*thickness_target_aquifer
-        self.groundwater_level =self.ground_surface-self.thickness_vadose_zone_at_boundary # self.groundwater_level_ASL # 0-self.thickness_vadose_zone
+        self.groundwater_level =self.ground_surface-self.thickness_vadose_zone_at_boundary 
         
         # Temperature 
         if self.temperature_vadose_zone is None:
@@ -394,21 +421,30 @@ class HydroChemicalSchematisation:
         if self.temperature_target_aquifer is None:
             self.temperature_target_aquifer = self.temperature
 
-        # Contamination
-        if start_date_contamination is None: 
-            self.start_date_contamination = self.start_date_well
-        if compute_contamination_for_date is None: 
-            self.compute_contamination_for_date = self.start_date_well + 100
-        if depth_point_contamination is None: 
-            self.depth_point_contamination = self.ground_surface
 
         # LEFT OFF HERE, NEED TO ADD SOMETHING (IF/ELSE) TO DECIDE WHICH CONCENTRATION
         # DIFFUSE/POINT TO ASSIGN AS THE CONCENTRATION
         self.recharge_concentration = recharge_concentration
         self.input_concentration = input_concentration
-        self.particle_release_date = particle_release_date
+        if particle_release_date is None:
+            self.particle_release_date = particle_release_date
+        else: 
+            self.particle_release_date =  date_to_datetime(particle_release_date)
 
-        if schematisation_type == 'modpath':
+        #Modpath params
+        self.ncols_near_well = ncols_near_well
+        self.ncols_far_well = ncols_far_well
+        if nlayers_shallow_aquifer is None:
+            self.nlayers_shallow_aquifer = int(self.thickness_shallow_aquifer)
+        else: 
+            self.nlayers_shallow_aquifer =nlayers_shallow_aquifer
+
+        if nlayers_target_aquifer is None:
+            self.nlayers_target_aquifer = int(self.thickness_target_aquifer)
+        else: 
+            self.nlayers_target_aquifer = nlayers_target_aquifer
+
+        if computation_method == 'modpath':
           
             top_shallow_aquifer = self.bottom_vadose_zone_at_boundary
             top_target_aquifer = self.bottom_shallow_aquifer
@@ -436,26 +472,38 @@ class HydroChemicalSchematisation:
             if vertical_anistropy_clayseal is None: 
                 self.vertical_anistropy_clayseal = 1
 
-            # if model_radius is None: 
-                # self.model_radius = #AH SA*recharge = well_discharge
-                #  AH this is the Re in the transatomic spreadsheet
+        if model_radius is None: 
+            if self.schematisation_type == 'phreatic':
+                self.model_radius = (math.sqrt(self.well_discharge
+                                                / (math.pi * self.recharge_rate ))) #AH SA*recharge = well_discharge
+            elif self.schematisation_type == 'semiconfined':
+                self.model_radius = math.sqrt(self.vertical_resistance_aquitard * self.KD * 3) # spreading_distance*3
+
+        # check when initialization
+        # thickness <=0 check, for all but the vadose zone
+        # vadose zone can be 0, but the others should not
+
 
     def make_dictionary(self,):
-        ''' Dicitonaries of the different paramters '''
+        ''' Dicitonaries of the different parameters '''
         
         # @MartinvdS -> is this how to implement these for the different 
         # schematisations?
         if self.schematisation_type == 'phreatic':
             compute_thickness_vadose_zone = True # @MartinvdS what is this for?
             
-            # only outer_boundary for phreatic
+            # additional meter added to the model radius for the fixed head boundary
+            # only for the phreatic case, not for the semiconfined case
+            self.model_radius_computed = self.model_radius + 1
+
+            # only outer_boundary for phreatic 
             ibound_parameters = {
                 'outer_boundary':{
                     'head': self.bottom_vadose_zone_at_boundary,
                     'top': self.bottom_shallow_aquifer,
                     'bot': self.bottom_target_aquifer,
                     'rmin': self.model_radius,
-                    'rmax': self.model_radius,
+                    'rmax': self.model_radius_computed,
                         },
                     }
 
@@ -464,16 +512,19 @@ class HydroChemicalSchematisation:
         elif self.schematisation_type == 'semiconfined':
             compute_thickness_vadose_zone = False # @MartinvdS what is this for?
 
+            # ibound at the model radius (no additional meter added)
+            self.model_radius_computed = self.model_radius
+
             # only top_boundary for semiconfined 
             ibound_parameters = {
                 'top_boundary1': {
                     'head': self.bottom_vadose_zone_at_boundary,
                     'rmin': self.diameter_gravelpack,
-                    'rmax': self.model_radius,
+                    'rmax': self.model_radius_computed,
                         },
                     }
         # make dictionaries of each grouping of parameters
-        simulation_paramters = {
+        simulation_parameters = {
             'schematisation_type': self.schematisation_type,
             'computation_method': self.computation_method,
             'temp_correction_Koc': self.temp_correction_Koc,
@@ -488,9 +539,10 @@ class HydroChemicalSchematisation:
         # Aquifer parameters dcitionary
         geo_parameters  = {
             'vadose': {
+                'vadose': True,
                 'top': self.ground_surface,
-                'bot': self.ground_surface - self.thickness_vadose_zone_at_boundary,
-                'rmin': self.diameter_gravelpack,
+                'bot': self.bottom_vadose_zone_at_boundary,
+                'rmin': self.diameter_borehole/2, # @MartinvdS -> excel says: self.diameter_gravelpack, but in email say 0.5*diam-borehole
                 'rmax': self.model_radius,
                 'porosity': self.porosity_vadose_zone,
                 'moisture_content': self.moisture_content_vadose_zone,
@@ -501,11 +553,11 @@ class HydroChemicalSchematisation:
                 'pH': self.pH_vadose_zone,
                 'T': self.temperature_vadose_zone,
                 },
-            'geolayer1': {
-                'top': self.thickness_vadose_zone_at_boundary,
+            'layer1': {
+                'top': self.bottom_vadose_zone_at_boundary,
                 'bot': self.bottom_shallow_aquifer,
-                'rmin': self.diameter_gravelpack,
-                'rmax': self.model_radius,
+                'rmin': self.diameter_borehole/2, # @MartinvdS -> excel says: self.diameter_gravelpack, but in email say 0.5*diam-borehole
+                'rmax': self.model_radius_computed,
                 'porosity': self.porosity_shallow_aquifer,
                 'solid_density': self.solid_density_shallow_aquifer,
                 'f_oc': self.fraction_organic_carbon_shallow_aquifer,
@@ -513,15 +565,15 @@ class HydroChemicalSchematisation:
                 'DOC': self.dissolved_organic_carbon_shallow_aquifer,
                 'pH': self.pH_shallow_aquifer,
                 'T': self.temperature_shallow_aquifer,
-                'Khor': self.hor_permeability_shallow_aquifer,
-                'VANI': self.vertical_anistropy_shallow_aquifer,
-                # 'nlayer': self.nlayer_shallow_aquifer, # AH come back to this, do we want to define here or inthe modpath class @MartinK
+                'hk': self.hor_permeability_shallow_aquifer,
+                'vani': self.vertical_anistropy_shallow_aquifer,
+                'nlayer': self.nlayers_shallow_aquifer, 
                 },
-            'geolayer2': {
-                'top': self.thickness_target_aquifer,
-                'bot': self.bottom_shallow_aquifer - self.thickness_target_aquifer,
-                'rmin': self.diameter_gravelpack,
-                'rmax': self.model_radius,
+            'layer2': {
+                'top': self.bottom_shallow_aquifer,
+                'bot': self.bottom_target_aquifer,
+                'rmin': self.diameter_borehole/2, # @MartinvdS -> excel says: self.diameter_gravelpack, but in email say 0.5*diam-borehole
+                'rmax': self.model_radius_computed,
                 'porosity': self.porosity_target_aquifer,
                 'solid_density': self.solid_density_target_aquifer,
                 'f_oc': self.fraction_organic_carbon_target_aquifer,
@@ -529,26 +581,36 @@ class HydroChemicalSchematisation:
                 'DOC': self.dissolved_organic_carbon_target_aquifer,
                 'pH': self.pH_target_aquifer,
                 'T': self.temperature_target_aquifer,
-                'Khor': self.hor_permeability_target_aquifer,
-                'VANI': self.vertical_anistropy_target_aquifer,
-                # 'nlayer': self.nlayer_target_aquifer, # AH come back to this, do we want to define here or inthe modpath class @MartinK
+                'hk': self.hor_permeability_target_aquifer,
+                'vani': self.vertical_anistropy_target_aquifer,
+                'nlayer': self.nlayers_target_aquifer, 
                 },
             'gravelpack1': {
                 'top': self.top_gravelpack,
                 'bot': self.bottom_gravelpack,
-                'rmax': self.diameter_gravelpack,
                 'rmin': self.diameter_filterscreen,
-                'Khor': self.hor_permebility_gravelpack,
-                'VANI': self.vertical_anistropy_gravelpack,
+                'rmax': self.diameter_gravelpack,
+                'hk': self.hor_permebility_gravelpack,
+                'vani': self.vertical_anistropy_gravelpack,
                 },
             'clayseal1':{
                 'top': self.top_clayseal,
                 'bot': self.bottom_clayseal,
-                'rmax': self.diameter_clayseal,
                 'rmin': self.diameter_filterscreen,
-                'Khor': self.hor_permeability_clayseal,
-                'VANI': self.vertical_anistropy_clayseal,
+                'rmax': self.diameter_clayseal,
+                'hk': self.hor_permeability_clayseal,
+                'vani': self.vertical_anistropy_clayseal,
                 },
+            'mesh_refinement1': {
+            'rmin': self.diameter_borehole, 
+            'rmax': self.thickness_target_aquifer,
+            'ncols': self.ncols_near_well, #indicates the number of columns close to the well
+                },
+            'mesh_refinement2': {
+            'rmin': self.thickness_target_aquifer, #@Martin from email... correct? self.diameter_gravelpack, 
+            'rmax': self.model_radius, #mesh boundary at the model raidus, must line up AH
+            'ncols': self.ncols_far_well #indicates the number of columns far from the well
+                }, 
             }
         
         well_parameters = {
@@ -556,17 +618,17 @@ class HydroChemicalSchematisation:
                 'Q': self.well_discharge,
                 'top': self.top_filterscreen,
                 'bot': self.bottom_filterscreen,
+                'rmin': 0.0,  # @MartinvdS email... self.inner_diameter_filterscreen,
                 'rmax': self.diameter_filterscreen,
-                'rmin': self.inner_diameter_filterscreen,
                 },
             }  
 
         #AH_todo implement the point source and come back to this
         recharge_parameters = {
             'source1': { # source1 -> recharge & diffuse sources
-                'name': self.substance,
-                'Recharge': self.recharge_rate,
-                'rmin': self.diameter_gravelpack,
+                'substance_name': self.substance,
+                'recharge': self.recharge_rate,
+                'rmin': self.diameter_borehole,
                 'rmax': self.model_radius,
                 'DOC': self.dissolved_organic_carbon_infiltration_water,
                 'TOC': self.total_organic_carbon_infiltration_water,
@@ -582,7 +644,7 @@ class HydroChemicalSchematisation:
         else:
             point_parameters= {
                 'point1': { 
-                    'name': self.substance,
+                    'substance_name': self.substance,
                     'c_in': self.concentration_point_contamination, # @MartinvdS confirm how to implement?
                     'r_start': self.distance_point_contamination_from_well,
                     'z_start': self.depth_point_contamination,
@@ -607,11 +669,10 @@ class HydroChemicalSchematisation:
         # so make dictionary here or not?
         # bas = basic package modflow
         bas_parameters = {
-            'rmax': self.model_radius, # same as for the other modpath paramters, do we specify here or layer @MartinK 
             }
 
         # returned as attribute of function
-        self.simulation_paramters = simulation_paramters
+        self.simulation_parameters = simulation_parameters
         self.geo_parameters = geo_parameters
         self.ibound_parameters = ibound_parameters
         self.recharge_parameters = recharge_parameters
@@ -651,6 +712,7 @@ class HydroChemicalSchematisation:
 
         self.spreading_distance = math.sqrt(self.vertical_resistance_aquitard * self.KD)
 
+        # AH change to model radius? #ah_todo
         self.radial_distance_recharge = (math.sqrt(self.well_discharge
                                                     / (math.pi * self.recharge_rate )))
       
@@ -872,9 +934,8 @@ class AnalyticalWell():
         # Make df_particle
         #------------------------------
         df_particle = pd.DataFrame(columns=['flowline_id', 'zone', 'travel_time_zone', 'total_travel_time', 
-                                                #  'xcoord'= radial_distcnace, ycoord = the width of the cell .. default = 1 m #AH_todo
-                                                 'xcoord',
-                                                 'ycoord',
+                                                 'xcoord', #= radial_distcance,
+                                                 'ycoord', #= the width of the cell .. default = 1 m 
                                                  'zcoord',
                                                  'redox_zone', 'temperature', 
                                                  'thickness_layer', 'porosity_layer', 
@@ -1254,10 +1315,10 @@ class Modpath():
         #     self.nlayer_target_aquifer =  math.ceil(top_target_aquifer - bottom_target_aquifer) 
 
 class Substance:
-    def __init__(self, name, ):
+    def __init__(self, substance_name, ):
         """
-        name: String, 
-            name of the substance (for now limited dictionary to 'benzene', 'AMPA', 'benzo(a)pyrene'
+        substance_name: String, 
+            substance_name of the substance (for now limited dictionary to 'benzene', 'AMPA', 'benzo(a)pyrene'
         substance_dict: dictionary
             log Koc: float
                 distribution coefficient of organic carbon and water ([-]
@@ -1268,7 +1329,7 @@ class Substance:
             omp_half_life: float
                 per redox zone, [days]) 
         """
-        self.name = name
+        self.substance_name = substance_name
     
         # Substance dict here as placeholder for the actual database
         substances_dict = { 
@@ -1304,7 +1365,7 @@ class Substance:
                 },
             }
 
-        self.substance_dict = substances_dict[name]
+        self.substance_dict = substances_dict[substance_name]
         # self.log_Koc = self.substance_dict['log_Koc']
         # self.pKa = self.substance_dict['pKa']
 
@@ -1347,7 +1408,7 @@ class Concentration():
         # @MartinK - need to make sure here that the substance passed is the same, e.g. comapre the dictionaries BUT ALSO
         # make sure that user doesn't call one substance in the hydrochemicalschematisation class and another in the concentration class
         # probably only a problem for ourselves, this should be written into a larger "run" class for the model which could avoid this
-        if self.substance.name == self.schematisation.schematisation.substance:
+        if self.substance.substance_name == self.schematisation.schematisation.substance:
             # Compare the dictionaries and override the default values if the user inputs a value
             # assumes that default dict contains the substance input by the user (we only have three right now though!)
             default_substance_dict = self.substance.substance_dict
@@ -1588,7 +1649,7 @@ def calculate_travel_time_upper_aquifer(
     median_retention_time = minimum required or median retention time in aquifer [d];
     travel_time_distribution_upper_phreatic = travel time in the upper aquifer [d]
 
-    Other paramters
+    Other parameters
     --------------
     hydraulic_conductivity = hydraulic conductivity of aquifer [m/d];
 
@@ -1707,7 +1768,7 @@ def calculate_travel_time_deeper_aquifer(horizontal_distance_basin_gallery,
     case, we neglect the contribution from the second aquifer
     if existing at all
     
-    Paramters
+    parameters
     ---------
     vertical_resistance_aquitard   # [d], c_V
     thickness_second_aquifer: mean thickness [m]

@@ -47,10 +47,10 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 #%%
 # Test
 test_travel_time_distribution_phreatic()
-test_retardation_temp_koc_correction()
-test_steady_concentration_temp_koc_correction(substance='benzene')
-test_steady_concentration_temp_koc_correction(substance='benzo(a)pyrene')
-test_steady_concentration_temp_koc_correction(substance='AMPA')
+test_retardation_temp_koc_correction(substance='benzene', schematisation_type='phreatic')
+test_steady_concentration_temp_koc_correction_phreatic(substance='benzene')
+test_steady_concentration_temp_koc_correction_phreatic(substance='benzo(a)pyrene')
+test_steady_concentration_temp_koc_correction_phreatic(substance='AMPA')
 # %%
 phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                     what_to_export='omp_parameters',
@@ -89,16 +89,15 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       diameter_borehole = 0.75,
                                       )
 
+phreatic_scheme.make_dictionary()  
+# phreatic_well = AnalyticalWell(phreatic_scheme)
+# phreatic_well.phreatic()     
 
-# phreatic_dict = scheme1.make_dictionary()  
-phreatic_well = AnalyticalWell(phreatic_scheme)
-phreatic_well.phreatic()     
-
-phreatic_conc = Concentration(phreatic_well, substance = 'benzene')
+# phreatic_conc = Concentration(phreatic_well, substance = 'benzene')
 # conc1 = Concentration(well1, substance = 'benzo(a)pyrene')
 # conc1 = Concentration(well1, substance = 'AMPA')
-phreatic_conc.compute_omp_removal()
-phreatic_conc.df_particle #.steady_state_concentration
+# phreatic_conc.compute_omp_removal()
+# phreatic_conc.df_particle #.steady_state_concentration
 
 # plt.plot(conc1.df_flowline.flowline_id, conc1.df_flowline.total_breakthrough_travel_time/365.25)
 # plt.xlabel('Flowline ID')
@@ -107,4 +106,30 @@ phreatic_conc.df_particle #.steady_state_concentration
 phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 4000], ylim=[1e3, 1e6])
 
 phreatic_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 100], ylim=[1e3, 1e6])
+#%%
+# Export dicts for steven
+
+all_dicts = { 'simulation_parameters' : phreatic_scheme.simulation_parameters,
+        'geo_parameters' : phreatic_scheme.geo_parameters,
+        'ibound_parameters' : phreatic_scheme.ibound_parameters,
+        'recharge_parameters' : phreatic_scheme.recharge_parameters,
+        'well_parameters' : phreatic_scheme.well_parameters,
+        'point_parameters' : phreatic_scheme.point_parameters,
+        'substance_parameters' : phreatic_scheme.substance_parameters,
+        'bas_parameters' : phreatic_scheme.bas_parameters,
+}
+
+
+f = open("phreatic_dict.txt","w")
+f.write( str(all_dicts))
+f.close()
+#%%
+# import the dictionary
+file = open("phreatic_dict.txt", "r")
+contents = file.read()
+ph_dictionary = ast.literal_eval(contents)
+file.close()
+
+ph_dictionary
+
 #%%
