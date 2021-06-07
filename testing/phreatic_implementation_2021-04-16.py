@@ -106,30 +106,3 @@ phreatic_scheme.make_dictionary()
 phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 4000], ylim=[1e3, 1e6])
 
 phreatic_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 100], ylim=[1e3, 1e6])
-#%%
-# Export dicts for steven
-
-all_dicts = { 'simulation_parameters' : phreatic_scheme.simulation_parameters,
-        'geo_parameters' : phreatic_scheme.geo_parameters,
-        'ibound_parameters' : phreatic_scheme.ibound_parameters,
-        'recharge_parameters' : phreatic_scheme.recharge_parameters,
-        'well_parameters' : phreatic_scheme.well_parameters,
-        'point_parameters' : phreatic_scheme.point_parameters,
-        'substance_parameters' : phreatic_scheme.substance_parameters,
-        'bas_parameters' : phreatic_scheme.bas_parameters,
-}
-
-
-f = open("phreatic_dict.txt","w")
-f.write( str(all_dicts))
-f.close()
-#%%
-# import the dictionary
-file = open("phreatic_dict.txt", "r")
-contents = file.read()
-ph_dictionary = ast.literal_eval(contents)
-file.close()
-
-ph_dictionary
-
-#%%

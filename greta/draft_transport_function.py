@@ -16,6 +16,7 @@
 # specific questions flagged for;
 # @MartinvdS // @steven //@martinK
 
+
 # LEFT OFF: MAY 27
 # add a dict with user input substance aprams which checks and updates dict if needed
 # just finished changing percent to flux, delete percent lines #todo
@@ -208,7 +209,7 @@ class HydroChemicalSchematisation:
                 diameter_borehole=0.75,
                 top_filterscreen=None,
                 bottom_filterscreen=None,
-                diameter_filterscreen=None,
+                diameter_filterscreen=0.75,
                 inner_diameter_filterscreen=None,
                 top_gravelpack=None,
                 bottom_gravelpack=None,
@@ -240,7 +241,7 @@ class HydroChemicalSchematisation:
                 compute_contamination_for_date=None,
 
                  concentration_point_contamination=None,
-                distance_point_contamination_from_well=0,
+                distance_point_contamination_from_well=1,
                  depth_point_contamination=None,
                  discharge_point_contamination=None,
 
@@ -444,33 +445,44 @@ class HydroChemicalSchematisation:
         else: 
             self.nlayers_target_aquifer = nlayers_target_aquifer
 
-        if computation_method == 'modpath':
+        # if computation_method == 'modpath':
           
-            top_shallow_aquifer = self.bottom_vadose_zone_at_boundary
-            top_target_aquifer = self.bottom_shallow_aquifer
+        top_shallow_aquifer = self.bottom_vadose_zone_at_boundary
+        top_target_aquifer = self.bottom_shallow_aquifer
 
-            if top_filterscreen	is None:
-                self.top_filterscreen = top_target_aquifer
-            if bottom_filterscreen is None: 
-                self.bottom_filterscreen = self.bottom_target_aquifer
-            if top_gravelpack is None: 
-                self.top_gravelpack = top_target_aquifer
-            if bottom_gravelpack is None: 
-                self.bottom_gravelpack = self.bottom_target_aquifer
-            if top_clayseal is None: 
-                self.top_clayseal = self.ground_surface
-            if bottom_clayseal is None: 
-                self.bottom_clayseal = top_target_aquifer
+        if top_filterscreen	is None:
+            self.top_filterscreen = top_target_aquifer
+        if bottom_filterscreen is None: 
+            self.bottom_filterscreen = self.bottom_target_aquifer
+        if top_gravelpack is None: 
+            self.top_gravelpack = top_target_aquifer
+        if bottom_gravelpack is None: 
+            self.bottom_gravelpack = self.bottom_target_aquifer
+        if top_clayseal is None: 
+            self.top_clayseal = self.ground_surface
+        if bottom_clayseal is None: 
+            self.bottom_clayseal = top_target_aquifer
+        
+        # DIAMETERS
+        if diameter_gravelpack is None:
+            self.diameter_gravelpack = self.diameter_borehole
+        if inner_diameter_gravelpack is None:
+            self.inner_diameter_gravelpack = diameter_filterscreen
+        if inner_diameter_filterscreen is None:
+            self.inner_diameter_filterscreen = self.diameter_filterscreen
+        if diameter_clayseal is None:
+            self.diameter_clayseal = diameter_borehole
+            self.inner_diameter_clayseal = self.diameter_filterscreen
 
-            #other default params
-            if hor_permebility_gravelpack is None: 
-                self.hor_permebility_gravelpack = 1000
-            if hor_permeability_clayseal is None: 
-                self.hor_permeability_clayseal = 0.001
-            if vertical_anistropy_gravelpack is None: 
-                self.vertical_anistropy_gravelpack = 1
-            if vertical_anistropy_clayseal is None: 
-                self.vertical_anistropy_clayseal = 1
+        #other default params
+        if hor_permebility_gravelpack is None: 
+            self.hor_permebility_gravelpack = 1000
+        if hor_permeability_clayseal is None: 
+            self.hor_permeability_clayseal = 0.001
+        if vertical_anistropy_gravelpack is None: 
+            self.vertical_anistropy_gravelpack = 1
+        if vertical_anistropy_clayseal is None: 
+            self.vertical_anistropy_clayseal = 1
 
         if model_radius is None: 
             if self.schematisation_type == 'phreatic':
@@ -519,7 +531,7 @@ class HydroChemicalSchematisation:
             ibound_parameters = {
                 'top_boundary1': {
                     'head': self.bottom_vadose_zone_at_boundary,
-                    'rmin': self.diameter_gravelpack,
+                    'rmin': self.diameter_gravelpack/2,
                     'rmax': self.model_radius_computed,
                         },
                     }
@@ -542,7 +554,7 @@ class HydroChemicalSchematisation:
                 'vadose': True,
                 'top': self.ground_surface,
                 'bot': self.bottom_vadose_zone_at_boundary,
-                'rmin': self.diameter_borehole/2, # @MartinvdS -> excel says: self.diameter_gravelpack, but in email say 0.5*diam-borehole
+                'rmin': self.diameter_gravelpack/2, 
                 'rmax': self.model_radius,
                 'porosity': self.porosity_vadose_zone,
                 'moisture_content': self.moisture_content_vadose_zone,
@@ -556,7 +568,7 @@ class HydroChemicalSchematisation:
             'layer1': {
                 'top': self.bottom_vadose_zone_at_boundary,
                 'bot': self.bottom_shallow_aquifer,
-                'rmin': self.diameter_borehole/2, # @MartinvdS -> excel says: self.diameter_gravelpack, but in email say 0.5*diam-borehole
+                'rmin': self.diameter_gravelpack/2, 
                 'rmax': self.model_radius_computed,
                 'porosity': self.porosity_shallow_aquifer,
                 'solid_density': self.solid_density_shallow_aquifer,
@@ -572,7 +584,7 @@ class HydroChemicalSchematisation:
             'layer2': {
                 'top': self.bottom_shallow_aquifer,
                 'bot': self.bottom_target_aquifer,
-                'rmin': self.diameter_borehole/2, # @MartinvdS -> excel says: self.diameter_gravelpack, but in email say 0.5*diam-borehole
+                'rmin': self.diameter_gravelpack/2,
                 'rmax': self.model_radius_computed,
                 'porosity': self.porosity_target_aquifer,
                 'solid_density': self.solid_density_target_aquifer,
@@ -588,28 +600,28 @@ class HydroChemicalSchematisation:
             'gravelpack1': {
                 'top': self.top_gravelpack,
                 'bot': self.bottom_gravelpack,
-                'rmin': self.diameter_filterscreen,
-                'rmax': self.diameter_gravelpack,
+                'rmin': self.inner_diameter_gravelpack/2,
+                'rmax': self.diameter_gravelpack/2,
                 'hk': self.hor_permebility_gravelpack,
                 'vani': self.vertical_anistropy_gravelpack,
                 },
             'clayseal1':{
                 'top': self.top_clayseal,
                 'bot': self.bottom_clayseal,
-                'rmin': self.diameter_filterscreen,
-                'rmax': self.diameter_clayseal,
+                'rmin': self.inner_diameter_clayseal/2, #@MartinvdS correct?
+                'rmax': self.diameter_clayseal/2, 
                 'hk': self.hor_permeability_clayseal,
                 'vani': self.vertical_anistropy_clayseal,
                 },
             'mesh_refinement1': {
-            'rmin': self.diameter_borehole, 
-            'rmax': self.thickness_target_aquifer,
-            'ncols': self.ncols_near_well, #indicates the number of columns close to the well
+                'rmin': self.diameter_borehole/2, 
+                'rmax': self.thickness_target_aquifer,
+                'ncols': self.ncols_near_well, #indicates the number of columns close to the well
                 },
             'mesh_refinement2': {
-            'rmin': self.thickness_target_aquifer, #@Martin from email... correct? self.diameter_gravelpack, 
-            'rmax': self.model_radius, #mesh boundary at the model raidus, must line up AH
-            'ncols': self.ncols_far_well #indicates the number of columns far from the well
+                'rmin': self.thickness_target_aquifer, #@Martin from email... correct? self.diameter_gravelpack, 
+                'rmax': self.model_radius, #mesh boundary at the model raidus, must line up AH
+                'ncols': self.ncols_far_well #indicates the number of columns far from the well
                 }, 
             }
         
@@ -618,8 +630,8 @@ class HydroChemicalSchematisation:
                 'Q': self.well_discharge,
                 'top': self.top_filterscreen,
                 'bot': self.bottom_filterscreen,
-                'rmin': 0.0,  # @MartinvdS email... self.inner_diameter_filterscreen,
-                'rmax': self.diameter_filterscreen,
+                'rmin': 0.0, #@MartinvdS check this? self.inner_diameter_filterscreen/2,
+                'rmax': self.diameter_filterscreen/2,
                 },
             }  
 
@@ -628,7 +640,7 @@ class HydroChemicalSchematisation:
             'source1': { # source1 -> recharge & diffuse sources
                 'substance_name': self.substance,
                 'recharge': self.recharge_rate,
-                'rmin': self.diameter_borehole,
+                'rmin': self.diameter_gravelpack/2,
                 'rmax': self.model_radius,
                 'DOC': self.dissolved_organic_carbon_infiltration_water,
                 'TOC': self.total_organic_carbon_infiltration_water,
@@ -654,7 +666,7 @@ class HydroChemicalSchematisation:
 
         #AH eventially to be computed by QSAR"
         substance_parameters = {
-            # self.substance: {
+                'substance_name': self.substance,
                 'log_Koc': self.partition_coefficient_water_organic_carbon,
                 'pKa': self.dissociation_constant,
                 'omp_half_life': {
@@ -662,7 +674,6 @@ class HydroChemicalSchematisation:
                     'anoxic': self.halflife_anoxic,
                     'deeply_anoxic': self.halflife_deeply_anoxic,
                     },
-                # }
             }
 
         # @MartinvdS, the rest of the params are in the Modpath class, 
@@ -1334,6 +1345,7 @@ class Substance:
         # Substance dict here as placeholder for the actual database
         substances_dict = { 
             'benzene': {
+                'substance_name': 'benzene',
                 'log_Koc': 1.92,
                 'molar_mass': 78.1, 
                 'pKa': 99,
@@ -1344,6 +1356,7 @@ class Substance:
                     },
                 },
             'AMPA': {
+                'substance_name': 'AMPA',
                 'log_Koc': -0.36,
                 'molar_mass': 111.04 , 
                 'pKa': 0.4,
@@ -1354,6 +1367,7 @@ class Substance:
                     },
                 },
             'benzo(a)pyrene': {
+                'substance_name': 'benzo(a)pyrene',
                 'log_Koc': 6.43,
                 'molar_mass': 252.3, 
                 'pKa': 99,
