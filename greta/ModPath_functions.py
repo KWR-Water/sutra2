@@ -20,7 +20,7 @@
 # INITIALISATION OF PYTHON e.g. packages, etc.
 # ------------------------------------------------------------------------------
 
-# %reset -f #reset all variables for each run, -f 'forces' reset, !! 
+# %reset -f conda install #reset all variables for each run, -f 'forces' reset, !! 
 # only seems to work in Python command window...
 
 import matplotlib.pyplot as plt
@@ -33,6 +33,7 @@ from pandas import read_excel
 from tqdm import tqdm  # tqdm gives a progress bar for the simultation
 # import pyarrow.parquet as pq
 import math
+import re # regular expressions
 from scipy.special import kn as besselk
 
 path = os.getcwd()  # path of working directory
@@ -81,36 +82,39 @@ removal_function: string
 """
 
 
-# ########### INPUT PARAMETERS Aquapriori Bodem "Phreatic OMP" ###########
-schematisation = 'freatic'
-thickness_vadoze_zone = 1.  # m
-thickness_shallow_aquifer = 5.  # m
-thickness_target_aquifer = 10.  # m
-porosity_vadoze_zone = .2  # m3/m3
-porosity_shallow_aquifer = .3  # m3/m3
-porosity_target_aquifer = .25  # m3/m3
-organic_carbon_vadoze_zone = .2  # kg/m3 ??
-organic_carbon_shallow_aquifer = .3  # kg/m3 ??
-organic_carbon_target_aquifer = .25  # kg/m3 ??
-redox_vadoze_zone = 1.  # 1 = (sub)oxic; 2 = anoxic; 3 = deeply anoxic
-redox_shallow_aquifer = 2
-redox_target_aquifer = 3
-well_discharge_m3hour = 20 #m3/h
-recharge_rate = .001
-recharge_conc = 1.
-substance = 'chloridazon'
-vertical_resistance_aquitard   # [d], c_V
-soil_moisture_content           # [m3/m3], θ
+# # ########### INPUT PARAMETERS Aquapriori Bodem "Phreatic OMP" ###########
+# schematisation = 'freatic'
+# thickness_vadoze_zone = 1.  # m
+# thickness_shallow_aquifer = 5.  # m
+# thickness_target_aquifer = 10.  # m
+# porosity_vadoze_zone = .2  # m3/m3
+# porosity_shallow_aquifer = .3  # m3/m3
+# porosity_target_aquifer = .25  # m3/m3
+# organic_carbon_vadoze_zone = .2  # kg/m3 ??
+# organic_carbon_shallow_aquifer = .3  # kg/m3 ??
+# organic_carbon_target_aquifer = .25  # kg/m3 ??
+# redox_vadoze_zone = 1.  # 1 = (sub)oxic; 2 = anoxic; 3 = deeply anoxic
+# redox_shallow_aquifer = 2
+# redox_target_aquifer = 3
+# well_discharge_m3hour = 20 #m3/h
+# recharge_rate = .001
+# recharge_conc = 1.
+# substance = 'chloridazon'
+# vertical_resistance_aquitard   # [d], c_V
+# soil_moisture_content           # [m3/m3], θ
 
 
-#@basin paramters
-length_basin
-width_basin
-_depth_basin
-horizontal_distance_basin_gallery = horizontal distance between basin bank and drainage gallery [m];
-porosity_recharge_basin 
-groundwater_level_above_saturated_zone = normal maximum rise of watertable above H0 [m];
-
+# #@basin paramters
+# length_basin
+# width_basin
+# _depth_basin
+# horizontal_distance_basin_gallery = horizontal distance between basin bank and drainage gallery [m];
+# porosity_recharge_basin 
+# groundwater_level_above_saturated_zone = normal maximum rise of watertable above H0 [m];
+from greta.draft_transport_function import HydroChemicalSchematisation as HCS
+# HCS_test = HCS()
+# print(vars(HCS_test))
+#%%
 class HydroChemicalSchematisation():
     """ Converts input parameters of AquaPriori GUI to a complete parameterisation."""
 
@@ -198,7 +202,7 @@ surfacewater_parameters = {
     } 
 # ->  hierboven is alles 1 class of 1 dict, hoort in ieder geval in 1 entiteit thuis
 --------------------------------
-
+#%%
 
 class Substance():
     """ Returns transport properties for a given Organic Micro Pollutant."""
@@ -212,9 +216,9 @@ class Substance():
 # -> check hoe dit in huidige AQP zit. alleen getKow etc. is nieuw
 
 
-class MicrobialProperties():
-    """ Return transport properties for a given virus or bacteria species."""
-    # to implement in next project phase
+# class MicrobialProperties():
+#     """ Return transport properties for a given virus or bacteria species."""
+#     # to implement in next project phase
 
 
 class AnalyticalWell():
@@ -223,33 +227,12 @@ class AnalyticalWell():
   	def __init__(self):
     		""" 'unpack/parse' all the variables from the hydrogeochemical schematizization """
   	  	for key, item for input_dict.items():
-          self.thickness_vadoze_zone = from dict
-          self.df_flowline = .... get all fucking user input .... #make the df hee, add what we have
-          self.df_particle = .... get all fucking user input ....
-  
+ 
   
     def _check_init_freatic():
        	#check the variables that we need for the individual aquifer types are not NONE aka set by the user
   			pass
-    def _blablaequation():
-        pass
-  
-  	def _check_init_confined():
-  			pass
-  	def _thiemequation():
-        pass
-  
-  	def freatic():
-  		  self._check_init_freatic
-  		  self._blablaequation
-        pass
-  
-    def semiconfined():
-  			self._check_init_confined
-  			self._thiemequation()
-  			# solve freatic functions
-  		  pass
-  
+ 
   	def export_to_df(self, what_to_export='all')
   	    """ Export to dataframe....
 
@@ -263,29 +246,164 @@ class AnalyticalWell():
 
   
 # the python user will call the function as follows
-well = AnalyticalWell()
-if schematisation == 'freatic':
-		well.freatic()
-elif schematisation == 'semiconfined':
-		well.semiconfined()
-else:
-  	raise KeyError('schematisation argument not recognized')
-df_flow, df_particle = well.export_to_df('all')
-
+# well = AnalyticalWell()
+# if schematisation == 'freatic':
+# 		well.freatic()
+# elif schematisation == 'semiconfined':
+# 		well.semiconfined()
+# else:
+#   	raise KeyError('schematisation argument not recognized')
+# df_flow, df_particle = well.export_to_df('all')
+#%%
 
 class ModPathWell():
+
     """ Compute travel time distribution using MODFLOW and MODPATH.""" 
-    def _check_init_freatic():
+    def __init__(self, schematisation: HydroChemicalSchematisation): #change schematisation_instance to schematisation
+        """ 'unpack/parse' all the variables from the hydrogeochemical schematizization """
+
+        '''Parameters
+        ----------
+        df_flowline: pandas.DataFrame
+            Column 'flowline_id': Integer
+            Column 'discharge': Float
+                Discharge associated with the flowline (m3/d)
+            Column 'particle_release_date': Float
+            Column 'input_concentration'
+            Column 'endpoint_id': Integer
+                ID of Well (or drain) where the flowline ends
+
+        df_particle: pandas.DataFrame
+            Column 'flowline_id'
+            Column 'travel_time'
+            Column 'xcoord'
+            Column 'ycoord'
+            Column 'zcoord'
+            Column 'redox_zone'
+            Column 'temperature'
+        '''
+
+        # get the non-default parameters
+        # self.test_variable = None #AH test variable here to see if errors are caught....
+
+        self.schematisation = schematisation
+
+    def _check_required_variables(self,required_variables):
+        for req_var in required_variables:
+            value = getattr(self.schematisation, req_var)
+            if value is None:
+                raise KeyError(f'Error, required variable {req_var} is not defined.')
+
+    def _check_init_phreatic(self):
         # check the variables that we need for the individual aquifer types are not NONE aka set by the user
-  
+        '''check the variables that we need for the individual aquifer types are not NONE aka set by the user'''
+
+        required_variables = ["schematisation_type", #repeat for all
+                              "thickness_vadose_zone_at_boundary",
+                              "thickness_shallow_aquifer",
+                              "thickness_target_aquifer",
+                              "porosity_vadose_zone",
+                              "porosity_shallow_aquifer",
+                              "porosity_target_aquifer",
+                              "well_discharge",
+                              "recharge_rate",
+                              "vertical_resistance_aquitard",
+                              "moisture_content_vadose_zone",
+                              "KD",
+                              "groundwater_level",
+                              "thickness_full_capillary_fringe",
+                            #   self.test_variable,
+                            ]
+        self._check_required_variables(required_variables)
     def _check_init_semi_confined():
         # check the variables that we need for the individual aquifer types are not NONE aka set by the user
+
+    def bas_parameters(self, ncols_filterscreen = 1,
+                      ncols_gravelpack = 1,
+                      ncols_near_well = 20,
+                      ncols_far_well = 30,
+                      diameter_filterscreen = 0.1,
+                      diameter_gravelpack = 0.75,
+                      thickness_aquifer = 20.,
+                      model_radius = 500.):
+        ''' Assign the grid discretization values '''
+
+        # General input dictionary for discretisation:
+        self.bas_parameters = {}
+        # Number of columns from the well to the outer boundary
+        self.bas_parameters["ncols_filterscreen"] = ncols_filterscreen
+        self.bas_parameters["ncols_gravelpack"] = ncols_gravelpack
+        self.bas_parameters["ncols_near_well"] = ncols_near_well
+        self.bas_parameters["ncols_far_well"] = ncols_far_well
+        # Filterscreen diameter
+        self.bas_parameters["diameter_filterscreen"] = diameter_filterscreen
+        # Gravelpack diameter
+        self.bas_parameters["diameter_gravelpack"] = diameter_gravelpack
+        
+        # Thickness in phreatic aquifer is equal to top of upper layer minus
+        # bottom of lowest layer () --> use regular expressions? 
+        # self.thickness_aquifer = geo_parameters["layer1"]["top"] - geo_parameters["layer2"]["bot"]
+        self.bas_parameters["thickness_aquifer"] = thickness_aquifer
+        
+        # Model radius is equal to the outer model boundary (defined earlier?)
+        # self.model_radius = ibound_parameters["outer_boundary"]["rmax"]
+        if not hasattr(self,"model_radius"):
+            self.bas_parameters["rmax"] = model_radius
+        # else:
+        #     # Copy model radius from previously defined boundary
+        #     self.bas_parameters["rmax"] = self.model_radius
 
  		def make_radial_discretisation()
   			""" Generate distance between columns for axisymmetric model.
             Sets it to self.delr
         """
-  			self.delr
+        if not hasattr(self,"bas_parameters"):
+            self.bas_parameters()
+
+        # General input parameters for discretisation:
+        self.ncols_filterscreen = self.bas_parameters["ncols_filterscreen"]
+        self.ncols_gravelpack = self.bas_parameters["ncols_gravelpack"]
+        self.ncols_near_well = self.bas_parameters["ncols_near_well"]
+        self.ncols_far_well = self.bas_parameters["ncols_far_well"]
+        # Filterscreen diameter
+        self.diameter_filterscreen = self.bas_parameters["diameter_filterscreen"]
+        # Gravelpack diameter
+        self.diameter_gravelpack = self.bas_parameters["diameter_gravelpack"]
+        
+        # Thickness in phreatic aquifer is equal to top of upper layer minus
+        # bottom of lowest layer () --> use regular expressions? 
+        # self.thickness_aquifer = geo_parameters["layer1"]["top"] - geo_parameters["layer2"]["bot"]
+        self.thickness_aquifer = self.bas_parameters["thickness_aquifer"]
+        
+        # Model radius is equal to the outer model boundary (defined earlier?)
+        # self.model_radius = ibound_parameters["outer_boundary"]["rmax"]
+        if not hasattr(self,"model_radius"):
+            self.model_radius = self.bas_parameters["rmax"]
+
+        # Calculated parameters (resulting in actual model column widths)
+        self.delr_filterscreen = (0.5 * self.diameter_filterscreen)
+        self.delr_gravelpack = 0.5 * (self.diameter_gravelpack - self.diameter_filterscreen) 
+        self.delr_near_well = (self.thickness_aquifer - 0.5 * self.diameter_gravelpack)
+        self.delr_far_well = (self.model_radius - self.thickness_aquifer)
+        # Use an iterator 'list' of delr-values to create delr attribute (array)
+        delr_list = [self.delr_filterscreen,self.delr_gravelpack, 
+                    self.delr_near_well, self.delr_far_well]
+        # List of number of columns
+        ncol_list = [self.ncols_filterscreen, self.ncols_gravelpack,
+                     self.ncols_near_well,self.ncols_far_well] 
+        # Total number of model culumns
+        self.ncols = sum(ncol_list)
+
+        # Create "delr" attribute: column widths (m)
+        self.delr = np.zeros((self.ncols), dtype = 'float')
+        for idx in range(len(delr_list)):
+            if idx == 0: 
+                self.delr[0:ncol_list[idx]] = np.diff(np.linspace(0.,delr_list[idx], 
+                                                       num = ncol_list[idx] + 1))
+            else:
+                self.delr[sum(ncol_list[:idx]):sum(ncol_list[:idx+1])] = np.diff(np.logspace(np.log10(sum(delr_list[:idx])),
+                                                                    np.log10(sum(delr_list[:idx+1])),
+                                                                    num = ncol_list[idx] + 1))
   
    		def make_vertical_discretisation()
   			""" Generate top's and bot's of MODFLOW layers.
