@@ -70,7 +70,6 @@ def test_retardation_temp_koc_correction(substance = 'benzene', schematisation_t
     test_ = HydroChemicalSchematisation(schematisation_type=schematisation_type,
                                         what_to_export='omp_parameters',
                                       well_discharge=319.4*24,
-                                    #   vertical_resistance_aquitard=500,
                                       hor_permeability_shallow_aquifer = 0.02,
                                       vertical_anistropy_shallow_aquifer = (10/(0.02*500)),
                                       porosity_vadose_zone=0.38,
@@ -96,7 +95,7 @@ def test_retardation_temp_koc_correction(substance = 'benzene', schematisation_t
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
                                       fraction_organic_carbon_target_aquifer=0.0005, 
-                                      input_concentration = 100,
+                                      diffuse_input_concentration = 100,
                                       temperature=11,
                                       solid_density_vadose_zone= 2.650, 
                                       solid_density_shallow_aquifer= 2.650, 
@@ -132,13 +131,13 @@ def test_retardation_temp_koc_correction(substance = 'benzene', schematisation_t
                     retardation[substance]['shallow_aquifer'], 
                     retardation[substance]['target_aquifer']])
 
-    test_array = np.array(conc1.df_particle.retardation.loc[1:3])
+    test_array = np.array(conc1.df_particle.retardation.loc[1:3], dtype='float')
 
     try:
         # assert output == output_phreatic
         np.testing.assert_allclose(test_array,
-                           retardation_array,
-                           rtol=1e-8, atol=1e-8)
+                           retardation_array ),
+                        #    rtol=1e-8, atol=1e-8)
 
     except AssertionError:
         print("Assertion Exception Raised - retardation test")
@@ -175,7 +174,7 @@ def test_steady_concentration_temp_koc_correction_phreatic(substance='benzene'):
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
                                       fraction_organic_carbon_target_aquifer=0.0005, 
-                                      input_concentration = 100,
+                                      diffuse_input_concentration = 100,
                                       temperature=11,
                                       solid_density_vadose_zone= 2.650, 
                                       solid_density_shallow_aquifer= 2.650, 
@@ -302,7 +301,7 @@ def test_steady_concentration_temp_koc_correction_semiconfined(substance='benzen
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
                                       fraction_organic_carbon_target_aquifer=0.0005, 
-                                      input_concentration = 100,
+                                      diffuse_input_concentration = 100,
                                       temperature=11,
                                       solid_density_vadose_zone= 2.650, 
                                       solid_density_shallow_aquifer= 2.650, 

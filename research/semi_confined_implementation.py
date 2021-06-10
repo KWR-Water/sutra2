@@ -33,7 +33,7 @@ import ast
 
 from pathlib import Path
 try:
-    from project_path import module_path #the dot says looik in the current folder, this project_path.py file must be in the folder here
+    from project_path import module_path #the dot says look in the current folder, this project_path.py file must be in the folder here
 except ModuleNotFoundError:
     from project_path import module_path
 

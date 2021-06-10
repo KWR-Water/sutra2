@@ -54,15 +54,15 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 # IS GRAVEL RMIN GRVEL = RMAX WELL SCREEN
 # CHECK THE DIAMETERS CAREFULLY FOR THESE INTERLINKING FUNCTION OF HTE WELLS
 
-#%%
-# Test
-test_travel_time_distribution_semiconfined()
-test_retardation_temp_koc_correction(substance='benzene', schematisation_type='semiconfined')
-test_retardation_temp_koc_correction(substance='benzo(a)pyrene', schematisation_type='semiconfined')
-test_retardation_temp_koc_correction(substance='AMPA', schematisation_type='semiconfined')
-test_steady_concentration_temp_koc_correction_semiconfined(substance='benzene')
-test_steady_concentration_temp_koc_correction_semiconfined(substance='benzo(a)pyrene')
-test_steady_concentration_temp_koc_correction_semiconfined(substance='AMPA')
+# #%%
+# # Test
+# test_travel_time_distribution_semiconfined()
+# test_retardation_temp_koc_correction(substance='benzene', schematisation_type='semiconfined')
+# test_retardation_temp_koc_correction(substance='benzo(a)pyrene', schematisation_type='semiconfined')
+# test_retardation_temp_koc_correction(substance='AMPA', schematisation_type='semiconfined')
+# test_steady_concentration_temp_koc_correction_semiconfined(substance='benzene')
+# test_steady_concentration_temp_koc_correction_semiconfined(substance='benzo(a)pyrene')
+# test_steady_concentration_temp_koc_correction_semiconfined(substance='AMPA')
 
 #%%
 
@@ -113,6 +113,7 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       concentration_point_contamination = 100.,
                                       discharge_point_contamination = 100.,#made up value
                                       top_clayseal = 17,
+                                      compute_contamination_for_date='2020-01-01',
                                       # substance = 'benzene',
                                       # halflife_oxic=600,
                                       # partition_coefficient_water_organic_carbon = 3.3,
@@ -131,9 +132,10 @@ semi_dict_1  = { 'simulation_parameters' : semiconfined_scheme.simulation_parame
         'bas_parameters' : semiconfined_scheme.bas_parameters,
 }
 
-f = open("semiconfined_dict_nogravel.txt","w")
-f.write( str(semi_dict_1))
-f.close()
+semi_dict_1 
+# f = open("semiconfined_dict_nogravel.txt","w")
+# f.write( str(semi_dict_1))
+# f.close()
 
 #%%
 semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfined',
@@ -183,6 +185,7 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       concentration_point_contamination = 100.,
                                       discharge_point_contamination = 100.,#made up value
                                       top_clayseal = 17,
+                                      compute_contamination_for_date='2020-01-01',
                                       # substance = 'benzene',
                                       # halflife_oxic=600,
                                       # partition_coefficient_water_organic_carbon = 3.3,
@@ -270,6 +273,7 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       concentration_point_contamination = 100.,
                                       discharge_point_contamination = 100.,#made up value
                                       top_clayseal = 17,
+                                      compute_contamination_for_date='2020-01-01',
                                       # substance = 'benzene',
                                       # halflife_oxic=600,
                                       # partition_coefficient_water_organic_carbon = 3.3,
@@ -339,6 +343,7 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       concentration_point_contamination = 100.,
                                       discharge_point_contamination = 100.,#made up value
                                       top_clayseal = 17,
+                                      compute_contamination_for_date='2020-01-01',
                                       # substance = 'benzene',
                                       # halflife_oxic=600,
                                       # partition_coefficient_water_organic_carbon = 3.3,
