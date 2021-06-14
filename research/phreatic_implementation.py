@@ -88,7 +88,7 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
 
                                       concentration_point_contamination = 600,
                                       distance_point_contamination_from_well = 5.45045, #300,
-                                      depth_point_contamination = 22, #m ASL
+                                      depth_point_contamination =21, #m ASL
                                       discharge_point_contamination=10,
                                       )
 
@@ -103,7 +103,7 @@ phreatic_conc = Concentration(phreatic_well, substance = 'benzene')
 
 
 phreatic_conc.compute_omp_removal()
-phreatic_conc.df_flowline
+phreatic_conc.df_particle
 # phreatic_conc.df_particle['steady_state_concentration']
 # phreatic_conc.df_particle #.steady_state_concentration
 
