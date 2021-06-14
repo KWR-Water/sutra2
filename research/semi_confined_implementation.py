@@ -57,9 +57,8 @@ test_steady_concentration_temp_koc_correction_semiconfined(substance='AMPA')
 
 semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfined',
                                     what_to_export='omp_parameters',
-                                    # biodegradation_sorbed_phase = False,
                                       well_discharge=319.4*24,
-                                      # vertical_resistance_aquitard=500,
+                                      vertical_anistropy_shallow_aquifer = (10/(0.02*500)),
                                       porosity_vadose_zone=0.38,
                                       porosity_shallow_aquifer=0.35,
                                       porosity_target_aquifer=0.35,
@@ -71,7 +70,6 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       thickness_target_aquifer=40,
                                       hor_permeability_target_aquifer=35,
                                       hor_permeability_shallow_aquifer = 0.02,
-                                      vertical_anistropy_shallow_aquifer = (10/(0.02*500)),
                                       thickness_full_capillary_fringe=0.4,
                                       redox_vadose_zone='anoxic', #'suboxic',
                                       redox_shallow_aquifer='anoxic',
@@ -85,7 +83,11 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
                                       fraction_organic_carbon_target_aquifer=0.0005, 
-                                      input_concentration = 100,
+                                      # diffuse_input_concentration = 100, #ug/L
+                                      concentration_point_contamination = 600,
+                                      distance_point_contamination_from_well = 5.45045, #300,
+                                      depth_point_contamination = 22, #m ASL
+
                                       temperature=11,
                                       solid_density_vadose_zone= 2.650, 
                                       solid_density_shallow_aquifer= 2.650, 
@@ -98,9 +100,15 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                     )
 
 
-semiconfined_well_dict = semiconfined_scheme.make_dictionary()  
-# semiconfined_well = AnalyticalWell(semiconfined_scheme) #.semiconfined()
-# semiconfined_well.semiconfined()   
+# semiconfined_well_dict = semiconfined_scheme.make_dictionary()  
+semiconfined_well = AnalyticalWell(semiconfined_scheme) #.semiconfined()
+semiconfined_well.semiconfined()   
+semiconfined_conc = Concentration(semiconfined_well, substance = 'OMP-X')
+
+semiconfined_conc.compute_omp_removal()
+semiconfined_conc.df_particle
+# semiconfined_conc.plot_concentration(xlim=[0, 500], ylim=[0,1 ])
+
 # # semiconfined_conc = Concentration(semiconfined_well, substance = 'benzo(a)pyrene')
 # semiconfined_conc = Concentration(semiconfined_well, substance = 'benzene')
 
@@ -111,8 +119,8 @@ semiconfined_well_dict = semiconfined_scheme.make_dictionary()
 # semiconfined_conc.substance_dict
 
 # %%
-# semiconfined_well.plot_travel_time_versus_radial_distance(xlim=[0, 4000], ylim=[1e3, 1e6])
-# semiconfined_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
+semiconfined_well.plot_travel_time_versus_radial_distance(xlim=[0, 4000], ylim=[1e3, 1e6])
+semiconfined_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
 #%%
 # Export dicts for steven
 

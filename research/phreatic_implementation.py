@@ -79,7 +79,7 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
                                       fraction_organic_carbon_target_aquifer=0.0005, 
-                                      # input_concentration = 100,
+                                      #  diffuse_input_concentration = 100, #ug/L
                                       temperature=11,
                                       solid_density_vadose_zone= 2.650, 
                                       solid_density_shallow_aquifer= 2.650, 
@@ -89,20 +89,21 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       concentration_point_contamination = 600,
                                       distance_point_contamination_from_well = 5.45045, #300,
                                       depth_point_contamination = 22, #m ASL
-                                      # discharge_point_contamination=,
+                                      discharge_point_contamination=10,
                                       )
 
 # phreatic_scheme.make_dictionary()  
 phreatic_well = AnalyticalWell(phreatic_scheme)
     
 phreatic_well.phreatic() #@MartinK in the functions run this? how to avoid errors running 'semiconfined' here when the schematisation_type was defined as 'phreatic'?
-
-# phreatic_conc = Concentration(phreatic_well, substance = 'benzene')
+# phreatic_well.df_particle
+phreatic_conc = Concentration(phreatic_well, substance = 'benzene')
 # # phreatic_conc = Concentration(phreatic_well, substance = 'benzo(a)pyrene')
-phreatic_conc = Concentration(phreatic_well, substance = 'AMPA')
+# phreatic_conc = Concentration(phreatic_well, substance = 'AMPA')
 
 
 phreatic_conc.compute_omp_removal()
+phreatic_conc.df_flowline
 # phreatic_conc.df_particle['steady_state_concentration']
 # phreatic_conc.df_particle #.steady_state_concentration
 
@@ -110,7 +111,7 @@ phreatic_conc.compute_omp_removal()
 # plt.xlabel('Flowline ID')
 # plt.ylabel('Breakthrough time (years)')
 
-phreatic_conc.df_particle
+# phreatic_conc.df_particle
 # %%
 phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 4000], ylim=[1e3, 1e6])
 
