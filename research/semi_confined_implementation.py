@@ -86,7 +86,8 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       # diffuse_input_concentration = 100, #ug/L
                                       concentration_point_contamination = 600,
                                       distance_point_contamination_from_well = 5.45045, #300,
-                                      depth_point_contamination = 22, #m ASL
+                                      depth_point_contamination = 23, #m ASL
+                                      discharge_point_contamination=10,
 
                                       temperature=11,
                                       solid_density_vadose_zone= 2.650, 
@@ -103,15 +104,15 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
 # semiconfined_well_dict = semiconfined_scheme.make_dictionary()  
 semiconfined_well = AnalyticalWell(semiconfined_scheme) #.semiconfined()
 semiconfined_well.semiconfined()   
-semiconfined_conc = Concentration(semiconfined_well, substance = 'OMP-X')
-
-semiconfined_conc.compute_omp_removal()
-semiconfined_conc.df_particle
-# semiconfined_conc.plot_concentration(xlim=[0, 500], ylim=[0,1 ])
+# semiconfined_conc = Concentration(semiconfined_well, substance = 'OMP-X')
 
 # # semiconfined_conc = Concentration(semiconfined_well, substance = 'benzo(a)pyrene')
-# semiconfined_conc = Concentration(semiconfined_well, substance = 'benzene')
+semiconfined_conc = Concentration(semiconfined_well, substance = 'benzene')
 
+semiconfined_conc.compute_omp_removal()
+semiconfined_conc.df_flowline
+semiconfined_conc.df_particle
+# semiconfined_conc.plot_concentration(xlim=[0, 500], ylim=[0,1 ])
 
 # semiconfined_conc.compute_omp_removal()
 # # semiconfined_conc.df_particle #.steady_state_concentration
