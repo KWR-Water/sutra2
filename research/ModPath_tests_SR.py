@@ -285,7 +285,7 @@ phreatic_scheme["well_parameters"]['well_leak'] = {'Q': -1.,
 delv, zmid, top, bot, refinement_bounds = make_vertical_discretisation(schematisation = phreatic_scheme,
                                                     dict_keys = dict_keys)
 
-print(delv, zmid, top, bot, refinement_bounds)                                                           
+                                                           
 #%%
 modpath_phrea = ModPathWell(phreatic_scheme)
 # modpath_phrea.schematisation
@@ -298,6 +298,11 @@ dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
 modpath_phrea.make_radial_discretisation(dict_keys = dict_keys)
 # Adds to object: delv, nlay, top, bot, zmid
 modpath_phrea.make_vertical_discretisation(dict_keys = dict_keys)
+
+# Print all attributes in object
+print(modpath_phrea.__dict__)
+
+#### HIER GEBLEVEN 14-6-2021 ####
 
 # # Create bas_parameters
 # modpath_phrea.assign_bas_parameters()

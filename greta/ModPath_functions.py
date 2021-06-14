@@ -487,17 +487,17 @@ class ModPathWell:
             dict_keys = [iDict for iDict in self.schematisation.keys()]
         
         for iDict in dict_keys:
-            for iDict_sub in schematisation[iDict]:
+            for iDict_sub in self.schematisation[iDict]:
                 try:
                     # rmin
-                    rmin = schematisation[iDict][iDict_sub]["rmin"]
+                    rmin = self.schematisation[iDict][iDict_sub]["rmin"]
                     refinement_bounds.append(rmin)
                 except Exception as e:
                     print("error:",e,iDict,iDict_sub)
                     continue
                 try:
                     # rmax
-                    rmax = schematisation[iDict][iDict_sub]["rmax"]
+                    rmax = self.schematisation[iDict][iDict_sub]["rmax"]
                     refinement_bounds.append(rmax)
                 except Exception as e:
                     print("error:",e,iDict,iDict_sub)
@@ -505,7 +505,7 @@ class ModPathWell:
 
                 # horizontal resolution
                 try:
-                    res_hor = schematisation[iDict][iDict_sub]["res_hor"]
+                    res_hor = self.schematisation[iDict][iDict_sub]["res_hor"]
                 except Exception as e:
                     # Default maximum resolution if "res_hor" is not in subdictionary
                     res_hor = res_hor_max 
@@ -576,24 +576,24 @@ class ModPathWell:
             dict_keys = [iDict for iDict in self.schematisation.keys()]
         
         for iDict in dict_keys:
-            for iDict_sub in schematisation[iDict]:
+            for iDict_sub in self.schematisation[iDict]:
                 try:
                     # bottom
-                    rbot = schematisation[iDict][iDict_sub]["bot"]
+                    rbot = self.schematisation[iDict][iDict_sub]["bot"]
                     refinement_bounds.append(rbot)
                 except Exception as e:
                     print("error:",e,iDict,iDict_sub)
                     continue
                 try:
                     # top
-                    rtop = schematisation[iDict][iDict_sub]["top"]
+                    rtop = self.schematisation[iDict][iDict_sub]["top"]
                     refinement_bounds.append(rtop)
                 except Exception as e:
                     print("error:",e,iDict,iDict_sub)
                     continue
                 # horizontal resolution
                 try:
-                    res_vert = schematisation[iDict][iDict_sub]["res_vert"]
+                    res_vert = self.schematisation[iDict][iDict_sub]["res_vert"]
                 except Exception as e:
                     # Default maximum resolution if "res_vert" is not in subdictionary
                     res_vert = res_vert_max 
