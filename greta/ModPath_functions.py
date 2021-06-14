@@ -455,103 +455,178 @@ class ModPathWell:
         #     # Copy model radius from previously defined boundary
         #     self.bas_parameters["rmax"] = self.model_radius
         
-def make_radial_discretisation(self, schematisation: dict, dict_keys = None,
-                                res_hor_max = 10.):
-    ''' Generate distance between columns for axisymmetric model.
-    Sets it to self.delr
-    - schematisation is of type dict with (sub)dictionaries with keys 'dict_keys'.
-    - res_hor_max: maximum horizontal resolution if horizontal resolution 'res_hor'
-      is not given in the subdictionary.
+    def make_radial_discretisation(self, dict_keys = None,
+                                    res_hor_max = 10.):
+        ''' Generate distance between columns for axisymmetric model.
+            Sets it to self.delr
+        - schematisation is of type dict with (sub)dictionaries with keys 'dict_keys'.
+        - res_hor_max: maximum horizontal resolution if horizontal resolution 'res_hor'
+        is not given in the subdictionary.
 
-    # Assign column data
-    - self.delr: column widths of the model columns [np.array]
-      rounded to three decimals [mm scale].
-    - self.xmid: x-coordinates (middle) of the model columns [np.array]
-    - self.ncol: number of model columns
+        # Assign column data
+        - self.delr: column widths of the model columns [np.array]
+        rounded to three decimals [mm scale].
+        - self.xmid: x-coordinates (middle) of the model columns [np.array]
+        - self.ncol: number of model columns
 
-    # Assign row data : The rows have a predefined width [2 rows, 1 m width]
-    - self.delc: row widths of the model rows [np.array]
-    - self.ymid: y-coordinates (middle) of the model rows [np.array]
-    - self.nrow: number of model rows [2]
+        # Assign row data : The rows have a predefined width [2 rows, 1 m width]
+        - self.delc: row widths of the model rows [np.array]
+        - self.ymid: y-coordinates (middle) of the model rows [np.array]
+        - self.nrow: number of model rows [2]
 
-    Local parameters:
-    - refinement_bounds: boundaries where horizontal resolution values may change.
-    - col_bounds: Represent the column edges (both xmin and xmax values) 
+        Local parameters:
+        - refinement_bounds: boundaries where horizontal resolution values may change.
+        - col_bounds: Represent the column edges (both xmin and xmax values) 
+        '''
+        # mesh refinement boundaries
+        refinement_bounds = []
+        # Detailed model column bounds
+        col_bounds = []
+
+        if dict_keys is None:
+            dict_keys = [iDict for iDict in self.schematisation.keys()]
+        
+        for iDict in dict_keys:
+            for iDict_sub in schematisation[iDict]:
+                try:
+                    # rmin
+                    rmin = schematisation[iDict][iDict_sub]["rmin"]
+                    refinement_bounds.append(rmin)
+                except Exception as e:
+                    print("error:",e,iDict,iDict_sub)
+                    continue
+                try:
+                    # rmax
+                    rmax = schematisation[iDict][iDict_sub]["rmax"]
+                    refinement_bounds.append(rmax)
+                except Exception as e:
+                    print("error:",e,iDict,iDict_sub)
+                    continue
+
+                # horizontal resolution
+                try:
+                    res_hor = schematisation[iDict][iDict_sub]["res_hor"]
+                except Exception as e:
+                    # Default maximum resolution if "res_hor" is not in subdictionary
+                    res_hor = res_hor_max 
+
+                num_cols = max(1,math.ceil((rmax-rmin)/res_hor))
+                # Determine (in-between) column boundaries
+                _column_bounds = np.linspace(rmin,rmax,
+                                            num = num_cols + 1, endpoint = True)
+                col_bounds.extend(list(_column_bounds))
+
+        # Only keep unique values for refinement_bounds and col_bounds
+        refinement_bounds = np.sort(np.unique(np.array(refinement_bounds)))   
+        col_bounds = np.sort(np.unique(np.array(col_bounds)))
+
+
+        # Create delr array along columns (rounded to 3 decimals)
+        self.delr = np.round(np.diff(col_bounds),3)
+        # Number of model columns
+        self.ncol = len(self.delr)
+        # Create xmid array from delr array
+        self.xmid = np.empty((self.ncol), dtype= 'float')
+        self.xmid[0] = self.delr[0] * 0.5
+        for iCol in range(1, self.ncol):
+            self.xmid[iCol] = (self.xmid[(iCol - 1)] + \
+                                ((self.delr[(iCol)]) + (self.delr[(iCol - 1)])) * 0.5)  
+
+    # Create delc array along rows (rounded to 3 decimals)
+        self.delc = np.ones(2,dtype = 'float')
+        # Number of model rows
+        self.nrow = len(self.delc)
+
+        # Create ymid array from delr array
+        self.ymid = np.empty((self.nrow), dtype= 'float')
+        self.ymid[0] = self.delc[0] * 0.5
+        for iRow in range(1, self.nrow):
+            self.ymid[iRow] = (self.ymid[(iRow - 1)] + \
+                                ((self.delc[(iRow)]) + (self.delc[(iRow - 1)])) * 0.5)  
+
+        
+    def make_vertical_discretisation(self, dict_keys = None,
+                                    res_vert_max = 1.):
+        ''' Generate vertical discretisation for MODFLOW layers.
+            self.top, self.bot, self.delv, self.zmid
+        
+        - schematisation is of type dict with (sub)dictionaries with keys 'dict_keys'.
+        - res_vert_max: maximum vertical resolution if vertical resolution 'res_vert'
+        is not given in the subdictionary.
+
+        Assign layer data
+        - self.delv: layer depths of the model layers [np.array]
+        rounded to two decimals [cm scale].
+        - self.zmid: z-coordinates (middle) of the model layers [np.array]
+        - self.top: model top [m above sea level or m ASL]
+        - self.bot: model layer bottoms [m ASL]
+        - self.nlay: number of model layers
+
+        Local parameters:
+        - refinement_bounds: boundaries where horizontal resolution values may change.
+        - lay_bounds: Represent the column edges (both xmin and xmax values) 
+        '''
+
+        # mesh refinement boundaries
+        refinement_bounds = []
+        # Detailed model column bounds
+        lay_bounds = []
+
+        if dict_keys is None:
+            dict_keys = [iDict for iDict in self.schematisation.keys()]
+        
+        for iDict in dict_keys:
+            for iDict_sub in schematisation[iDict]:
+                try:
+                    # bottom
+                    rbot = schematisation[iDict][iDict_sub]["bot"]
+                    refinement_bounds.append(rbot)
+                except Exception as e:
+                    print("error:",e,iDict,iDict_sub)
+                    continue
+                try:
+                    # top
+                    rtop = schematisation[iDict][iDict_sub]["top"]
+                    refinement_bounds.append(rtop)
+                except Exception as e:
+                    print("error:",e,iDict,iDict_sub)
+                    continue
+                # horizontal resolution
+                try:
+                    res_vert = schematisation[iDict][iDict_sub]["res_vert"]
+                except Exception as e:
+                    # Default maximum resolution if "res_vert" is not in subdictionary
+                    res_vert = res_vert_max 
+
+                num_lays = max(1,math.ceil((rtop-rbot)/res_vert))
+                # Determine (in-between) column boundaries
+                _layer_bounds = np.linspace(rbot,rtop,
+                                            num = num_lays + 1, endpoint = True)
+                lay_bounds.extend(list(_layer_bounds))
+
+        # Only keep unique values for refinement_bounds and col_bounds
+        refinement_bounds = np.sort(np.unique(np.array(refinement_bounds)))[::-1]   
+        # Order from top to bottom
+        lay_bounds = np.sort(np.unique(np.array(lay_bounds)))[::-1]
+
+        # Create delr array along columns (rounded to 2 decimals)
+        self.delv = abs(np.round(np.diff(lay_bounds),2))
+        # Number of model columns
+        self.nlay = len(self.delv)   
+
+        # Model top
+        self.top = max(lay_bounds)
+        # Model bottoms
+        self.bot = self.top - self.delv.cumsum()
+
+        # Create zmid array from top and delv arrays
+        self.zmid = np.empty((self.nlay), dtype= 'float')
+        self.zmid[0] = self.top - self.delv[0] * 0.5
+        for iLay in range(1, self.nlay):
+            self.zmid[iLay] = (self.zmid[(iLay - 1)] - ((self.delv[(iLay)]) + (self.delv[(iLay - 1)])) * 0.5)  
+
     '''
-    # mesh refinement boundaries
-    refinement_bounds = []
-    # Detailed model column bounds
-    col_bounds = []
 
-    if dict_keys is None:
-        dict_keys = [iDict for iDict in schematisation.keys()]
-    
-    for iDict in dict_keys:
-        for iDict_sub in schematisation[iDict]:
-            try:
-                # rmin
-                rmin = schematisation[iDict][iDict_sub]["rmin"]
-                refinement_bounds.append(rmin)
-            except Exception as e:
-                print(e,"continue")
-            try:
-                # rmax
-                rmax = schematisation[iDict][iDict_sub]["rmax"]
-                refinement_bounds.append(rmax)
-            except Exception as e:
-                print(e,"continue")
-            # horizontal resolution
-            try:
-                res_hor = schematisation[iDict][iDict_sub]["res_hor"]
-            except Exception as e:
-                # Default maximum resolution if "res_hor" is not in subdictionary
-                res_hor = res_hor_max 
-
-            num_cols = max(1,math.ceil((rmax-rmin)/res_hor))
-            # Determine (in-between) column boundaries
-            column_bounds = np.linspace(rmin,rmax,
-                                        num = num_cols + 1, endpoint = True)
-            col_bounds.extend(list(column_bounds))
-
-    # Only keep unique values for refinement_bounds and col_bounds
-    refinement_bounds = np.sort(np.unique(np.array(refinement_bounds)))   
-    col_bounds = np.sort(np.unique(np.array(col_bounds)))
-
-
-    # Create delr array along columns (rounded to 3 decimals)
-    self.delr = np.round(np.diff(col_bounds),3)
-    # Number of model columns
-    self.ncol = len(self.delr)
-    # Create xmid array from delr array
-    self.xmid = np.empty((self.ncol), dtype= 'float')
-    self.xmid[0] = self.delr[0] * 0.5
-    for iCol in range(1, self.ncol):
-        self.xmid[iCol] = (self.xmid[(iCol - 1)] + \
-                            ((self.delr[(iCol)]) + (self.delr[(iCol - 1)])) * 0.5)  
-
-   # Create delc array along rows (rounded to 3 decimals)
-    self.delc = np.ones(2,dtype = 'float')
-    # Number of model rows
-    self.nrow = len(self.delc)
-
-    # Create ymid array from delr array
-    self.ymid = np.empty((self.nrow), dtype= 'float')
-    self.ymid[0] = self.delc[0] * 0.5
-    for iRow in range(1, self.nrow):
-        self.ymid[iRow] = (self.ymid[(iRow - 1)] + \
-                            ((self.delc[(iRow)]) + (self.delc[(iRow - 1)])) * 0.5)  
-
-    '''
-    def make_vertical_discretisation(self):
-        """ Generate top's and bot's of MODFLOW layers.
-        Sets it to self.tops, self.bots
-        """
-        self.top = 0.
-        lay_bots = {}
-        for iGeo in self.geo_parameters:
-            lay_bots[iGeo] = self.geo_parameters[iGeo]["bot"]
-  			self.bots = None
-    
   	def make_discretisation():
         self.grid
  
@@ -566,7 +641,7 @@ def make_radial_discretisation(self, schematisation: dict, dict_keys = None,
   		#etc.,
 
   	def assign_wells():
-  	    self.WELL_pacakage  # np.array
+  	    self.WELL_package  # np.array
   		self.Q
   		self.well_id
 

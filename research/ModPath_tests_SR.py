@@ -134,12 +134,14 @@ def make_radial_discretisation(schematisation: dict, dict_keys = None,
                 refinement_bounds.append(rmin)
             except Exception as e:
                 print(e,"continue")
+                continue
             try:
                 # rmax
                 rmax = schematisation[iDict][iDict_sub]["rmax"]
                 refinement_bounds.append(rmax)
             except Exception as e:
                 print(e,"continue")
+                continue
             # horizontal resolution
             try:
                 res_hor = schematisation[iDict][iDict_sub]["res_hor"]
@@ -170,6 +172,82 @@ def make_radial_discretisation(schematisation: dict, dict_keys = None,
 
     return delr, xmid, refinement_bounds
 
+def make_vertical_discretisation(schematisation: dict, dict_keys = None,
+                                res_vert_max = 1.):
+    ''' Generate top's and bot's of MODFLOW layers.
+        Sets it to self.top, self.bot
+    
+    - schematisation is of type dict with (sub)dictionaries with keys 'dict_keys'.
+    - res_vert_max: maximum vertical resolution if vertical resolution 'res_vert'
+      is not given in the subdictionary.
+
+    The function returns numpy arrays of: 
+    - delv: layer depths of the model layers [np.array]
+      rounded to two decimals [cm scale].
+    - zmid: z-coordinates (middle) of the model layers [np.array]
+    - refinement_bounds: boundaries where vertical resolution values may change.
+    '''
+
+    # mesh refinement boundaries
+    refinement_bounds = []
+    # Detailed model column bounds
+    lay_bounds = []
+
+    if dict_keys is None:
+        dict_keys = [iDict for iDict in schematisation.keys()]
+    
+    for iDict in dict_keys:
+        for iDict_sub in schematisation[iDict]:
+            try:
+                # bottom
+                rbot = schematisation[iDict][iDict_sub]["bot"]
+                refinement_bounds.append(rbot)
+            except Exception as e:
+                print("error:",e,iDict,iDict_sub)
+                continue
+            try:
+                # top
+                rtop = schematisation[iDict][iDict_sub]["top"]
+                refinement_bounds.append(rtop)
+            except Exception as e:
+                print("error:",e,iDict,iDict_sub)
+                continue
+            # horizontal resolution
+            try:
+                res_vert = schematisation[iDict][iDict_sub]["res_vert"]
+            except Exception as e:
+                # Default maximum resolution if "res_vert" is not in subdictionary
+                res_vert = res_vert_max 
+
+            num_lays = max(1,math.ceil((rtop-rbot)/res_vert))
+            # Determine (in-between) column boundaries
+            layer_bounds = np.linspace(rbot,rtop,
+                                        num = num_lays + 1, endpoint = True)
+            lay_bounds.extend(list(layer_bounds))
+
+    # Only keep unique values for refinement_bounds and col_bounds
+    refinement_bounds = np.sort(np.unique(np.array(refinement_bounds)))[::-1]   
+    # Order from top to bottom
+    lay_bounds = np.sort(np.unique(np.array(lay_bounds)))[::-1]
+
+    # Create delr array along columns (rounded to 2 decimals)
+    delv = abs(np.round(np.diff(lay_bounds),2))
+    # Number of model columns
+    nlay = len(delv)   
+
+    # Model top
+    top = max(lay_bounds)
+    # Model bottoms
+    bot = top - delv.cumsum()
+
+    # Create zmid array from top and delv arrays
+    zmid = np.empty((nlay), dtype= 'float')
+    zmid[0] = top - delv[0] * 0.5
+    for iLay in range(1, nlay):
+        zmid[iLay] = (zmid[(iLay - 1)] - ((delv[(iLay)]) + (delv[(iLay - 1)])) * 0.5)  
+
+    return delv, zmid, top, bot, refinement_bounds
+
 
 #%%
 
@@ -194,12 +272,36 @@ delr, xmid, refinement_bounds = make_radial_discretisation(schematisation = phre
 print(delr, xmid, refinement_bounds)
 print(len(delr), len(xmid), len(refinement_bounds))
 
+# Change well discharge of well1 to -7665.6
+phreatic_scheme["well_parameters"]['well1']['Q'] = -7665.6
+# Add test well_parameters with leak from 9.9 to 10.0 m
+phreatic_scheme["well_parameters"]['well_leak'] = {'Q': -1.,
+  'top': 10.0,
+  'bot': 9.9,
+  'rmin': 0.0,
+  'rmax': 0.1}
+
+# Add delv, zmid, top and bottoms
+delv, zmid, top, bot, refinement_bounds = make_vertical_discretisation(schematisation = phreatic_scheme,
+                                                    dict_keys = dict_keys)
+
+print(delv, zmid, top, bot, refinement_bounds)                                                           
 #%%
 modpath_phrea = ModPathWell(phreatic_scheme)
-modpath_phrea.schematisation
-# Create bas_parameters
-modpath_phrea.assign_bas_parameters()
-modpath_phrea.bas_parameters
+# modpath_phrea.schematisation
+
+# Refinement boundaries and column boundaries
+# Horizontal discretisation dictionary keys
+dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
+                      "well_parameters"]
+# Adds to object: delr, ncol, xmid
+modpath_phrea.make_radial_discretisation(dict_keys = dict_keys)
+# Adds to object: delv, nlay, top, bot, zmid
+modpath_phrea.make_vertical_discretisation(dict_keys = dict_keys)
+
+# # Create bas_parameters
+# modpath_phrea.assign_bas_parameters()
+# modpath_phrea.bas_parameters
 
 #%%
 delr_bounds = []
