@@ -575,18 +575,39 @@ class ModPathWell:
 
         return empty_grid, lay_bounds, row_bounds, col_bounds
 
-    def assign_ibound(self,filter_top, filter_botm, filter_left, filter_right,zmid, xmid, ibound):
+    def assign_ibound(self,ibound_grid: np.array or None,
+                        ibound_parameters: dict or None = None,
+                        bound_left: str, bound_right: str, 
+                        bound_top: str, bound_bot: str,
+                        schematisation_type = None):
 
-        ''' This fnction is used to assign the constant head cells (ibound --> "-1". 
-            These represent a constant well abstraction in combination
-            with a net precipitation influx. '''
+        ''' This function is used to assign the constant head cells (ibound --> "-1". 
+        '''
+        if ibound_grid is not None:
+            self.ibound = ibound_grid
+        else:
+            try:
+                self.ibound = getattr(self,"ibound")
+            except AttributeError:
+                print("attribute ibound does not yet exist. Create empty ibound grid")
+                self.ibound = np.ones((self.nlay,self.nrow,self.ncol), dtype = 'int')
+                
+        if schematisation_type is None:
+            schematisation_type = getattr(self.schematisation, "schematisation_type")
         
-        for iLay in range(self.nlay):
-            for iCol in [0]: #range(100):
-                if (zmid[iLay] < filter_top) & (zmid[iLay] > filter_botm):
-    #                (xmid[iCol] > filter_left) & (xmid[iCol] < filter_right):
-                    # Update ibound
-                    ibound[iLay, 0, iCol] = -1
+        
+        if schematisation_type in ["phreatic","2D"]:
+            # In 2D model or axisymmetric models an 
+            # inactive row is added to be able to run Modpath successfully.
+            self.ibound[:,1,:] = 0
+            # Only change constant head values for python row "0"
+            iRow = 0  
+            for iLay in range(self.nlay):
+                for iCol in range(self.ncol): 
+                    if (self.zmid[iLay] < ibound_parameters) & (zmid[iLay] > filter_botm):
+        #                (xmid[iCol] > filter_left) & (xmid[iCol] < filter_right):
+                        # Update ibound
+                        ibound[iLay, 0, iCol] = -1
                     
         # return ibound
 
