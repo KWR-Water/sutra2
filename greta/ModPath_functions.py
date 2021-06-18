@@ -157,41 +157,11 @@ with open(os.path.join(research_dir,"phreatic_dict_nogravel.txt"),"r") as file_:
     dict_content = file_.read()
     phreatic_scheme = eval(dict_content)
 
-for iKey,iVal in phreatic_scheme.items():
-    print(iKey,iVal,"\n")
+check_schematisation = False # Check input dict (T/F)
+if check_schematisation:
+    for iKey,iVal in phreatic_scheme.items():
+        print(iKey,iVal,"\n")
 
-delr_bounds = []
-ncol_bounds = []
-for iDict_main in phreatic_scheme:
-    
-    if iDict_main in ["geo_parameters","recharge_parameters","ibound_parameters",
-                      "well_parameters"]:
-        
-        for iDict_sub in phreatic_scheme[iDict_main]:
-            if (iDict_main == "geo_parameters") & (iDict_sub == "vadose"):
-                continue
-            print(iDict_main,iDict_sub)
-            try:
-                delr_bounds.append(phreatic_scheme[iDict_main][iDict_sub]["rmin"])
-            except Exception as e: print(e)
-            try:
-                delr_bounds.append(phreatic_scheme[iDict_main][iDict_sub]["rmax"])
-            except Exception as e: print(e)
-            try:
-                ncol_bounds.append([phreatic_scheme[iDict_main][iDict_sub]["ncols"],
-                                    phreatic_scheme[iDict_main][iDict_sub]["rmin"],
-                                    phreatic_scheme[iDict_main][iDict_sub]["rmax"],
-                                    iDict_main,iDict_sub])
-            except Exception:
-                ncol_bounds.append([1,
-                                    phreatic_scheme[iDict_main][iDict_sub]["rmin"],
-                                    phreatic_scheme[iDict_main][iDict_sub]["rmax"],
-                                    iDict_main,iDict_sub])
-print(delr_bounds,"\n",ncol_bounds)
-np.unique(np.array(delr_bounds))
-# Horizontal boudnaries determined by rmin, rmax
-# 
-# Refinement1 --> near well 
 
 #%%
 '''
@@ -390,241 +360,238 @@ class ModPathWell:
 
         self.schematisation = schematisation
 
+    def _check_schematisation(self,required_keys):
+        
+        for req_key in required_keys:
+            if not req_key in self.schematisation.keys():
+                print(f'Error, required variable {req_key} is not defined in schematisation dict.')
+
     def _check_required_variables(self,required_variables):
         for req_var in required_variables:
-            value = getattr(self.schematisation, req_var)
+            value = getattr(self, req_var)
+            print(req_var,value)
             if value is None:
                 raise KeyError(f'Error, required variable {req_var} is not defined.')
+
 
     def _check_init_phreatic(self):
         # check the variables that we need for the individual aquifer types are not NONE aka set by the user
         '''check the variables that we need for the individual aquifer types are not NONE aka set by the user'''
-
-        required_variables = ["schematisation_type", #repeat for all
-                              "thickness_vadose_zone_at_boundary",
-                              "thickness_shallow_aquifer",
-                              "thickness_target_aquifer",
-                              "porosity_vadose_zone",
-                              "porosity_shallow_aquifer",
-                              "porosity_target_aquifer",
-                              "well_discharge",
-                              "recharge_rate",
-                              "vertical_resistance_aquitard",
-                              "moisture_content_vadose_zone",
-                              "KD",
-                              "groundwater_level",
-                              "thickness_full_capillary_fringe",
-                            #   self.test_variable,
+        
+        # Required keys in self.schematisation
+        required_keys = ["simulation_parameters",#repeat for all
+                              "geo_parameters",
+                              "recharge_parameters",
+                              "ibound_parameters",
+                              "well_parameters",
+                              "point_parameters",
+                              "substance_parameters"
                             ]
+
+        # Required variables (to run model)
+        required_variables = []
+
+        # Check schematisation dictionary
+        self._check_schematisation(required_keys)
+        # Check required variables
         self._check_required_variables(required_variables)
+
     def _check_init_semi_confined():
         ''' check the variables that we need for the individual aquifer types are not NONE aka set by the user '''
 
-    def assign_bas_parameters(self, ncols_filterscreen = 1,
-                      ncols_gravelpack = 1,
-                      ncols_near_well = 20,
-                      ncols_far_well = 30,
-                      diameter_filterscreen = 0.1,
-                      diameter_gravelpack = 0.75,
-                      thickness_aquifer = 20.,
-                      model_radius = 500.):
-        ''' Assign the grid discretization values '''
+    def _assign_cellboundaries(self,schematisation: dict, dict_keys: list or None = None,
+                                bound_min: str = "xmin", bound_max: str = "xmax",
+                                n_refinement: str = "ncols", ascending: bool = True,
+                                res_max: int or float or None = None):
+        ''' Function to help creating the grid discretisation inside 'make_discretisation'.
+            Determines grid refinement in either the X (ncol), Y (nrow), or Z (nlay) direction.
 
-        # General input dictionary for discretisation:
-        self.bas_parameters = {}
-        # Number of columns from the well to the outer boundary
-        self.bas_parameters["ncols_filterscreen"] = ncols_filterscreen
-        self.bas_parameters["ncols_gravelpack"] = ncols_gravelpack
-        self.bas_parameters["ncols_near_well"] = ncols_near_well
-        self.bas_parameters["ncols_far_well"] = ncols_far_well
-        # Filterscreen diameter
-        self.bas_parameters["diameter_filterscreen"] = diameter_filterscreen
-        # Gravelpack diameter
-        self.bas_parameters["diameter_gravelpack"] = diameter_gravelpack
-        
-        # Thickness in phreatic aquifer is equal to top of upper layer minus
-        # bottom of lowest layer () --> use regular expressions? 
-        # self.thickness_aquifer = geo_parameters["layer1"]["top"] - geo_parameters["layer2"]["bot"]
-        self.bas_parameters["thickness_aquifer"] = thickness_aquifer
-        
-        # Model radius is equal to the outer model boundary (defined earlier?)
-        # self.model_radius = ibound_parameters["outer_boundary"]["rmax"]
-        if not hasattr(self,"model_radius"):
-            self.bas_parameters["rmax"] = model_radius
-        # else:
-        #     # Copy model radius from previously defined boundary
-        #     self.bas_parameters["rmax"] = self.model_radius
-        
-    def make_radial_discretisation(self, dict_keys = None,
-                                    res_hor_max = 10.):
-        ''' Generate distance between columns for axisymmetric model.
-            Sets it to self.delr
-        - schematisation is of type dict with (sub)dictionaries with keys 'dict_keys'.
-        - res_hor_max: maximum horizontal resolution if horizontal resolution 'res_hor'
-        is not given in the subdictionary.
+            Return terms:
+            - len_arr        # Length of grid in X,Y or Z-direction [int]
+            - cell_sizes     # Distance between cell boundaries in X,Y, or Z-direction [1D np.array]
+            - center_points  # Center locations of cells in the direction of grid refinement [1D np.array]
+            - bound_list     # Model coordinates of cell boundaries in X, Y or Z-direction [1D np.array]
 
-        # Assign column data
+        '''
+
+        # Keep track of grid boundaries
+        bound_list = []
+
+        if dict_keys is None:
+            dict_keys = [iDict for iDict in schematisation.keys()]
+
+        # Loop through schematisation keys (dict_keys)
+        for iDict in dict_keys:
+            # Loop through subkeys of schematisation dictionary
+            for iDict_sub in schematisation[iDict]:   
+
+                try:
+                    # minimum bound
+                    val_min = schematisation[iDict][iDict_sub][bound_min]
+                except KeyError as e:
+                    print(e,f"missing {iDict} {iDict_sub}. Continue")
+                    continue
+
+                try:
+                    # maximum bound
+                    val_max = schematisation[iDict][iDict_sub][bound_max]
+                except KeyError as e:
+                    print(e,f"missing {iDict} {iDict_sub}. Continue")
+                    continue
+
+                try:
+                    # number of refinements
+                    n_ref = schematisation[iDict][iDict_sub][n_refinement]
+                except KeyError:
+                    if res_max is None:
+                        n_ref = 1
+                    else:
+                        # Limit the cell resolution using 'res_max' (if not None)
+                        n_ref = max(1,math.ceil((bound_max-bound_min)/res_max))
+                    pass  
+
+                # Calculate local resolution [L]
+                resolution = (val_max-val_min) / n_ref   
+
+                # Determine (in-between) column boundaries
+                boundaries = np.linspace(val_min,val_max,
+                                            num = n_ref + 1, endpoint = True)
+                bound_list.extend(list(boundaries))
+
+        # Only keep unique values for boundary list 'bound_list' 
+        if ascending:  
+            bound_list = np.sort(np.unique(np.round(bound_list,3)))
+        else:
+            bound_list = np.sort(np.unique(np.round(bound_list,3)))[::-1]
+        # size of grid cells in the dimension (delr, delc or delv) from zeroeth to n_th cell
+        cell_sizes =  abs(np.diff(bound_list))
+
+        # Length of array
+        len_arr = len(cell_sizes)
+
+        # Assign center points (xmid | ymid | zmid)
+        center_points = np.empty((len_arr), dtype= 'float')
+        if ascending: # xmid and ymid arrays are increasing with increasing index number
+            center_points[0] = cell_sizes[0] * 0.5
+            for idx in range(1, len_arr):
+                center_points[idx] = (center_points[(idx - 1)] + ((cell_sizes[(idx)]) + (cell_sizes[(idx - 1)])) * 0.5)  
+        else: # zmid arrays are decreasing with increasing index number
+            center_points[0] = cell_sizes[0] * 0.5
+            for idx in range(1, len_arr):
+                center_points[idx] = (center_points[(idx - 1)] - ((cell_sizes[(idx)]) + (cell_sizes[(idx - 1)])) * 0.5)  
+
+        return len_arr, cell_sizes, center_points, bound_list
+
+        
+    def make_discretisation(self, schematisation: dict, dict_keys = None,
+                            model_type = 'axisymmetric'):
+        ''' Generate spatial grid for model_type choices: 'axisymmetric', '2D' or '3D'.
+            
+        Parameter 'schematisation' is of type dict with (sub)dictionaries with keys 'dict_keys'.
+        The subdictionaries should contain specific keyword arguments to generate the grids.  
+        The function indirectly uses "_assign_cellboundaries" to obtain grid data outputs.
+        
+        # Layer data assignment (model_type: axi-symmetric | 2D | 3D)
+        Required keys:
+        - "bot"  # bottom of local grid refinement
+        - "top"  # top of local grid refinement
+        Optional keyword argument(s):
+        - "nlayers"  # number of layers within local grid refinement
+
+        - self.delv: layer depths of the model layers [np.array]
+                     rounded to two decimals [cm scale].
+        - self.zmid: z-coordinates (middle) of the model layers [np.array]
+        - self.nlay: number of model layers
+        - self.top: model top [float or np.array]
+        - self.bot: model bottoms per layer [1D | 2D | 3D np.array of floats]
+                
+        # Column data assignment (model_type: axi-symmetric | 2D | 3D) 
+        Required keys:
+        - "xmin"  # left side of local grid refinement
+        - "xmax"  # right side of local grid refinement
+        Optional keyword argument(s):
+        - "ncols" # number of columns within local grid refinement
+
+        # Column data outputs:
         - self.delr: column widths of the model columns [np.array]
-        rounded to three decimals [mm scale].
+            rounded to three decimals [mm scale].
         - self.xmid: x-coordinates (middle) of the model columns [np.array]
         - self.ncol: number of model columns
 
-        # Assign row data : The rows have a predefined width [2 rows, 1 m width]
+
+        # Row data assignment (model_type: 3D)
+        # N.B. for modeltype: (axisymmetric | 2D) the rows have a predefined width [2 rows, 1 m width]
+
+        Required keys:
+        - "ymin"  # 'northern' side of local grid refinement
+        - "ymax"  # 'southern' side of local grid refinement
+        Optional keyword argument(s):
+        - "nrows" # number of rows within local grid refinement
+
+        # Row data outputs:
         - self.delc: row widths of the model rows [np.array]
         - self.ymid: y-coordinates (middle) of the model rows [np.array]
-        - self.nrow: number of model rows [2]
-
-        Local parameters:
-        - refinement_bounds: boundaries where horizontal resolution values may change.
-        - col_bounds: Represent the column edges (both xmin and xmax values) 
+        - self.nrow: number of model rows
+        
+        Optional local outputs to return:
+        - empty_grid  # Empty numpy array with size (self.nlay,nrow,ncol)
+        - lay_bounds  # Upper and lower boundaries of the model grid cells [1D-array]
+        - row_bounds  # Left and right boundaries of the model grid cells [1D-array]
+        - col_bounds  # North-south boundaries of the grid-cells [1D-array]
         '''
-        # mesh refinement boundaries
-        refinement_bounds = []
-        # Detailed model column bounds
-        col_bounds = []
+        if schematisation is None:
+            schematisation = getattr(self,"schematisation")
 
-        if dict_keys is None:
-            dict_keys = [iDict for iDict in self.schematisation.keys()]
-        
-        for iDict in dict_keys:
-            for iDict_sub in self.schematisation[iDict]:
-                try:
-                    # rmin
-                    rmin = self.schematisation[iDict][iDict_sub]["rmin"]
-                    refinement_bounds.append(rmin)
-                except Exception as e:
-                    print("error:",e,iDict,iDict_sub)
-                    continue
-                try:
-                    # rmax
-                    rmax = self.schematisation[iDict][iDict_sub]["rmax"]
-                    refinement_bounds.append(rmax)
-                except Exception as e:
-                    print("error:",e,iDict,iDict_sub)
-                    continue
-
-                # horizontal resolution
-                try:
-                    res_hor = self.schematisation[iDict][iDict_sub]["res_hor"]
-                except Exception as e:
-                    # Default maximum resolution if "res_hor" is not in subdictionary
-                    res_hor = res_hor_max 
-
-                num_cols = max(1,math.ceil((rmax-rmin)/res_hor))
-                # Determine (in-between) column boundaries
-                _column_bounds = np.linspace(rmin,rmax,
-                                            num = num_cols + 1, endpoint = True)
-                col_bounds.extend(list(_column_bounds))
-
-        # Only keep unique values for refinement_bounds and col_bounds
-        refinement_bounds = np.sort(np.unique(np.array(refinement_bounds)))   
-        col_bounds = np.sort(np.unique(np.array(col_bounds)))
-
-
-        # Create delr array along columns (rounded to 3 decimals)
-        self.delr = np.round(np.diff(col_bounds),3)
-        # Number of model columns
-        self.ncol = len(self.delr)
-        # Create xmid array from delr array
-        self.xmid = np.empty((self.ncol), dtype= 'float')
-        self.xmid[0] = self.delr[0] * 0.5
-        for iCol in range(1, self.ncol):
-            self.xmid[iCol] = (self.xmid[(iCol - 1)] + \
-                                ((self.delr[(iCol)]) + (self.delr[(iCol - 1)])) * 0.5)  
-
-    # Create delc array along rows (rounded to 3 decimals)
-        self.delc = np.ones(2,dtype = 'float')
-        # Number of model rows
-        self.nrow = len(self.delc)
-
-        # Create ymid array from delr array
-        self.ymid = np.empty((self.nrow), dtype= 'float')
-        self.ymid[0] = self.delc[0] * 0.5
-        for iRow in range(1, self.nrow):
-            self.ymid[iRow] = (self.ymid[(iRow - 1)] + \
-                                ((self.delc[(iRow)]) + (self.delc[(iRow - 1)])) * 0.5)  
-
-        
-    def make_vertical_discretisation(self, dict_keys = None,
-                                    res_vert_max = 1.):
-        ''' Generate vertical discretisation for MODFLOW layers.
-            self.top, self.bot, self.delv, self.zmid
-        
-        - schematisation is of type dict with (sub)dictionaries with keys 'dict_keys'.
-        - res_vert_max: maximum vertical resolution if vertical resolution 'res_vert'
-        is not given in the subdictionary.
-
-        Assign layer data
-        - self.delv: layer depths of the model layers [np.array]
-        rounded to two decimals [cm scale].
-        - self.zmid: z-coordinates (middle) of the model layers [np.array]
-        - self.top: model top [m above sea level or m ASL]
-        - self.bot: model layer bottoms [m ASL]
-        - self.nlay: number of model layers
-
-        Local parameters:
-        - refinement_bounds: boundaries where horizontal resolution values may change.
-        - lay_bounds: Represent the column edges (both xmin and xmax values) 
-        '''
-
-        # mesh refinement boundaries
-        refinement_bounds = []
-        # Detailed model column bounds
-        lay_bounds = []
-
-        if dict_keys is None:
-            dict_keys = [iDict for iDict in self.schematisation.keys()]
-        
-        for iDict in dict_keys:
-            for iDict_sub in self.schematisation[iDict]:
-                try:
-                    # bottom
-                    rbot = self.schematisation[iDict][iDict_sub]["bot"]
-                    refinement_bounds.append(rbot)
-                except Exception as e:
-                    print("error:",e,iDict,iDict_sub)
-                    continue
-                try:
-                    # top
-                    rtop = self.schematisation[iDict][iDict_sub]["top"]
-                    refinement_bounds.append(rtop)
-                except Exception as e:
-                    print("error:",e,iDict,iDict_sub)
-                    continue
-                # horizontal resolution
-                try:
-                    res_vert = self.schematisation[iDict][iDict_sub]["res_vert"]
-                except Exception as e:
-                    # Default maximum resolution if "res_vert" is not in subdictionary
-                    res_vert = res_vert_max 
-
-                num_lays = max(1,math.ceil((rtop-rbot)/res_vert))
-                # Determine (in-between) column boundaries
-                _layer_bounds = np.linspace(rbot,rtop,
-                                            num = num_lays + 1, endpoint = True)
-                lay_bounds.extend(list(_layer_bounds))
-
-        # Only keep unique values for refinement_bounds and col_bounds
-        refinement_bounds = np.sort(np.unique(np.array(refinement_bounds)))[::-1]   
-        # Order from top to bottom
-        lay_bounds = np.sort(np.unique(np.array(lay_bounds)))[::-1]
-
-        # Create delr array along columns (rounded to 2 decimals)
-        self.delv = abs(np.round(np.diff(lay_bounds),2))
-        # Number of model columns
-        self.nlay = len(self.delv)   
-
-        # Model top
+        # Assign delv and zmid   
+        self.nlay, self.delv, self.zmid, lay_bounds = self._assign_cellboundaries(schematisation = schematisation,
+                                                                                  dict_keys = dict_keys,
+                                                                                  bound_min = "bot", bound_max = "top",
+                                                                                  n_refinement = "nlayers", ascending = False)                                   
+ 
+         # Model top
         self.top = max(lay_bounds)
         # Model bottoms
-        self.bot = self.top - self.delv.cumsum()
+        self.bot = self.top - self.delv.cumsum() 
+        # Assign delr and xmid
+        self.ncol, self.delr, self.xmid, col_bounds = self._assign_cellboundaries(schematisation = schematisation,
+                                                                                  dict_keys = dict_keys,
+                                                                    bound_min = "rmin", bound_max = "rmax",
+                                                                    n_refinement = "ncols", ascending = True)
 
-        # Create zmid array from top and delv arrays
-        self.zmid = np.empty((self.nlay), dtype= 'float')
-        self.zmid[0] = self.top - self.delv[0] * 0.5
-        for iLay in range(1, self.nlay):
-            self.zmid[iLay] = (self.zmid[(iLay - 1)] - ((self.delv[(iLay)]) + (self.delv[(iLay - 1)])) * 0.5)  
+        # Assign delc and ymid
+        if model_type in ["axisymmetric","2D"]:
+            self.nrow = 2
+            self.delc = np.ones((self.nrow),dtype = 'float')
+            self.ymid = np.array([0.5,1.5])
+            row_bounds = np.array([0.,1.,2.])
+        else:
+            self.nrow,self.delc,self.ymid,row_bounds = self._assign_cellboundaries(schematisation = schematisation,
+                                                                                  dict_keys = dict_keys,
+                                                                    bound_min = "ymin", bound_max = "ymax",
+                                                                    n_refinement = "nrows", ascending = True)
 
+        # Create empty model grid
+        empty_grid = np.empty((self.nlay,self.nrow,self.ncol), dtype = 'float')
+
+        return empty_grid, lay_bounds, row_bounds, col_bounds
+
+    def assign_ibound(self,filter_top, filter_botm, filter_left, filter_right,zmid, xmid, ibound):
+
+        ''' This fnction is used to assign the constant head cells (ibound --> "-1". 
+            These represent a constant well abstraction in combination
+            with a net precipitation influx. '''
+        
+        for iLay in range(self.nlay):
+            for iCol in [0]: #range(100):
+                if (zmid[iLay] < filter_top) & (zmid[iLay] > filter_botm):
+    #                (xmid[iCol] > filter_left) & (xmid[iCol] < filter_right):
+                    # Update ibound
+                    ibound[iLay, 0, iCol] = -1
+                    
+        # return ibound
+
+
+### Functie: Check xmin, xmax,
     '''
 
   	def make_discretisation():
@@ -653,20 +620,7 @@ class ModPathWell:
   			self.head
     '''
 
-    def assign_ibound(self,filter_top, filter_botm, filter_left, filter_right,zmid, xmid, ibound):
 
-        ''' This fnction is used to assign the constant head cells (ibound --> "-1". 
-            These represent a constant well abstraction in combination
-            with a net precipitation influx. '''
-        
-        for iLay in range(self.nlay):
-            for iCol in [0]: #range(100):
-                if (zmid[iLay] < filter_top) & (zmid[iLay] > filter_botm):
-    #                (xmid[iCol] > filter_left) & (xmid[iCol] < filter_right):
-                    # Update ibound
-                    ibound[iLay, 0, iCol] = -1
-                    
-        # return ibound
     '''
   	def assign_recharge_boundary():
   		self.recharge  #2 D grid
@@ -737,11 +691,16 @@ class ModPathWell:
 
   		#delete the unwanted columns depending on what the user asks for here
   		# return df_flowline, df_particle
+
     def phreatic(self):
         self._check_init_phreatic()
 
         # Make radial discretisation
-        self.make_radial_discretisation()
+        # Use dictionary keys from schematisation
+        dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
+                      "well_parameters"]
+        self.make_discretisation(self.schematisation, dict_keys = dict_keys,
+                            model_type = 'axisymmetric')
 
         '''
         Function to create array of travel time distributionss
@@ -776,6 +735,23 @@ class ModPathWell:
                                         from site X within and any site on the groundwater divide
         '''
 
+    def run_model(self, simulation_parameters: dict or None = None):
+        # print(self.schematisation)
+
+        if simulation_parameters is None:
+            self.simulation_parameters = self.schematisation["simulation_parameters"]
+        else:
+            self.simulation_parameters = simulation_parameters
+        # Type scenario
+        try:
+            self.schematisation_type = self.simulation_parameters["schematisation_type"]
+        except KeyError as e:
+            print(e)
+
+        if self.schematisation_type == "phreatic":
+            print("Run phreatic model")
+            self.phreatic()
+        print("modelrun of type", self.schematisation_type, "completed.")
 '''
 #%%  
 class ModPathWell_OLD():
