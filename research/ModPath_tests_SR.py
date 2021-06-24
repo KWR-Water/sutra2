@@ -283,7 +283,7 @@ def make_discretisation(schematisation: dict, dict_keys = None,
 # # print(len(delr), len(xmid), len(refinement_bounds))
 
 #%%
-# Method 3: use indirect _assign_boundaries
+''' Add changes to dictionary scheme (for programming purposes). '''
 
 model_top, model_bot,model_thickness, model_radius = calc_modeldim_phrea(phreatic_scheme["geo_parameters"])
 ''' change mesh refinement dicts SR '''
@@ -316,6 +316,8 @@ phreatic_scheme["well_parameters"]['well_leak'] = {'Q': -1.,
   'rmax': 0.1,
   'nlayers': 1}
 
+# Add ibound parameters
+phreatic_scheme["ibound_parameters"]["ibound_type"] = -1
 # # Create model discretisation using schematisation dict
 # nlay,nrow,ncol,delv,delc,delr,zmid,ymid,xmid,top,bot = make_discretisation(schematisation = phreatic_scheme,
 #                                                             dict_keys = dict_keys)
@@ -326,8 +328,11 @@ phreatic_scheme["well_parameters"]['well_leak'] = {'Q': -1.,
 #                                                     dict_keys = dict_keys,
 #                                                     res_vert_max = None)
 
-                                                           
+# Gaat het goed met freatische winning? --> grid + toewijzen concentraties
+
+
 #%%
+''' Inititalize ModPath class'''
 modpath_phrea = ModPathWell(phreatic_scheme)
 # modpath_phrea.schematisation
 
@@ -351,6 +356,7 @@ check_attr_list = ["nlay","nrow","ncol","delv","delc","delr","zmid","ymid","xmid
 for iAttr in check_attr_list:
     print(iAttr,getattr(modpath_phrea,iAttr))
 
+modpath_phrea.schematisation["ibound_parameters"]
 # # Create bas_parameters
 # modpath_phrea.assign_bas_parameters()
 # modpath_phrea.bas_parameters

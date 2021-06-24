@@ -399,6 +399,112 @@ class ModPathWell:
     def _check_init_semi_confined():
         ''' check the variables that we need for the individual aquifer types are not NONE aka set by the user '''
 
+    def fill_grid(self,schematisation: dict, dict_keys: list or None = None,
+                        parameter: str = "None",
+                        grid: np.array or None = None,
+                        dtype: str or None = 'float',
+                        bound_left: str = "xmin", bound_right: str = "xmax",
+                        bound_top: str = "top", bound_bot: str = "bot",
+                        bound_north: str = "ymin", bound_south: str = "ymax",
+                        schematisation_type = None):
+        ''' Assign values to 'grid' [np.array] for parameter name 'parameter' [str], 
+            using the keys dict_keys [list] in schematisation dictionary 'self.schematisation'.
+            'dtype' [grid dtype] --> grid dtype [str] is obtained from grid if initial array is given.
+            The schematisation type refers to the model_type["axisymmetric","2D" or "3D"]
+            
+            Boundaries of the parameter values are to be included in the dictionaries:
+
+            bound_left: str = "xmin" 
+            bound_right: str = "xmax"
+            bound_top: str = "top"
+            bound_bot: str = "bot"
+            bound_north: str = "ymin"
+            bound_south: str = "ymax"
+
+            The function returns:
+            - grid  # grid [np.array] filled with (numeric) values for parameter 'parameter'.
+
+        ''' 
+        
+        if grid is None:
+            # Set dtype
+            if dtype is not None:
+                dtype = dtype
+            else:
+                dtype = "float"
+            # Create empty np.array
+            grid = np.ones((self.nlay,self.nrow,self.ncol), dtype = dtype)
+        else:  # np.array is given
+            if dtype is not None:
+                dtype = grid.dtype
+            else:
+                dtype = "float"
+
+        if dict_keys is None:
+            dict_keys = [iDict for iDict in schematisation.keys()]
+
+        if schematisation_type is None:
+            schematisation_type = getattr(self.schematisation, "schematisation_type")
+        
+        
+        if schematisation_type in ["phreatic","2D"]:
+            # In 2D model or axisymmetric models an 
+            # inactive row is added to be able to run Modpath successfully.
+            grid[:,1,:] = 0
+
+            # Loop through schematisation keys (dict_keys)
+            for iDict in dict_keys:
+                # Loop through subkeys of schematisation dictionary
+                for iDict_sub in schematisation[iDict]:   
+                    
+                    if iDict_sub == parameter:
+
+                        left = schematisation[iDict][iDict_sub][bound_left]
+                        right = schematisation[iDict][iDict_sub][bound_right]
+                        top = schematisation[iDict][iDict_sub][bound_top]
+                        bot = schematisation[iDict][iDict_sub][bound_bot]
+                        # Obtain parameter value
+                        parm_val = schematisation[iDict][iDict_sub][parameter]
+
+                        # Only change constant head values for python row "0"
+                        iRow = 0  
+                        row_idx = np.array([iRow])
+                        # Determine layer indices
+                        lay_idx = np.where((self.zmid < top) & (self.zmid > bot))
+                        # Determine column indices
+                        col_idx = np.where((self.xmid < right) & (self.xmid > left))
+                        # Fill grid with parameter value 'parm_val'
+                        grid[lay_idx, row_idx, col_idx] = parm_val
+        else:  # 3D grid
+
+            # Loop through schematisation keys (dict_keys)
+            for iDict in dict_keys:
+                # Loop through subkeys of schematisation dictionary
+                for iDict_sub in schematisation[iDict]:   
+                    
+                    if iDict_sub == parameter:
+
+                        left = schematisation[iDict][iDict_sub][bound_left]
+                        right = schematisation[iDict][iDict_sub][bound_right]
+                        top = schematisation[iDict][iDict_sub][bound_top]
+                        bot = schematisation[iDict][iDict_sub][bound_bot]
+                        north = schematisation[iDict][iDict_sub][bound_north]
+                        south = schematisation[iDict][iDict_sub][bound_south]
+                        # Obtain parameter value
+                        parm_val = schematisation[iDict][iDict_sub][parameter]
+
+                        # Only change constant head values for python row "0"
+                        row_idx = np.where((self.ymid < south) & (self.ymid > north))
+                        # Determine layer indices
+                        lay_idx = np.where((self.zmid < top) & (self.zmid > bot))
+                        # Determine column indices
+                        col_idx = np.where((self.xmid < right) & (self.xmid > left))
+                        # Fill grid with parameter value 'parm_val'
+                        grid[lay_idx, row_idx, col_idx] = parm_val                            
+        return grid
+
+        
+
     def _assign_cellboundaries(self,schematisation: dict, dict_keys: list or None = None,
                                 bound_min: str = "xmin", bound_max: str = "xmax",
                                 n_refinement: str = "ncols", ascending: bool = True,
@@ -575,10 +681,11 @@ class ModPathWell:
 
         return empty_grid, lay_bounds, row_bounds, col_bounds
 
-    def assign_ibound(self,ibound_grid: np.array or None,
+    def assign_ibound(self,ibound_grid: np.array or None = None,
                         ibound_parameters: dict or None = None,
-                        bound_left: str, bound_right: str, 
-                        bound_top: str, bound_bot: str,
+                        bound_left: str = "xmin", bound_right: str = "xmax",
+                        bound_top: str = "top", bound_bot: str = "bot",
+                        bound_north: str = "ymin", bound_south: str = "ymax",
                         schematisation_type = None):
 
         ''' This function is used to assign the constant head cells (ibound --> "-1". 
@@ -602,12 +709,14 @@ class ModPathWell:
             self.ibound[:,1,:] = 0
             # Only change constant head values for python row "0"
             iRow = 0  
+            for iBoundary in ibound_parameters.keys():
+
             for iLay in range(self.nlay):
                 for iCol in range(self.ncol): 
                     if (self.zmid[iLay] < ibound_parameters) & (zmid[iLay] > filter_botm):
         #                (xmid[iCol] > filter_left) & (xmid[iCol] < filter_right):
                         # Update ibound
-                        ibound[iLay, 0, iCol] = -1
+                        self.ibound[iLay, 0, iCol] = -1
                     
         # return ibound
 
