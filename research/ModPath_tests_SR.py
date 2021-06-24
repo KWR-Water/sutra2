@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import os
+import sys
 # from pandas import read_excel
 from pandas import read_csv
 from pandas import read_excel
@@ -31,22 +32,40 @@ import math
 import re # regular expressions
 from scipy.special import kn as besselk
 
-path = os.getcwd()  # path of working directory
-
-# Import schematisation functions
-
 from pathlib import Path
-try:
-    from project_path import module_path #the dot says looik in the current folder, this project_path.py file must be in the folder here
-except ModuleNotFoundError:
-    from project_path import module_path
 
-from greta.draft_transport_function import *
-from greta.ModPath_functions import ModPathWell
-
-from testing.test_transatomic import *
+# %%
+# try:
+#     from project_path import module_path as module_path #the dot says looik in the current folder, this project_path.py file must be in the folder here
+# except ModuleNotFoundError as e:
+#     print(e)
+#     # from project_path import module_path
 # get directory of this file
-path = Path(__file__).parent #os.getcwd() #path of working directory
+path = os.getcwd() #path of working directory
+
+module_path = os.path.join(path,"..","greta")
+if module_path not in sys.path:
+    sys.path.insert(0,module_path)
+sys.path.insert(0,module_path)
+
+from ModPath_functions import ModPathWell   
+from draft_transport_function import * 
+# # Import schematisation functions
+# try:
+#     from greta.draft_transport_function import *
+#     from greta.ModPath_functions import ModPathWell
+# except ModuleNotFoundError as e:
+#     print(e)
+#     # sys.path.append(str(module_path.parent))
+#     # from greta.draft_transport_function import *
+#     # from greta.ModPath_functions import ModPathWell
+
+
+# from testing.test_transatomic import *
+
+
+
+# Path(__file__).parent 
 
 #%%
 # output Alex "phreatic_dict_nogravel.txt" --> saved in "testing dir"
@@ -306,8 +325,12 @@ dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
 # Change well discharge of well1 to -7665.6
 phreatic_scheme["well_parameters"]['well1']['Q'] = -7665.6
 # phreatic_scheme["well_parameters"]['well1']['res_vert'] = 0.5
-phreatic_scheme["well_parameters"]['well1']['xmin'] = phreatic_scheme["well_parameters"]['well1']['rmin']
-phreatic_scheme["well_parameters"]['well1']['xmax'] = phreatic_scheme["well_parameters"]['well1']['rmax']
+try:
+    phreatic_scheme["well_parameters"]['well1']['xmin'] = phreatic_scheme["well_parameters"]['well1']['rmin']
+    phreatic_scheme["well_parameters"]['well1']['xmax'] = phreatic_scheme["well_parameters"]['well1']['rmax']
+except:
+    pass
+
 # Add test well_parameters with leak from 9.9 to 10.0 m
 phreatic_scheme["well_parameters"]['well_leak'] = {'Q': -1.,
   'top': 10.0,
@@ -317,7 +340,12 @@ phreatic_scheme["well_parameters"]['well_leak'] = {'Q': -1.,
   'nlayers': 1}
 
 # Add ibound parameters
-phreatic_scheme["ibound_parameters"]["ibound_type"] = -1
+phreatic_scheme["ibound_parameters"]["outer_boundary"]["ibound_type"] = -1
+try:
+    phreatic_scheme["ibound_parameters"]["outer_boundary"]["xmin"] = phreatic_scheme["ibound_parameters"]["outer_boundary"]["rmin"]
+    phreatic_scheme["ibound_parameters"]["outer_boundary"]["xmax"] = phreatic_scheme["ibound_parameters"]["outer_boundary"]["rmax"]
+except:
+    pass
 # # Create model discretisation using schematisation dict
 # nlay,nrow,ncol,delv,delc,delr,zmid,ymid,xmid,top,bot = make_discretisation(schematisation = phreatic_scheme,
 #                                                             dict_keys = dict_keys)
@@ -357,149 +385,171 @@ for iAttr in check_attr_list:
     print(iAttr,getattr(modpath_phrea,iAttr))
 
 modpath_phrea.schematisation["ibound_parameters"]
+n_fixedcells = abs(modpath_phrea.ibound[modpath_phrea.ibound == -1].sum())
+n_inactivecells = abs(modpath_phrea.ibound[modpath_phrea.ibound == 0].sum())
+n_activecells = modpath_phrea.ibound[modpath_phrea.ibound == 1].sum()
+print("Number of fixed head model cells:",n_fixedcells)
+print("Number of inactive model cells:",n_inactivecells)
+print("Number of active model cells:",n_activecells)
 # # Create bas_parameters
 # modpath_phrea.assign_bas_parameters()
 # modpath_phrea.bas_parameters
 
+# Add material grid
+# Check attributes in ModPath object
+check_attr_list = ["moisture_content","hk","vani","porosity"]
+for iAttr in check_attr_list:
+    print(iAttr,getattr(modpath_phrea,iAttr))
+    ''' Phreatic function currently uses rmin, rmax instead of xmin,xmax'''
+# Model run completed
+print("Model run completed.")
 #%%
-delr_bounds = []
-ncol_bounds = []
-for iDict_main in phreatic_scheme:
-    
-    if iDict_main in ["geo_parameters","recharge_parameters","ibound_parameters",
-                      "well_parameters"]:
-        
-        for iDict_sub in phreatic_scheme[iDict_main]:
-            if (iDict_main == "geo_parameters") & (iDict_sub == "vadose"):
-                continue
-            print(iDict_main,iDict_sub)
-            try:
-                delr_bounds.append(phreatic_scheme[iDict_main][iDict_sub]["rmin"])
-            except Exception as e: print(e)
-            try:
-                delr_bounds.append(phreatic_scheme[iDict_main][iDict_sub]["rmax"])
-            except Exception as e: print(e)
-            try:
-                ncol_bounds.append([phreatic_scheme[iDict_main][iDict_sub]["ncols"],
-                                    phreatic_scheme[iDict_main][iDict_sub]["rmin"],
-                                    phreatic_scheme[iDict_main][iDict_sub]["rmax"],
-                                    iDict_main,iDict_sub])
-            except Exception:
-                ncol_bounds.append([1,
-                                    phreatic_scheme[iDict_main][iDict_sub]["rmin"],
-                                    phreatic_scheme[iDict_main][iDict_sub]["rmax"],
-                                    iDict_main,iDict_sub])
-print(delr_bounds,"\n",ncol_bounds)
-np.unique(np.array(delr_bounds))
-# Horizontal boundaries determined by rmin, rmax
+
 # 
-# Refinement1 --> near well 
-
-
-#%%
-# Horizontal spacing based on rmin, rmax, ncol
-
-# output Alex "phreatic_dict_nogravel.txt" --> saved in "testing dir"
-path = 'd:\\Greta\\greta\\greta'
-testing_dir = os.path.join(path,"..","testing")
-with open(os.path.join(testing_dir,"phreatic_dict_nogravel.txt"),"r") as file_:
-    dict_content = file_.read()
-    phreatic_scheme = eval(dict_content)
-
-for iKey,iVal in phreatic_scheme.items():
-    print(iKey,iVal,"\n")
-
-delr_bounds = []
-ncol_bounds = []
-for iDict_main in phreatic_scheme:
-    
-    if iDict_main in ["geo_parameters","recharge_parameters","ibound_parameters",
-                      "well_parameters"]:
-        
-        for iDict_sub in phreatic_scheme[iDict_main]:
-            if (iDict_main == "geo_parameters") & (iDict_sub == "vadose"):
-                continue
-            print(iDict_main,iDict_sub)
-            try:
-                delr_bounds.append(phreatic_scheme[iDict_main][iDict_sub]["rmin"])
-            except Exception as e: print(e)
-            try:
-                delr_bounds.append(phreatic_scheme[iDict_main][iDict_sub]["rmax"])
-            except Exception as e: print(e)
-            try:
-                ncol_bounds.append([phreatic_scheme[iDict_main][iDict_sub]["ncols"],
-                                    phreatic_scheme[iDict_main][iDict_sub]["rmin"],
-                                    phreatic_scheme[iDict_main][iDict_sub]["rmax"],
-                                    iDict_main,iDict_sub])
-            except Exception:
-                ncol_bounds.append([1,
-                                    phreatic_scheme[iDict_main][iDict_sub]["rmin"],
-                                    phreatic_scheme[iDict_main][iDict_sub]["rmax"],
-                                    iDict_main,iDict_sub])
-
-print(delr_bounds,"\n",ncol_bounds)
-# Unique boundaries
-delr_bounds = sorted(list(set(delr_bounds)))
-# List of distances between horizontal boundaries
-delr_list = np.diff(delr_bounds)
-# Number of columns based on pre-specified distances
-ncol_list = []
-for i_delr in delr_list:
-    # cumulative radius
-    radius_min = sum(delr_list[:i_delr])
-    radius_max = sum(delr_list[:i_delr+1])
-    if radius_min > 1.
-
-for iBound in delr_bounds:
-    
-    ncol, rmin, rmax = iBound[0:3]
-    dr = (rmax-rmin) / ncol
-    print(rmin, rmax, dr)
-
-    
-
-# Proposal
-# Horizontal boudnaries determined by rmin, rmax
 # 
-# Refinement1 --> near well 
+# 
+# 
+# 
 
-# Refinement2 --> well --> aquifer thickness
 
-#%%
-# Vertical spacing based on top, bot, ncol
-
-# output Alex "phreatic_dict_nogravel.txt" --> saved in "testing dir"
-path = 'd:\\Greta\\greta\\greta'
-testing_dir = os.path.join(path,"..","testing")
-with open(os.path.join(testing_dir,"phreatic_dict_nogravel.txt"),"r") as file_:
-    dict_content = file_.read()
-    phreatic_scheme = eval(dict_content)
-
-for iKey,iVal in phreatic_scheme.items():
-    print(iKey,iVal,"\n")
-
-delv_bounds = []
-for iDict_main in phreatic_scheme:
+# delr_bounds = []
+# ncol_bounds = []
+# for iDict_main in phreatic_scheme:
     
-    if iDict_main in ["geo_parameters","ibound_parameters",
-                      "well_parameters"]:
+#     if iDict_main in ["geo_parameters","recharge_parameters","ibound_parameters",
+#                       "well_parameters"]:
         
-        for iDict_sub in phreatic_scheme[iDict_main]:
-            if (iDict_main == "geo_parameters") & (iDict_sub == "vadose"):
-                continue
-            print(iDict_main,iDict_sub)
-            try:
-                delv_bounds.append(phreatic_scheme[iDict_main][iDict_sub]["top"])
-            except Exception as e: print(e)
-            try:
-                delv_bounds.append(phreatic_scheme[iDict_main][iDict_sub]["bot"])
-            except Exception as e: print(e)
+#         for iDict_sub in phreatic_scheme[iDict_main]:
+#             if (iDict_main == "geo_parameters") & (iDict_sub == "vadose"):
+#                 continue
+#             print(iDict_main,iDict_sub)
+#             try:
+#                 delr_bounds.append(phreatic_scheme[iDict_main][iDict_sub]["rmin"])
+#             except Exception as e: print(e)
+#             try:
+#                 delr_bounds.append(phreatic_scheme[iDict_main][iDict_sub]["rmax"])
+#             except Exception as e: print(e)
+#             try:
+#                 ncol_bounds.append([phreatic_scheme[iDict_main][iDict_sub]["ncols"],
+#                                     phreatic_scheme[iDict_main][iDict_sub]["rmin"],
+#                                     phreatic_scheme[iDict_main][iDict_sub]["rmax"],
+#                                     iDict_main,iDict_sub])
+#             except Exception:
+#                 ncol_bounds.append([1,
+#                                     phreatic_scheme[iDict_main][iDict_sub]["rmin"],
+#                                     phreatic_scheme[iDict_main][iDict_sub]["rmax"],
+#                                     iDict_main,iDict_sub])
+# print(delr_bounds,"\n",ncol_bounds)
+# np.unique(np.array(delr_bounds))
+# # Horizontal boundaries determined by rmin, rmax
+# # 
+# # Refinement1 --> near well 
 
-# Unique boundaries
-delv_bounds = sorted(list(set(delv_bounds)))
-print(delv_bounds)
 
-nlay_list = [max(1,math.ceil((delv_bounds[idx]-delv_bounds[idx-1]) / 0.5)) for idx in range(1,len(delv_bounds))]
-ncol_tot = sum(nlay_list)
-delv = np.zeros((ncol_tot), dtype = 'float') + 0.5
+# #%%
+# # Horizontal spacing based on rmin, rmax, ncol
+
+# # output Alex "phreatic_dict_nogravel.txt" --> saved in "testing dir"
+# path = 'd:\\Greta\\greta\\greta'
+# testing_dir = os.path.join(path,"..","testing")
+# with open(os.path.join(testing_dir,"phreatic_dict_nogravel.txt"),"r") as file_:
+#     dict_content = file_.read()
+#     phreatic_scheme = eval(dict_content)
+
+# for iKey,iVal in phreatic_scheme.items():
+#     print(iKey,iVal,"\n")
+
+# delr_bounds = []
+# ncol_bounds = []
+# for iDict_main in phreatic_scheme:
+    
+#     if iDict_main in ["geo_parameters","recharge_parameters","ibound_parameters",
+#                       "well_parameters"]:
+        
+#         for iDict_sub in phreatic_scheme[iDict_main]:
+#             if (iDict_main == "geo_parameters") & (iDict_sub == "vadose"):
+#                 continue
+#             print(iDict_main,iDict_sub)
+#             try:
+#                 delr_bounds.append(phreatic_scheme[iDict_main][iDict_sub]["rmin"])
+#             except Exception as e: print(e)
+#             try:
+#                 delr_bounds.append(phreatic_scheme[iDict_main][iDict_sub]["rmax"])
+#             except Exception as e: print(e)
+#             try:
+#                 ncol_bounds.append([phreatic_scheme[iDict_main][iDict_sub]["ncols"],
+#                                     phreatic_scheme[iDict_main][iDict_sub]["rmin"],
+#                                     phreatic_scheme[iDict_main][iDict_sub]["rmax"],
+#                                     iDict_main,iDict_sub])
+#             except Exception:
+#                 ncol_bounds.append([1,
+#                                     phreatic_scheme[iDict_main][iDict_sub]["rmin"],
+#                                     phreatic_scheme[iDict_main][iDict_sub]["rmax"],
+#                                     iDict_main,iDict_sub])
+
+# print(delr_bounds,"\n",ncol_bounds)
+# # Unique boundaries
+# delr_bounds = sorted(list(set(delr_bounds)))
+# # List of distances between horizontal boundaries
+# delr_list = np.diff(delr_bounds)
+# # Number of columns based on pre-specified distances
+# ncol_list = []
+# for i_delr in delr_list:
+#     # cumulative radius
+#     radius_min = sum(delr_list[:i_delr])
+#     radius_max = sum(delr_list[:i_delr+1])
+#     if radius_min > 1.
+
+# for iBound in delr_bounds:
+    
+#     ncol, rmin, rmax = iBound[0:3]
+#     dr = (rmax-rmin) / ncol
+#     print(rmin, rmax, dr)
+
+    
+
+# # Proposal
+# # Horizontal boudnaries determined by rmin, rmax
+# # 
+# # Refinement1 --> near well 
+
+# # Refinement2 --> well --> aquifer thickness
+
+# #%%
+# # Vertical spacing based on top, bot, ncol
+
+# # output Alex "phreatic_dict_nogravel.txt" --> saved in "testing dir"
+# path = 'd:\\Greta\\greta\\greta'
+# testing_dir = os.path.join(path,"..","testing")
+# with open(os.path.join(testing_dir,"phreatic_dict_nogravel.txt"),"r") as file_:
+#     dict_content = file_.read()
+#     phreatic_scheme = eval(dict_content)
+
+# for iKey,iVal in phreatic_scheme.items():
+#     print(iKey,iVal,"\n")
+
+# delv_bounds = []
+# for iDict_main in phreatic_scheme:
+    
+#     if iDict_main in ["geo_parameters","ibound_parameters",
+#                       "well_parameters"]:
+        
+#         for iDict_sub in phreatic_scheme[iDict_main]:
+#             if (iDict_main == "geo_parameters") & (iDict_sub == "vadose"):
+#                 continue
+#             print(iDict_main,iDict_sub)
+#             try:
+#                 delv_bounds.append(phreatic_scheme[iDict_main][iDict_sub]["top"])
+#             except Exception as e: print(e)
+#             try:
+#                 delv_bounds.append(phreatic_scheme[iDict_main][iDict_sub]["bot"])
+#             except Exception as e: print(e)
+
+# # Unique boundaries
+# delv_bounds = sorted(list(set(delv_bounds)))
+# print(delv_bounds)
+
+# nlay_list = [max(1,math.ceil((delv_bounds[idx]-delv_bounds[idx-1]) / 0.5)) for idx in range(1,len(delv_bounds))]
+# ncol_tot = sum(nlay_list)
+# delv = np.zeros((ncol_tot), dtype = 'float') + 0.5
 

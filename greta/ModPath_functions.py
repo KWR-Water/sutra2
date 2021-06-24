@@ -399,6 +399,10 @@ class ModPathWell:
     def _check_init_semi_confined():
         ''' check the variables that we need for the individual aquifer types are not NONE aka set by the user '''
 
+    def update_property(self, property, value):
+        setattr(self, property, value)
+        ''' set attribute value to new object attribute/property'''
+
     def fill_grid(self,schematisation: dict, dict_keys: list or None = None,
                         parameter: str = "None",
                         grid: np.array or None = None,
@@ -406,7 +410,7 @@ class ModPathWell:
                         bound_left: str = "xmin", bound_right: str = "xmax",
                         bound_top: str = "top", bound_bot: str = "bot",
                         bound_north: str = "ymin", bound_south: str = "ymax",
-                        schematisation_type = None):
+                        model_type = "axisymmetric"):
         ''' Assign values to 'grid' [np.array] for parameter name 'parameter' [str], 
             using the keys dict_keys [list] in schematisation dictionary 'self.schematisation'.
             'dtype' [grid dtype] --> grid dtype [str] is obtained from grid if initial array is given.
@@ -442,12 +446,9 @@ class ModPathWell:
 
         if dict_keys is None:
             dict_keys = [iDict for iDict in schematisation.keys()]
-
-        if schematisation_type is None:
-            schematisation_type = getattr(self.schematisation, "schematisation_type")
+       
         
-        
-        if schematisation_type in ["phreatic","2D"]:
+        if model_type in ["axisymmetric","2D"]:
             # In 2D model or axisymmetric models an 
             # inactive row is added to be able to run Modpath successfully.
             grid[:,1,:] = 0
@@ -457,7 +458,7 @@ class ModPathWell:
                 # Loop through subkeys of schematisation dictionary
                 for iDict_sub in schematisation[iDict]:   
                     
-                    if iDict_sub == parameter:
+                    if parameter in schematisation[iDict][iDict_sub]:
 
                         left = schematisation[iDict][iDict_sub][bound_left]
                         right = schematisation[iDict][iDict_sub][bound_right]
@@ -468,13 +469,22 @@ class ModPathWell:
 
                         # Only change constant head values for python row "0"
                         iRow = 0  
-                        row_idx = np.array([iRow])
-                        # Determine layer indices
-                        lay_idx = np.where((self.zmid < top) & (self.zmid > bot))
-                        # Determine column indices
-                        col_idx = np.where((self.xmid < right) & (self.xmid > left))
-                        # Fill grid with parameter value 'parm_val'
-                        grid[lay_idx, row_idx, col_idx] = parm_val
+                        try:
+                            # Determine layer indices
+                            layidx_min = int(np.argwhere((self.zmid - top <= 0.) & (self.zmid - bot >= 0.))[0])
+                            layidx_max = int(np.argwhere((self.zmid - top <= 0.) & (self.zmid - bot >= 0.))[-1] + 1)
+                            # np.where((self.zmid < top) & (self.zmid > bot))
+                            # Determine column indices
+                            colidx_min = int(np.argwhere((self.xmid - left >= 0.) & (self.xmid - right <= 0.))[0])
+                            colidx_max = int(np.argwhere((self.xmid - left >= 0.) & (self.xmid - right <= 0.))[-1] + 1)
+                            # np.where((self.xmid < right) & (self.xmid > left))
+                            # Fill grid with parameter value 'parm_val'
+                            grid[layidx_min:layidx_max,\
+                                iRow,\
+                                colidx_min:colidx_max] = parm_val
+                        except Exception as e:
+                            print(e)
+                            continue
         else:  # 3D grid
 
             # Loop through schematisation keys (dict_keys)
@@ -493,14 +503,22 @@ class ModPathWell:
                         # Obtain parameter value
                         parm_val = schematisation[iDict][iDict_sub][parameter]
 
-                        # Only change constant head values for python row "0"
-                        row_idx = np.where((self.ymid < south) & (self.ymid > north))
+                        # Determine row indices
+                        rowidx_min = int(np.argwhere((self.ymid - north <= 0.) & (self.ymid - south >= 0.))[0])
+                        rowidx_max = int(np.argwhere((self.ymid - north <= 0.) & (self.ymid - south >= 0.))[-1] + 1)
                         # Determine layer indices
-                        lay_idx = np.where((self.zmid < top) & (self.zmid > bot))
+                        layidx_min = int(np.argwhere((self.zmid - top <= 0.) & (self.zmid - bot >= 0.))[0])
+                        layidx_max = int(np.argwhere((self.zmid - top <= 0.) & (self.zmid - bot >= 0.))[-1] + 1)
+                        # np.where((self.zmid < top) & (self.zmid > bot))
                         # Determine column indices
-                        col_idx = np.where((self.xmid < right) & (self.xmid > left))
+                        colidx_min = int(np.argwhere((self.xmid - left >= 0.) & (self.xmid - right <= 0.))[0])
+                        colidx_max = int(np.argwhere((self.xmid - left >= 0.) & (self.xmid - right <= 0.))[-1] + 1)
+                        # np.where((self.xmid < right) & (self.xmid > left))
                         # Fill grid with parameter value 'parm_val'
-                        grid[lay_idx, row_idx, col_idx] = parm_val                            
+                        grid[layidx_min: layidx_max,\
+                            rowidx_min: rowidx_max,\
+                            colidx_min: colidx_max] = parm_val
+        # Return the filled grid                
         return grid
 
         
@@ -530,7 +548,6 @@ class ModPathWell:
         for iDict in dict_keys:
             # Loop through subkeys of schematisation dictionary
             for iDict_sub in schematisation[iDict]:   
-
                 try:
                     # minimum bound
                     val_min = schematisation[iDict][iDict_sub][bound_min]
@@ -645,6 +662,7 @@ class ModPathWell:
         - row_bounds  # Left and right boundaries of the model grid cells [1D-array]
         - col_bounds  # North-south boundaries of the grid-cells [1D-array]
         '''
+
         if schematisation is None:
             schematisation = getattr(self,"schematisation")
 
@@ -654,7 +672,7 @@ class ModPathWell:
                                                                                   bound_min = "bot", bound_max = "top",
                                                                                   n_refinement = "nlayers", ascending = False)                                   
  
-         # Model top
+        # Model top
         self.top = max(lay_bounds)
         # Model bottoms
         self.bot = self.top - self.delv.cumsum() 
@@ -681,44 +699,34 @@ class ModPathWell:
 
         return empty_grid, lay_bounds, row_bounds, col_bounds
 
-    def assign_ibound(self,ibound_grid: np.array or None = None,
-                        ibound_parameters: dict or None = None,
+    def set_ibound(self,schematisation: dict,
+                        dict_keys: dict or None = None,
+                        ibound: np.array or None = None,
                         bound_left: str = "xmin", bound_right: str = "xmax",
                         bound_top: str = "top", bound_bot: str = "bot",
                         bound_north: str = "ymin", bound_south: str = "ymax",
-                        schematisation_type = None):
+                        model_type = 'axisymmetric'):
 
         ''' This function is used to assign the constant head cells (ibound --> "-1". 
         '''
-        if ibound_grid is not None:
-            self.ibound = ibound_grid
-        else:
-            try:
-                self.ibound = getattr(self,"ibound")
-            except AttributeError:
-                print("attribute ibound does not yet exist. Create empty ibound grid")
-                self.ibound = np.ones((self.nlay,self.nrow,self.ncol), dtype = 'int')
+        if ibound is None:
+            print("attribute ibound does not yet exist. Create empty ibound grid")
+            ibound = np.ones((self.nlay,self.nrow,self.ncol), dtype = 'int')
                 
-        if schematisation_type is None:
-            schematisation_type = getattr(self.schematisation, "schematisation_type")
         
         
-        if schematisation_type in ["phreatic","2D"]:
-            # In 2D model or axisymmetric models an 
-            # inactive row is added to be able to run Modpath successfully.
-            self.ibound[:,1,:] = 0
-            # Only change constant head values for python row "0"
-            iRow = 0  
-            for iBoundary in ibound_parameters.keys():
+        # Relevant dictionary keys
+        self.ibound = self.fill_grid(schematisation = self.schematisation,
+                                    dict_keys = dict_keys,
+                                    parameter = "ibound_type",
+                                    grid = ibound,
+                                    dtype = 'int',
+                                    bound_left = "xmin", bound_right = "xmax",
+                                    bound_top = "top", bound_bot = "bot",
+                                    bound_north = "ymin", bound_south = "ymax",
+                                    model_type = model_type)
 
-            for iLay in range(self.nlay):
-                for iCol in range(self.ncol): 
-                    if (self.zmid[iLay] < ibound_parameters) & (zmid[iLay] > filter_botm):
-        #                (xmid[iCol] > filter_left) & (xmid[iCol] < filter_right):
-                        # Update ibound
-                        self.ibound[iLay, 0, iCol] = -1
-                    
-        # return ibound
+        
 
 
 ### Functie: Check xmin, xmax,
@@ -822,15 +830,43 @@ class ModPathWell:
   		#delete the unwanted columns depending on what the user asks for here
   		# return df_flowline, df_particle
 
+
     def phreatic(self):
         self._check_init_phreatic()
+        # Model_type axisymmetric
+        model_type = "axisymmetric"
 
         # Make radial discretisation
         # Use dictionary keys from schematisation
         dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
                       "well_parameters"]
-        self.make_discretisation(self.schematisation, dict_keys = dict_keys,
-                            model_type = 'axisymmetric')
+        self.make_discretisation(schematisation = self.schematisation, dict_keys = dict_keys,
+                            model_type = model_type)
+
+        # Set ibound grid
+        dict_keys = ["ibound_parameters"]
+        self.set_ibound(schematisation = self.schematisation,
+                            dict_keys = dict_keys,
+                            ibound = None,
+                            model_type = model_type)
+
+        parm_names = {"moisture_content": ["geo_parameters"],
+                      "hk": ["geo_parameters"],
+                      "vani": ["geo_parameters"],
+                      "porosity": ["geo_parameters"]}
+
+        for iParm, dict_keys in parm_names.items():
+
+            grid = self.fill_grid(schematisation = self.schematisation,
+                            dict_keys = dict_keys,
+                            parameter = iParm,
+                            grid = None,
+                            dtype = 'float',
+                            bound_left = "rmin", bound_right = "rmax",
+                            bound_top = "top", bound_bot = "bot",
+                            bound_north = "ymin", bound_south = "ymax",
+                            model_type = model_type)
+            self.update_property(property = iParm, value = grid)
 
         '''
         Function to create array of travel time distributionss
