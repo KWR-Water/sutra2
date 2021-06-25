@@ -521,7 +521,6 @@ class ModPathWell:
         # Return the filled grid                
         return grid
 
-        
 
     def _assign_cellboundaries(self,schematisation: dict, dict_keys: list or None = None,
                                 bound_min: str = "xmin", bound_max: str = "xmax",
@@ -595,13 +594,13 @@ class ModPathWell:
         # Assign center points (xmid | ymid | zmid)
         center_points = np.empty((len_arr), dtype= 'float')
         if ascending: # xmid and ymid arrays are increasing with increasing index number
-            center_points[0] = cell_sizes[0] * 0.5
+            center_points[0] = bound_list[0] + cell_sizes[0] * 0.5
             for idx in range(1, len_arr):
-                center_points[idx] = (center_points[(idx - 1)] + ((cell_sizes[(idx)]) + (cell_sizes[(idx - 1)])) * 0.5)  
+                center_points[idx] = center_points[(idx - 1)] + ((cell_sizes[(idx)] + cell_sizes[(idx - 1)]) * 0.5)  
         else: # zmid arrays are decreasing with increasing index number
-            center_points[0] = cell_sizes[0] * 0.5
+            center_points[0] = bound_list[0] - cell_sizes[0] * 0.5
             for idx in range(1, len_arr):
-                center_points[idx] = (center_points[(idx - 1)] - ((cell_sizes[(idx)]) + (cell_sizes[(idx - 1)])) * 0.5)  
+                center_points[idx] = center_points[(idx - 1)] - ((cell_sizes[(idx)] + cell_sizes[(idx - 1)]) * 0.5)  
 
         return len_arr, cell_sizes, center_points, bound_list
 
@@ -849,6 +848,11 @@ class ModPathWell:
                             dict_keys = dict_keys,
                             ibound = None,
                             model_type = model_type)
+
+        # list active packages
+        active_packages = []
+        # Parameter requirement
+        package_parms = {"BAS"}
 
         parm_names = {"moisture_content": ["geo_parameters"],
                       "hk": ["geo_parameters"],

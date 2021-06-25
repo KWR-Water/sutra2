@@ -402,6 +402,7 @@ for iAttr in check_attr_list:
     print(iAttr,getattr(modpath_phrea,iAttr))
     ''' Phreatic function currently uses rmin, rmax instead of xmin,xmax'''
 # Model run completed
+hk = getattr(modpath_phrea,"hk")
 print("Model run completed.")
 #%%
 
