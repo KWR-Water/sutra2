@@ -40,16 +40,29 @@ from pathlib import Path
 # except ModuleNotFoundError as e:
 #     print(e)
 #     # from project_path import module_path
+
 # get directory of this file
-path = os.getcwd() #path of working directory
 
-module_path = os.path.join(path,"..","greta")
-if module_path not in sys.path:
-    sys.path.insert(0,module_path)
-sys.path.insert(0,module_path)
 
-from ModPath_functions import ModPathWell   
-from draft_transport_function import * 
+# module_path = os.path.join(path,"..","greta")
+# if module_path not in sys.path:
+#     sys.path.insert(0,module_path)
+# sys.path.insert(0,module_path)
+try:
+    from greta.ModPath_functions import ModPathWell   
+    from greta.draft_transport_function import * 
+except ModuleNotFoundError as e:
+    print(e, ": second try.")
+    module_path = os.path.join("..","greta")
+    if module_path not in sys.path:
+        sys.path.insert(0,module_path)
+
+    from ModPath_functions import ModPathWell   
+    from draft_transport_function import * 
+
+    print("Second try to import modules succeeded.")
+
+path = os.getcwd()
 # # Import schematisation functions
 # try:
 #     from greta.draft_transport_function import *
@@ -60,38 +73,7 @@ from draft_transport_function import *
 #     # from greta.draft_transport_function import *
 #     # from greta.ModPath_functions import ModPathWell
 
-
-# from testing.test_transatomic import *
-
-
-
-# Path(__file__).parent 
-
 #%%
-# output Alex "phreatic_dict_nogravel.txt" --> saved in "testing dir"
-research_dir = os.path.join(path,"..","research")
-with open(os.path.join(research_dir,"phreatic_dict_nogravel.txt"),"r") as file_:
-    dict_content = file_.read()
-    phreatic_scheme = eval(dict_content)
-
-check_schematisation = False # Check input dict (T/F)
-if check_schematisation:
-    for iKey,iVal in phreatic_scheme.items():
-        print(iKey,iVal,"\n")
-
-
-#%%
-
-# # check of creating delr in make_radial_discretisation
-# ncols_filterscreen = None
-# ncols_gravelpack = None
-# ncols_near_well = None
-# ncols_far_well = None
-# diameter_filterscreen = 0.1
-# diameter_gravelpack = 0.75
-# thickness_aquifer = 20.
-# model_radius = 500.
-
 
 def calc_modeldim_phrea(geo_parameters: dict):
     ''' Calculate the model dimensions using geo_parameters:
@@ -255,302 +237,180 @@ def make_discretisation(schematisation: dict, dict_keys = None,
 #%%
 
 
-# # Method 1: horizontal discretisation based on number of columns
-# # phreatic_scheme['geo_parameters']['mesh_refinement1'] =   {"rmin": 0.,
-# #                                          "rmax": 0.5,
-# #                                          "ncols": 20}
-# # phreatic_scheme['geo_parameters']['mesh_refinement2'] =   {"rmin": 0.5,
-# #                                          "rmax": model_thickness,
-# #                                          "ncols": 20}
-# # phreatic_scheme['geo_parameters']['mesh_refinement3'] =   {"rmin": model_thickness,
-# #                                          "rmax": model_radius,
-# #                                          "ncols": 40}
 
-# # Refinement boundaries and column boundaries
-# # Horizontal discretisation dictionary keys
-# dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
-#                       "well_parameters"]
+if __name__ == "__main__":
 
-                      
-# delr, xmid, refinement_bounds = make_radial_discretisation(schematisation = phreatic_scheme,
-#                                                             dict_keys = dict_keys,
-#                                                             res_hor_max = 10.)
-# print(delr, xmid, refinement_bounds)
-# print(len(delr), len(xmid), len(refinement_bounds))
+    # output Alex "phreatic_dict_nogravel.txt" --> saved in "testing dir"
+    research_dir = os.path.join(path,"..","research")
+    with open(os.path.join(research_dir,"phreatic_dict_nogravel.txt"),"r") as file_:
+        dict_content = file_.read()
+        phreatic_scheme = eval(dict_content)
 
-# #%%
-# # Method 2: horizontal and vertical discretisation based on grid resolution
-# ''' change mesh refinement dicts SR '''
-# phreatic_scheme['geo_parameters']['mesh_refinement1'] =   {"rmin": 0.,
-#                                          "rmax": 0.5,
-#                                          "res_hor": 0.025}
-# phreatic_scheme['geo_parameters']['mesh_refinement2'] =   {"rmin": 0.5,
-#                                          "rmax": model_thickness,
-#                                          "res_hor": 0.25}
-# phreatic_scheme['geo_parameters']['mesh_refinement3'] =   {"rmin": model_thickness,
-#                                          "rmax": model_radius,
-#                                          "res_hor": 5.}
+    check_schematisation = False # Check input dict (T/F)
+    if check_schematisation:
+        for iKey,iVal in phreatic_scheme.items():
+            print(iKey,iVal,"\n")
 
-# # Refinement boundaries and column boundaries
-# # Horizontal discretisation dictionary keys
-# # dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
-# #                       "well_parameters"]
-# # delr, xmid, refinement_bounds = make_radial_discretisation(schematisation = phreatic_scheme,
-# #                                                             dict_keys = dict_keys,
-# #                                                             res_hor_max = None)
-# # print(delr, xmid, refinement_bounds)
-# # print(len(delr), len(xmid), len(refinement_bounds))
+
+    #%%
+
+    # # check of creating delr in make_radial_discretisation
+    # ncols_filterscreen = None
+    # ncols_gravelpack = None
+    # ncols_near_well = None
+    # ncols_far_well = None
+    # diameter_filterscreen = 0.1
+    # diameter_gravelpack = 0.75
+    # thickness_aquifer = 20.
+    # model_radius = 500.
+
+        
+    # # Method 1: horizontal discretisation based on number of columns
+    # # phreatic_scheme['geo_parameters']['mesh_refinement1'] =   {"rmin": 0.,
+    # #                                          "rmax": 0.5,
+    # #                                          "ncols": 20}
+    # # phreatic_scheme['geo_parameters']['mesh_refinement2'] =   {"rmin": 0.5,
+    # #                                          "rmax": model_thickness,
+    # #                                          "ncols": 20}
+    # # phreatic_scheme['geo_parameters']['mesh_refinement3'] =   {"rmin": model_thickness,
+    # #                                          "rmax": model_radius,
+    # #                                          "ncols": 40}
+
+    # # Refinement boundaries and column boundaries
+    # # Horizontal discretisation dictionary keys
+    # dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
+    #                       "well_parameters"]
+
+                        
+    # delr, xmid, refinement_bounds = make_radial_discretisation(schematisation = phreatic_scheme,
+    #                                                             dict_keys = dict_keys,
+    #                                                             res_hor_max = 10.)
+    # print(delr, xmid, refinement_bounds)
+    # print(len(delr), len(xmid), len(refinement_bounds))
+
+    # #%%
+    # # Method 2: horizontal and vertical discretisation based on grid resolution
+    # ''' change mesh refinement dicts SR '''
+    # phreatic_scheme['geo_parameters']['mesh_refinement1'] =   {"rmin": 0.,
+    #                                          "rmax": 0.5,
+    #                                          "res_hor": 0.025}
+    # phreatic_scheme['geo_parameters']['mesh_refinement2'] =   {"rmin": 0.5,
+    #                                          "rmax": model_thickness,
+    #                                          "res_hor": 0.25}
+    # phreatic_scheme['geo_parameters']['mesh_refinement3'] =   {"rmin": model_thickness,
+    #                                          "rmax": model_radius,
+    #                                          "res_hor": 5.}
+
+    # # Refinement boundaries and column boundaries
+    # # Horizontal discretisation dictionary keys
+    # # dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
+    # #                       "well_parameters"]
+    # # delr, xmid, refinement_bounds = make_radial_discretisation(schematisation = phreatic_scheme,
+    # #                                                             dict_keys = dict_keys,
+    # #                                                             res_hor_max = None)
+    # # print(delr, xmid, refinement_bounds)
+    # # print(len(delr), len(xmid), len(refinement_bounds))
+
+    #%%
+    ''' Add changes to dictionary scheme (for programming purposes). '''
+
+    model_top, model_bot,model_thickness, model_radius = calc_modeldim_phrea(phreatic_scheme["geo_parameters"])
+    ''' change mesh refinement dicts SR '''
+    phreatic_scheme['geo_parameters']['mesh_refinement1'] =   {"rmin": 0.,
+                                            "rmax": 0.5,
+                                            "res_hor": 0.025,
+                                            "ncols": 20}
+    phreatic_scheme['geo_parameters']['mesh_refinement2'] =   {"rmin": 0.5,
+                                            "rmax": model_thickness,
+                                            "res_hor": 0.25,
+                                            "ncols": 100}
+    phreatic_scheme['geo_parameters']['mesh_refinement3'] =   {"rmin": model_thickness,
+                                            "rmax": model_radius,
+                                            "res_hor": 5.,
+                                            "ncols": 100}
+                                            
+    dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
+                        "well_parameters"]
+
+    # Change well discharge of well1 to -7665.6
+    phreatic_scheme["well_parameters"]['well1']['Q'] = -7665.6
+    # phreatic_scheme["well_parameters"]['well1']['res_vert'] = 0.5
+    try:
+        phreatic_scheme["well_parameters"]['well1']['xmin'] = phreatic_scheme["well_parameters"]['well1']['rmin']
+        phreatic_scheme["well_parameters"]['well1']['xmax'] = phreatic_scheme["well_parameters"]['well1']['rmax']
+    except:
+        pass
+
+    # Add test well_parameters with leak from 9.9 to 10.0 m
+    phreatic_scheme["well_parameters"]['well_leak'] = {'Q': -1.,
+    'top': 10.0,
+    'bot': 9.9,
+    'rmin': 0.0,
+    'rmax': 0.1,
+    'nlayers': 1}
+
+    # Add ibound parameters
+    phreatic_scheme["ibound_parameters"]["outer_boundary"]["ibound_type"] = -1
+    try:
+        phreatic_scheme["ibound_parameters"]["outer_boundary"]["xmin"] = phreatic_scheme["ibound_parameters"]["outer_boundary"]["rmin"]
+        phreatic_scheme["ibound_parameters"]["outer_boundary"]["xmax"] = phreatic_scheme["ibound_parameters"]["outer_boundary"]["rmax"]
+    except:
+        pass
+    # # Create model discretisation using schematisation dict
+    # nlay,nrow,ncol,delv,delc,delr,zmid,ymid,xmid,top,bot = make_discretisation(schematisation = phreatic_scheme,
+    #                                                             dict_keys = dict_keys)
+    # print(nlay,nrow,ncol,delv,delc,delr,zmid,ymid,xmid,top,bot)
+
+    # # Add delv, zmid, top and bottoms
+    # delv, zmid, top, bot, refinement_bounds = make_vertical_discretisation(schematisation = phreatic_scheme,
+    #                                                     dict_keys = dict_keys,
+    #                                                     res_vert_max = None)
+
+    # Gaat het goed met freatische winning? --> grid + toewijzen concentraties
+
 
 #%%
-''' Add changes to dictionary scheme (for programming purposes). '''
+    ''' Inititalize ModPath class'''
+    modpath_phrea = ModPathWell(phreatic_scheme)
+    # modpath_phrea.schematisation
 
-model_top, model_bot,model_thickness, model_radius = calc_modeldim_phrea(phreatic_scheme["geo_parameters"])
-''' change mesh refinement dicts SR '''
-phreatic_scheme['geo_parameters']['mesh_refinement1'] =   {"rmin": 0.,
-                                         "rmax": 0.5,
-                                         "res_hor": 0.025,
-                                         "ncols": 20}
-phreatic_scheme['geo_parameters']['mesh_refinement2'] =   {"rmin": 0.5,
-                                         "rmax": model_thickness,
-                                         "res_hor": 0.25,
-                                         "ncols": 100}
-phreatic_scheme['geo_parameters']['mesh_refinement3'] =   {"rmin": model_thickness,
-                                         "rmax": model_radius,
-                                         "res_hor": 5.,
-                                         "ncols": 100}
-                                         
-dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
-                      "well_parameters"]
+    # Refinement boundaries and column boundaries
+    # Horizontal discretisation dictionary keys
+    dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
+                        "well_parameters"]
+    # Adds to object: delr, ncol, xmid
+    # modpath_phrea.make_discretisation(dict_keys = dict_keys)
+    # Adds to object: delv, nlay, top, bot, zmid
+    # modpath_phrea.make_vertical_discretisation(dict_keys = dict_keys)
 
-# Change well discharge of well1 to -7665.6
-phreatic_scheme["well_parameters"]['well1']['Q'] = -7665.6
-# phreatic_scheme["well_parameters"]['well1']['res_vert'] = 0.5
-try:
-    phreatic_scheme["well_parameters"]['well1']['xmin'] = phreatic_scheme["well_parameters"]['well1']['rmin']
-    phreatic_scheme["well_parameters"]['well1']['xmax'] = phreatic_scheme["well_parameters"]['well1']['rmax']
-except:
-    pass
+    # Print all attributes in object
+    # print(modpath_phrea.__dict__)
+    # modpath_phrea.phreatic()
+    modpath_phrea.run_model()
+    #### HIER GEBLEVEN 14-6-2021 ####
 
-# Add test well_parameters with leak from 9.9 to 10.0 m
-phreatic_scheme["well_parameters"]['well_leak'] = {'Q': -1.,
-  'top': 10.0,
-  'bot': 9.9,
-  'rmin': 0.0,
-  'rmax': 0.1,
-  'nlayers': 1}
+    # Check attributes in ModPath object
+    check_attr_list = ["nlay","nrow","ncol","delv","delc","delr","zmid","ymid","xmid","top","bot"]
+    for iAttr in check_attr_list:
+        print(iAttr,getattr(modpath_phrea,iAttr))
 
-# Add ibound parameters
-phreatic_scheme["ibound_parameters"]["outer_boundary"]["ibound_type"] = -1
-try:
-    phreatic_scheme["ibound_parameters"]["outer_boundary"]["xmin"] = phreatic_scheme["ibound_parameters"]["outer_boundary"]["rmin"]
-    phreatic_scheme["ibound_parameters"]["outer_boundary"]["xmax"] = phreatic_scheme["ibound_parameters"]["outer_boundary"]["rmax"]
-except:
-    pass
-# # Create model discretisation using schematisation dict
-# nlay,nrow,ncol,delv,delc,delr,zmid,ymid,xmid,top,bot = make_discretisation(schematisation = phreatic_scheme,
-#                                                             dict_keys = dict_keys)
-# print(nlay,nrow,ncol,delv,delc,delr,zmid,ymid,xmid,top,bot)
+    modpath_phrea.schematisation["ibound_parameters"]
+    n_fixedcells = abs(modpath_phrea.ibound[modpath_phrea.ibound == -1].sum())
+    n_inactivecells = abs(modpath_phrea.ibound[modpath_phrea.ibound == 0].sum())
+    n_activecells = modpath_phrea.ibound[modpath_phrea.ibound == 1].sum()
+    print("Number of fixed head model cells:",n_fixedcells)
+    print("Number of inactive model cells:",n_inactivecells)
+    print("Number of active model cells:",n_activecells)
+    # # Create bas_parameters
+    # modpath_phrea.assign_bas_parameters()
+    # modpath_phrea.bas_parameters
 
-# # Add delv, zmid, top and bottoms
-# delv, zmid, top, bot, refinement_bounds = make_vertical_discretisation(schematisation = phreatic_scheme,
-#                                                     dict_keys = dict_keys,
-#                                                     res_vert_max = None)
-
-# Gaat het goed met freatische winning? --> grid + toewijzen concentraties
-
-
+    # Add material grid
+    # Check attributes in ModPath object
+    check_attr_list = ["moisture_content","hk","vani","porosity"]
+    for iAttr in check_attr_list:
+        print(iAttr,getattr(modpath_phrea,iAttr))
+        ''' Phreatic function currently uses rmin, rmax instead of xmin,xmax'''
+    # Model run completed
+    print("Model run completed.")
 #%%
-''' Inititalize ModPath class'''
-modpath_phrea = ModPathWell(phreatic_scheme)
-# modpath_phrea.schematisation
-
-# Refinement boundaries and column boundaries
-# Horizontal discretisation dictionary keys
-dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
-                      "well_parameters"]
-# Adds to object: delr, ncol, xmid
-# modpath_phrea.make_discretisation(dict_keys = dict_keys)
-# Adds to object: delv, nlay, top, bot, zmid
-# modpath_phrea.make_vertical_discretisation(dict_keys = dict_keys)
-
-# Print all attributes in object
-# print(modpath_phrea.__dict__)
-# modpath_phrea.phreatic()
-modpath_phrea.run_model()
-#### HIER GEBLEVEN 14-6-2021 ####
-
-# Check attributes in ModPath object
-check_attr_list = ["nlay","nrow","ncol","delv","delc","delr","zmid","ymid","xmid","top","bot"]
-for iAttr in check_attr_list:
-    print(iAttr,getattr(modpath_phrea,iAttr))
-
-modpath_phrea.schematisation["ibound_parameters"]
-n_fixedcells = abs(modpath_phrea.ibound[modpath_phrea.ibound == -1].sum())
-n_inactivecells = abs(modpath_phrea.ibound[modpath_phrea.ibound == 0].sum())
-n_activecells = modpath_phrea.ibound[modpath_phrea.ibound == 1].sum()
-print("Number of fixed head model cells:",n_fixedcells)
-print("Number of inactive model cells:",n_inactivecells)
-print("Number of active model cells:",n_activecells)
-# # Create bas_parameters
-# modpath_phrea.assign_bas_parameters()
-# modpath_phrea.bas_parameters
-
-# Add material grid
-# Check attributes in ModPath object
-check_attr_list = ["moisture_content","hk","vani","porosity"]
-for iAttr in check_attr_list:
-    print(iAttr,getattr(modpath_phrea,iAttr))
-    ''' Phreatic function currently uses rmin, rmax instead of xmin,xmax'''
-# Model run completed
-hk = getattr(modpath_phrea,"hk")
-print("Model run completed.")
-#%%
-
-# 
-# 
-# 
-# 
-# 
-
-
-# delr_bounds = []
-# ncol_bounds = []
-# for iDict_main in phreatic_scheme:
-    
-#     if iDict_main in ["geo_parameters","recharge_parameters","ibound_parameters",
-#                       "well_parameters"]:
-        
-#         for iDict_sub in phreatic_scheme[iDict_main]:
-#             if (iDict_main == "geo_parameters") & (iDict_sub == "vadose"):
-#                 continue
-#             print(iDict_main,iDict_sub)
-#             try:
-#                 delr_bounds.append(phreatic_scheme[iDict_main][iDict_sub]["rmin"])
-#             except Exception as e: print(e)
-#             try:
-#                 delr_bounds.append(phreatic_scheme[iDict_main][iDict_sub]["rmax"])
-#             except Exception as e: print(e)
-#             try:
-#                 ncol_bounds.append([phreatic_scheme[iDict_main][iDict_sub]["ncols"],
-#                                     phreatic_scheme[iDict_main][iDict_sub]["rmin"],
-#                                     phreatic_scheme[iDict_main][iDict_sub]["rmax"],
-#                                     iDict_main,iDict_sub])
-#             except Exception:
-#                 ncol_bounds.append([1,
-#                                     phreatic_scheme[iDict_main][iDict_sub]["rmin"],
-#                                     phreatic_scheme[iDict_main][iDict_sub]["rmax"],
-#                                     iDict_main,iDict_sub])
-# print(delr_bounds,"\n",ncol_bounds)
-# np.unique(np.array(delr_bounds))
-# # Horizontal boundaries determined by rmin, rmax
-# # 
-# # Refinement1 --> near well 
-
-
-# #%%
-# # Horizontal spacing based on rmin, rmax, ncol
-
-# # output Alex "phreatic_dict_nogravel.txt" --> saved in "testing dir"
-# path = 'd:\\Greta\\greta\\greta'
-# testing_dir = os.path.join(path,"..","testing")
-# with open(os.path.join(testing_dir,"phreatic_dict_nogravel.txt"),"r") as file_:
-#     dict_content = file_.read()
-#     phreatic_scheme = eval(dict_content)
-
-# for iKey,iVal in phreatic_scheme.items():
-#     print(iKey,iVal,"\n")
-
-# delr_bounds = []
-# ncol_bounds = []
-# for iDict_main in phreatic_scheme:
-    
-#     if iDict_main in ["geo_parameters","recharge_parameters","ibound_parameters",
-#                       "well_parameters"]:
-        
-#         for iDict_sub in phreatic_scheme[iDict_main]:
-#             if (iDict_main == "geo_parameters") & (iDict_sub == "vadose"):
-#                 continue
-#             print(iDict_main,iDict_sub)
-#             try:
-#                 delr_bounds.append(phreatic_scheme[iDict_main][iDict_sub]["rmin"])
-#             except Exception as e: print(e)
-#             try:
-#                 delr_bounds.append(phreatic_scheme[iDict_main][iDict_sub]["rmax"])
-#             except Exception as e: print(e)
-#             try:
-#                 ncol_bounds.append([phreatic_scheme[iDict_main][iDict_sub]["ncols"],
-#                                     phreatic_scheme[iDict_main][iDict_sub]["rmin"],
-#                                     phreatic_scheme[iDict_main][iDict_sub]["rmax"],
-#                                     iDict_main,iDict_sub])
-#             except Exception:
-#                 ncol_bounds.append([1,
-#                                     phreatic_scheme[iDict_main][iDict_sub]["rmin"],
-#                                     phreatic_scheme[iDict_main][iDict_sub]["rmax"],
-#                                     iDict_main,iDict_sub])
-
-# print(delr_bounds,"\n",ncol_bounds)
-# # Unique boundaries
-# delr_bounds = sorted(list(set(delr_bounds)))
-# # List of distances between horizontal boundaries
-# delr_list = np.diff(delr_bounds)
-# # Number of columns based on pre-specified distances
-# ncol_list = []
-# for i_delr in delr_list:
-#     # cumulative radius
-#     radius_min = sum(delr_list[:i_delr])
-#     radius_max = sum(delr_list[:i_delr+1])
-#     if radius_min > 1.
-
-# for iBound in delr_bounds:
-    
-#     ncol, rmin, rmax = iBound[0:3]
-#     dr = (rmax-rmin) / ncol
-#     print(rmin, rmax, dr)
-
-    
-
-# # Proposal
-# # Horizontal boudnaries determined by rmin, rmax
-# # 
-# # Refinement1 --> near well 
-
-# # Refinement2 --> well --> aquifer thickness
-
-# #%%
-# # Vertical spacing based on top, bot, ncol
-
-# # output Alex "phreatic_dict_nogravel.txt" --> saved in "testing dir"
-# path = 'd:\\Greta\\greta\\greta'
-# testing_dir = os.path.join(path,"..","testing")
-# with open(os.path.join(testing_dir,"phreatic_dict_nogravel.txt"),"r") as file_:
-#     dict_content = file_.read()
-#     phreatic_scheme = eval(dict_content)
-
-# for iKey,iVal in phreatic_scheme.items():
-#     print(iKey,iVal,"\n")
-
-# delv_bounds = []
-# for iDict_main in phreatic_scheme:
-    
-#     if iDict_main in ["geo_parameters","ibound_parameters",
-#                       "well_parameters"]:
-        
-#         for iDict_sub in phreatic_scheme[iDict_main]:
-#             if (iDict_main == "geo_parameters") & (iDict_sub == "vadose"):
-#                 continue
-#             print(iDict_main,iDict_sub)
-#             try:
-#                 delv_bounds.append(phreatic_scheme[iDict_main][iDict_sub]["top"])
-#             except Exception as e: print(e)
-#             try:
-#                 delv_bounds.append(phreatic_scheme[iDict_main][iDict_sub]["bot"])
-#             except Exception as e: print(e)
-
-# # Unique boundaries
-# delv_bounds = sorted(list(set(delv_bounds)))
-# print(delv_bounds)
-
-# nlay_list = [max(1,math.ceil((delv_bounds[idx]-delv_bounds[idx-1]) / 0.5)) for idx in range(1,len(delv_bounds))]
-# ncol_tot = sum(nlay_list)
-# delv = np.zeros((ncol_tot), dtype = 'float') + 0.5
-
