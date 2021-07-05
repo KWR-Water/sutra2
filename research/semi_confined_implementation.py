@@ -38,10 +38,15 @@ except ModuleNotFoundError:
     from project_path import module_path
 
 from greta.draft_transport_function import *
+# if change classes to seperate files, then import them seperately here AH
 
 from testing.test_transatomic import *
+
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
+
+path = os.getcwd() #path of working directory
+
 
 #%%
 # Test

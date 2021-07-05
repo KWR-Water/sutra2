@@ -158,6 +158,8 @@ In this example we calculate analytical solution for a phreatic well, with a dif
 contamination over the whole model domain.
 
 .. ipython:: python
+    
+    from greta.draft_transport_function import HydroChemicalSchematisation
     phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
                                         well_discharge=7500, #m3/day
                                         vertical_anistropy_shallow_aquifer=0.0006,
@@ -227,7 +229,7 @@ From the AnalyticalWell class two important outputs are:
 
 
 Step 3: View the Substance class (Optional)
-==========================================
+===========================================
 You can retrieve the default substance parameters used to calculate the removal in the 
 Concentration class. 
 

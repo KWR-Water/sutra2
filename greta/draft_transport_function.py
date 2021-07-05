@@ -68,7 +68,8 @@ class HydroChemicalSchematisation:
     
     Parameters
     ----------
-    schematisation_type: string
+    schematisation_type: string 
+        #AH add definition here this is the kind of well yuo use...
         'phreatic', 'semiconfined', 'riverbankfiltration', 'basinfiltration'
     computation_method: string
         'analytical', 'modpath'
@@ -743,6 +744,7 @@ class HydroChemicalSchematisation:
     def calculate_unsaturated_zone_travel_time_phreatic (self, 
                                                         distance, 
                                                         depth_point_contamination=None):
+        ''''''
 
         head = self.calculate_hydraulic_head_phreatic(distance=distance)
 
@@ -1885,7 +1887,6 @@ class Concentration():
     #         select flowline with break_through_time < evaluation_time                                                  
     #         conc_flowline = concentration at end of selected flowline
     #         concentration_well = sum (conc_selected_flowline_i * discharge_flowline_i) / sum discharge_all_flowline                                                             
-
 
 
     def plot_concentration(self, xlim=[0, 500], ylim=[0,1 ]):
