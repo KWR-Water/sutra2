@@ -36,8 +36,8 @@ try:
 except ModuleNotFoundError:
     from project_path import module_path
 
-from greta.draft_transport_function import *
-
+from greta.Analytical_Well import *
+from greta.Substance_Transport import *
 from testing.test_transatomic import *
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
@@ -97,9 +97,9 @@ phreatic_well = AnalyticalWell(phreatic_scheme)
     
 phreatic_well.phreatic() #@MartinK in the functions run this? how to avoid errors running 'semiconfined' here when the schematisation_type was defined as 'phreatic'?
 # phreatic_well.df_particle
-phreatic_conc = Concentration(phreatic_well, substance = 'OMP-X')
-# # phreatic_conc = Concentration(phreatic_well, substance = 'benzo(a)pyrene')
-# phreatic_conc = Concentration(phreatic_well, substance = 'AMPA')
+phreatic_conc = SubstanceTransport(phreatic_well, substance = 'OMP-X')
+# # phreatic_conc = SubstanceTransport(phreatic_well, substance = 'benzo(a)pyrene')
+# phreatic_conc = SubstanceTransport(phreatic_well, substance = 'AMPA')
 
 
 phreatic_conc.compute_omp_removal()

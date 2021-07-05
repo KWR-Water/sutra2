@@ -1096,7 +1096,7 @@ df_flow, df_particle = well.export_to_df('all')
 #%%
 
 '''
-class Concentration():
+class SubstanceTransport():
     """ Returns concentration in a groundwater well for a given Organic Micro Pollutant or microbial species.
 
     Parameters
@@ -1192,7 +1192,7 @@ class Test():
                                                     
 # %%                       
 # the python user will call the function as follows
-concentration = Concentration()
+concentration = SubstanceTransport()
 if removal_function == 'omp':
 		concentration.compute_omp_removal
 elif removal_function = 'omp':

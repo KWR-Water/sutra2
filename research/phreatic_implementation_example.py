@@ -35,8 +35,8 @@ try:
 except ModuleNotFoundError:
     from project_path import module_path
 
-from greta.draft_transport_function import *
-
+from greta.Analytical_Well import *
+from greta.Substance_Transport import *
 from testing.test_transatomic import *
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
@@ -84,19 +84,19 @@ phreatic_well.phreatic()
 
 # test_substance = Substance(substance_name='benzene')
 
-phreatic_concentration = Concentration(phreatic_well, substance = 'OMP-X')
+phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'OMP-X')
 phreatic_concentration.compute_omp_removal()
 phreatic_concentration.plot_concentration(xlim=[0, 500], ylim=[0,1 ])
 
 phreatic_well = AnalyticalWell(phreatic_schematisation)
 phreatic_well.phreatic() 
-phreatic_concentration = Concentration(phreatic_well, substance = 'benzene')
+phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzene')
 phreatic_concentration.compute_omp_removal()
 phreatic_concentration.plot_concentration(xlim=[0, 500], ylim=[0,0.1 ])
 
 phreatic_well = AnalyticalWell(phreatic_schematisation)
 phreatic_well.phreatic() 
-phreatic_concentration = Concentration(phreatic_well, substance = 'AMPA')
+phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'AMPA')
 phreatic_concentration.compute_omp_removal()
 phreatic_concentration.plot_concentration(xlim=[0, 500], ylim=[0,0.001 ])
 # %%

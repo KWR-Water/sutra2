@@ -11,8 +11,8 @@ try:
 except ModuleNotFoundError:
     from project_path import module_path
 
-from greta.draft_transport_function import *
-
+from greta.Analytical_Well import *
+from greta.Substance_Transport import *
 from pandas._testing import assert_frame_equal
 
 # get directory of this file
@@ -107,7 +107,7 @@ def test_retardation_temp_koc_correction(substance = 'benzene', schematisation_t
         well1.phreatic()  
     elif  schematisation_type=='semiconfined':
         well1.semiconfined()
-    conc1 = Concentration(well1, substance = substance) #, df_particle, df_flowline)
+    conc1 = SubstanceTransport(well1, substance = substance) #, df_particle, df_flowline)
     conc1.compute_omp_removal()
 
     retardation = {
@@ -184,7 +184,7 @@ def test_steady_concentration_temp_koc_correction_phreatic(substance='benzene'):
     well1 = AnalyticalWell(test_)
     well1.phreatic()  
     # substance = 'benzene'
-    conc1 = Concentration(well1, substance = substance) #, df_particle, df_flowline)
+    conc1 = SubstanceTransport(well1, substance = substance) #, df_particle, df_flowline)
     conc1.compute_omp_removal()
     
     steady_state_concentration = {
@@ -312,7 +312,7 @@ def test_steady_concentration_temp_koc_correction_semiconfined(substance='benzen
     well1 = AnalyticalWell(test_)
     well1.semiconfined()  
     # substance = 'benzene'
-    conc1 = Concentration(well1, substance = substance) #, df_particle, df_flowline)
+    conc1 = SubstanceTransport(well1, substance = substance) #, df_particle, df_flowline)
     conc1.compute_omp_removal()
     
     steady_state_concentration = {

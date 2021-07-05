@@ -111,7 +111,7 @@ class Substance:
 
         self.substance_dict = substances_dict[substance_name]
 
-class Concentration():
+class SubstanceTransport():
     """ Returns concentration in a groundwater well for a given Organic Micro Pollutant or microbial species.
 
     Parameters

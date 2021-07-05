@@ -72,8 +72,8 @@ Now, let’s try some examples by importing different datamodels.
     except ModuleNotFoundError:
         from project_path import module_path
 
-    from greta.draft_transport_function import *
-
+    from greta.Analytical_Well import *
+    from greta.Substance_Transport import *
     from testing.test_transatomic import *
     # get directory of this file
     path = Path(__file__).parent #os.getcwd() #path of working directory
@@ -254,7 +254,7 @@ the OMP (or pathogen) of interest.
 In this example we use benzene. First we create the object then compute the removal:
 
 .. ipython:: python
-    phreatic_concentration = Concentration(phreatic_well, substance = 'benzene')
+    phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzene')
     phreatic_concentration.compute_omp_removal()
 
 If you have specified a values for the substance (e.g. half-life, pKa, log_Koc),

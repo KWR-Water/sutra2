@@ -36,8 +36,8 @@ try:
 except ModuleNotFoundError:
     from project_path import module_path
 
-from greta.draft_transport_function import *
-
+from greta.Analytical_Well import *
+from greta.Substance_Transport import *
 from testing.test_transatomic import *
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
@@ -82,13 +82,13 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
  
 semiconfined_well = AnalyticalWell(semiconfined_scheme) #.semiconfined()
 semiconfined_well.semiconfined()   
-semiconfined_conc = Concentration(semiconfined_well, substance = 'OMP-X')
+semiconfined_conc = SubstanceTransport(semiconfined_well, substance = 'OMP-X')
 
 semiconfined_conc.compute_omp_removal()
 semiconfined_conc.plot_concentration(xlim=[0, 500], ylim=[0,1 ])
 
-# semiconfined_conc = Concentration(semiconfined_well, substance = 'benzo(a)pyrene')
-# semiconfined_conc = Concentration(semiconfined_well, substance = 'benzene')
+# semiconfined_conc = SubstanceTransport(semiconfined_well, substance = 'benzo(a)pyrene')
+# semiconfined_conc = SubstanceTransport(semiconfined_well, substance = 'benzene')
 
 # semiconfined_conc.compute_omp_removal()
 # # semiconfined_conc.df_particle #.steady_state_concentration
