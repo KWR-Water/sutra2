@@ -543,6 +543,7 @@ class HydroChemicalSchematisation:
                     'bottom': self.bottom_vadose_zone_at_boundary,
                     'rmin': self.diameter_gravelpack/2,
                     'rmax': self.model_radius_computed,
+                    #AH 'IBOUND': -1/0/1 from the PPT depending on the case? use int
                         },
                     }
         # make dictionaries of each grouping of parameters
@@ -738,13 +739,10 @@ class HydroChemicalSchematisation:
         return head
 
 
-    #ah_todo split this into making the thickness, head and travel time (3 functions)
+    #ah_todo if time, split this into making the thickness, head and travel time (3 functions)
     def calculate_unsaturated_zone_travel_time_phreatic (self, 
                                                         distance, 
                                                         depth_point_contamination=None):
-        # head = (self.groundwater_level - self.well_discharge
-        #             / (2 * math.pi * self.KD) 
-        #             * np.log(self.radial_distance_recharge / distance))
 
         head = self.calculate_hydraulic_head_phreatic(distance=distance)
 
@@ -828,8 +826,6 @@ class HydroChemicalSchematisation:
         
         self.travel_time_unsaturated = travel_time_unsaturated
     
-
-#%%
 class AnalyticalWell():
     """ Compute travel time distribution using analytical well functions."""
 
@@ -1004,13 +1000,6 @@ class AnalyticalWell():
         porosity_target_aquifer=0.32  
         thickness_target_aquifer=95
 
-        # self.travel_time_target_aquifer = (2 * math.pi * self.spreading_distance ** 2 / (self.schematisation.well_discharge)
-        #                     * porosity_target_aquifer * thickness_target_aquifer
-        #                     * (1.0872 * (self.radial_distance / self.spreading_distance) ** 3
-        #                         - 1.7689 * (self.radial_distance /
-        #                                     self.spreading_distance) ** 2
-        #                         + 1.5842 * (self.radial_distance / self.spreading_distance) - 0.2544)
-        #                     )
         self.travel_time_target_aquifer = (2 * math.pi * self.spreading_distance ** 2 / (self.schematisation.well_discharge)
                             * porosity_target_aquifer * thickness_target_aquifer
                             * (1.0872 * (distance / self.spreading_distance) ** 3
@@ -1027,9 +1016,6 @@ class AnalyticalWell():
         '''Calculate the hydraulic head in meters above sea level for the 
         semiconfined case (AH confirm?)'''
 
-        # self.head = (-self.schematisation.well_discharge / (2 * math.pi * self.schematisation.KD)
-        #         * besselk(0, self.schematisation.radial_distance / self.schematisation.spreading_distance)
-        #         + self.schematisation.groundwater_level)
         self.head = (-self.schematisation.well_discharge / (2 * math.pi * self.schematisation.KD)
                 * besselk(0, distance / self.schematisation.spreading_distance)
                 + self.schematisation.groundwater_level)
@@ -1072,16 +1058,6 @@ class AnalyticalWell():
         if len(distance) == 1:
             #point source
             self.flowline_discharge = cumulative_fraction_abstracted_water * self.schematisation.well_discharge
-            # data = [total_travel_time, 
-            #         travel_time_unsaturated, 
-            #         travel_time_shallow_aquifer, 
-            #         travel_time_target_aquifer,
-            #         distance[0], 
-            #         head, 
-            #         cumulative_fraction_abstracted_water,  
-            #         self.flowline_discharge,
-            #         ]
-            # self.df_output = pd.DataFrame ([data], columns=column_names)
 
         else:
             #diffuse source
@@ -1346,11 +1322,8 @@ class AnalyticalWell():
             fraction_flux=self.schematisation.fraction_flux
         else: 
             self.schematisation._calculate_travel_time_unsaturated_zone(distance=distance, depth_point_contamination=depth_point_contamination)
-            # self.travel_time_unsaturated = self.schematisation.travel_time_unsaturated
-            # self.head = self.schematisation.head
             self.radial_distance = distance
             fraction_flux=None
-            # discharge_point_contamination = self.discharge_point_contamination
             
         self.travel_time_unsaturated = self.schematisation.travel_time_unsaturated
         self.head = self.schematisation.head
@@ -1375,7 +1348,6 @@ class AnalyticalWell():
                     distance=self.radial_distance,
                     head=self.head, 
                     cumulative_fraction_abstracted_water = self.cumulative_fraction_abstracted_water,  
-                    # flowline_discharge=self.flowline_discharge,
                     )
             
 
@@ -1499,7 +1471,6 @@ class AnalyticalWell():
 
         fig = plt.figure(figsize=[10, 5])
         plt.plot(self.radial_distance, self.total_travel_time, 'r', label=self.schematisation.schematisation_type)
-        # plt.plot(radial_distance, total_travel_time, 'b', label = 'Phreatic')
         plt.xlim(xlim)
         plt.ylim(ylim) 
         plt.yscale('log')
@@ -1519,7 +1490,6 @@ class AnalyticalWell():
 
         fig = plt.figure(figsize=[10, 5])
         plt.plot(self.cumulative_fraction_abstracted_water, self.total_travel_time, 'r', label=self.schematisation.schematisation_type)
-        # plt.plot(radial_distance, total_travel_time, 'b', label = 'Phreatic')
         plt.xlim(xlim)  # [0.01,10000])
         plt.ylim(ylim) 
         plt.yscale('log')
@@ -1653,8 +1623,6 @@ class Substance:
             }
 
         self.substance_dict = substances_dict[substance_name]
-        # self.log_Koc = self.substance_dict['log_Koc']
-        # self.pKa = self.substance_dict['pKa']
 
 class Concentration():
     """ Returns concentration in a groundwater well for a given Organic Micro Pollutant or microbial species.
@@ -1770,11 +1738,13 @@ class Concentration():
         to the Van ‘t Hoff equation and equally performing for other OMPs yields'''
 
         #@MartinK this seems a bit roundabout way to access this?
-        if self.schematisation.schematisation.temp_correction_Koc:
-            self.df_particle['Koc_temperature_correction'] = 10 ** self.df_particle.log_Koc * 10 ** (1913 * (1 / (self.df_particle.temperature + 273.15) - 1 / (20 + 273.15)))
 
+        if self.df_particle.log_Koc[0] == 0:
+            self.df_particle['Koc_temperature_correction'] = 0
+        elif self.schematisation.schematisation.temp_correction_Koc:
+            self.df_particle['Koc_temperature_correction'] = 10 ** self.df_particle.log_Koc * 10 ** (1913 * (1 / (self.df_particle.temperature + 273.15) - 1 / (20 + 273.15)))
         else: 
-            self.df_particle['Koc_temperature_correction'] = self.df_particle.temperature
+            self.df_particle['Koc_temperature_correction'] = self.df_particle.log_Koc
            
     def _calculate_state_concentration_in_zone(self):
         '''Equation 4.11 in report '''
@@ -1874,93 +1844,22 @@ class Concentration():
 
             if self.schematisation.schematisation.schematisation_type == 'phreatic':
                 self.head = self.schematisation.schematisation.calculate_hydraulic_head_phreatic(distance=distance)
-                # self.cumulative_fraction_abstracted_water = self.schematisation.schematisation.fraction_flux 
                 cumulative_fraction_abstracted_water = (math.pi * self.schematisation.schematisation.recharge_rate * distance ** 2)/self.schematisation.schematisation.well_discharge
-
-                if depth >= self.head: 
-                    self.schematisation.phreatic(distance = distance, 
+                self.schematisation.phreatic(distance = distance, 
                                             depth_point_contamination=depth, 
                                             cumulative_fraction_abstracted_water=cumulative_fraction_abstracted_water )
-                elif depth <=self.head:
-                    #override the unsaturated zone travel time
-                    if depth > self.schematisation.schematisation.bottom_shallow_aquifer:
-                        #override the shallow aquifer travel time
-                        travel_distance_shallow_aquifer = depth - self.schematisation.schematisation.bottom_shallow_aquifer
-
-                        self.schematisation.phreatic(distance = distance, 
-                                            depth_point_contamination=depth, 
-                                            cumulative_fraction_abstracted_water=cumulative_fraction_abstracted_water )
-
-                    elif depth <= self.schematisation.schematisation.bottom_shallow_aquifer:
-                        #override the shallow and target aquifer travel time
-                        travel_distance_shallow_aquifer = 0
-
-                        self.schematisation.phreatic(distance = distance, 
-                                            depth_point_contamination=depth, 
-                                            cumulative_fraction_abstracted_water=cumulative_fraction_abstracted_water )
-
                 self.df_particle = self.schematisation.df_particle
                 self.df_flowline = self.schematisation.df_flowline
 
             elif self.schematisation.schematisation.schematisation_type == 'semiconfined':
                 bottom_vadose_zone = self.schematisation.schematisation.bottom_vadose_zone_at_boundary
-                # self.cumulative_fraction_abstracted_water = self.schematisation.schematisation.fraction_flux 
                 cumulative_fraction_abstracted_water = (math.pi * self.schematisation.schematisation.recharge_rate * distance ** 2)/self.schematisation.schematisation.well_discharge
-
-                if depth >= bottom_vadose_zone: 
-                    self.schematisation.semiconfined(distance=distance, 
-                                        depth_point_contamination=depth,  )
-
-                elif depth <=bottom_vadose_zone:
-                    #override the unsaturated zone travel time
-                    if depth > self.schematisation.schematisation.bottom_shallow_aquifer:
-                        #override the shallow aquifer travel time
-                        travel_distance_shallow_aquifer = depth - self.schematisation.schematisation.bottom_shallow_aquifer
-
-                        self.schematisation.semiconfined(distance=distance, 
-                                        depth_point_contamination=depth,  )
-
-                    elif depth <= self.schematisation.schematisation.bottom_shallow_aquifer:
-                        #override the shallow and target aquifer travel time
-                        travel_distance_shallow_aquifer = 0
-
-                        self.schematisation.semiconfined(distance=distance, 
+                self.schematisation.semiconfined(distance=distance, 
                                         depth_point_contamination=depth,  )
 
                 self.df_particle = self.schematisation.df_particle
                 self.df_flowline = self.schematisation.df_flowline
-                pass 
-
-            # # default travel times PHREATIC
-            # # self.travel_time_unsaturated, self.thickness_vadose_zone_drawdown, self.head = self.schematisation.schematisation.calculate_unsaturated_zone_travel_time_phreatic (distance=distance)
-            # # self.travel_time_shallow_aquifer = self.schematisation._calculate_travel_time_shallow_aquifer_phreatic(head=self.head)
-            # # self.travel_time_target_aquifer = self.schematisation._calculate_travel_time_target_aquifer_phreatic(distance_point_contamination_from_well=distance)
-
-            # # if depth >= self.schematisation.schematisation.ground_surface:
-            #     # travel_distance_unsaturated_zone = depth - self.head
-
-
-            # self.total_travel_time = (self.travel_time_unsaturated + self.travel_time_shallow_aquifer
-            #                     + self.travel_time_target_aquifer)
             
-
-            # self.df_output = self.schematisation._create_output_dataframe(total_travel_time=self.total_travel_time, 
-            #         travel_time_unsaturated = self.travel_time_unsaturated, 
-            #         travel_time_shallow_aquifer=self.travel_time_shallow_aquifer, 
-            #         travel_time_target_aquifer=self.travel_time_target_aquifer,
-            #         distance=distance,
-            #         head=self.head, 
-            #         cumulative_fraction_abstracted_water = self.cumulative_fraction_abstracted_water,  
-            #         # flowline_discharge=self.flowline_discharge,
-            #         )
-            
-            # self.df_flowline, self.df_particle= self.schematisation._export_to_df(df_output = self.df_output, distance = distance,
-            #         total_travel_time=self.total_travel_time, 
-            #         travel_time_unsaturated = self.travel_time_unsaturated, 
-            #         travel_time_shallow_aquifer=self.travel_time_shallow_aquifer, 
-            #         travel_time_target_aquifer=self.travel_time_target_aquifer,)
-            
-            # print(self.df)
             self._init_omp()
 
             self._calculate_Koc_temperature_correction()
@@ -1992,6 +1891,10 @@ class Concentration():
     def plot_concentration(self, xlim=[0, 500], ylim=[0,1 ]):
         time_array = np.arange(0, 505, 1)*365.24
 
+        if self.schematisation.schematisation.concentration_point_contamination is None:
+            type_contamination = 'diffuse'
+        else:
+            type_contamination = 'point'
         #Calculate the concentration in the well, as 
         self.df_flowline['concentration_in_well'] = (self.df_flowline['breakthrough_concentration'] 
                             * self.df_flowline['discharge']/ self.df_flowline['well_discharge'])
@@ -2002,7 +1905,7 @@ class Concentration():
 
         well_conc = well_conc/self.df_flowline.input_concentration[0]
         fig = plt.figure(figsize=[10, 5])
-        plt.plot(time_array/365.24, well_conc, 'b', label =str(self.df_flowline.substance[0]))
+        plt.plot(time_array/365.24, well_conc, 'b', label =str(self.substance.substance_name))
         plt.xlim(xlim)
         plt.ylim(ylim) 
         plt.ylabel('Fraction of input concentration')
@@ -2010,7 +1913,7 @@ class Concentration():
         plt.title('Aquifer type: ' + self.schematisation.schematisation.schematisation_type)
         plt.grid()
         plt.legend()
-        plt.savefig('well_concentration_over_time_'+str(self.df_flowline.substance[0])+'_'+self.schematisation.schematisation.schematisation_type+'.png', dpi=300, bbox_inches='tight')  # save_results_to + '/
+        plt.savefig('well_concentration_over_time_'+str(self.substance.substance_name)+'_'+self.schematisation.schematisation.schematisation_type+'_'+type_contamination+'.png', dpi=300, bbox_inches='tight')  # save_results_to + '/
 
 
     def plot_age_distribution(self):
@@ -2020,342 +1923,3 @@ class Concentration():
     def plot_logremoval(self):
         #AH_todo
         pass
-
-# ------------------------------------------------------------------------------
-# Basin Aquifer Recharge (BAR) Functions
-# ------------------------------------------------------------------------------
-
-
-def calculate_travel_time_recharge_basin(length,
-                                width, 
-                                depth,
-                                annual_basin_discharge):
-    '''
-    Calculated the median travel time of infiltration water in a
-    recharge basin, according to Huisman & Olsthoorn (1983)
-
-    Parameters
-    ----------
-    width = width of recharge basin [m];
-    length = total length of recharge basin and drainage gallery [m];
-    depth = mean water-filled depth of recharge basin [m];
-    annual_basin_discharge = total volume of infiltration water discharged
-        into basin [m3/yr]
-
-    x = longitudinal distance from inlet, situated on one of the ends of an
-        elongate basin [m];
-    calculated for median distance for x = 0.632 * length #AH why 0.632?
-
-    Returns
-    -------
-    travel_time: [years]
-    '''
-
-    travel_time_recharge_basin = (length * width * depth
-                                  / (annual_basin_discharge * 10 ** 6
-                                     / 365.25) * np.log(1 / (1 - 0.632)))
-    # AH why 0.632 = median?
-
-    return travel_time_recharge_basin
-
-
-def calculate_travel_time_upper_aquifer( 
-                    horizontal_distance_basin_gallery,   
-                    hydraulic_conductivity_reference_value,
-                    temperature,
-                    porosity_recharge_basin,
-                    groundwater_level_above_saturated_zone,
-                     ):
-    '''
-    The travel time in the upper aquifer is based on design
-    characteristics of the BAR system, which is rigorously
-    schematized as indicated in Fig.A3.1. The schematisation
-    and analytical solutions are based on Huisman & Olsthoorn
-    (1983) and Stuyfzand & van der Schans (2018), with a
-    MAR system composed of parallel spreading basins and
-    drainage galleries in between, with phreatic aquifer
-    characteristics and typical recharge system requirements.
-
-    The design follows from the equations given below, assuming that:
-    (i) flow is predominantly horizontal (Dupuit assumption;
-    also excluding unsaturated zone beneath basin), requiring
-    that both the spreading basin and drainage gallery fully
-    penetrates the saturated thickness of the aquifer;
-    (ii) the aquifer is homogeneous and isotropic,
-    (iii) rainfall and evaporation can be ignored;
-    (iv) all infiltration water is recovered (QIN = QOUT).
-
-    Parameters
-    ----------
-    horizontal_distance_basin_gallery = horizontal distance between basin bank and drainage gallery [m];
-    hydraulic_conductivity_reference_value = m/d, at specific deg. C
-    temperature = deg C
-    porosity_recharge_basin = porosity [-]
-    groundwater_level_above_saturated_zone = normal maximum rise of watertable above H0 [m];
-    
-    Outputs
-    -------
-    median_retention_time = minimum required or median retention time in aquifer [d];
-    travel_time_distribution_upper_phreatic = travel time in the upper aquifer [d]
-
-    Other parameters
-    --------------
-    hydraulic_conductivity = hydraulic conductivity of aquifer [m/d];
-
-
-    Not used but calculated/input in spreadsheet AH check what to do with these?
-    ---------------------------
-    tIP = maximum bridging period from the dynamic reservoir,
-        which allows abstraction during an intake (and spreading) interruption [d];
-    VDYN,A, VDYN,B = amount of water in dynamic storage, within the aquifer
-        and basin respectively, which can be used to cover a (short) intake stop [Mm3];
-    vIN = entry rate [m/d]
-    QOUT = pumping rate, approximately equal to QIN prior to intake stop,
-        however on a daily basis [m3/d];
-    SY = phreatic specific yield [-];
-    H0 = saturated thickness of aquifer before spreading [m];
-
-    '''
-
-    # horizontal_distance_basin_gallery = np.sqrt(
-    #     hydraulic_conductivity * groundwater_level_above_saturated_zone * median_retention_time / porosity_recharge_basin)
-    hydraulic_conductivity = (hydraulic_conductivity_reference_value
-                              * ((temperature + 42.5) / (11 + 42.5)) ** 1.5)
-    # AH where do these numbers come from? 11, 42.5, 1.5?
-
-    median_retention_time = (porosity_recharge_basin * horizontal_distance_basin_gallery
-                             ** 2 / (hydraulic_conductivity * groundwater_level_above_saturated_zone))
-
-    travel_time_array = np.arange(0.50, 4.6, 0.1)
-
-    travel_time_distribution_upper_phreatic = median_retention_time * travel_time_array
-
-    # EPM = exponential piston model, AH percent travel time?
-    percent_flux_EPM = 1 - np.exp((travel_time_distribution_upper_phreatic[0] - travel_time_distribution_upper_phreatic) / (
-        median_retention_time - travel_time_distribution_upper_phreatic[0]))
-
-    # LMP = linear piston model, AH percent travel time?
-    percent_flux_LPM = np.arange(0, 1.1, 0.1)
-
-    # AH same as the percent flux? keep variables consistent...
-    # percent_travel_time_distribution = np.arange()
-    percent_flux = np.append(percent_flux_LPM[0:9], percent_flux_EPM[9:])
-
-    aquifer_dictionary = {'travel_time_basin': median_retention_time,
-                          'travel_time_upper_aquifer': travel_time_distribution_upper_phreatic,
-                          'percent_flux': percent_flux,
-                          'percent_flux_EPM':  percent_flux_EPM,
-                          'percent_flux_LPM': percent_flux_LPM,
-                          'aquifer_type': 'BAR_upper_phreatic',
-                          # 'travel_time_array': travel_time_array,
-                          }
-
-    return aquifer_dictionary
-
-
-def calculate_travel_time_upper_aquifer_and_basins(length,
-                                                   width,
-                                                   depth,
-                                                   annual_basin_discharge,
-                                                   horizontal_distance_basin_gallery,
-                                                   hydraulic_conductivity_reference_value,
-                                                   temperature,
-                                                   porosity_recharge_basin,
-                                                   groundwater_level_above_saturated_zone,
-                                                   ):
-
-    '''Adds the median travel time in the recharge basins to the travel 
-    time calculated in the upper, phreatic aquifer
-    
-    Inputs
-    ------
-    width = width of recharge basin [m];
-    length = total length of recharge basin and drainage gallery [m];
-    depth = mean water-filled depth of recharge basin [m];
-
-
-    Returns
-    -------
-    Travel time distribution in the upper aquifer and basin '''
-
-    travel_time_recharge_basin = calculate_travel_time_recharge_basin(
-        length=length,
-        width=width,
-        depth=depth,
-        annual_basin_discharge=annual_basin_discharge)
-
-    upper_phreatic_aquifer_dict = calculate_travel_time_upper_aquifer(
-        horizontal_distance_basin_gallery=horizontal_distance_basin_gallery,
-        hydraulic_conductivity_reference_value=hydraulic_conductivity_reference_value,
-        temperature=temperature,
-        porosity_recharge_basin=porosity_recharge_basin,
-        groundwater_level_above_saturated_zone=groundwater_level_above_saturated_zone,
-        )
-
-    travel_time_upper_aquifer_and_basins = travel_time_recharge_basin + upper_phreatic_aquifer_dict['travel_time_upper_aquifer']
-
-    return travel_time_upper_aquifer_and_basins
-
-
-def calculate_travel_time_deeper_aquifer(horizontal_distance_basin_gallery,
-                                         hydraulic_conductivity_reference_value,
-                                         temperature,
-                                         porosity_recharge_basin,
-                                         groundwater_level_above_saturated_zone,
-                                         vertical_resistance_aquitard,
-                                         thickness_second_aquifer,
-                                         porosity_second_aquifer,
-                                         vertical_hydraulic_head_difference,
-                                         ):
-    '''
-    For the deeper part we have 2 options: (i) it represents
-    the second aquifer, which is semiconfined and (deeply)
-    anoxic situated below an aquitard that separates it from
-    the upper aquifer, or (ii) it represents the deeper, anoxic
-    parts of the upper aquifer, often with lower hydraulic
-    conductivity and longer transit times. In the latter
-    case, we neglect the contribution from the second aquifer
-    if existing at all
-    
-    parameters
-    ---------
-    vertical_resistance_aquitard   # [d], c_V
-    thickness_second_aquifer: mean thickness [m]
-    porosity_second_aquifer (n), [-]
-    vertical_hydraulic_head_difference: mean vertical jump 
-        in hydraulic head between both aquifers (Δh).
-    
-    Outputs
-    -------
-    '''
-
-    travel_time_second_aquifer = (0.3 *  thickness_second_aquifer
-        * vertical_resistance_aquitard / vertical_hydraulic_head_difference)
-    
-    percent_flux_deep_aquifer = 2000 / travel_time_second_aquifer
-
-    multiplication_factor = np.sqrt(travel_time_second_aquifer)
-
-    percent_flux = np.arange(0,110,10)
-
-    # EPM = exponential piston model
-    travel_time_distribution_EPM = percent_flux / 100
-
-    travel_time_upper_aquifer_dict = calculate_travel_time_upper_aquifer(
-        horizontal_distance_basin_gallery=horizontal_distance_basin_gallery,
-        hydraulic_conductivity_reference_value=hydraulic_conductivity_reference_value,
-        temperature=temperature,
-        porosity_recharge_basin=porosity_recharge_basin,
-        groundwater_level_above_saturated_zone=groundwater_level_above_saturated_zone,
-        )
-
-    travel_time_distribution_deeper_aquifer = (travel_time_upper_aquifer_dict['travel_time_upper_aquifer']
-                                                * multiplication_factor)
-
-    return travel_time_distribution_deeper_aquifer
-
-
-def travel_time_distribution_BAR(length,
-                                 width,
-                                 depth,
-                                 annual_basin_discharge,
-                                 horizontal_distance_basin_gallery,
-                                 hydraulic_conductivity_reference_value,
-                                 temperature,
-                                 porosity_recharge_basin,
-                                 groundwater_level_above_saturated_zone,
-                                 vertical_resistance_aquitard,
-                                 thickness_second_aquifer,
-                                 porosity_second_aquifer,
-                                 vertical_hydraulic_head_difference,
-                                 ):
-    
-    ''' Calculate travel time distribution for Basin Aquifer Recharge (BAR)
-    systems
-
-    Calculates the median travel time distribution (TTD) of the basin, 
-    the TTD of the upper aquifer and TTD of the deeper aquifer.
-
-    Assumptions: from \cite{Stuyfzand2020}
-    The following assumptions are made: 
-    (i) the water inlet is situated at one of the ends of an elongated 
-    recharge basin 
-    (ii) the infiltration rate is uniformly distributed
-    (iii) rainfall and evaporation do not have a significant impact.
-
-    Parameters
-    -----------
-    width = width of recharge basin [m];
-    length = total length of recharge basin and drainage gallery [m];
-    depth = mean water-filled depth of recharge basin [m];
-
-    horizontal_distance_basin_gallery = horizontal distance between basin bank and drainage gallery [m];
-    hydraulic_conductivity_reference_value = m/d, at specific deg. C
-    temperature = deg C
-    porosity_recharge_basin = porosity [-]
-    groundwater_level_above_saturated_zone = normal maximum rise of watertable above H0 [m];
-
-    '''
-
-    median_retention_time = calculate_travel_time_recharge_basin(
-        length=length,
-        width=width,
-        depth=depth,
-        annual_basin_discharge=annual_basin_discharge,
-        )
-
-    upper_phreatic_aquifer_dict = calculate_travel_time_upper_aquifer(
-        horizontal_distance_basin_gallery=horizontal_distance_basin_gallery,
-        hydraulic_conductivity_reference_value=hydraulic_conductivity_reference_value,
-        temperature=temperature,
-        porosity_recharge_basin=porosity_recharge_basin,
-        groundwater_level_above_saturated_zone=groundwater_level_above_saturated_zone,
-        )
-
-    travel_time_upper_aquifer_and_basins = calculate_travel_time_upper_aquifer_and_basins(
-        length=length,
-        width=width,
-        depth=depth,
-        annual_basin_discharge=annual_basin_discharge,
-        horizontal_distance_basin_gallery=horizontal_distance_basin_gallery,
-        hydraulic_conductivity_reference_value=hydraulic_conductivity_reference_value,
-        temperature=temperature,
-        porosity_recharge_basin=porosity_recharge_basin,
-        groundwater_level_above_saturated_zone=groundwater_level_above_saturated_zone,
-        )
-
-    travel_time_deeper_aquifer = calculate_travel_time_deeper_aquifer(
-        horizontal_distance_basin_gallery=horizontal_distance_basin_gallery,
-        hydraulic_conductivity_reference_value=hydraulic_conductivity_reference_value,
-        temperature=temperature,
-        porosity_recharge_basin=porosity_recharge_basin,
-        groundwater_level_above_saturated_zone=groundwater_level_above_saturated_zone,
-        vertical_resistance_aquitard=vertical_resistance_aquitard,
-        thickness_second_aquifer=thickness_second_aquifer,
-        porosity_second_aquifer=porosity_second_aquifer,
-        vertical_hydraulic_head_difference=vertical_hydraulic_head_difference,
-        )
-
-    column_names = ["travel_time_upper_aquifer", "travel_time_upper_aquifer_and_basins",
-                        "travel_time_deeper_aquifer", "percent_flux", "well_discharge"]
-    
-    # AH check the flux calculations for the streamline... Pr*Q? 
-    data = [upper_phreatic_aquifer_dict['travel_time_upper_aquifer'],
-            travel_time_upper_aquifer_and_basins,
-            travel_time_deeper_aquifer,
-            upper_phreatic_aquifer_dict['percent_flux'],
-            upper_phreatic_aquifer_dict['percent_flux'] * annual_basin_discharge]
-
-    df = pd.DataFrame (data = np.transpose(data), columns=column_names)
-
-    aquifer_dictionary = {'travel_time_basin': median_retention_time,
-                          'travel_time_upper_aquifer': upper_phreatic_aquifer_dict['travel_time_upper_aquifer'],
-                          'travel_time_upper_aquifer_and_basins': travel_time_upper_aquifer_and_basins,
-                          'travel_time_deeper_aquifer': travel_time_deeper_aquifer,
-                          'percent_flux': upper_phreatic_aquifer_dict['percent_flux'],
-                          'df_output': df,
-                          'aquifer_type': 'BAR',
-                         }
-
-    return aquifer_dictionary
-
