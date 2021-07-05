@@ -29,8 +29,8 @@ def test_travel_time_distribution_phreatic():
                                         well_discharge=319.4*24,
                                         # vertical_resistance_aquitard=500,
                                         hor_permeability_shallow_aquifer = 0.02,
-                                       vertical_anistropy_shallow_aquifer = (10/(0.02*500)),
-                                      porosity_vadose_zone=0.38,
+                                        vertical_anistropy_shallow_aquifer = (10/(0.02*500)),
+                                        porosity_vadose_zone=0.38,
                                         porosity_shallow_aquifer=0.35,
                                         porosity_target_aquifer=0.35,
                                         recharge_rate=0.3/365.25,
@@ -44,9 +44,9 @@ def test_travel_time_distribution_phreatic():
                                         thickness_full_capillary_fringe=0.4,
                                         temperature=11,
                                          solid_density_vadose_zone= 2.650, 
-                                      solid_density_shallow_aquifer= 2.650, 
-                                      solid_density_target_aquifer= 2.650, 
-                                      diameter_borehole = 0.75,
+                                        solid_density_shallow_aquifer= 2.650, 
+                                        solid_density_target_aquifer= 2.650, 
+                                        diameter_borehole = 0.75,
                                         )
 
     well1 = AnalyticalWell(test_)
@@ -257,15 +257,16 @@ def test_travel_time_distribution_semiconfined():
     output = output[["total_travel_time", "travel_time_unsaturated",
                     "travel_time_shallow_aquifer", "travel_time_target_aquifer",
                     "radial_distance",]]
-    try:
+    # try:
         # assert output == output_semiconfirned
-        assert_frame_equal(output, output_semiconfined, 
+    assert_frame_equal(output, output_semiconfined, 
                         check_dtype=False)
+        # assert output ==1 
 
-    except AssertionError:
-        print("Assertion Exception Raised - in TTD test")
-    else:
-        print("Success, no error in TTD!")
+    # except AssertionError:
+    #     print("Assertion Exception Raised - in TTD test")
+    # else:
+    #     print("Success, no error in TTD!")
 
 
 
@@ -354,7 +355,7 @@ def test_steady_concentration_temp_koc_correction_semiconfined(substance='benzen
 output_semiconfined = pd.read_csv(path / 'semiconfined_test.csv')
 output_semiconfined = output_semiconfined.round(7)
 test_ = HydroChemicalSchematisation(schematisation_type='semiconfined',
-                                            what_to_export='omp_parameters',
+                                    what_to_export='omp_parameters',
                                     well_discharge=319.4*24,
                                     # vertical_resistance_aquitard=500,
                                     hor_permeability_shallow_aquifer = 0.02,

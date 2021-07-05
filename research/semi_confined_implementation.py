@@ -56,7 +56,7 @@ test_steady_concentration_temp_koc_correction_semiconfined(substance='AMPA')
 #%%
 
 semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfined',
-                                    what_to_export='omp_parameters',
+                                      what_to_export='omp_parameters',
                                       well_discharge=319.4*24,
                                       vertical_anistropy_shallow_aquifer = (10/(0.02*500)),
                                       porosity_vadose_zone=0.38,
@@ -84,11 +84,10 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
                                       fraction_organic_carbon_target_aquifer=0.0005, 
                                       # diffuse_input_concentration = 100, #ug/L
-                                      concentration_point_contamination = 600,
-                                      distance_point_contamination_from_well = 5.45045, #300,
-                                      depth_point_contamination = 23, #m ASL
-                                      discharge_point_contamination=10,
-
+                                      concentration_point_contamination = 100,
+                                      distance_point_contamination_from_well = 25, #5.45045, #
+                                      depth_point_contamination =21, #m ASL
+                                      discharge_point_contamination=1000,
                                       temperature=11,
                                       solid_density_vadose_zone= 2.650, 
                                       solid_density_shallow_aquifer= 2.650, 
@@ -104,15 +103,15 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
 # semiconfined_well_dict = semiconfined_scheme.make_dictionary()  
 semiconfined_well = AnalyticalWell(semiconfined_scheme) #.semiconfined()
 semiconfined_well.semiconfined()   
-# semiconfined_conc = Concentration(semiconfined_well, substance = 'OMP-X')
+semiconfined_conc = Concentration(semiconfined_well, substance = 'OMP-X')
 
 # # semiconfined_conc = Concentration(semiconfined_well, substance = 'benzo(a)pyrene')
-semiconfined_conc = Concentration(semiconfined_well, substance = 'benzene')
+# semiconfined_conc = Concentration(semiconfined_well, substance = 'benzene')
 
 semiconfined_conc.compute_omp_removal()
 semiconfined_conc.df_flowline
 semiconfined_conc.df_particle
-# semiconfined_conc.plot_concentration(xlim=[0, 500], ylim=[0,1 ])
+semiconfined_conc.plot_concentration(xlim=[0, 100], ylim=[0,1 ])
 
 # semiconfined_conc.compute_omp_removal()
 # # semiconfined_conc.df_particle #.steady_state_concentration
