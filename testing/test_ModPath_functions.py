@@ -42,12 +42,16 @@ from pathlib import Path
 #     # from project_path import module_path
 
 # get directory of this file
-
+try:
+    from project_path import module_path #the dot says looik in the current folder, this project_path.py file must be in the folder here
+except ModuleNotFoundError:
+    from project_path import module_path
 
 # module_path = os.path.join(path,"..","greta")
 # if module_path not in sys.path:
 #     sys.path.insert(0,module_path)
 # sys.path.insert(0,module_path)
+from pandas._testing import assert_frame_equal
 try:
     from greta.ModPath_functions import ModPathWell   
     from greta.Analytical_Well import * 
