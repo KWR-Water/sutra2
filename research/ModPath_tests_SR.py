@@ -50,7 +50,7 @@ from pathlib import Path
 # sys.path.insert(0,module_path)
 try:
     from greta.ModPath_functions import ModPathWell   
-    from greta.draft_transport_function import * 
+    from greta.Analytical_Well import * 
 except ModuleNotFoundError as e:
     print(e, ": second try.")
     module_path = os.path.join("..","greta")
@@ -58,7 +58,7 @@ except ModuleNotFoundError as e:
         sys.path.insert(0,module_path)
 
     from ModPath_functions import ModPathWell   
-    from draft_transport_function import * 
+    from Analytical_Well import * 
 
     print("Second try to import modules succeeded.")
 
