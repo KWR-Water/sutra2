@@ -65,13 +65,13 @@ except ModuleNotFoundError as e:
 path = os.getcwd()
 # # Import schematisation functions
 # try:
-#     from greta.draft_transport_function import *
-#     from greta.ModPath_functions import ModPathWell
+#     from greta.Analytical_Well import *
+#     from greta.Substance_Transport import *#     from greta.ModPath_functions import ModPathWell
 # except ModuleNotFoundError as e:
 #     print(e)
 #     # sys.path.append(str(module_path.parent))
-#     # from greta.draft_transport_function import *
-#     # from greta.ModPath_functions import ModPathWell
+#     # from greta.Analytical_Well import *
+from greta.Substance_Transport import *#     # from greta.ModPath_functions import ModPathWell
 
 #%%
 

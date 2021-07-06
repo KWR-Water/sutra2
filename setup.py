@@ -28,7 +28,7 @@ setup(
     'Documentation': 'http://greta.readthedocs.io/en/latest/',
     'Tracker': 'https://github.com/KWR-Water/greta/issues',
     'Help': 'https://github.com/KWR-Water/greta/issues',
-    # 'Help': 'https://stackoverflow.com/questions/tagged/hgc'
+    # 'Help': 'https://stackoverflow.com/questions/tagged/greta'
     },
     install_requires=[
         'pandas>=0.23',

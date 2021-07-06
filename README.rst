@@ -1,4 +1,4 @@
-HGC
+GRETA
 ====
 .. image:: https://readthedocs.org/projects/greta/badge/?version=latest&style=flat
                     :target: https://greta.readthedocs.io

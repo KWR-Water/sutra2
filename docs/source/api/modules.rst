@@ -1,7 +1,7 @@
-hgc
-===
+greta
+=====
 
 .. toctree::
    :maxdepth: 2
 
-   hgc
+   greta

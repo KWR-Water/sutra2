@@ -48,7 +48,7 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 
 #FIX
 # FIX THE DIAMETERS
-# FIX THE DICIOTNARY FOR HTE UBSTANCE, ADD SUBSTANCE NAME,
+# FIX THE DICIOTNARY FOR the UBSTANCE, ADD SUBSTANCE NAME,
 # FIX R_START not r = zero (default) for steven
  
 # IS GRAVEL RMIN GRVEL = RMAX WELL SCREEN
@@ -97,7 +97,7 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
                                       fraction_organic_carbon_target_aquifer=0.0005, 
-                                      input_concentration = 100.,
+                                      diffuse_input_concentration = 100, #ug/L
                                       temperature=11.,
                                       solid_density_vadose_zone= 2.650, 
                                       solid_density_shallow_aquifer= 2.650, 
@@ -257,7 +257,6 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
                                       fraction_organic_carbon_target_aquifer=0.0005, 
-                                      input_concentration = 100.,
                                       temperature=11.,
                                       solid_density_vadose_zone= 2.650, 
                                       solid_density_shallow_aquifer= 2.650, 
@@ -274,6 +273,7 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       discharge_point_contamination = 100.,#made up value
                                       top_clayseal = 17,
                                       compute_contamination_for_date='2020-01-01',
+
                                       # substance = 'benzene',
                                       # halflife_oxic=600,
                                       # partition_coefficient_water_organic_carbon = 3.3,
@@ -290,10 +290,10 @@ phreatic_dict_1 = { 'simulation_parameters' : phreatic_scheme.simulation_paramet
         'substance_parameters' : phreatic_scheme.substance_parameters,
         'bas_parameters' : phreatic_scheme.bas_parameters,
 }
-
-f = open("phreatic_dict_nogravel.txt","w")
-f.write( str(phreatic_dict_1))
-f.close()
+phreatic_dict_1
+# f = open("phreatic_dict_nogravel.txt","w")
+# f.write( str(phreatic_dict_1))
+# f.close()
 
 #%%
 phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
