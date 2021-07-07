@@ -27,6 +27,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import os
+import sys
 # from pandas import read_excel
 from pandas import read_csv
 from pandas import read_excel
@@ -39,7 +40,19 @@ from scipy.special import kn as besselk
 
 path = os.getcwd()  # path of working directory
 
+# run installed version of flopy or add local path 
+# (add flopy to requirements.txt: pip install flopy==3.3.1)
+try:
+    import flopy
+    import flopy.utils.binaryfile as bf
+except Exception as e:
+    flopypth = os.path.abspath(os.path.join('..', '..'))
+    sys.path.append(flopypth)
+    import flopy
+    import flopy.utils.binaryfile as bf
 
+# flopy version
+print(flopy.__version__)
 
 #%%
 '''
@@ -815,6 +828,29 @@ class ModPathWell:
         radial_distance                 # [m], radial distance to well (field),
                                         from site X within and any site on the groundwater divide
         '''
+
+def read_binaryhead(fname):
+    ''' Read binary head file (fname).
+        This is modflow output.'''
+    hdsobj = bf.HeadFile(fname, precision = 'single')
+    times = hdsobj.get_times()
+    head_dat = hdsobj.get_data(totim = times[-1])
+    
+    hdsobj.close()
+    return head_dat
+
+
+def read_binarycbc(fname):
+    ''' Read binary cell budget file (fname). 
+        This is modflow output.'''
+    cbcobj = bf.CellBudgetFile(fname)
+    print(cbcobj.list_records())
+    
+    frf = cbcobj.get_data(text='FLOW RIGHT FACE')[0]
+    flf = cbcobj.get_data(text='FLOW LOWER FACE')[0]
+    cbcobj.close()
+    
+    return frf, flf 
 
     def run_model(self, simulation_parameters: dict or None = None):
         # print(self.schematisation)
