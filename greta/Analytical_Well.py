@@ -1027,17 +1027,20 @@ class AnalyticalWell():
         return self.head
 
 
-    def _calculate_flux_fraction(self):
+    def _calculate_flux_fraction(self,
+                                radial_distance,
+                                spreading_distance,
+                                ):
         '''Calculates the fraction of the flux at distance x
 
         [-], Qr/Qw
         Qr = flux at distance x
         Qw = well flux '''
 
-        self.flux_fraction = (self.radial_distance / self.spreading_distance
-                        * besselk(1, self.radial_distance / self.spreading_distance))
+        flux_fraction = (radial_distance / spreading_distance
+                        * besselk(1, radial_distance / spreading_distance))
 
-        return self.flux_fraction
+        return flux_fraction
 
     def _create_output_dataframe(self, 
                                 total_travel_time, 
@@ -1062,11 +1065,11 @@ class AnalyticalWell():
         #AH_here
         if len(distance) == 1:
             #point source
-            self.flowline_discharge = cumulative_fraction_abstracted_water * self.schematisation.well_discharge
+            flowline_discharge = cumulative_fraction_abstracted_water * self.schematisation.well_discharge
 
         else:
             #diffuse source
-            self.flowline_discharge = (np.diff(np.insert(cumulative_fraction_abstracted_water,0,0., axis=0)))*self.schematisation.well_discharge
+            flowline_discharge = (np.diff(np.insert(cumulative_fraction_abstracted_water,0,0., axis=0)))*self.schematisation.well_discharge
 
         data = [total_travel_time, 
                 travel_time_unsaturated, 
@@ -1075,11 +1078,11 @@ class AnalyticalWell():
                 distance, 
                 head, 
                 cumulative_fraction_abstracted_water,  
-                self.flowline_discharge,
+                flowline_discharge,
                 ]
-        self.df_output = pd.DataFrame (data = np.transpose(data), columns=column_names, dtype="object")
+        df_output = pd.DataFrame (data = np.transpose(data), columns=column_names, dtype="object")
             
-        return self.df_output
+        return df_output
         
 
     def _export_to_df(self,
@@ -1218,7 +1221,7 @@ class AnalyticalWell():
                                             'particle_release_date',
                                             # 'input_concentration',
                                             'endpoint_id', ])
-        df_flowline['discharge'] = self.flowline_discharge
+        df_flowline['discharge'] = df_output['flowline_discharge']
         df_flowline['flowline_type'] = 'diffuse_source'
 
 
@@ -1432,7 +1435,9 @@ class AnalyticalWell():
         # percent of the max head? AH
         self.head_minus_max = 100*(self.head - self.schematisation.groundwater_level) / (self.head[0] - self.schematisation.groundwater_level)
 
-        self.flux_fraction = self._calculate_flux_fraction()
+        self.flux_fraction = self._calculate_flux_fraction(radial_distance=self.radial_distance,
+                                spreading_distance = self.spreading_distance,
+                                )
 
         ''' Calculate the cumulative_fraction_abstracted_water
         1.1369 comes form pg. 52 in report, describes cutting off the 
@@ -1450,7 +1455,6 @@ class AnalyticalWell():
                     distance=self.radial_distance,
                     head=self.head, 
                     cumulative_fraction_abstracted_water = self.cumulative_fraction_abstracted_water,  
-                    # flowline_discharge=self.flowline_discharge,
                     )
 
         self.df_flowline, self.df_particle=self._export_to_df(df_output=self.df_output, 
@@ -1460,6 +1464,72 @@ class AnalyticalWell():
                     travel_time_shallow_aquifer=self.travel_time_shallow_aquifer, 
                     travel_time_target_aquifer=self.travel_time_target_aquifer,
                     discharge_point_contamination = self.schematisation.discharge_point_contamination)
+
+    def add_semiconfined_point_sources(self, 
+                                    distance = None, 
+                                    depth_point_contamination=None,  ):
+        ''' Same as the semiconfined except that the attributes are not updated, 
+        this ensures that the attributes of the well class remain as the ones for 
+        the flowlines from the well, not the point sources'''
+
+        if distance is None:
+            self.schematisation._calculate_travel_time_unsaturated_zone()
+            radial_distance = self.schematisation.radial_distance
+        else: 
+            self.schematisation._calculate_travel_time_unsaturated_zone(distance=distance,
+                                                                        depth_point_contamination = depth_point_contamination
+                                                                        )
+            radial_distance = distance
+        
+        travel_time_unsaturated = self.schematisation.travel_time_unsaturated
+        spreading_distance = self.schematisation.spreading_distance
+
+        # travel time in semiconfined is one value, make it array by repeating the value
+        # self.travel_time_unsaturated = [self.travel_time_unsaturated] * (len(self.radial_distance))
+
+        #left off here, need to make sure this is up to date? distances????
+        travel_time_shallow_aquifer = self._calculate_travel_time_aquitard_semiconfined(distance=radial_distance,
+                                                                                    depth_point_contamination=depth_point_contamination)
+
+        travel_time_target_aquifer = self._calculate_travel_time_target_aquifer_semiconfined(distance=radial_distance) 
+
+        total_travel_time = travel_time_unsaturated + travel_time_shallow_aquifer + travel_time_target_aquifer
+
+        head = self._calculate_hydraulic_head(distance=radial_distance)
+
+        # percent of the max head? AH
+        head_minus_max = 100*(head - self.schematisation.groundwater_level) / (head[0] - self.schematisation.groundwater_level)
+
+        flux_fraction = self._calculate_flux_fraction(radial_distance=radial_distance,
+                                spreading_distance = spreading_distance,)
+
+        ''' Calculate the cumulative_fraction_abstracted_water
+        1.1369 comes form pg. 52 in report, describes cutting off the 
+        recharge_rate distance at 3 labda, need to increase the fraction abstracted from ~87%
+        to 99.9% so multiply by 1.1369 to get to that
+        Equation A.16 in report'''
+        # AH, may want to change this, to eg. 6 labda or something else, adjust this number
+        cumulative_fraction_abstracted_water = 1.1369 * (1 - flux_fraction)
+
+
+        df_output = self._create_output_dataframe(total_travel_time=total_travel_time, 
+                    travel_time_unsaturated = travel_time_unsaturated, 
+                    travel_time_shallow_aquifer=travel_time_shallow_aquifer, 
+                    travel_time_target_aquifer=travel_time_target_aquifer,
+                    distance=radial_distance,
+                    head=head, 
+                    cumulative_fraction_abstracted_water = cumulative_fraction_abstracted_water,  
+                    )
+
+        df_flowline, df_particle=self._export_to_df(df_output=df_output, 
+                    distance=radial_distance,
+                    total_travel_time=total_travel_time, 
+                    travel_time_unsaturated = travel_time_unsaturated, 
+                    travel_time_shallow_aquifer=travel_time_shallow_aquifer, 
+                    travel_time_target_aquifer=travel_time_target_aquifer,
+                    discharge_point_contamination = self.schematisation.discharge_point_contamination)
+        
+        return df_flowline, df_particle
 
 
     def plot_travel_time_versus_radial_distance(self,

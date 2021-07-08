@@ -331,33 +331,30 @@ class SubstanceTransport():
             elif self.schematisation.schematisation.schematisation_type == 'semiconfined':
                 bottom_vadose_zone = self.schematisation.schematisation.bottom_vadose_zone_at_boundary
                 
-                self.schematisation.semiconfined(distance=distance, 
+                df_flowline, df_particle = self.schematisation.add_semiconfined_point_sources(distance=distance, 
                                         depth_point_contamination=depth,  )
 
-            self.schematisation.df_particle['flowline_id'] = self.schematisation.df_particle['flowline_id'] + ind
+            df_particle['flowline_id'] = df_particle['flowline_id'] + ind
             
-            self.schematisation.df_flowline['input_concentration'] = self.schematisation.schematisation.concentration_point_contamination
-            self.schematisation.df_particle['input_concentration'] = None
-            self.schematisation.df_particle['steady_state_concentration'] = None
-            self.schematisation.df_particle.loc[self.df_particle.zone=='surface', 'input_concentration'] = self.schematisation.schematisation.concentration_point_contamination
-            self.schematisation.df_particle.loc[self.df_particle.zone=='surface', 'steady_state_concentration'] = self.schematisation.schematisation.concentration_point_contamination
+            df_flowline['input_concentration'] = self.schematisation.schematisation.concentration_point_contamination
+            df_particle['input_concentration'] = None
+            df_particle['steady_state_concentration'] = None
+            df_particle.loc[self.df_particle.zone=='surface', 'input_concentration'] = self.schematisation.schematisation.concentration_point_contamination
+            df_particle.loc[self.df_particle.zone=='surface', 'steady_state_concentration'] = self.schematisation.schematisation.concentration_point_contamination
 
-            self.schematisation.df_flowline['flowline_id'] = self.schematisation.df_flowline['flowline_id'] + ind
-            self.schematisation.df_flowline['flowline_type'] = "point_source"
-            self.schematisation.df_flowline['discharge'] = self.schematisation.schematisation.discharge_point_contamination
+            df_flowline['flowline_id'] = df_flowline['flowline_id'] + ind
+            df_flowline['flowline_type'] = "point_source"
+            df_flowline['discharge'] = self.schematisation.schematisation.discharge_point_contamination
 
             #AH_todo, something here to loop through the different point sources?
 
-            self.df_particle = self.df_particle.append(self.schematisation.df_particle)
+            self.df_particle = self.df_particle.append(df_particle)
             self.df_particle.reset_index(drop=True, inplace=True)
 
-            self.df_flowline = self.df_flowline.append(self.schematisation.df_flowline) #
+            self.df_flowline = self.df_flowline.append(df_flowline) #
             self.df_flowline.reset_index(drop=True, inplace=True)
 
             self.df_flowline['substance'] = self.substance_dict['substance_name']
-
-            self.schematisation.df_flowline = self.df_flowline
-            self.schematisation.df_particle = self.df_particle
 
         self._init_omp()
 
