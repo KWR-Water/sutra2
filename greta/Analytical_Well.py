@@ -228,12 +228,12 @@ class HydroChemicalSchematisation:
                 vertical_anistropy_gravelpack=None,
                 vertical_anistropy_clayseal=None,
 
-                 substance=None,
-                 partition_coefficient_water_organic_carbon=None,
-                 dissociation_constant=None,
-                 halflife_oxic=None,
-                 halflife_anoxic=None,
-                 halflife_deeply_anoxic=None,
+                substance=None,
+                partition_coefficient_water_organic_carbon=None,
+                dissociation_constant=None,
+                halflife_oxic=None,
+                halflife_anoxic=None,
+                halflife_deeply_anoxic=None,
 
                 diffuse_input_concentration=1,
                 start_date_well='1950-01-01', #("Enter date in YYYY-MM-DD format")
@@ -241,18 +241,18 @@ class HydroChemicalSchematisation:
                 end_date_contamination='2000-01-01', #("Enter date in YYYY-MM-DD format")None, #AH my own default
                 compute_contamination_for_date=None,
 
-                 concentration_point_contamination=None,
-                 distance_point_contamination_from_well=np.array([1]),
-                 depth_point_contamination=None,
-                 discharge_point_contamination=None, #AH_todo add this to the calculation? how?
+                concentration_point_contamination=None,
+                distance_point_contamination_from_well=np.array([1]),
+                depth_point_contamination=None,
+                discharge_point_contamination=None, #AH_todo add this to the calculation? how?
 
-                 source_area_radius=None,
-                 number_of_spreading_distance=None,
-                 model_radius=None,
-                 model_width=1, #AH @MartinvdS for the ycoord? cell width, see def _export_to_df(self, ):
-                 relative_position_starting_points_radial=None,
-                 relative_position_starting_points_in_basin=None,
-                 relative_position_starting_points_outside_basin=None,
+                source_area_radius=None,
+                number_of_spreading_distance=None,
+                model_radius=None,
+                model_width=1, #AH @MartinvdS for the ycoord? cell width, see def _export_to_df(self, ):
+                relative_position_starting_points_radial=None,
+                relative_position_starting_points_in_basin=None,
+                relative_position_starting_points_outside_basin=None,
 
                  # AH to be removed when if/else for point/diffuse added, see below
                 #  recharge_concentration=None,
@@ -371,13 +371,14 @@ class HydroChemicalSchematisation:
         self.halflife_deeply_anoxic = halflife_deeply_anoxic
 
         # Diffuse contamination override if point contamination specified
-        if concentration_point_contamination is None:
-            self.diffuse_input_concentration = diffuse_input_concentration
-            self.input_concentration = diffuse_input_concentration
+        # if concentration_point_contamination is None:
+        self.diffuse_input_concentration = diffuse_input_concentration
+            # self.input_concentration = diffuse_input_concentration
 
-        else: 
-            self.diffuse_input_concentration = 0 
-            self.input_concentration = concentration_point_contamination
+        # else: 
+            # self.diffuse_input_concentration = 0 
+            # self.input_concentration = concentration_point_contamination
+        self.concentration_point_contamination = concentration_point_contamination
 
         def date_to_datetime(date):
             '''convert str input of date to datetime'''
@@ -894,7 +895,6 @@ class AnalyticalWell():
     def _calculate_travel_time_shallow_aquifer_phreatic(self, 
                                                         head, 
                                                         depth_point_contamination=None,
-                                                        # travel_distance_shallow_aquifer=None,
                                                         ):
 
         if depth_point_contamination is None:
@@ -919,7 +919,9 @@ class AnalyticalWell():
         return travel_time_shallow_aquifer
 
     
-    def _calculate_travel_time_target_aquifer_phreatic(self, fraction_flux = None, distance= None):
+    def _calculate_travel_time_target_aquifer_phreatic(self, 
+                                                        fraction_flux = None, 
+                                                        distance= None):
         ''' Use a fraction_flux array to calculate the travel time for all flowlines or specify
         a specific distance from the well to calculate the travel time '''
 
@@ -1057,6 +1059,7 @@ class AnalyticalWell():
 
         # if isinstance(cumulative_fraction_abstracted_water, float):
         # if isinstance(distance, float):
+        #AH_here
         if len(distance) == 1:
             #point source
             self.flowline_discharge = cumulative_fraction_abstracted_water * self.schematisation.well_discharge
@@ -1087,6 +1090,7 @@ class AnalyticalWell():
         travel_time_shallow_aquifer, 
         travel_time_target_aquifer,
         discharge_point_contamination=None,
+        # input_concentration=self.schematisation.diffuse_input_concentration,
         ):
         """ Export to dataframe....
 
@@ -1099,10 +1103,12 @@ class AnalyticalWell():
         #------------------------------
         # Make df_particle
         #------------------------------
-        def fill_df_particle (df, distance, travel_time_unsaturated, 
-                                travel_time_shallow_aquifer, 
-                                travel_time_target_aquifer,
-                                total_travel_time):
+        def fill_df_particle (df, 
+                            distance, 
+                            travel_time_unsaturated, 
+                            travel_time_shallow_aquifer, 
+                            travel_time_target_aquifer,
+                            total_travel_time):
             
             df.loc[0] = [flowline_id, 
                         "surface", 
@@ -1118,8 +1124,6 @@ class AnalyticalWell():
                          None, 
                          None, 
                          None,
-                         input_concentration, 
-                         input_concentration, 
                          None]
 
             df.loc[1] = [flowline_id, 
@@ -1136,8 +1140,6 @@ class AnalyticalWell():
                          self.schematisation.dissolved_organic_carbon_vadose_zone,
                          self.schematisation.pH_vadose_zone,
                          self.schematisation.fraction_organic_carbon_vadose_zone,
-                         input_concentration,
-                         None, #steady_state_concentration placeholder
                          self.schematisation.solid_density_vadose_zone,
                          ]
 
@@ -1155,8 +1157,6 @@ class AnalyticalWell():
                          self.schematisation.dissolved_organic_carbon_shallow_aquifer,
                          self.schematisation.pH_shallow_aquifer,
                          self.schematisation.fraction_organic_carbon_shallow_aquifer,
-                         input_concentration,
-                         None,#steady_state_concentration placeholder
                          self.schematisation.solid_density_shallow_aquifer, 
                          ]
 
@@ -1174,8 +1174,6 @@ class AnalyticalWell():
                          self.schematisation.dissolved_organic_carbon_target_aquifer,
                          self.schematisation.pH_target_aquifer,
                          self.schematisation.fraction_organic_carbon_target_aquifer,
-                         input_concentration,
-                         None, #steady_state_concentration placeholder
                          self.schematisation.solid_density_target_aquifer,                         
                          ]
             return df
@@ -1194,16 +1192,12 @@ class AnalyticalWell():
                                                  'dissolved_organic_carbon', 
                                                  'pH', 
                                                  'fraction_organic_carbon', 
-                                                 'input_concentration', 
-                                                 'steady_state_concentration', 
                                                  'solid_density_layer'])
 
         df = df_particle.copy()
-        # if len(df_output) > 1:
 
         for i in range(len(df_output)):
             flowline_id = i+1
-            input_concentration = self.schematisation.input_concentration #df_flowline.loc[self.df_flowline['flowline_id'] == 1, 'input_concentration'].values[0]
             df = fill_df_particle (df= df, 
                                 distance = distance[i], 
                                 travel_time_unsaturated = travel_time_unsaturated[i], 
@@ -1215,24 +1209,24 @@ class AnalyticalWell():
             df_particle['redox_zone'] = df_particle['redox_zone'].fillna('').astype(str)
             df_particle['flowline_id'] = df_particle['flowline_id'].astype(int)
 
-        self.df_particle = df_particle
-
         #------------------------------
         # Make df_flowline
         #------------------------------
-        df_flowline = pd.DataFrame(columns=['flowline_id', 'discharge',
-                                                 'particle_release_date',
-                                                 'input_concentration',
-                                                 'endpoint_id'])
+        df_flowline = pd.DataFrame(columns=['flowline_id',
+                                            'flowline_type', #diffuse_source or point_source
+                                            'discharge',
+                                            'particle_release_date',
+                                            # 'input_concentration',
+                                            'endpoint_id', ])
+        df_flowline['discharge'] = self.flowline_discharge
+        df_flowline['flowline_type'] = 'diffuse_source'
 
-        if discharge_point_contamination is None:
-            df_flowline['discharge'] = self.flowline_discharge
-        else: 
-            df_flowline.loc[0,'discharge'] = discharge_point_contamination
 
         df_flowline['flowline_id'] =  df_flowline.index + 1
         df_flowline['particle_release_date'] = self.schematisation.particle_release_date
-        df_flowline['input_concentration'] = self.schematisation.input_concentration
+
+
+        # df_flowline['input_concentration'] = self.schematisation.input_concentration
         # #AH  Temporary solution here, @MartinK @MartinvdS, do we want to automatically 
         # make the dictionaries for modpath when running the analytical model? 
         # so far this is the only use for hte dicitonaries so they are made here
@@ -1251,7 +1245,7 @@ class AnalyticalWell():
             df_flowline['thickness_full_capillary_fringe'] = self.schematisation.thickness_full_capillary_fringe
             # df_flowline['recharge_concentration'] = self.schematisation.recharge_concentration
             df_flowline['substance'] = self.schematisation.substance
-            df_flowline['input_concentration'] = self.schematisation.input_concentration
+            # df_flowline['input_concentration'] = input_concentration
             df_flowline['particle_release_date'] = self.schematisation.particle_release_date
             df_flowline['moisture_content_vadose_zone'] = self.schematisation.moisture_content_vadose_zone
             df_flowline['diameter_borehole'] = self.schematisation.diameter_borehole
@@ -1274,13 +1268,14 @@ class AnalyticalWell():
             # df_flowline['vani_clayseal'] = self.schematisation.vani_clayseal
             # df_flowline['dz_well'] = self.schematisation.dz_well
 
-        self.df_flowline = df_flowline
-        return self.df_flowline, self.df_particle
+        # self.df_flowline = df_flowline
+        return df_flowline, df_particle
 
     def phreatic(self, 
                 distance=None, 
                 depth_point_contamination=None,
-                cumulative_fraction_abstracted_water=None, ):
+                cumulative_fraction_abstracted_water=None,
+                ):
         self._check_init_phreatic()
                 
         '''
@@ -1353,7 +1348,7 @@ class AnalyticalWell():
                     )
             
 
-        self.df_flowline, self.df_particle= self._export_to_df(df_output=self.df_output, 
+        self.df_flowline, self.df_particle = self._export_to_df(df_output=self.df_output, 
                     distance=self.radial_distance,
                     total_travel_time=self.total_travel_time, 
                     travel_time_unsaturated = self.travel_time_unsaturated, 
@@ -1416,8 +1411,6 @@ class AnalyticalWell():
             self.schematisation._calculate_travel_time_unsaturated_zone(distance=distance,
                                                                         depth_point_contamination = depth_point_contamination
                                                                         )
-            # self.travel_time_unsaturated = self.schematisation.travel_time_unsaturated
-            # self.spreading_distance = self.schematisation.spreading_distance
             self.radial_distance = distance
         
         self.travel_time_unsaturated = self.schematisation.travel_time_unsaturated
@@ -1459,12 +1452,15 @@ class AnalyticalWell():
                     cumulative_fraction_abstracted_water = self.cumulative_fraction_abstracted_water,  
                     # flowline_discharge=self.flowline_discharge,
                     )
-        self.df_flowline, self.df_particle=self._export_to_df(df_output=self.df_output, distance=self.radial_distance,
+
+        self.df_flowline, self.df_particle=self._export_to_df(df_output=self.df_output, 
+                    distance=self.radial_distance,
                     total_travel_time=self.total_travel_time, 
                     travel_time_unsaturated = self.travel_time_unsaturated, 
                     travel_time_shallow_aquifer=self.travel_time_shallow_aquifer, 
                     travel_time_target_aquifer=self.travel_time_target_aquifer,
                     discharge_point_contamination = self.schematisation.discharge_point_contamination)
+
 
     def plot_travel_time_versus_radial_distance(self,
                                                 xlim=[0, 4000],
@@ -1473,6 +1469,7 @@ class AnalyticalWell():
 
         fig = plt.figure(figsize=[10, 5])
         plt.plot(self.radial_distance, self.total_travel_time, 'r', label=self.schematisation.schematisation_type)
+        
         plt.xlim(xlim)
         plt.ylim(ylim) 
         plt.yscale('log')

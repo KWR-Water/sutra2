@@ -171,7 +171,7 @@ class SubstanceTransport():
         else:
             self.substance_dict = self.substance.substance_dict
 
-        self.df_flowline['substance'] = self.substance_dict['substance_name']
+        # self.df_flowline['substance'] = self.substance_dict['substance_name']
 
     def _init_omp(self):
         if self.omp_inialized:
@@ -224,8 +224,7 @@ class SubstanceTransport():
         from Luers and Ten Hulscher (1996): Assuming the relation to be similar 
         to the Van ‘t Hoff equation and equally performing for other OMPs yields'''
 
-        #@MartinK this seems a bit roundabout way to access this?
-
+        # if log_Koc is zero, assign value of zero
         if self.df_particle.log_Koc[0] == 0:
             self.df_particle['Koc_temperature_correction'] = 0
         elif self.schematisation.schematisation.temp_correction_Koc:
@@ -236,7 +235,7 @@ class SubstanceTransport():
     def _calculate_state_concentration_in_zone(self):
         '''Equation 4.11 in report '''
 
-        #check if there is degradation prior
+        #check if there is degradation prior to infiltration
         DOC_inf = self.schematisation.schematisation.dissolved_organic_carbon_infiltration_water 
         TOC_inf = self.schematisation.schematisation.total_organic_carbon_infiltration_water 
 
@@ -301,24 +300,15 @@ class SubstanceTransport():
         extra column: Retardation
         extra column: break_through_time
         """
+        
+        self.df_flowline['input_concentration'] = self.schematisation.schematisation.diffuse_input_concentration
+        self.df_particle['input_concentration'] = None
+        self.df_particle['steady_state_concentration'] = None
 
-        if self.schematisation.schematisation.concentration_point_contamination is None:
-            ''' diffuse calculation'''
-            self._init_omp()
+        self.df_particle.loc[self.df_particle.zone=='surface', 'input_concentration'] = self.schematisation.schematisation.diffuse_input_concentration
+        self.df_particle.loc[self.df_particle.zone=='surface', 'steady_state_concentration'] = self.schematisation.schematisation.diffuse_input_concentration
 
-            self._calculate_Koc_temperature_correction()
-
-            self._calculate_omp_half_life_temperature_correction()
-            
-            self._calculate_retardation()
-
-            self._calculate_state_concentration_in_zone()
-
-            self.df_particle['breakthrough_travel_time'] = self.df_particle.retardation * self.df_particle.travel_time_zone
-
-            self._calculcate_total_breakthrough_travel_time()
-
-        else: 
+        if self.schematisation.schematisation.concentration_point_contamination:
             ''' point contamination '''
             # need to take into account the depth of the point contamination here....
             # need to change the df_particle and df_flowline to only be the flowlines for the point contamination flowline(s)
@@ -328,38 +318,60 @@ class SubstanceTransport():
             #only for a SINGLE point contamination
             distance = self.schematisation.schematisation.distance_point_contamination_from_well
             depth = self.schematisation.schematisation.depth_point_contamination
+            cumulative_fraction_abstracted_water = (math.pi * self.schematisation.schematisation.recharge_rate 
+                                                        * distance ** 2)/self.schematisation.schematisation.well_discharge
+            ind = self.df_particle.flowline_id.iloc[-1]
 
             if self.schematisation.schematisation.schematisation_type == 'phreatic':
                 self.head = self.schematisation.schematisation.calculate_hydraulic_head_phreatic(distance=distance)
-                cumulative_fraction_abstracted_water = (math.pi * self.schematisation.schematisation.recharge_rate * distance ** 2)/self.schematisation.schematisation.well_discharge
                 self.schematisation.phreatic(distance = distance, 
                                             depth_point_contamination=depth, 
                                             cumulative_fraction_abstracted_water=cumulative_fraction_abstracted_water )
-                self.df_particle = self.schematisation.df_particle
-                self.df_flowline = self.schematisation.df_flowline
 
             elif self.schematisation.schematisation.schematisation_type == 'semiconfined':
                 bottom_vadose_zone = self.schematisation.schematisation.bottom_vadose_zone_at_boundary
-                cumulative_fraction_abstracted_water = (math.pi * self.schematisation.schematisation.recharge_rate * distance ** 2)/self.schematisation.schematisation.well_discharge
+                
                 self.schematisation.semiconfined(distance=distance, 
                                         depth_point_contamination=depth,  )
 
-                self.df_particle = self.schematisation.df_particle
-                self.df_flowline = self.schematisation.df_flowline
+            self.schematisation.df_particle['flowline_id'] = self.schematisation.df_particle['flowline_id'] + ind
             
-            self._init_omp()
+            self.schematisation.df_flowline['input_concentration'] = self.schematisation.schematisation.concentration_point_contamination
+            self.schematisation.df_particle['input_concentration'] = None
+            self.schematisation.df_particle['steady_state_concentration'] = None
+            self.schematisation.df_particle.loc[self.df_particle.zone=='surface', 'input_concentration'] = self.schematisation.schematisation.concentration_point_contamination
+            self.schematisation.df_particle.loc[self.df_particle.zone=='surface', 'steady_state_concentration'] = self.schematisation.schematisation.concentration_point_contamination
 
-            self._calculate_Koc_temperature_correction()
+            self.schematisation.df_flowline['flowline_id'] = self.schematisation.df_flowline['flowline_id'] + ind
+            self.schematisation.df_flowline['flowline_type'] = "point_source"
+            self.schematisation.df_flowline['discharge'] = self.schematisation.schematisation.discharge_point_contamination
 
-            self._calculate_omp_half_life_temperature_correction()
-            
-            self._calculate_retardation()
+            #AH_todo, something here to loop through the different point sources?
 
-            self._calculate_state_concentration_in_zone()
+            self.df_particle = self.df_particle.append(self.schematisation.df_particle)
+            self.df_particle.reset_index(drop=True, inplace=True)
 
-            self.df_particle['breakthrough_travel_time'] = self.df_particle.retardation * self.df_particle.travel_time_zone
+            self.df_flowline = self.df_flowline.append(self.schematisation.df_flowline) #
+            self.df_flowline.reset_index(drop=True, inplace=True)
 
-            self._calculcate_total_breakthrough_travel_time()
+            self.df_flowline['substance'] = self.substance_dict['substance_name']
+
+            self.schematisation.df_flowline = self.df_flowline
+            self.schematisation.df_particle = self.df_particle
+
+        self._init_omp()
+
+        self._calculate_Koc_temperature_correction()
+
+        self._calculate_omp_half_life_temperature_correction()
+        
+        self._calculate_retardation()
+
+        self._calculate_state_concentration_in_zone()
+
+        self.df_particle['breakthrough_travel_time'] = self.df_particle.retardation * self.df_particle.travel_time_zone
+
+        self._calculcate_total_breakthrough_travel_time()
 
     def compute_microbiology_removal(self):
         pass
@@ -375,31 +387,41 @@ class SubstanceTransport():
 
 
     def plot_concentration(self, xlim=[0, 500], ylim=[0,1 ]):
+        ''' Plot the concentration of the given OMP as a function of time since the start of the contamination'''
         time_array = np.arange(0, 505, 1)*365.24
+        
+        # reduce the amount of text per line by extracting the following parameters
+        concentration_point_contamination = self.schematisation.schematisation.concentration_point_contamination
+        diffuse_input_concentration = self.schematisation.schematisation.diffuse_input_concentration
+        schematisation_type = self.schematisation.schematisation.schematisation_type
 
-        if self.schematisation.schematisation.concentration_point_contamination is None:
-            type_contamination = 'diffuse'
+        if concentration_point_contamination is None:
+            input_concentration = diffuse_input_concentration 
         else:
-            type_contamination = 'point'
-        #Calculate the concentration in the well, as 
+            input_concentration = diffuse_input_concentration + concentration_point_contamination
+
+        #Calculate the concentration in the well, 
         self.df_flowline['concentration_in_well'] = (self.df_flowline['breakthrough_concentration'] 
                             * self.df_flowline['discharge']/ self.df_flowline['well_discharge'])
         well_conc = []
+
+        #sum the concentration in the well for each timestep
         for i in range(len(time_array)):
             t = time_array[i]
             well_conc.append(sum(self.df_flowline['concentration_in_well'].loc[self.df_flowline['total_breakthrough_travel_time'] <= t]))
 
-        well_conc = well_conc/self.df_flowline.input_concentration[0]
+        # well_conc = well_conc/input_concentration
+        well_conc[:] = [x / input_concentration for x in well_conc]
         fig = plt.figure(figsize=[10, 5])
         plt.plot(time_array/365.24, well_conc, 'b', label =str(self.substance.substance_name))
         plt.xlim(xlim)
         plt.ylim(ylim) 
         plt.ylabel('Fraction of input concentration')
         plt.xlabel('Time since start of contamination (years)')
-        plt.title('Aquifer type: ' + self.schematisation.schematisation.schematisation_type)
+        plt.title('Aquifer type: ' + schematisation_type)
         plt.grid()
         plt.legend()
-        plt.savefig('well_concentration_over_time_'+str(self.substance.substance_name)+'_'+self.schematisation.schematisation.schematisation_type+'_'+type_contamination+'.png', dpi=300, bbox_inches='tight')  # save_results_to + '/
+        plt.savefig('well_concentration_over_time_'+str(self.substance.substance_name)+'_'+schematisation_type+'.png', dpi=300, bbox_inches='tight')  # save_results_to + '/
 
 
     def plot_age_distribution(self):
