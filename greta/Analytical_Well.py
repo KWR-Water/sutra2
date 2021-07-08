@@ -1279,7 +1279,6 @@ class AnalyticalWell():
                 depth_point_contamination=None,
                 cumulative_fraction_abstracted_water=None,
                 ):
-        self._check_init_phreatic()
                 
         '''
         Function to create array of travel time distributionss
@@ -1313,6 +1312,7 @@ class AnalyticalWell():
         radial_distance                 # [m], radial distance to well (field),
                                         from site X within and any site on the groundwater divide
         '''
+        self._check_init_phreatic()
 
         # travel time unsaturated now calculated in the HydrochemicalSchematisation class
 
@@ -1359,6 +1359,92 @@ class AnalyticalWell():
                     travel_time_target_aquifer=self.travel_time_target_aquifer,
                     discharge_point_contamination = self.schematisation.discharge_point_contamination)
 
+    def add_phreatic_point_sources(self, 
+                distance=None, 
+                depth_point_contamination=None,
+                cumulative_fraction_abstracted_water=None,
+                ):
+                
+        '''
+        Function to create array of travel time distributionss
+        for distances from well for phreatic aquifer scenario
+
+        Parameter - Input
+        ---------
+        well_discharge                           # [m3/day]
+        spreading_distance               # [m]?, sqtr(K*D*c)
+        vertical_resistance_aquitard   # [d], c_V
+        porosity_vadose_zone           # [-]
+        porosity_shallow_aquifer       # [-]
+        porosity_target_aquifer        # [-]
+        KD                             # [m2/d], permeability * tickness of vertical layer
+        permeability                   # [m2]
+
+        thickness_vadose_zone           # [m], thickness of unsaturated zone/layer
+        thickness_shallow_aquifer       # [m], thickness of zone 1, if semiconfined aquitard,
+                                        if phreatic aquifer, aquifer zone above top of well screens.
+        thickness_target_aquifer        # [m], thickness of zone 2
+
+        thickness_full_capillary_fringe #[m], cF
+
+        recharge_rate                        # [m/d], recharge of well area
+        moisture_content_vadose_zone           # [m3/m3], θ
+        travel_time_H2O                 # [d],  travel time of water along flowline, in zone
+
+        Output
+        ------
+        radial_distance_recharge        # [m], radial distance to well in order to recharge the well
+        radial_distance                 # [m], radial distance to well (field),
+                                        from site X within and any site on the groundwater divide
+        '''
+        self._check_init_phreatic()
+
+        # travel time unsaturated now calculated in the HydrochemicalSchematisation class
+
+        if distance is None:
+            self.schematisation._calculate_travel_time_unsaturated_zone()
+            radial_distance = self.schematisation.radial_distance
+            fraction_flux=self.schematisation.fraction_flux
+        else: 
+            self.schematisation._calculate_travel_time_unsaturated_zone(distance=distance, depth_point_contamination=depth_point_contamination)
+            radial_distance = distance
+            fraction_flux=None
+            
+        travel_time_unsaturated = self.schematisation.travel_time_unsaturated
+        head = self.schematisation.head
+
+        travel_time_shallow_aquifer = self._calculate_travel_time_shallow_aquifer_phreatic(head=head, 
+                                                                                        depth_point_contamination=depth_point_contamination)
+        
+        travel_time_target_aquifer = self._calculate_travel_time_target_aquifer_phreatic(fraction_flux=fraction_flux,
+                                                                                        distance=distance)
+
+        total_travel_time = (travel_time_unsaturated + travel_time_shallow_aquifer
+                            + travel_time_target_aquifer)
+        
+        if cumulative_fraction_abstracted_water is None:
+            cumulative_fraction_abstracted_water = self.schematisation.fraction_flux 
+        else:
+            cumulative_fraction_abstracted_water = cumulative_fraction_abstracted_water
+
+        df_output = self._create_output_dataframe(total_travel_time=total_travel_time, 
+                    travel_time_unsaturated = travel_time_unsaturated, 
+                    travel_time_shallow_aquifer=travel_time_shallow_aquifer, 
+                    travel_time_target_aquifer=travel_time_target_aquifer,
+                    distance=radial_distance,
+                    head=head, 
+                    cumulative_fraction_abstracted_water = cumulative_fraction_abstracted_water,  
+                    )
+            
+        df_flowline, df_particle=self._export_to_df(df_output=df_output, 
+                    distance=radial_distance,
+                    total_travel_time=total_travel_time, 
+                    travel_time_unsaturated = travel_time_unsaturated, 
+                    travel_time_shallow_aquifer=travel_time_shallow_aquifer, 
+                    travel_time_target_aquifer=travel_time_target_aquifer,
+                    discharge_point_contamination = self.schematisation.discharge_point_contamination)
+        
+        return df_flowline, df_particle
 
     def semiconfined(self,
                     distance = None, 
