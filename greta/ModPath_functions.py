@@ -40,128 +40,6 @@ from scipy.special import kn as besselk
 path = os.getcwd()  # path of working directory
 
 
-#%% 
-
-# ------------------------------------------------------------------------------
-# Questions
-# ------------------------------------------------------------------------------
-
-# 1. 
-
-# ------------------------------------------------------------------------------
-# Phreatic and Semi-Confined Aquifer Functions
-# ------------------------------------------------------------------------------
-# %%
-
-# ########### Defaults ###########
-WELL_SCREEN_DIAMETER = .75  # m
-BOREHOLE_DIAMETER = .75  # m -> equal to screen diameter to ignore backfilling
-TEMPERATURE = 11  # Celcius
-K_HOR_AQUIFER = 10  # m/d
-VANI_AQUIFER = 1.  # -
-K_HOR_CONFINING = .001  # m/d
-VANI_CONFINING = 1.  # -
-K_HOR_GRAVELPACK = 100  # m/d
-VANI_GRAVELPACK = 1.  # -
-K_HOR_CLAYSEAL = .001  # m/d
-VANI_CLAYSEAL = 1.  # -
-
-DENSITY_AQUIFER = 2650.  # kg/m3
-REMOVAL_FUNCTION = 'omp'
-
-DZ_WELL = 0.5  # preferred height of layer [m]
-#%%
-"""
-Parameters
-----------
-schematisation: string
-    'freatic', 'semi-confined', 'riverbankfiltration', 'basinfiltration'
-removal_function: string
-    'omp' -> get parameters for OMP
-    'microbiology' -> get parameters for microbiology
-"""
-
-
-# # ########### INPUT PARAMETERS Aquapriori Bodem "Phreatic OMP" ###########
-# schematisation = 'freatic'
-# thickness_vadoze_zone = 1.  # m
-# thickness_shallow_aquifer = 5.  # m
-# thickness_target_aquifer = 10.  # m
-# porosity_vadoze_zone = .2  # m3/m3
-# porosity_shallow_aquifer = .3  # m3/m3
-# porosity_target_aquifer = .25  # m3/m3
-# organic_carbon_vadoze_zone = .2  # kg/m3 ??
-# organic_carbon_shallow_aquifer = .3  # kg/m3 ??
-# organic_carbon_target_aquifer = .25  # kg/m3 ??
-# redox_vadoze_zone = 1.  # 1 = (sub)oxic; 2 = anoxic; 3 = deeply anoxic
-# redox_shallow_aquifer = 2
-# redox_target_aquifer = 3
-# well_discharge_m3hour = 20 #m3/h
-# recharge_rate = .001
-# recharge_conc = 1.
-# substance = 'chloridazon'
-# vertical_resistance_aquitard   # [d], c_V
-# soil_moisture_content           # [m3/m3], θ
-
-
-# #@basin paramters
-# length_basin
-# width_basin
-# _depth_basin
-# horizontal_distance_basin_gallery = horizontal distance between basin bank and drainage gallery [m];
-# porosity_recharge_basin 
-# groundwater_level_above_saturated_zone = normal maximum rise of watertable above H0 [m];
-
-# from greta.draft_transport_function import HydroChemicalSchematisation as HCS
-# HCS_test = HCS()
-# print(vars(HCS_test))
-
-# #%%
-# class AnalyticalWell():
-#     """ Compute travel time distribution using analytical well functions."""
- 
-#   	def __init__(self):
-#     		""" 'unpack/parse' all the variables from the hydrogeochemical schematizization """
-#   	  	for key, item for input_dict.items():
- 
-  
-#     def _check_init_freatic():
-#        	#check the variables that we need for the individual aquifer types are not NONE aka set by the user
-#   			pass
- 
-#   	def export_to_df(self, what_to_export='all')
-#   	    """ Export to dataframe....
-
-#         Parameters
-#         ----------
-#         what_to_export: String
-#         		options: 'all', 'omp_parameters', 'microbial_parameters'
-#         """
-#   			#delete the unwanted columns depending on what the user asks for here
-#   			returns df_flowline, df_particle
-
-#%%  
-# the python user will call the function as follows
-# well = AnalyticalWell()
-# if schematisation == 'freatic':
-# 		well.freatic()
-# elif schematisation == 'semiconfined':
-# 		well.semiconfined()
-# else:
-#   	raise KeyError('schematisation argument not recognized')
-# df_flow, df_particle = well.export_to_df('all')
-#%%
-# output Alex "phreatic_dict_nogravel.txt" --> saved in "testing dir"
-research_dir = os.path.join(path,"..","research")
-with open(os.path.join(research_dir,"phreatic_dict_nogravel.txt"),"r") as file_:
-    dict_content = file_.read()
-    phreatic_scheme = eval(dict_content)
-
-check_schematisation = False # Check input dict (T/F)
-if check_schematisation:
-    for iKey,iVal in phreatic_scheme.items():
-        print(iKey,iVal,"\n")
-
 
 #%%
 '''
@@ -403,6 +281,26 @@ class ModPathWell:
         setattr(self, property, value)
         ''' set attribute value to new object attribute/property'''
 
+    def axisym_correction(self, grid: np.array,
+                          dtype: str or None = None, theta = 2 * np.pi):
+
+        ''' Correct modflow parameters to correctly calculate axisymmetric flow.
+            Adjust the array 'grid' if it already exists, using multiplier theta
+            and xmid (nrow == 1 or nrow == 2) or ymid (ncol == 1 or ncol == 2).
+        '''
+        # Check if model is axisymmetric along rows or columns.
+        if dtype is None:
+            dtype = grid.dtype
+        # Create empty numpy grid    
+        grid_axi = np.zeros((self.nlay,self.nrow,self.ncol), dtype = dtype)
+        if (self.nrow == 1) | (self.nrow == 2):
+            for iCol in range(self.ncol):
+                grid_axi[:,:,iCol] = theta * self.xmid[iCol] * grid[:,:,iCol]
+
+        return grid_axi
+
+
+
     def fill_grid(self,schematisation: dict, dict_keys: list or None = None,
                         parameter: str = "None",
                         grid: np.array or None = None,
@@ -521,7 +419,6 @@ class ModPathWell:
         # Return the filled grid                
         return grid
 
-        
 
     def _assign_cellboundaries(self,schematisation: dict, dict_keys: list or None = None,
                                 bound_min: str = "xmin", bound_max: str = "xmax",
@@ -595,13 +492,13 @@ class ModPathWell:
         # Assign center points (xmid | ymid | zmid)
         center_points = np.empty((len_arr), dtype= 'float')
         if ascending: # xmid and ymid arrays are increasing with increasing index number
-            center_points[0] = cell_sizes[0] * 0.5
+            center_points[0] = bound_list[0] + cell_sizes[0] * 0.5
             for idx in range(1, len_arr):
-                center_points[idx] = (center_points[(idx - 1)] + ((cell_sizes[(idx)]) + (cell_sizes[(idx - 1)])) * 0.5)  
+                center_points[idx] = center_points[(idx - 1)] + ((cell_sizes[(idx)] + cell_sizes[(idx - 1)]) * 0.5)  
         else: # zmid arrays are decreasing with increasing index number
-            center_points[0] = cell_sizes[0] * 0.5
+            center_points[0] = bound_list[0] - cell_sizes[0] * 0.5
             for idx in range(1, len_arr):
-                center_points[idx] = (center_points[(idx - 1)] - ((cell_sizes[(idx)]) + (cell_sizes[(idx - 1)])) * 0.5)  
+                center_points[idx] = center_points[(idx - 1)] - ((cell_sizes[(idx)] + cell_sizes[(idx - 1)]) * 0.5)  
 
         return len_arr, cell_sizes, center_points, bound_list
 
@@ -834,21 +731,26 @@ class ModPathWell:
     def phreatic(self):
         self._check_init_phreatic()
         # Model_type axisymmetric
-        model_type = "axisymmetric"
+        self.model_type = "axisymmetric"
 
         # Make radial discretisation
         # Use dictionary keys from schematisation
         dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
                       "well_parameters"]
         self.make_discretisation(schematisation = self.schematisation, dict_keys = dict_keys,
-                            model_type = model_type)
+                            model_type = self.model_type)
 
         # Set ibound grid
         dict_keys = ["ibound_parameters"]
         self.set_ibound(schematisation = self.schematisation,
                             dict_keys = dict_keys,
                             ibound = None,
-                            model_type = model_type)
+                            model_type = self.model_type)
+
+        # list active packages
+        active_packages = []
+        # Parameter requirement
+        package_parms = {"BAS"}
 
         parm_names = {"moisture_content": ["geo_parameters"],
                       "hk": ["geo_parameters"],
@@ -856,7 +758,7 @@ class ModPathWell:
                       "porosity": ["geo_parameters"]}
 
         for iParm, dict_keys in parm_names.items():
-
+            # Temporary value
             grid = self.fill_grid(schematisation = self.schematisation,
                             dict_keys = dict_keys,
                             parameter = iParm,
@@ -865,8 +767,21 @@ class ModPathWell:
                             bound_left = "rmin", bound_right = "rmax",
                             bound_top = "top", bound_bot = "bot",
                             bound_north = "ymin", bound_south = "ymax",
-                            model_type = model_type)
+                            model_type = self.model_type)
             self.update_property(property = iParm, value = grid)
+
+        # Create (uncorrected) array for kv, using "kh" and "vani" (vertical anisotropy)
+        self.vk = self.hk / self.vani
+        # and for 'storativity'
+        self.stor = np.ones((self.nlay,self.nrow,self.ncol), dtype = 'float') * 1.E-6
+        # Axisymmetric flow properties
+        axisym_parms = ["hk","vk","stor"]
+        if self.model_type == "axisymmetric":
+            for iParm in axisym_parms:
+                grid_uncorr = getattr(self,iParm)
+                grid_axi = self.axisym_correction(grid = grid_uncorr)
+                # Update attribute
+                self.update_property(property = iParm, value = grid_axi)
 
         '''
         Function to create array of travel time distributionss
@@ -1201,3 +1116,128 @@ else:
   	raise KeyError('schematisation argument not recognized')
                        
 '''
+
+#%%
+if __name__ == "__main__":
+    #%% 
+
+    # ------------------------------------------------------------------------------
+    # Questions
+    # ------------------------------------------------------------------------------
+
+    # 1. 
+
+    # ------------------------------------------------------------------------------
+    # Phreatic and Semi-Confined Aquifer Functions
+    # ------------------------------------------------------------------------------
+    # %%
+
+    # ########### Defaults ###########
+    WELL_SCREEN_DIAMETER = .75  # m
+    BOREHOLE_DIAMETER = .75  # m -> equal to screen diameter to ignore backfilling
+    TEMPERATURE = 11  # Celcius
+    K_HOR_AQUIFER = 10  # m/d
+    VANI_AQUIFER = 1.  # -
+    K_HOR_CONFINING = .001  # m/d
+    VANI_CONFINING = 1.  # -
+    K_HOR_GRAVELPACK = 100  # m/d
+    VANI_GRAVELPACK = 1.  # -
+    K_HOR_CLAYSEAL = .001  # m/d
+    VANI_CLAYSEAL = 1.  # -
+
+    DENSITY_AQUIFER = 2650.  # kg/m3
+    REMOVAL_FUNCTION = 'omp'
+
+    DZ_WELL = 0.5  # preferred height of layer [m]
+    #%%
+    """
+    Parameters
+    ----------
+    schematisation: string
+        'freatic', 'semi-confined', 'riverbankfiltration', 'basinfiltration'
+    removal_function: string
+        'omp' -> get parameters for OMP
+        'microbiology' -> get parameters for microbiology
+    """
+
+
+    # # ########### INPUT PARAMETERS Aquapriori Bodem "Phreatic OMP" ###########
+    # schematisation = 'freatic'
+    # thickness_vadoze_zone = 1.  # m
+    # thickness_shallow_aquifer = 5.  # m
+    # thickness_target_aquifer = 10.  # m
+    # porosity_vadoze_zone = .2  # m3/m3
+    # porosity_shallow_aquifer = .3  # m3/m3
+    # porosity_target_aquifer = .25  # m3/m3
+    # organic_carbon_vadoze_zone = .2  # kg/m3 ??
+    # organic_carbon_shallow_aquifer = .3  # kg/m3 ??
+    # organic_carbon_target_aquifer = .25  # kg/m3 ??
+    # redox_vadoze_zone = 1.  # 1 = (sub)oxic; 2 = anoxic; 3 = deeply anoxic
+    # redox_shallow_aquifer = 2
+    # redox_target_aquifer = 3
+    # well_discharge_m3hour = 20 #m3/h
+    # recharge_rate = .001
+    # recharge_conc = 1.
+    # substance = 'chloridazon'
+    # vertical_resistance_aquitard   # [d], c_V
+    # soil_moisture_content           # [m3/m3], θ
+
+
+    # #@basin paramters
+    # length_basin
+    # width_basin
+    # _depth_basin
+    # horizontal_distance_basin_gallery = horizontal distance between basin bank and drainage gallery [m];
+    # porosity_recharge_basin 
+    # groundwater_level_above_saturated_zone = normal maximum rise of watertable above H0 [m];
+
+    # from greta.draft_transport_function import HydroChemicalSchematisation as HCS
+    # HCS_test = HCS()
+    # print(vars(HCS_test))
+
+    # #%%
+    # class AnalyticalWell():
+    #     """ Compute travel time distribution using analytical well functions."""
+    
+    #   	def __init__(self):
+    #     		""" 'unpack/parse' all the variables from the hydrogeochemical schematizization """
+    #   	  	for key, item for input_dict.items():
+    
+    
+    #     def _check_init_freatic():
+    #        	#check the variables that we need for the individual aquifer types are not NONE aka set by the user
+    #   			pass
+    
+    #   	def export_to_df(self, what_to_export='all')
+    #   	    """ Export to dataframe....
+
+    #         Parameters
+    #         ----------
+    #         what_to_export: String
+    #         		options: 'all', 'omp_parameters', 'microbial_parameters'
+    #         """
+    #   			#delete the unwanted columns depending on what the user asks for here
+    #   			returns df_flowline, df_particle
+
+    #%%  
+    # the python user will call the function as follows
+    # well = AnalyticalWell()
+    # if schematisation == 'freatic':
+    # 		well.freatic()
+    # elif schematisation == 'semiconfined':
+    # 		well.semiconfined()
+    # else:
+    #   	raise KeyError('schematisation argument not recognized')
+    # df_flow, df_particle = well.export_to_df('all')
+    #%%
+    # output Alex "phreatic_dict_nogravel.txt" --> saved in "testing dir"
+    research_dir = os.path.join(path,"..","research")
+    with open(os.path.join(research_dir,"phreatic_dict_nogravel.txt"),"r") as file_:
+        dict_content = file_.read()
+        phreatic_scheme = eval(dict_content)
+
+    check_schematisation = False # Check input dict (T/F)
+    if check_schematisation:
+        for iKey,iVal in phreatic_scheme.items():
+            print(iKey,iVal,"\n")
+
