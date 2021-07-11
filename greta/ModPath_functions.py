@@ -222,7 +222,8 @@ rmax -> diameter_filterscreen
 class ModPathWell:
 
     """ Compute travel time distribution using MODFLOW and MODPATH.""" 
-    def __init__(self, schematisation: dict): #change schematisation_instance to schematisation
+    def __init__(self, schematisation: dict,
+                       workspace: str or None = None, modelname: str or None = None): 
         """ 'unpack/parse' all the variables from the hydrogeochemical schematizization """
 
         '''Parameters
@@ -250,6 +251,30 @@ class ModPathWell:
         # self.test_variable = None #AH test variable here to see if errors are caught....
 
         self.schematisation = schematisation
+        
+        self.workspace = workspace  # workspace
+        self.modelname = modelname  # modelname
+        # Cbc unit flag (modflow oc-package input)
+        iu_cbc = 130
+        self.iu_cbc = iu_cbc
+        
+
+        # Create output directories
+        # Destination root
+        self.dstroot = self.workspace + '\\results'  # + '\\results_' + 'yr' + str(yr) + '_sp' + str(per)
+        self.dstdircbc = os.path.join(self.dstroot, 'cbc')
+        self.dstdirhds = os.path.join(self.dstroot, 'hds')
+
+        # create all directories
+        if not os.path.exists(self.dstdirhds):
+            os.makedirs(self.dstdirhds)
+        if not os.path.exists(self.dstdircbc):
+            os.makedirs(self.dstdircbc)
+
+        # Source files
+        self.model_hds = os.path.join(self.w_s, self.modelname + '.hds')
+        self.model_cbc = os.path.join(self.w_s, self.modelname + '.cbc')
+
 
     def _check_schematisation(self,required_keys):
         
@@ -637,7 +662,33 @@ class ModPathWell:
                                     model_type = model_type)
 
         
+    # def lpf_input(self, layavg = None, hk= {"hk": ["geo_parameters"]},
+    #     vani= 1., ss = 1.E-3,
+    #               storativity = True, model_type = "axisymmetric"):
+    #     ''' ### lpf package input parms ###
+            
+    #         hk: Horizontal conductivity
+    #         vka: Vertical conductivity (-> if layvka = 0 (default))
+    #         ss: Specific storage (1/m)
+    #         storativity: # If True (default): Ss stands for storativity [-] instead of specific storage [1/m]
+    #         layavg: Layer average of hydraulic conductivity
+    #             layavg: 0 --> harmonic mean 
+    #             layavg: 1 --> logarithmic mean (is used in axisymmetric models).
+    #     '''
+    #     self.storagecoefficient = storativity 
 
+    #     if model_type == "axisymmetric":
+    #         if layavg is None:
+    #             self.layavg = 1
+    #         else:  
+    #             self.layavg = layavg 
+    #     self.hk = hk            
+    #     self.vka = vka           
+    #     self.ss = ss             
+        
+    def oc_input(self, spd_oc = {(0, 0): ['save head', 'save budget']}):
+        ''' Load OC package parms to model. '''
+        self.spd_oc = spd_oc
 
 ### Functie: Check xmin, xmax,
     '''
@@ -763,11 +814,26 @@ class ModPathWell:
         # list active packages
         active_packages = []
         # Parameter requirement
-        package_parms = {"BAS"}
+        package_parms = {"BAS": "ibound"}
 
+        ''' ### lpf package input parms ###
+            
+            hk: Horizontal conductivity
+            vka: Vertical conductivity (-> if layvka = 0 (default))
+            ss: Specific storage (1/m)
+            storativity: # If True (default): Ss stands for storativity [-] instead of specific storage [1/m]
+            layavg: Layer average of hydraulic conductivity
+                layavg: 0 --> harmonic mean 
+                layavg: 1 --> logarithmic mean (is used in axisymmetric models).
+        '''
+
+        if self.model_type == "axisymmetric":
+            self.layavg = 1
+        else:  
+            self.layavg = 0
         parm_names = {"moisture_content": ["geo_parameters"],
-                      "hk": ["geo_parameters"],
-                      "vani": ["geo_parameters"],
+                      "hk": ["geo_parameters","well_parameters"],
+                      "vani": ["geo_parameters","well_parameters"],
                       "porosity": ["geo_parameters"]}
 
         for iParm, dict_keys in parm_names.items():
@@ -783,12 +849,12 @@ class ModPathWell:
                             model_type = self.model_type)
             self.update_property(property = iParm, value = grid)
 
-        # Create (uncorrected) array for kv, using "kh" and "vani" (vertical anisotropy)
-        self.vk = self.hk / self.vani
+        # Create (uncorrected) array for kv ("vka"), using "kh" and "vani" (vertical anisotropy)
+        self.vka = self.hk / self.vani
         # and for 'storativity'
         self.stor = np.ones((self.nlay,self.nrow,self.ncol), dtype = 'float') * 1.E-6
         # Axisymmetric flow properties
-        axisym_parms = ["hk","vk","stor"]
+        axisym_parms = ["hk","vka","stor"]
         if self.model_type == "axisymmetric":
             for iParm in axisym_parms:
                 grid_uncorr = getattr(self,iParm)
@@ -829,15 +895,38 @@ class ModPathWell:
                                         from site X within and any site on the groundwater divide
         '''
 
-    def read_binaryhead(fname):
-        ''' Read binary head file (fname).
-            This is modflow output.'''
-        hdsobj = bf.HeadFile(fname, precision = 'single')
-        times = hdsobj.get_times()
-        head_dat = hdsobj.get_data(totim = times[-1])
+    def load_hdsobj(self, fname = None, time = None):
         
-        hdsobj.close()
-        return head_dat
+        ''' Return head data from file.
+            If time = -1 --> return final time and head grid,
+            elif time = 'all' --> return all time values and head grids,
+            elif time = [1.,2.,time_n]--> Return head grids for prespecified times. '''
+        
+        try:
+            # Read binary concentration file
+            hdsobj = bf.HeadFile(fname, precision = 'single', verbose = False)
+            times = hdsobj.get_times()
+            head_dat = {}
+                
+            if time == -1:
+                head_dat = hdsobj.get_data(totim = times[-1])
+            elif time == 'all':
+                for iTime in times:
+                    head_dat[iTime] = hdsobj.get_data(totim = iTime)
+            else:
+                try:
+                    for iTime in time:
+                        head_dat[iTime] = hdsobj.get_data(totim = iTime)
+                except Exception as e:
+                    print ("time values are not in saved list of times")
+        except Exception as e:
+            print ("Error loading head data\nhead_dat set to '0'.")
+            head_dat = 0.
+            pass
+        finally:
+            hdsobj.close()
+
+        return times, head_dat
 
     def read_binarycbc(fname):
         ''' Read binary cell budget file (fname). 
@@ -862,10 +951,13 @@ class ModPathWell:
 
     def calc_node_indices(self,xyz_nodes, particle_list: list or None):
         ''' Obtain/return layer,row,column idx ("node_indices") as dict of np.arrays
-            corresponding to xyz-values of dict with nodes "xyz" (np.array). 
-            Uses center points xmid, ymid, zmid.
+            corresponding to xyz-coördinates of type dict per tracked particle (as key)
+            with nodes "xyz_nodes" (np.array). 
+            
+            Method requires center points xmid, ymid, zmid to be predefined.
             
         '''
+
         if particle_list is None:
             particle_nodes = list(xyz_nodes.keys())
         else:  # requires check if all indices occur in 'xyz_nodes'
@@ -888,14 +980,90 @@ class ModPathWell:
 
         return node_indices
 
-    def run_model(self, simulation_parameters: dict or None = None):
+    def read_pathlinedata(fpth, nodes):
+        ''' read pathlinedata from file fpth (extension: '*.mppth'), 
+            given the particle release node index 'nodes' obtained from 
+            a tuple or list of tuples (iLay,iRow,iCol).
+            Cell node indices can be obtained using the method get_nodes((iLay,iRow,iCol))
+            
+            Return xyz_nodes, dist, tdiff, dist_tot, time_tot, pth_data 
+            
+            with xyz_nodes, the xyz coördinates of each node per tracked particle
+            dist (L): the distance between each node per tracked particle
+            tdiff (T): the travel time (difference) between each node per particle
+            dist_tot: total distance cvered by each tracked particle
+            time_tot: total duration between release and ending of each particle
+            pth_data: complete recarray is returned to see what's in the file fpth.
+            
+                '''
+        pth_object = flopy.utils.PathlineFile(fpth)
+        # Raw pathline data
+        pth_data = pth_object.get_destination_pathline_data(nodes)
+        time, xyz_nodes, txyz, dist, tdiff = {}, {}, {}, {}, {}
+        # number of particles within file
+        npart = len(pth_data)
+        # Numpy arrays storing the total distance traveled for each particle
+        dist_tot = np.zeros((npart), dtype = 'float')
+        # Numpy arrays storing the total travel time for each particle
+        time_tot = np.zeros((npart), dtype = 'float')
+        for idx,iPart in enumerate(pth_data):
+            # n_nodes (ruw)
+            n_nodes_raw = len(pth_data[idx]["x"])
+            # XYZ data
+            txyz[idx] = np.empty((n_nodes_raw,4), dtype = 'float')
+            txyz[idx] = np.array([pth_data[idx]["time"],
+                                pth_data[idx]["x"],
+                                pth_data[idx]["y"],
+                                pth_data[idx]["z"],
+                                ]).T
+            # Remove identical data (based on identical times)
+            txyz[idx] = np.unique(txyz[idx], axis = 0)
+            # time data
+            time[idx] = txyz[idx][:,0]
+            # xyz data
+            xyz_nodes[idx] = txyz[idx][:,1:]
+            
+            # Determine number of remaining nodes
+            n_nodes = min(xyz_nodes[idx].shape[0],time[idx].shape[0])
+            if xyz_nodes[idx].shape[0] != time[idx].shape[0]:
+                print(xyz_nodes[idx].shape[0],time[idx].shape[0])
+            #Distance array between nodes
+            dist[idx] = np.zeros((n_nodes-1), dtype = 'float')
+            # Time difference array
+            tdiff[idx] = np.zeros((n_nodes-1), dtype = 'float')
+            for iNode in range(1,n_nodes):
+                # Calculate internodal distance (m)
+                dist[idx][iNode-1] = np.sqrt((xyz_nodes[idx][iNode][0] - xyz_nodes[idx][iNode-1][0])**2 + \
+                    (xyz_nodes[idx][iNode][1] - xyz_nodes[idx][iNode-1][1])**2 + \
+                    (xyz_nodes[idx][iNode][2] - xyz_nodes[idx][iNode-1][2])**2)
+                # Calculate time difference between nodes
+                tdiff[idx][iNode-1] = (time[idx][iNode] - time[idx][iNode - 1])
+                
+            # Total distance covered per particle
+            dist_tot[idx] = dist[idx].sum()
+            # Total time covered per particle
+            time_tot[idx] = time[idx][-1]
+                        
+        return xyz_nodes, dist, tdiff, dist_tot, time_tot, pth_data
+
+    def run_model(self, simulation_parameters: dict or None = None,
+                    xll = 0., yll = 0., perlen = 365.*50, nstp = 1, steady = False):
         # print(self.schematisation)
 
         if simulation_parameters is None:
             self.simulation_parameters = self.schematisation["simulation_parameters"]
         else:
             self.simulation_parameters = simulation_parameters
-        # Type scenario
+
+        # Simulation parameters
+        self.perlen = perlen    # List with stress period lengths
+        self.nstp = nstp        # Nr of time periods per stress period (int)
+        self.steady = steady    # Steady state model run (True/False)
+        # Define reference lowerleft
+        self.xll = xll
+        self.yll = yll
+
+        # Type of scenario
         try:
             self.schematisation_type = self.simulation_parameters["schematisation_type"]
         except KeyError as e:

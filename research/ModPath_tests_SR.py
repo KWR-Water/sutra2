@@ -51,6 +51,7 @@ from pathlib import Path
 try:
     from greta.ModPath_functions import ModPathWell   
     from greta.Analytical_Well import * 
+    from greta.Substance_Transport import *
 except ModuleNotFoundError as e:
     print(e, ": second try.")
     module_path = os.path.join("..","greta")
@@ -59,6 +60,7 @@ except ModuleNotFoundError as e:
 
     from ModPath_functions import ModPathWell   
     from Analytical_Well import * 
+    from Substance_Transport import *
 
     print("Second try to import modules succeeded.")
 
@@ -71,7 +73,7 @@ path = os.getcwd()
 #     print(e)
 #     # sys.path.append(str(module_path.parent))
 #     # from greta.Analytical_Well import *
-from greta.Substance_Transport import *#     # from greta.ModPath_functions import ModPathWell
+# from greta.Substance_Transport import * #     # from greta.ModPath_functions import ModPathWell
 
 #%%
 
@@ -246,7 +248,7 @@ with open(os.path.join(research_dir,"phreatic_dict_nogravel.txt"),"r") as file_:
     dict_content = file_.read()
     phreatic_scheme = eval(dict_content)
 
-check_schematisation = False # Check input dict (T/F)
+check_schematisation = True # Check input dict (T/F)
 if check_schematisation:
     for iKey,iVal in phreatic_scheme.items():
         print(iKey,iVal,"\n")
@@ -349,6 +351,16 @@ phreatic_scheme["well_parameters"]['well_leak'] = {'Q': -1.,
 'rmax': 0.1,
 'nlayers': 1}
 
+try:
+    # Place 'gravelpack1' and 'clayseal1' in scheme dictionary "well_parameters"
+    phreatic_scheme["well_parameters"]['gravelpack1'] = phreatic_scheme["geo_parameters"]['gravelpack1']
+    phreatic_scheme["well_parameters"]['clayseal1'] = phreatic_scheme["geo_parameters"]['clayseal1']
+except KeyError:
+    pass   
+# Delete (or 'pop') key from dictionary (use pop if you are not sure the key exists or not)
+phreatic_scheme["geo_parameters"].pop('gravelpack1', None)
+phreatic_scheme["geo_parameters"].pop('clayseal1', None)
+
 # Add ibound parameters
 phreatic_scheme["ibound_parameters"]["outer_boundary"]["ibound_type"] = -1
 try:
@@ -356,6 +368,7 @@ try:
     phreatic_scheme["ibound_parameters"]["outer_boundary"]["xmax"] = phreatic_scheme["ibound_parameters"]["outer_boundary"]["rmax"]
 except:
     pass
+
 # # Create model discretisation using schematisation dict
 # nlay,nrow,ncol,delv,delc,delr,zmid,ymid,xmid,top,bot = make_discretisation(schematisation = phreatic_scheme,
 #                                                             dict_keys = dict_keys)
