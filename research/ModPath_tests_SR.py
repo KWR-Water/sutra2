@@ -384,7 +384,9 @@ except:
 
 #%%
 ''' Inititalize ModPath class'''
-modpath_phrea = ModPathWell(phreatic_scheme)
+modpath_phrea = ModPathWell(phreatic_scheme,
+                            workspace = "test_ws",
+                            modelname = "phreatic")
 # modpath_phrea.schematisation
 
 # Refinement boundaries and column boundaries
@@ -420,9 +422,15 @@ print("Number of active model cells:",n_activecells)
 
 # Add material grid
 # Check attributes in ModPath object
-check_attr_list = ["moisture_content","hk","vani","porosity"]
+check_attr_list = ["moisture_content","hk","vka","vani","porosity"]
+test_var = {}
 for iAttr in check_attr_list:
-    print(iAttr,getattr(modpath_phrea,iAttr))
+    try:
+        test_var[iAttr] = getattr(modpath_phrea,iAttr) 
+        print(iAttr, test_var[iAttr])
+    except Exception as e:
+        print(e)
+
     ''' Phreatic function currently uses rmin, rmax instead of xmin,xmax'''
 # Model run completed
 print("Model run completed.")

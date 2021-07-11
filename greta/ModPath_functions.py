@@ -272,8 +272,8 @@ class ModPathWell:
             os.makedirs(self.dstdircbc)
 
         # Source files
-        self.model_hds = os.path.join(self.w_s, self.modelname + '.hds')
-        self.model_cbc = os.path.join(self.w_s, self.modelname + '.cbc')
+        self.model_hds = os.path.join(self.workspace, self.modelname + '.hds')
+        self.model_cbc = os.path.join(self.workspace, self.modelname + '.cbc')
 
 
     def _check_schematisation(self,required_keys):
@@ -637,6 +637,7 @@ class ModPathWell:
     def set_ibound(self,schematisation: dict,
                         dict_keys: dict or None = None,
                         ibound: np.array or None = None,
+                        strt: np.array or None = None,
                         bound_left: str = "xmin", bound_right: str = "xmax",
                         bound_top: str = "top", bound_bot: str = "bot",
                         bound_north: str = "ymin", bound_south: str = "ymax",
@@ -648,6 +649,11 @@ class ModPathWell:
             print("attribute ibound does not yet exist. Create empty ibound grid")
             ibound = np.ones((self.nlay,self.nrow,self.ncol), dtype = 'int')
                 
+        if strt is None:
+            print("attribute strt does not yet exist. Create empty ibound grid")
+            strt = np.zeros((self.nlay,self.nrow,self.ncol), dtype = 'float')
+                
+        
         
         
         # Relevant dictionary keys
@@ -660,7 +666,15 @@ class ModPathWell:
                                     bound_top = "top", bound_bot = "bot",
                                     bound_north = "ymin", bound_south = "ymax",
                                     model_type = model_type)
-
+        self.strt = self.fill_grid(schematisation = self.schematisation,
+                                    dict_keys = dict_keys,
+                                    parameter = "head",
+                                    grid = strt,
+                                    dtype = 'int',
+                                    bound_left = "xmin", bound_right = "xmax",
+                                    bound_top = "top", bound_bot = "bot",
+                                    bound_north = "ymin", bound_south = "ymax",
+                                    model_type = model_type)
         
     # def lpf_input(self, layavg = None, hk= {"hk": ["geo_parameters"]},
     #     vani= 1., ss = 1.E-3,
@@ -689,6 +703,8 @@ class ModPathWell:
     def oc_input(self, spd_oc = {(0, 0): ['save head', 'save budget']}):
         ''' Load OC package parms to model. '''
         self.spd_oc = spd_oc
+
+               
 
 ### Functie: Check xmin, xmax,
     '''
@@ -804,12 +820,15 @@ class ModPathWell:
         self.make_discretisation(schematisation = self.schematisation, dict_keys = dict_keys,
                             model_type = self.model_type)
 
-        # Set ibound grid
+        # Set ibound grid and starting head
         dict_keys = ["ibound_parameters"]
+        self.strt = np.zeros((self.nlay,self.nrow,self.ncol), dtype = 'float')
         self.set_ibound(schematisation = self.schematisation,
                             dict_keys = dict_keys,
                             ibound = None,
+                            strt = self.strt,
                             model_type = self.model_type)
+
 
         # list active packages
         active_packages = []
@@ -834,7 +853,8 @@ class ModPathWell:
         parm_names = {"moisture_content": ["geo_parameters"],
                       "hk": ["geo_parameters","well_parameters"],
                       "vani": ["geo_parameters","well_parameters"],
-                      "porosity": ["geo_parameters"]}
+                      "porosity": ["geo_parameters"],
+                      "recharge": ["recharge_parameters"]}
 
         for iParm, dict_keys in parm_names.items():
             # Temporary value
@@ -854,13 +874,16 @@ class ModPathWell:
         # and for 'storativity'
         self.stor = np.ones((self.nlay,self.nrow,self.ncol), dtype = 'float') * 1.E-6
         # Axisymmetric flow properties
-        axisym_parms = ["hk","vka","stor"]
+        axisym_parms = ["hk","vka","stor","recharge"]
         if self.model_type == "axisymmetric":
             for iParm in axisym_parms:
                 grid_uncorr = getattr(self,iParm)
                 grid_axi = self.axisym_correction(grid = grid_uncorr)
                 # Update attribute
                 self.update_property(property = iParm, value = grid_axi)
+
+        # Create input oc package
+        self.oc_input()
 
         '''
         Function to create array of travel time distributionss
