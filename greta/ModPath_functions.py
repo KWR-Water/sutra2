@@ -704,6 +704,22 @@ class ModPathWell:
         ''' Load OC package parms to model. '''
         self.spd_oc = spd_oc
 
+    # Load wel parms to model
+    def wel_input(self, spd_wel, well_nr = [1], well_lay = {1: [0]},
+                                well_row = {1: [0]}, well_col = {1: [0]},
+                                well_oper = None, Qwell_day = None,
+                                KD_Well = None, KD_Welltot = None):
+        ''' WEL package input parms.
+            Returns well stress period data. '''
+        self.spd_wel = spd_wel
+        self.well_nr = well_nr      # Well screens (list of int)
+        self.well_lay = well_lay    # Well screen loc (layers) (dict with key per well_nr)  
+        self.well_row = well_row    # Well screen loc (rows) (dict with key per well_nr)
+        self.well_col = well_col    # Well screen loc (cols) (dict with key per well_nr)
+        self.well_oper = well_oper  # Operational well screen (dictionary)
+        self.Qwell_day = Qwell_day  # Daily well discharge (total) --> List per stress period
+        self.KD_Well = KD_Well      # Transmissivity correction for well discharge
+        self.KD_Welltot = KD_Welltot # Summed transmissivity correction for well discharge
                
 
 ### Functie: Check xmin, xmax,
@@ -850,13 +866,13 @@ class ModPathWell:
             self.layavg = 1
         else:  
             self.layavg = 0
-        parm_names = {"moisture_content": ["geo_parameters"],
+        # geohydrological parameter names
+        geoparm_names = {"moisture_content": ["geo_parameters"],
                       "hk": ["geo_parameters","well_parameters"],
                       "vani": ["geo_parameters","well_parameters"],
-                      "porosity": ["geo_parameters"],
-                      "recharge": ["recharge_parameters"]}
+                      "porosity": ["geo_parameters"]}
 
-        for iParm, dict_keys in parm_names.items():
+        for iParm, dict_keys in geoparm_names.items():
             # Temporary value
             grid = self.fill_grid(schematisation = self.schematisation,
                             dict_keys = dict_keys,
@@ -874,7 +890,7 @@ class ModPathWell:
         # and for 'storativity'
         self.stor = np.ones((self.nlay,self.nrow,self.ncol), dtype = 'float') * 1.E-6
         # Axisymmetric flow properties
-        axisym_parms = ["hk","vka","stor","recharge"]
+        axisym_parms = ["hk","vka","stor"]
         if self.model_type == "axisymmetric":
             for iParm in axisym_parms:
                 grid_uncorr = getattr(self,iParm)
@@ -883,7 +899,50 @@ class ModPathWell:
                 self.update_property(property = iParm, value = grid_axi)
 
         # Create input oc package
-        self.oc_input()
+        self.oc_input(spd_oc = {(0, 0): ['save head', 'save budget']})
+
+        # Create recharge package
+        rech_parmnames = {"recharge": ["recharge_parameters"]}
+        for iParm, dict_keys in rech_parmnames.items():
+            # Temporary value
+            grid = self.fill_grid(schematisation = self.schematisation,
+                            dict_keys = dict_keys,
+                            parameter = iParm,
+                            grid = None,
+                            dtype = 'float',
+                            bound_left = "rmin", bound_right = "rmax",
+                            bound_top = "top", bound_bot = "bot",
+                            bound_north = "ymin", bound_south = "ymax",
+                            model_type = self.model_type)
+            self.update_property(property = iParm, value = grid)
+
+            if self.model_type == "axisymmetric":
+                grid_uncorr = getattr(self,iParm)
+                grid_axi = self.axisym_correction(grid = grid_uncorr)
+                # Update attribute
+                self.update_property(property = iParm, value = grid_axi)
+
+        # Well input
+        # !!! Obtain node numbers of well locations (use indices) !!!
+        # leakage discharge from well
+
+        leakage_day = -lek_params[iLek]["lekdebiet_pb"] # leak_flux[iFlux] 
+
+        # Correct discharge for K_hor near wells and for the possible difference in delv (K * D)
+        KD_Well = 0.
+        for iLay in leak_lay:
+            for iRow, iCol in zip(leak_row,leak_col):
+                KD_Well += kh[iLay,iRow,iCol] * delv[iLay]
+        
+        # stress period data for well package
+        spd_wel = {}
+        spd_wel[0] = []
+        for iLay in leak_lay:
+            for iRow, iCol in zip(leak_row,leak_col):
+                spd_wel[0].append([iLay, iRow, iCol, leakage_day * (kh[iLay,iRow,iCol] * delv[iLay]) / KD_Well])
+
+        # Load wel parms to model
+        self.wel_input(spd_wel = spd_wel)
 
         '''
         Function to create array of travel time distributionss
