@@ -27,6 +27,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import os
+import sys
 # from pandas import read_excel
 from pandas import read_csv
 from pandas import read_excel
@@ -39,7 +40,19 @@ from scipy.special import kn as besselk
 
 path = os.getcwd()  # path of working directory
 
+# run installed version of flopy or add local path 
+# (add flopy to requirements.txt: pip install flopy==3.3.1)
+try:
+    import flopy
+    import flopy.utils.binaryfile as bf
+except Exception as e:
+    flopypth = os.path.abspath(os.path.join('..', '..'))
+    sys.path.append(flopypth)
+    import flopy
+    import flopy.utils.binaryfile as bf
 
+# flopy version
+print(flopy.__version__)
 
 #%%
 '''
@@ -815,6 +828,65 @@ class ModPathWell:
         radial_distance                 # [m], radial distance to well (field),
                                         from site X within and any site on the groundwater divide
         '''
+
+    def read_binaryhead(fname):
+        ''' Read binary head file (fname).
+            This is modflow output.'''
+        hdsobj = bf.HeadFile(fname, precision = 'single')
+        times = hdsobj.get_times()
+        head_dat = hdsobj.get_data(totim = times[-1])
+        
+        hdsobj.close()
+        return head_dat
+
+    def read_binarycbc(fname):
+        ''' Read binary cell budget file (fname). 
+            This is modflow output.'''
+        cbcobj = bf.CellBudgetFile(fname)
+        print(cbcobj.list_records())
+        
+        frf = cbcobj.get_data(text='FLOW RIGHT FACE')[0]
+        flf = cbcobj.get_data(text='FLOW LOWER FACE')[0]
+        cbcobj.close()
+        
+        return frf, flf 
+
+    def get_nodes(self,locs):
+        ''' Obtain/return model node index (int) belonging to
+            layer 'iLay', row 'iRow' and column 'iCol'.
+            for point locations 'locs'. '''
+        nodes = []
+        for iLay,iRow,iCol in locs:
+            nodes.append(iLay * self.nrow * self.ncol + iRow * self.ncol + iCol)
+        return nodes
+
+    def calc_node_indices(self,xyz_nodes, particle_list: list or None):
+        ''' Obtain/return layer,row,column idx ("node_indices") as dict of np.arrays
+            corresponding to xyz-values of dict with nodes "xyz" (np.array). 
+            Uses center points xmid, ymid, zmid.
+            
+        '''
+        if particle_list is None:
+            particle_nodes = list(xyz_nodes.keys())
+        else:  # requires check if all indices occur in 'xyz_nodes'
+            particle_nodes = [idx for idx in particle_list if idx in xyz_nodes.keys()]
+            if len(particle_nodes) < particle_list:
+                print("Warning: particles do not match 'xyz_nodes' indices.\n",
+                "Function uses all 'xyz_nodes' keys instead (=default).")
+                particle_nodes = list(xyz_nodes.keys())
+
+        # Create dict for Layer, row, column indices per particle
+        node_indices = {}
+        for iPart in particle_nodes:
+            # Number of nodes
+            nr_nodes = xyz_nodes[iPart].shape[0]
+    #                                    print(iPart)
+            node_indices[iPart] = np.array([(np.argmin(abs(self.zmid-xyz_nodes[iPart][iNode][2])), \
+                                        np.argmin(abs(self.ymid-xyz_nodes[iPart][iNode][1])), \
+                                        np.argmin(abs(self.xmid-xyz_nodes[iPart][iNode][0]))) \
+                                                        for iNode in range(nr_nodes)])
+
+        return node_indices
 
     def run_model(self, simulation_parameters: dict or None = None):
         # print(self.schematisation)
