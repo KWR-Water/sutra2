@@ -337,7 +337,55 @@ class ModPathWell:
 
         return grid_axi
 
+    def cell_bounds(self,schematisation: dict, dict_key: str = "None",
+                        dict_subkey: str = "None",
+                        bound_left: str = "xmin", bound_right: str = "xmax",
+                        bound_top: str = "top", bound_bot: str = "bot",
+                        bound_north: str = "ymin", bound_south: str = "ymax",
+                        model_type = "axisymmetric"):
+        ''' Create cell boundaries of box created using following boundaries:
+            bound_left: str = "xmin" 
+            bound_right: str = "xmax"
+            bound_top: str = "top"
+            bound_bot: str = "bot"
+            bound_north: str = "ymin"  # not required for axisymmetric or 2D model
+            bound_south: str = "ymax"  # not required for axisymmetric or 2D model  
+            # Return boundary indices of row and columns plus parameter value
+            return layidx_min,layidx_max,rowidx_min,rowidx_max,colidx_min,colidx_max                
+        '''
+        # Loop through schematisation keys (dict_keys)
+        iDict = dict_key
+        # Use subkeys of schematisation dictionary
+        iDict_sub = dict_subkey   
 
+        # coordinate values of boundaries [float]
+        left = schematisation[iDict][iDict_sub][bound_left]
+        right = schematisation[iDict][iDict_sub][bound_right]
+        top = schematisation[iDict][iDict_sub][bound_top]
+        bot = schematisation[iDict][iDict_sub][bound_bot]
+        if not model_type == "axisymmetric":
+            try:
+                north = schematisation[iDict][iDict_sub][bound_north]
+                south = schematisation[iDict][iDict_sub][bound_south]
+                # Determine row indices
+                rowidx_min = int(np.argwhere((self.ymid - north <= 0.) & (self.ymid - south >= 0.))[0])
+                rowidx_max = int(np.argwhere((self.ymid - north <= 0.) & (self.ymid - south >= 0.))[-1])
+            except KeyError as e:
+                print(e)
+        else:
+            north,south,rowidx_min,rowidx_max = None, None,0,self.nrow-1
+
+        # Determine layer indices
+        layidx_min = int(np.argwhere((self.zmid - top <= 0.) & (self.zmid - bot >= 0.))[0])
+        layidx_max = int(np.argwhere((self.zmid - top <= 0.) & (self.zmid - bot >= 0.))[-1] + 1)
+        # np.where((self.zmid < top) & (self.zmid > bot))
+        # Determine column indices
+        colidx_min = int(np.argwhere((self.xmid - left >= 0.) & (self.xmid - right <= 0.))[0])
+        colidx_max = int(np.argwhere((self.xmid - left >= 0.) & (self.xmid - right <= 0.))[-1] + 1)
+        # np.where((self.xmid < right) & (self.xmid > left))    
+        
+        return layidx_min,layidx_max,rowidx_min,rowidx_max,colidx_min,colidx_max
+            
 
     def fill_grid(self,schematisation: dict, dict_keys: list or None = None,
                         parameter: str = "None",
@@ -925,6 +973,41 @@ class ModPathWell:
         # Well input
         # !!! Obtain node numbers of well locations (use indices) !!!
         # leakage discharge from well
+        well_names = [iWell for iWell in self.schematisation["well_parameters"] if \
+                        "Q" in self.schematisation["well_parameters"][iWell].keys()]
+    def assign_wellloc(self,schematisation: dict, 
+                        dict_keys: list or None = None,
+                        well_names: list or None,
+                        discharge_parameter = "Q",
+                        dtype: str or None = 'float',
+                        bound_left: str = "xmin", bound_right: str = "xmax",
+                        bound_top: str = "top", bound_bot: str = "bot",
+                        bound_north: str = "ymin", bound_south: str = "ymax",
+                        model_type = "axisymmetric")
+        ''' Determine the location of the pumping wells and the relative discharge per cell.
+            
+            Boundaries of the well locations are to be included in the dictionaries with 
+            keys "dict_keys" [list], based on presence of "discharge_parameter" [str (default = "Q")]:
+                       
+            bound_left: str = "xmin" 
+            bound_right: str = "xmax"
+            bound_top: str = "top"
+            bound_bot: str = "bot"
+            bound_north: str = "ymin"
+            bound_south: str = "ymax"
+
+            # Output:
+            # Creates a dict with list of tuples representing the well locations
+            well_loc = {"well1": [(5,0,0),(6,0,0)],
+                        "well2":}
+            # Create stress period data [list of lists per stress period]:
+            # wel_spd = {0: [[lay,row,col,discharge1],[lay,row,col,discharge2]]
+            
+        '''
+
+        # Create empty dicts
+        well_loc = {}
+        wel_spd = {}
 
         leakage_day = -lek_params[iLek]["lekdebiet_pb"] # leak_flux[iFlux] 
 
