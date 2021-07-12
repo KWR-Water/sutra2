@@ -284,7 +284,7 @@ class HydroChemicalSchematisation:
         self.compute_thickness_vadose_zone = compute_thickness_vadose_zone
 
         # Porous Medium
-        self.ground_surface = ground_surface
+        self.ground_surface = ground_surface #as meters above sea level (m ASL)
         self.thickness_vadose_zone_at_boundary = thickness_vadose_zone_at_boundary
         self.bottom_vadose_zone_at_boundary = ground_surface - thickness_vadose_zone_at_boundary 
         self.head_boundary = head_boundary
@@ -520,17 +520,24 @@ class HydroChemicalSchematisation:
 
             # only outer_boundary for phreatic 
             ibound_parameters = {
-                'outer_boundary':{
+                'inner_boundary_shallow_aquifer': {
+                    'top': self.bottom_vadose_zone_at_boundary,
+                    'bot': self.bottom_shallow_aquifer,
+                    'xmin': 0, 
+                    'xmax': self.diameter_filterscreen/2, 
+                    'ibound':0,
+                    },
+
+                'inner_boundary_target_aquifer': {
                     'head': self.bottom_vadose_zone_at_boundary,
                     'top': self.bottom_shallow_aquifer,
                     'bot': self.bottom_target_aquifer,
-                    'rmin': self.model_radius,
-                    'rmax': self.model_radius_computed,
-                        },
+                    'xmin': 0, 
+                    'xmax': self.diameter_filterscreen/2,
+                    'ibound':-1,
                     }
+                }
 
-        #@MartinvdS -> these parameters listed as compute in excel
-        # how to compute them?
         elif self.schematisation_type == 'semiconfined':
             compute_thickness_vadose_zone = False # @MartinvdS what is this for?
 
@@ -541,13 +548,21 @@ class HydroChemicalSchematisation:
             ibound_parameters = {
                 'top_boundary1': {
                     'head': self.bottom_vadose_zone_at_boundary,
-                    'top': self.bottom_vadose_zone_at_boundary + 0.1,# 10 cm  thick XX @MartinvdS, @Steven
+                    'top': self.bottom_vadose_zone_at_boundary + 0.1,# 10 cm ficticous thickness to allow head boundary
                     'bottom': self.bottom_vadose_zone_at_boundary,
-                    'rmin': self.diameter_gravelpack/2,
-                    'rmax': self.model_radius_computed,
-                    #AH 'IBOUND': -1/0/1 from the PPT depending on the case? use int
+                    'xmin': self.diameter_gravelpack/2,
+                    'xmax': self.model_radius_computed,
+                    'ibound': -1, 
                         },
+                    'inner_boundary_shallow_aquifer': {
+                    'top': self.bottom_vadose_zone_at_boundary,
+                    'bot':self.bottom_shallow_aquifer,
+                    'xmin':0,
+                    'xmax':self.diameter_filterscreen/2, #check this
+                    'ibound':0, 
                     }
+                    }
+
         # make dictionaries of each grouping of parameters
         simulation_parameters = {
             'schematisation_type': self.schematisation_type,
@@ -567,8 +582,8 @@ class HydroChemicalSchematisation:
                 'vadose': True,
                 'top': self.ground_surface,
                 'bot': self.bottom_vadose_zone_at_boundary,
-                'rmin': self.diameter_gravelpack/2, 
-                'rmax': self.model_radius,
+                'xmin': self.diameter_gravelpack/2, 
+                'xmax': self.model_radius,
                 'porosity': self.porosity_vadose_zone,
                 'moisture_content': self.moisture_content_vadose_zone,
                 'solid_density': self.solid_density_vadose_zone,
@@ -581,8 +596,8 @@ class HydroChemicalSchematisation:
             'layer1': {
                 'top': self.bottom_vadose_zone_at_boundary,
                 'bot': self.bottom_shallow_aquifer,
-                'rmin': self.diameter_gravelpack/2, 
-                'rmax': self.model_radius_computed,
+                'xmin': self.diameter_gravelpack/2, 
+                'xmax': self.model_radius_computed,
                 'porosity': self.porosity_shallow_aquifer,
                 'solid_density': self.solid_density_shallow_aquifer,
                 'f_oc': self.fraction_organic_carbon_shallow_aquifer,
@@ -597,8 +612,8 @@ class HydroChemicalSchematisation:
             'layer2': {
                 'top': self.bottom_shallow_aquifer,
                 'bot': self.bottom_target_aquifer,
-                'rmin': self.diameter_gravelpack/2,
-                'rmax': self.model_radius_computed,
+                'xmin': self.diameter_gravelpack/2,
+                'xmax': self.model_radius_computed,
                 'porosity': self.porosity_target_aquifer,
                 'solid_density': self.solid_density_target_aquifer,
                 'f_oc': self.fraction_organic_carbon_target_aquifer,
@@ -613,16 +628,16 @@ class HydroChemicalSchematisation:
             'gravelpack1': {
                 'top': self.top_gravelpack,
                 'bot': self.bottom_gravelpack,
-                'rmin': self.inner_diameter_gravelpack/2,
-                'rmax': self.diameter_gravelpack/2,
+                'xmin': self.inner_diameter_gravelpack/2,
+                'xmax': self.diameter_gravelpack/2,
                 'hk': self.hor_permebility_gravelpack,
                 'vani': self.vertical_anistropy_gravelpack,
                 },
             'clayseal1':{
                 'top': self.top_clayseal,
                 'bot': self.bottom_clayseal,
-                'rmin': self.inner_diameter_clayseal/2, #@MartinvdS correct?
-                'rmax': self.diameter_clayseal/2, 
+                'xmin': self.inner_diameter_clayseal/2, #@MartinvdS correct?
+                'xmax': self.diameter_clayseal/2, 
                 'hk': self.hor_permeability_clayseal,
                 'vani': self.vertical_anistropy_clayseal,
                 },
@@ -630,35 +645,40 @@ class HydroChemicalSchematisation:
 
             # From borehole to D target aquifer
             'mesh_refinement1': {
-                'rmin': self.diameter_borehole/2, 
-                'rmax': self.thickness_target_aquifer,
+                'xmin': self.diameter_borehole/2, 
+                'xmax': self.thickness_target_aquifer,
                 'ncols': self.ncols_near_well, #indicates the number of columns close to the well
                 },
             #From D target aquifer to model radiu #horizontal resolution
             'mesh_refinement2': {
-                'rmin': self.thickness_target_aquifer, #@Martin from email... correct? self.diameter_gravelpack, 
-                'rmax': self.model_radius, #mesh boundary at the model raidus, must line up AH
+                'xmin': self.thickness_target_aquifer, #@Martin from email... correct? self.diameter_gravelpack, 
+                'xmax': self.model_radius, #mesh boundary at the model raidus, must line up AH
                 'ncols': self.ncols_far_well #indicates the number of columns far from the well
                 }, 
             }
-        
-        well_parameters = {
-            'well1': {
-                'Q': self.well_discharge,
-                'top': self.top_filterscreen,
-                'bot': self.bottom_filterscreen,
-                'rmin': 0.0, #@MartinvdS check this? self.inner_diameter_filterscreen/2,
-                'rmax': self.diameter_filterscreen/2,
 
-                },
+        if self.schematisation_type == 'semiconfined':
+            well_parameters = {
+                'well1': {
+                    'Q': self.well_discharge,
+                    'top': self.top_filterscreen,
+                    'bot': self.bottom_filterscreen,
+                    'xmin': 0.0, 
+                    'xmax': self.diameter_filterscreen/2,
+                    },
+                } 
+        # elif will come here for the BAR, RBF cases AH
+        else: 
+            # no well_paramters dict needed for the phreatic case
+            well_parameters = {
             }  
 
         recharge_parameters = {
             'source1': { # source1 -> recharge & diffuse sources
                 'substance_name': self.substance,
                 'recharge': self.recharge_rate,
-                'rmin': self.diameter_gravelpack/2,
-                'rmax': self.model_radius,
+                'xmin': self.diameter_gravelpack/2,
+                'xmax': self.model_radius,
                 'DOC': self.dissolved_organic_carbon_infiltration_water,
                 'TOC': self.total_organic_carbon_infiltration_water,
                 'c_in': self.diffuse_input_concentration, 
