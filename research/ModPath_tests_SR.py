@@ -361,6 +361,10 @@ except KeyError:
 phreatic_scheme["geo_parameters"].pop('gravelpack1', None)
 phreatic_scheme["geo_parameters"].pop('clayseal1', None)
 
+# Names of well with a discharge "Q"
+well_names = [iWell for iWell in phreatic_scheme["well_parameters"] if \
+                        "Q" in phreatic_scheme["well_parameters"][iWell].keys()]
+
 # Add ibound parameters
 phreatic_scheme["ibound_parameters"]["outer_boundary"]["ibound_type"] = -1
 try:
@@ -382,6 +386,7 @@ except:
 # Gaat het goed met freatische winning? --> grid + toewijzen concentraties
 
 
+
 #%%
 ''' Inititalize ModPath class'''
 modpath_phrea = ModPathWell(phreatic_scheme,
@@ -401,7 +406,7 @@ dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
 # Print all attributes in object
 # print(modpath_phrea.__dict__)
 # modpath_phrea.phreatic()
-modpath_phrea.run_model()
+modpath_phrea.run_model(run_mfmodel = False)
 #### HIER GEBLEVEN 14-6-2021 ####
 
 # Check attributes in ModPath object
