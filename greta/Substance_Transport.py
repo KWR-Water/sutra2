@@ -323,41 +323,38 @@ class SubstanceTransport():
             ind = self.df_particle.flowline_id.iloc[-1]
 
             if self.schematisation.schematisation.schematisation_type == 'phreatic':
-                self.head = self.schematisation.schematisation.calculate_hydraulic_head_phreatic(distance=distance)
-                self.schematisation.phreatic(distance = distance, 
+                head = self.schematisation.schematisation.calculate_hydraulic_head_phreatic(distance=distance)
+                df_flowline, df_particle = self.schematisation.add_phreatic_point_sources(distance = distance, 
                                             depth_point_contamination=depth, 
-                                            cumulative_fraction_abstracted_water=cumulative_fraction_abstracted_water )
+                                            cumulative_fraction_abstracted_water=cumulative_fraction_abstracted_water)
 
             elif self.schematisation.schematisation.schematisation_type == 'semiconfined':
                 bottom_vadose_zone = self.schematisation.schematisation.bottom_vadose_zone_at_boundary
                 
-                self.schematisation.semiconfined(distance=distance, 
+                df_flowline, df_particle = self.schematisation.add_semiconfined_point_sources(distance=distance, 
                                         depth_point_contamination=depth,  )
 
-            self.schematisation.df_particle['flowline_id'] = self.schematisation.df_particle['flowline_id'] + ind
+            df_particle['flowline_id'] = df_particle['flowline_id'] + ind
             
-            self.schematisation.df_flowline['input_concentration'] = self.schematisation.schematisation.concentration_point_contamination
-            self.schematisation.df_particle['input_concentration'] = None
-            self.schematisation.df_particle['steady_state_concentration'] = None
-            self.schematisation.df_particle.loc[self.df_particle.zone=='surface', 'input_concentration'] = self.schematisation.schematisation.concentration_point_contamination
-            self.schematisation.df_particle.loc[self.df_particle.zone=='surface', 'steady_state_concentration'] = self.schematisation.schematisation.concentration_point_contamination
+            df_flowline['input_concentration'] = self.schematisation.schematisation.concentration_point_contamination
+            df_particle['input_concentration'] = None
+            df_particle['steady_state_concentration'] = None
+            df_particle.loc[self.df_particle.zone=='surface', 'input_concentration'] = self.schematisation.schematisation.concentration_point_contamination
+            df_particle.loc[self.df_particle.zone=='surface', 'steady_state_concentration'] = self.schematisation.schematisation.concentration_point_contamination
 
-            self.schematisation.df_flowline['flowline_id'] = self.schematisation.df_flowline['flowline_id'] + ind
-            self.schematisation.df_flowline['flowline_type'] = "point_source"
-            self.schematisation.df_flowline['discharge'] = self.schematisation.schematisation.discharge_point_contamination
+            df_flowline['flowline_id'] = df_flowline['flowline_id'] + ind
+            df_flowline['flowline_type'] = "point_source"
+            df_flowline['discharge'] = self.schematisation.schematisation.discharge_point_contamination
 
             #AH_todo, something here to loop through the different point sources?
 
-            self.df_particle = self.df_particle.append(self.schematisation.df_particle)
+            self.df_particle = self.df_particle.append(df_particle)
             self.df_particle.reset_index(drop=True, inplace=True)
 
-            self.df_flowline = self.df_flowline.append(self.schematisation.df_flowline) #
+            self.df_flowline = self.df_flowline.append(df_flowline) #
             self.df_flowline.reset_index(drop=True, inplace=True)
 
             self.df_flowline['substance'] = self.substance_dict['substance_name']
-
-            self.schematisation.df_flowline = self.df_flowline
-            self.schematisation.df_particle = self.df_particle
 
         self._init_omp()
 
@@ -386,7 +383,10 @@ class SubstanceTransport():
     #         concentration_well = sum (conc_selected_flowline_i * discharge_flowline_i) / sum discharge_all_flowline                                                             
 
 
-    def plot_concentration(self, xlim=[0, 500], ylim=[0,1 ]):
+    def plot_concentration(self, 
+                            xlim=[0, 500], 
+                            ylim=[0,1 ], 
+                            as_fraction_input = None):
         ''' Plot the concentration of the given OMP as a function of time since the start of the contamination'''
         time_array = np.arange(0, 505, 1)*365.24
         
@@ -410,13 +410,17 @@ class SubstanceTransport():
             t = time_array[i]
             well_conc.append(sum(self.df_flowline['concentration_in_well'].loc[self.df_flowline['total_breakthrough_travel_time'] <= t]))
 
-        # well_conc = well_conc/input_concentration
-        well_conc[:] = [x / input_concentration for x in well_conc]
+        # as fraction of the input concentration
+        if as_fraction_input:
+            well_conc[:] = [x / input_concentration for x in well_conc]
+            ylabel = 'Fraction of input concentration'
+        else: 
+            ylabel = 'Concentration'
         fig = plt.figure(figsize=[10, 5])
         plt.plot(time_array/365.24, well_conc, 'b', label =str(self.substance.substance_name))
         plt.xlim(xlim)
         plt.ylim(ylim) 
-        plt.ylabel('Fraction of input concentration')
+        plt.ylabel(ylabel)
         plt.xlabel('Time since start of contamination (years)')
         plt.title('Aquifer type: ' + schematisation_type)
         plt.grid()
