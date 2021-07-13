@@ -223,7 +223,10 @@ class ModPathWell:
 
     """ Compute travel time distribution using MODFLOW and MODPATH.""" 
     def __init__(self, schematisation: dict,
-                       workspace: str or None = None, modelname: str or None = None): 
+                       workspace: str or None = None, modelname: str or None = None,
+                       bound_left: str = "xmin", bound_right: str = "xmax",
+                       bound_top: str = "top", bound_bot: str = "bot",
+                       bound_north: str = "ymin", bound_south: str = "ymax"): 
         """ 'unpack/parse' all the variables from the hydrogeochemical schematizization """
 
         '''Parameters
@@ -257,7 +260,13 @@ class ModPathWell:
         # Cbc unit flag (modflow oc-package input)
         iu_cbc = 130
         self.iu_cbc = iu_cbc
-        
+        # Expected boundary terms in dicts
+        self.bound_left = bound_left
+        self.bound_right = bound_right
+        self.bound_top = bound_top
+        self.bound_bot = bound_bot
+        self.bound_north = bound_north
+        self.bound_south = bound_south
 
         # Create output directories
         # Destination root
@@ -339,34 +348,32 @@ class ModPathWell:
 
     def cell_bounds(self,schematisation: dict, dict_key: str = "None",
                         dict_subkey: str = "None",
-                        bound_left: str = "xmin", bound_right: str = "xmax",
-                        bound_top: str = "top", bound_bot: str = "bot",
-                        bound_north: str = "ymin", bound_south: str = "ymax",
                         model_type = "axisymmetric"):
         ''' Create cell boundaries of box created using following boundaries:
-            bound_left: str = "xmin" 
-            bound_right: str = "xmax"
-            bound_top: str = "top"
-            bound_bot: str = "bot"
-            bound_north: str = "ymin"  # not required for axisymmetric or 2D model
-            bound_south: str = "ymax"  # not required for axisymmetric or 2D model  
+            self.bound_left: str = "xmin" 
+            self.bound_right: str = "xmax"
+            self.bound_top: str = "top"
+            self.bound_bot: str = "bot"
+            self.bound_north: str = "ymin"  # not required for axisymmetric or 2D model
+            self.bound_south: str = "ymax"  # not required for axisymmetric or 2D model  
             # Return boundary indices of row and columns plus parameter value
             return layidx_min,layidx_max,rowidx_min,rowidx_max,colidx_min,colidx_max                
         '''
+        
         # Loop through schematisation keys (dict_keys)
         iDict = dict_key
         # Use subkeys of schematisation dictionary
         iDict_sub = dict_subkey   
 
         # coordinate values of boundaries [float]
-        left = schematisation[iDict][iDict_sub][bound_left]
-        right = schematisation[iDict][iDict_sub][bound_right]
-        top = schematisation[iDict][iDict_sub][bound_top]
-        bot = schematisation[iDict][iDict_sub][bound_bot]
-        if not model_type == "axisymmetric":
+        left = schematisation[iDict][iDict_sub][self.bound_left]
+        right = schematisation[iDict][iDict_sub][self.bound_right]
+        top = schematisation[iDict][iDict_sub][self.bound_top]
+        bot = schematisation[iDict][iDict_sub][self.bound_bot]
+        if not self.model_type == "axisymmetric":
             try:
-                north = schematisation[iDict][iDict_sub][bound_north]
-                south = schematisation[iDict][iDict_sub][bound_south]
+                north = schematisation[iDict][iDict_sub][self.bound_north]
+                south = schematisation[iDict][iDict_sub][self.bound_south]
                 # Determine row indices
                 rowidx_min = int(np.argwhere((self.ymid - north <= 0.) & (self.ymid - south >= 0.))[0])
                 rowidx_max = int(np.argwhere((self.ymid - north <= 0.) & (self.ymid - south >= 0.))[-1])
@@ -391,9 +398,6 @@ class ModPathWell:
                         parameter: str = "None",
                         grid: np.array or None = None,
                         dtype: str or None = 'float',
-                        bound_left: str = "xmin", bound_right: str = "xmax",
-                        bound_top: str = "top", bound_bot: str = "bot",
-                        bound_north: str = "ymin", bound_south: str = "ymax",
                         model_type = "axisymmetric"):
         ''' Assign values to 'grid' [np.array] for parameter name 'parameter' [str], 
             using the keys dict_keys [list] in schematisation dictionary 'self.schematisation'.
@@ -402,12 +406,12 @@ class ModPathWell:
             
             Boundaries of the parameter values are to be included in the dictionaries:
 
-            bound_left: str = "xmin" 
-            bound_right: str = "xmax"
-            bound_top: str = "top"
-            bound_bot: str = "bot"
-            bound_north: str = "ymin"
-            bound_south: str = "ymax"
+            self.bound_left: str = "xmin" 
+            self.bound_right: str = "xmax"
+            self.bound_top: str = "top"
+            self.bound_bot: str = "bot"
+            self.bound_north: str = "ymin"
+            self.bound_south: str = "ymax"
 
             The function returns:
             - grid  # grid [np.array] filled with (numeric) values for parameter 'parameter'.
@@ -439,46 +443,32 @@ class ModPathWell:
                 
                 if parameter in schematisation[iDict][iDict_sub]:
 
-                    # Obtain parameter value
-                    parm_val = schematisation[iDict][iDict_sub][parameter]
 
-                    # Only change constant head values for python row "0"
-                    iRow = 0  
+
                     try:
+                        # Obtain parameter value
+                        parm_val = schematisation[iDict][iDict_sub][parameter]
+                        # Obtain cell boundary limits
                         layidx_min,layidx_max,\
                             rowidx_min,rowidx_max,\
                             colidx_min,colidx_max = self.cell_bounds(schematisation,
                                                     dict_key = iDict,
                                                     dict_subkey = parameter,
-                                                    bound_left = bound_left, bound_right = bound_right,
-                                                    bound_top = bound_top, bound_bot = bound_bot,
-                                                    bound_north = bound_north, bound_south = bound_south,
                                                     model_type = model_type)
-                    except Exception as e:
-                        print(e)
-                        continue
-                    
-                    if model_type in ["axisymmetric","2D"]:
-                        # In 2D model or axisymmetric models an 
-                        # inactive row is added to be able to run Modpath successfully.
-                        grid[:,1,:] = 0
-                        try:
-                            # Fill grid with parameter value 'parm_val'
-                            grid[layidx_min:layidx_max+1,\
-                                iRow,\
-                                colidx_min:colidx_max+1] = parm_val
-                        except Exception as e:
-                            print(e)
-                            continue
-                    else:  # 3D grid
                         # Fill grid with parameter value 'parm_val'
                         grid[layidx_min: layidx_max+1,\
                             rowidx_min: rowidx_max+1,\
                             colidx_min: colidx_max+1] = parm_val
+                        if model_type in ["axisymmetric","2D"]:
+                            # In 2D model or axisymmetric models an 
+                            # inactive row is added to be able to run Modpath successfully.
+                            grid[:,1,:] = 0
+                    except KeyError:
+                        print("Key error exception:",parameter,". No grid filled.")
+                        continue
   
         # Return the filled grid                
         return grid
-
 
     def _assign_cellboundaries(self,schematisation: dict, dict_keys: list or None = None,
                                 bound_min: str = "xmin", bound_max: str = "xmax",
@@ -659,11 +649,7 @@ class ModPathWell:
     def set_ibound(self,schematisation: dict,
                         dict_keys: dict or None = None,
                         ibound: np.array or None = None,
-                        strt: np.array or None = None,
-                        bound_left: str = "xmin", bound_right: str = "xmax",
-                        bound_top: str = "top", bound_bot: str = "bot",
-                        bound_north: str = "ymin", bound_south: str = "ymax",
-                        model_type = 'axisymmetric'):
+                        strt: np.array or None = None):
 
         ''' This function is used to assign the constant head cells (ibound --> "-1". 
         '''
@@ -684,56 +670,30 @@ class ModPathWell:
                                     parameter = "ibound_type",
                                     grid = ibound,
                                     dtype = 'int',
-                                    bound_left = "xmin", bound_right = "xmax",
-                                    bound_top = "top", bound_bot = "bot",
-                                    bound_north = "ymin", bound_south = "ymax",
-                                    model_type = model_type)
+                                    model_type = self.model_type)
         self.strt = self.fill_grid(schematisation = self.schematisation,
                                     dict_keys = dict_keys,
                                     parameter = "head",
                                     grid = strt,
                                     dtype = 'int',
-                                    bound_left = "xmin", bound_right = "xmax",
-                                    bound_top = "top", bound_bot = "bot",
-                                    bound_north = "ymin", bound_south = "ymax",
-                                    model_type = model_type)
-        
-    # def lpf_input(self, layavg = None, hk= {"hk": ["geo_parameters"]},
-    #     vani= 1., ss = 1.E-3,
-    #               storativity = True, model_type = "axisymmetric"):
-    #     ''' ### lpf package input parms ###
-            
-    #         hk: Horizontal conductivity
-    #         vka: Vertical conductivity (-> if layvka = 0 (default))
-    #         ss: Specific storage (1/m)
-    #         storativity: # If True (default): Ss stands for storativity [-] instead of specific storage [1/m]
-    #         layavg: Layer average of hydraulic conductivity
-    #             layavg: 0 --> harmonic mean 
-    #             layavg: 1 --> logarithmic mean (is used in axisymmetric models).
-    #     '''
-    #     self.storagecoefficient = storativity 
-
-    #     if model_type == "axisymmetric":
-    #         if layavg is None:
-    #             self.layavg = 1
-    #         else:  
-    #             self.layavg = layavg 
-    #     self.hk = hk            
-    #     self.vka = vka           
-    #     self.ss = ss             
+                                    model_type = self.model_type)
+         
         
     def oc_input(self, spd_oc = {(0, 0): ['save head', 'save budget']}):
         ''' Load OC package parms to model. '''
         self.spd_oc = spd_oc
+    def _validate_input(self):
+        # controleren op alle benodigde keys van de 
+        # schematization class
+        # if 'xmin' is not in dictionary.keys():
+        #     raise ValueError('xmin is not in dictionayr')
+        # dit soort validaties moet eigenlij in de schematization class
+        pass
 
     def assign_wellloc(self,schematisation: dict,
                         dict_key: str = "well_parameters",
                         well_names: list or str or None = "None",
-                        discharge_parameter = "Q",
-                        bound_left: str = "xmin", bound_right: str = "xmax",
-                        bound_top: str = "top", bound_bot: str = "bot",
-                        bound_north: str = "ymin", bound_south: str = "ymax",
-                        model_type = "axisymmetric"):
+                        discharge_parameter = "Q"):
         ''' Determine the location of the pumping wells and the relative discharge per cell.
             
             Boundaries of the well locations are to be included in the dictionaries with 
@@ -775,39 +735,38 @@ class ModPathWell:
         well_loc = {}  # well locations
         KD_well = {}   # KD (cumulative) per well
         Qwell_day = {} # Daily flux [m3/d] per well
+        # stress period data for well package
+        spd_wel = {}
+        spd_wel[0] = []
         for iWell in well_names:
+            # Daily flux [m3/d]     
+            Qwell_day[iWell] = schematisation[dict_key][iWell][discharge_parameter]
+            # Calculate boundary indices
+            layidx_min,layidx_max,\
+                rowidx_min,rowidx_max,\
+                colidx_min,colidx_max = self.cell_bounds(schematisation,
+                                        dict_key = dict_key,
+                                        dict_subkey = iWell,
+                                        model_type = self.model_type)
 
-            try:
-                layidx_min,layidx_max,\
-                    rowidx_min,rowidx_max,\
-                    colidx_min,colidx_max = self.cell_bounds(schematisation,
-                                            dict_key = dict_key,
-                                            dict_subkey = iWell,
-                                            bound_left = bound_left, bound_right = bound_right,
-                                            bound_top = bound_top, bound_bot = bound_bot,
-                                            bound_north = bound_north, bound_south = bound_south,
-                                            model_type = model_type)
-            except Exception as e:
-                print(e)
-                continue
-            
+
+            # print("Laymin_max:", (layidx_min,layidx_max),\
+            #       "Rowmin_max:", rowidx_min,rowidx_max,\
+            #       "Colmin_max:",colidx_min,colidx_max)
+            # print("(nlay,nrow,ncol)",(self.nlay,self.nrow,self.ncol))
             # Add well locations and stress_period_data
             well_loc[iWell] = []
             KD_well[iWell] = 0.
             for iLay in range(layidx_min,layidx_max+1):
                 for iRow in range(rowidx_min,rowidx_max+1):
                     for iCol in range(colidx_min, colidx_max+1):
+                        # print(iLay,iRow,iCol)
                         well_loc[iWell].append((iLay,iRow,iCol))
                         # Correct discharge for K_hor near wells and for the possible difference in delv (K * D)
                         KD_well[iWell] += self.hk[iLay,iRow,iCol] * self.delv[iLay]
 
         
-        # stress period data for well package
-        spd_wel = {}
-        spd_wel[0] = []
-        for iWell in well_names:
-            # Daily flux [m3/d]     
-            Qwell_day[iWell] = schematisation[dict_key][iKey][discharge_parameter]
+            # stress period data for well package
             for iLay in range(layidx_min,layidx_max+1):
                 for iRow in range(rowidx_min,rowidx_max+1):
                    for iCol in range(colidx_min, colidx_max+1):
@@ -1135,9 +1094,6 @@ class ModPathWell:
                             parameter = iParm,
                             grid = None,
                             dtype = 'float',
-                            bound_left = "rmin", bound_right = "rmax",
-                            bound_top = "top", bound_bot = "bot",
-                            bound_north = "ymin", bound_south = "ymax",
                             model_type = self.model_type)
             self.update_property(property = iParm, value = grid)
 
@@ -1166,9 +1122,6 @@ class ModPathWell:
                             parameter = iParm,
                             grid = None,
                             dtype = 'float',
-                            bound_left = "rmin", bound_right = "rmax",
-                            bound_top = "top", bound_bot = "bot",
-                            bound_north = "ymin", bound_south = "ymax",
                             model_type = self.model_type)
             self.update_property(property = iParm, value = grid)
 
@@ -1190,11 +1143,7 @@ class ModPathWell:
                     self.Qwell_day = self.assign_wellloc(schematisation = self.schematisation,
                                                         dict_key = "well_parameters",
                                                         well_names = None,
-                                                        discharge_parameter = "Q",
-                                                        bound_left = "xmin", bound_right = "xmax",
-                                                        bound_top = "top", bound_bot = "bot",
-                                                        bound_north = "ymin", bound_south = "ymax",
-                                                        model_type = self.model_type)
+                                                        discharge_parameter = "Q")
 
         # Load wel parms to model
         # self.wel_input(spd_wel = self.spd_wel)

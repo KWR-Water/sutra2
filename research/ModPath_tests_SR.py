@@ -34,6 +34,9 @@ from scipy.special import kn as besselk
 
 from pathlib import Path
 
+%load_ext autoreload
+%autoreload 2
+
 # %%
 # try:
 #     from project_path import module_path as module_path #the dot says looik in the current folder, this project_path.py file must be in the folder here
@@ -347,8 +350,8 @@ except:
 phreatic_scheme["well_parameters"]['well_leak'] = {'Q': -1.,
 'top': 10.0,
 'bot': 9.9,
-'rmin': 0.0,
-'rmax': 0.1,
+'xmin': 0.0,
+'xmax': 0.1,
 'nlayers': 1}
 
 try:
@@ -396,8 +399,8 @@ modpath_phrea = ModPathWell(phreatic_scheme,
 
 # Refinement boundaries and column boundaries
 # Horizontal discretisation dictionary keys
-dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
-                    "well_parameters"]
+# dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
+#                     "well_parameters"]
 # Adds to object: delr, ncol, xmid
 # modpath_phrea.make_discretisation(dict_keys = dict_keys)
 # Adds to object: delv, nlay, top, bot, zmid
@@ -409,6 +412,7 @@ dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
 modpath_phrea.run_model(run_mfmodel = False)
 #### HIER GEBLEVEN 14-6-2021 ####
 
+#%%
 # Check attributes in ModPath object
 check_attr_list = ["nlay","nrow","ncol","delv","delc","delr","zmid","ymid","xmid","top","bot"]
 for iAttr in check_attr_list:
