@@ -799,7 +799,7 @@ class ModPathWell:
                     for iCol in range(colidx_min, colidx_max+1):
                         well_loc[iWell].append((iLay,iRow,iCol))
                         # Correct discharge for K_hor near wells and for the possible difference in delv (K * D)
-                        KD_well[iWell] += self.kh[iLay,iRow,iCol] * self.delv[iLay]
+                        KD_well[iWell] += self.hk[iLay,iRow,iCol] * self.delv[iLay]
 
         
         # stress period data for well package
@@ -812,7 +812,7 @@ class ModPathWell:
                 for iRow in range(rowidx_min,rowidx_max+1):
                    for iCol in range(colidx_min, colidx_max+1):
                         spd_wel[0].append([iLay, iRow, iCol, Qwell_day[iWell] * \
-                                          (self.kh[iLay,iRow,iCol] * self.delv[iLay]) / KD_well[iWell]])
+                                          (self.hk[iLay,iRow,iCol] * self.delv[iLay]) / KD_well[iWell]])
         
         return well_loc, KD_well, spd_wel, Qwell_day
 
@@ -1383,11 +1383,24 @@ class ModPathWell:
                         
         return xyz_nodes, dist, tdiff, dist_tot, time_tot, pth_data
 
-    def run_model(self, run_mfmodel = True, run_mpmodel = True,
+    def run_model(self,
                     simulation_parameters: dict or None = None,
-                    xll = 0., yll = 0., perlen:dict = {0: 365.*50} , 
-                    nstp:dict = {0:1}, steady:dict = {0:True}):
+                    xll = 0., yll = 0., perlen:dict or float or int = 365.*50, 
+                    nstp:dict or int = 1, steady:dict or bool = True,
+                    run_mfmodel = True, run_mpmodel = True):
+        ''' Run the combined modflow and modpath model using one 
+            of four possible schematisation types:
+            - "Phreatic"
+            - "Semi-confined"
+            - "Recharge basin (BAR)"
+            - "River bank filtration (RBF)"
+            Currently (13-7-2021) only the Phreatic schematisation is supported.'''
+
         # print(self.schematisation)
+        # Run modflow model (T/F)
+        self.run_mfmodel = run_mfmodel
+        # Run modpath model (T/F)
+        self.run_mpmodel = run_mpmodel
 
         if simulation_parameters is None:
             self.simulation_parameters = self.schematisation["simulation_parameters"]
@@ -1395,9 +1408,22 @@ class ModPathWell:
             self.simulation_parameters = simulation_parameters
 
         # Simulation parameters
-        self.perlen = perlen    # List with stress period lengths
-        self.nstp = nstp        # Nr of time periods per stress period (int)
-        self.steady = steady    # Steady state model run (True/False)
+        # Dict with stress period lengths
+        if type(perlen) != "dict":
+            self.perlen = {0: perlen}    
+        else:
+            self.perlen = perlen
+        # Nr of time periods per stress period (int)
+        if type(nstp) != "dict":
+            self.nstp = {0: nstp} 
+        else:
+            self.nstp = nstp 
+        # Steady state model run (True/False)
+        if type(steady) != "dict":
+            self.steady = {0: steady} 
+        else:    
+            self.steady = steady  
+              
         # Define reference lowerleft
         self.xll = xll
         self.yll = yll
