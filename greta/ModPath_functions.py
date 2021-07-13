@@ -377,11 +377,11 @@ class ModPathWell:
 
         # Determine layer indices
         layidx_min = int(np.argwhere((self.zmid - top <= 0.) & (self.zmid - bot >= 0.))[0])
-        layidx_max = int(np.argwhere((self.zmid - top <= 0.) & (self.zmid - bot >= 0.))[-1] + 1)
+        layidx_max = int(np.argwhere((self.zmid - top <= 0.) & (self.zmid - bot >= 0.))[-1])
         # np.where((self.zmid < top) & (self.zmid > bot))
         # Determine column indices
         colidx_min = int(np.argwhere((self.xmid - left >= 0.) & (self.xmid - right <= 0.))[0])
-        colidx_max = int(np.argwhere((self.xmid - left >= 0.) & (self.xmid - right <= 0.))[-1] + 1)
+        colidx_max = int(np.argwhere((self.xmid - left >= 0.) & (self.xmid - right <= 0.))[-1])
         # np.where((self.xmid < right) & (self.xmid > left))    
         
         return layidx_min,layidx_max,rowidx_min,rowidx_max,colidx_min,colidx_max
@@ -1423,7 +1423,7 @@ class ModPathWell:
             self.steady = {0: steady} 
         else:    
             self.steady = steady  
-              
+
         # Define reference lowerleft
         self.xll = xll
         self.yll = yll
