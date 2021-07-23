@@ -244,7 +244,7 @@ class HydroChemicalSchematisation:
                 concentration_point_contamination=None,
                 distance_point_contamination_from_well=np.array([1]),
                 depth_point_contamination=None,
-                discharge_point_contamination=None, #AH_todo add this to the calculation? how?
+                discharge_point_contamination=None, #AH_todo add this to the calculation-> what calculation???? how?
 
                 source_area_radius=None,
                 number_of_spreading_distance=None,
@@ -695,10 +695,13 @@ class HydroChemicalSchematisation:
                 'point1': { 
                     'substance_name': self.substance,
                     'c_in': self.concentration_point_contamination, 
-                    'r_start': self.distance_point_contamination_from_well[0], #AH_todo check this works...
+                    'x_start': self.distance_point_contamination_from_well[0][0], #AH_todo check this works...
                     'z_start': self.depth_point_contamination,
                     'q_point': self.discharge_point_contamination,
                     },
+                # 'point2': {} #AH_todo if there is more than one point source, 
+                # input a dictionary directly, @maritnK, @martinvdS we will discuss this
+                # and make a decision
                 }
 
         #AH eventially to be computed by QSAR"

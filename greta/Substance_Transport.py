@@ -370,6 +370,10 @@ class SubstanceTransport():
 
         self._calculcate_total_breakthrough_travel_time()
 
+        #something here to deal with start date well, start date contamination, end date contamination
+
+        #start date contamination -> LEFT OFF HERE NEED TO ADD SOMETHING FOR THE START/END DATE CONTAMINATION ETC ah_TODO
+
     def compute_microbiology_removal(self):
         pass
 
