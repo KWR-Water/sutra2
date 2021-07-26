@@ -56,13 +56,13 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 
 # #%%
 # # Test
-# test_travel_time_distribution_semiconfined()
-# test_retardation_temp_koc_correction(substance='benzene', schematisation_type='semiconfined')
-# test_retardation_temp_koc_correction(substance='benzo(a)pyrene', schematisation_type='semiconfined')
-# test_retardation_temp_koc_correction(substance='AMPA', schematisation_type='semiconfined')
-# test_steady_concentration_temp_koc_correction_semiconfined(substance='benzene')
-# test_steady_concentration_temp_koc_correction_semiconfined(substance='benzo(a)pyrene')
-# test_steady_concentration_temp_koc_correction_semiconfined(substance='AMPA')
+test_travel_time_distribution_semiconfined()
+test_retardation_temp_koc_correction(substance='benzene', schematisation_type='semiconfined')
+test_retardation_temp_koc_correction(substance='benzo(a)pyrene', schematisation_type='semiconfined')
+test_retardation_temp_koc_correction(substance='AMPA', schematisation_type='semiconfined')
+test_steady_concentration_temp_koc_correction_semiconfined(substance='benzene')
+test_steady_concentration_temp_koc_correction_semiconfined(substance='benzo(a)pyrene')
+test_steady_concentration_temp_koc_correction_semiconfined(substance='AMPA')
 
 #%%
 
@@ -132,10 +132,11 @@ semi_dict_1  = { 'simulation_parameters' : semiconfined_scheme.simulation_parame
         'bas_parameters' : semiconfined_scheme.bas_parameters,
 }
 
+
+f = open("semiconfined_dict_nogravel.txt","w")
+f.write( str(semi_dict_1))
+f.close()
 semi_dict_1 
-# f = open("semiconfined_dict_nogravel.txt","w")
-# f.write( str(semi_dict_1))
-# f.close()
 
 #%%
 semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfined',
@@ -169,7 +170,6 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
                                       fraction_organic_carbon_target_aquifer=0.0005, 
-                                      input_concentration = 100.,
                                       temperature=11.,
                                       solid_density_vadose_zone= 2.650, 
                                       solid_density_shallow_aquifer= 2.650, 
@@ -208,6 +208,7 @@ semi_dict_2 = { 'simulation_parameters' : semiconfined_scheme.simulation_paramet
 f = open("semiconfined_dict_gravelpack.txt","w")
 f.write( str(semi_dict_2))
 f.close()
+semi_dict_2
 #%%
 # # import the dictionary
 # file = open("semiconfined_dict.txt", "r")
@@ -290,10 +291,11 @@ phreatic_dict_1 = { 'simulation_parameters' : phreatic_scheme.simulation_paramet
         'substance_parameters' : phreatic_scheme.substance_parameters,
         'bas_parameters' : phreatic_scheme.bas_parameters,
 }
+f = open("phreatic_dict_nogravel.txt","w")
+f.write( str(phreatic_dict_1))
+f.close()
 phreatic_dict_1
-# f = open("phreatic_dict_nogravel.txt","w")
-# f.write( str(phreatic_dict_1))
-# f.close()
+
 
 #%%
 phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
@@ -327,7 +329,6 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
                                       fraction_organic_carbon_target_aquifer=0.0005, 
-                                      input_concentration = 100.,
                                       temperature=11.,
                                       solid_density_vadose_zone= 2.650, 
                                       solid_density_shallow_aquifer= 2.650, 
@@ -364,5 +365,6 @@ phreatic_dict_2 = { 'simulation_parameters' : phreatic_scheme.simulation_paramet
 f = open("phreatic_dict_gravelpack.txt","w")
 f.write( str(phreatic_dict_2))
 f.close()
+phreatic_dict_2
 
 #%%

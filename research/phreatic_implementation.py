@@ -7,10 +7,6 @@
 #
 # ------------------------------------------------------------------------------
 
-#### CHANGE LOG ####
-
-####
-
 #%% ----------------------------------------------------------------------------
 # INITIALISATION OF PYTHON e.g. packages, etc.
 # ------------------------------------------------------------------------------
@@ -46,11 +42,14 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 
 #%%
 # Test
-test_travel_time_distribution_phreatic()
-test_retardation_temp_koc_correction(substance='benzene', schematisation_type='phreatic')
-test_steady_concentration_temp_koc_correction_phreatic(substance='benzene')
-test_steady_concentration_temp_koc_correction_phreatic(substance='benzo(a)pyrene')
-test_steady_concentration_temp_koc_correction_phreatic(substance='AMPA')
+# test_travel_time_distribution_phreatic()
+# test_retardation_temp_koc_correction(substance='benzene', schematisation_type='phreatic')
+# test_steady_concentration_temp_koc_correction_phreatic(substance='benzene')
+# test_steady_concentration_temp_koc_correction_phreatic(substance='benzo(a)pyrene')
+# test_steady_concentration_temp_koc_correction_phreatic(substance='AMPA')
+test_start_end_dates_contamination()
+test_compute_for_date_start_dates_contamination()
+test_compute_for_date_start_date_well()
 # %%
 phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       what_to_export='omp_parameters',
@@ -61,7 +60,7 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       porosity_target_aquifer=0.35,
                                       recharge_rate=0.3/365.25, #m/day
                                       moisture_content_vadose_zone=0.15,
-                                      ground_surface = 22,
+                                      ground_surface=22,
                                       thickness_vadose_zone_at_boundary=5,
                                       thickness_shallow_aquifer=10,
                                       thickness_target_aquifer=40,
@@ -80,18 +79,22 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
                                       fraction_organic_carbon_target_aquifer=0.0005, 
                                       temperature=11,
-                                      solid_density_vadose_zone= 2.650, 
-                                      solid_density_shallow_aquifer= 2.650, 
-                                      solid_density_target_aquifer= 2.650, 
-                                      diameter_borehole = 0.75,
+                                      solid_density_vadose_zone=2.650, 
+                                      solid_density_shallow_aquifer=2.650, 
+                                      solid_density_target_aquifer=2.650, 
+                                      diameter_borehole=0.75,
                                       #diffuse parameters
-                                      diffuse_input_concentration = 100, #ug/L
+                                      diffuse_input_concentration=100, #ug/L
                                       #point paramters
-                                      concentration_point_contamination = 100,
-                                      distance_point_contamination_from_well = 25, #5.45045, #
-                                      depth_point_contamination =21, #m ASL
+                                      concentration_point_contamination=100,
+                                      distance_point_contamination_from_well=25, #5.45045, #
+                                      depth_point_contamination=21, #m ASL
                                       discharge_point_contamination=1000,
-
+                                      #dates
+                                      start_date_well='1965-01-01', 
+                                      start_date_contamination= '1966-01-01',
+                                    #   compute_contamination_for_date='2000-01-01',
+                                    #   end_date_contamination='1970-01-01',
                                       )
 
 # phreatic_scheme.make_dictionary()  
@@ -103,24 +106,22 @@ phreatic_conc = SubstanceTransport(phreatic_well, substance = 'OMP-X')
 # # phreatic_conc = SubstanceTransport(phreatic_well, substance = 'benzo(a)pyrene')
 # phreatic_conc = SubstanceTransport(phreatic_well, substance = 'AMPA')
 
-
 phreatic_conc.compute_omp_removal()
-phreatic_conc.df_particle
+# phreatic_conc.df_particle
 # phreatic_conc.df_particle['steady_state_concentration']
 # phreatic_conc.df_particle #.steady_state_concentration
 
 # phreatic_conc.plot_concentration(xlim=[0, 500], ylim=[0,1 ])
-phreatic_conc.df_flowline
+# phreatic_conc.df_flowline
 # plt.plot(phreatic_conc.df_flowline.flowline_id, phreatic_conc.df_flowline.total_breakthrough_travel_time/365.25)
 # plt.xlabel('Flowline ID')
 # plt.ylabel('Breakthrough time (years)')
 
 # phreatic_conc.df_particle
-# %%
-phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 1750], ylim=[1e3, 1e6])
+#
+# phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 1750], ylim=[1e3, 1e6])
+# phreatic_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
+phreatic_conc.plot_concentration() #xlim=[0, 25], ylim=[0,200])
 
-phreatic_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
-
-#%%
-phreatic_conc.plot_concentration(xlim=[0, 100], ylim=[0,200])
+phreatic_conc.plot_concentration(x_axis='Time') 
 # %%

@@ -62,6 +62,14 @@ path = os.getcwd()  # path of working directory
 
 
 #%%
+#@MartinK - this is how I found online to check the assertion errors...
+class EndDateBeforeStart(Exception):
+    """ Exception raised when the 'End_date_contamination' is before the 'start_date_contamination' """
+class ComputeDateBeforeStartDate(Exception):
+    """ Exception raised when the 'compute_contamination_for_date' is before the 'start_date_contamination' """
+class ComputeDateBeforeStartWellDate(Exception):
+    """ Exception raised when the 'compute_contamination_for_date' is before the 'start_date_well' """
+
 class HydroChemicalSchematisation:
 
     """ Converts input parameters of AquaPriori GUI to a complete parameterisation
@@ -395,9 +403,19 @@ class HydroChemicalSchematisation:
         else: 
             self.start_date_contamination = date_to_datetime(start_date_contamination)
         if compute_contamination_for_date is None: 
-            self.compute_contamination_for_date = self.start_date_well + timedelta(days=100)
+            self.compute_contamination_for_date = self.start_date_well + timedelta(days=365.24*50)
         else:
             self.compute_contamination_for_date = date_to_datetime(compute_contamination_for_date)
+        
+        ''' Check logical things here for contamination'''
+        if self.end_date_contamination < self.start_date_contamination:
+            raise EndDateBeforeStart('Error, "end_date_contamination" is before "start_date_contamination". Please enter an new "end_date_contamination" or "start_date_contamination" ')
+        if self.compute_contamination_for_date < self.start_date_contamination:
+            raise ComputeDateBeforeStartDate('Error, "compute_contamination_for_date" is before "start_date_contamination". Please enter an new "compute_contamination_for_date" or "start_date_contamination" ')
+        if self.compute_contamination_for_date < self.start_date_well:
+            raise ComputeDateBeforeStartWellDate('Error, "compute_contamination_for_date" is before "start_date_well". Please enter an new "compute_contamination_for_date" or "start_date_well" ')
+        #AH_todo @MartinvdS -> if end_date_contamination<start_date_well what to do?
+
         if depth_point_contamination is None: 
             self.depth_point_contamination = self.ground_surface
         elif depth_point_contamination > self.ground_surface: 
@@ -695,7 +713,7 @@ class HydroChemicalSchematisation:
                 'point1': { 
                     'substance_name': self.substance,
                     'c_in': self.concentration_point_contamination, 
-                    'x_start': self.distance_point_contamination_from_well[0][0], #AH_todo check this works...
+                    'x_start': self.distance_point_contamination_from_well[0],
                     'z_start': self.depth_point_contamination,
                     'q_point': self.discharge_point_contamination,
                     },
@@ -740,6 +758,7 @@ class HydroChemicalSchematisation:
         specifying the aquifer type (semiconfined, phreatic)
         '''
         #ah_todo change this to single array of 0.001 to 100
+        # right now we have this set up to directly compare with P. Stuyfzand's results
         fraction_flux = np.array([0.00001, 0.0001, 0.001, 0.005])
         fraction_flux = np.append(fraction_flux, np.arange(0.01, 1, 0.01))
         self.fraction_flux = np.append(fraction_flux, [0.995, 0.9999])
@@ -1257,7 +1276,7 @@ class AnalyticalWell():
         # make the dictionaries for modpath when running the analytical model? 
         # so far this is the only use for hte dicitonaries so they are made here
         self.schematisation.make_dictionary()
-        endpoint_id = list(self.schematisation.well_parameters.items())[0][0]
+        endpoint_id = 'well1' #AH_todo, @MartinvdS, what is this needed for? placeholder value here , #list(self.schematisation.well_parameters.items())[0][0]
         df_flowline['endpoint_id'] = endpoint_id 
         
         # AH which parameters for the 'microbial_parameters' option? @MartinvdS or @steven
