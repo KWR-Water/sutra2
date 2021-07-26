@@ -378,7 +378,7 @@ class ModPathWell:
                 rowidx_min = int(np.argwhere((self.ymid - north <= 0.) & (self.ymid - south >= 0.))[0])
                 rowidx_max = int(np.argwhere((self.ymid - north <= 0.) & (self.ymid - south >= 0.))[-1])
             except KeyError as e:
-                print(e)
+                print(e,f"missing {iDict} {iDict_sub}. Continue")
         else:
             north,south,rowidx_min,rowidx_max = None, None,0,0
 
@@ -445,27 +445,27 @@ class ModPathWell:
 
 
 
-                    try:
-                        # Obtain parameter value
-                        parm_val = schematisation[iDict][iDict_sub][parameter]
-                        # Obtain cell boundary limits
-                        layidx_min,layidx_max,\
-                            rowidx_min,rowidx_max,\
-                            colidx_min,colidx_max = self.cell_bounds(schematisation,
-                                                    dict_key = iDict,
-                                                    dict_subkey = parameter,
-                                                    model_type = model_type)
-                        # Fill grid with parameter value 'parm_val'
-                        grid[layidx_min: layidx_max+1,\
-                            rowidx_min: rowidx_max+1,\
-                            colidx_min: colidx_max+1] = parm_val
-                        if model_type in ["axisymmetric","2D"]:
-                            # In 2D model or axisymmetric models an 
-                            # inactive row is added to be able to run Modpath successfully.
-                            grid[:,1,:] = 0
-                    except KeyError:
-                        print("Key error exception:",parameter,". No grid filled.")
-                        continue
+                    # try:
+                    # Obtain parameter value
+                    parm_val = schematisation[iDict][iDict_sub][parameter]
+                    # Obtain cell boundary limits
+                    layidx_min,layidx_max,\
+                        rowidx_min,rowidx_max,\
+                        colidx_min,colidx_max = self.cell_bounds(schematisation,
+                                                dict_key = iDict,
+                                                dict_subkey = parameter,
+                                                model_type = model_type)
+                    # Fill grid with parameter value 'parm_val'
+                    grid[layidx_min: layidx_max+1,\
+                        rowidx_min: rowidx_max+1,\
+                        colidx_min: colidx_max+1] = parm_val
+                    if model_type in ["axisymmetric","2D"]:
+                        # In 2D model or axisymmetric models an 
+                        # inactive row is added to be able to run Modpath successfully.
+                        grid[:,1,:] = 0
+                    # except KeyError:
+                    #     print(f"Key error exception: {iDict} - {iDict_sub}. No grid filled.")
+                    #     continue
   
         # Return the filled grid                
         return grid
@@ -667,7 +667,7 @@ class ModPathWell:
         # Relevant dictionary keys
         self.ibound = self.fill_grid(schematisation = self.schematisation,
                                     dict_keys = dict_keys,
-                                    parameter = "ibound_type",
+                                    parameter = "ibound",
                                     grid = ibound,
                                     dtype = 'int',
                                     model_type = self.model_type)
@@ -694,6 +694,7 @@ class ModPathWell:
                         dict_key: str = "well_parameters",
                         well_names: list or str or None = "None",
                         discharge_parameter = "Q"):
+
         ''' Determine the location of the pumping wells and the relative discharge per cell.
             
             Boundaries of the well locations are to be included in the dictionaries with 
@@ -1057,8 +1058,7 @@ class ModPathWell:
         self.set_ibound(schematisation = self.schematisation,
                             dict_keys = dict_keys,
                             ibound = None,
-                            strt = self.strt,
-                            model_type = self.model_type)
+                            strt = self.strt)
 
 
         # list active packages
