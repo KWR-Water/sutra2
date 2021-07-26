@@ -6,10 +6,10 @@ import pandas as pd
 import os
 # path = os.getcwd()  # path of working directory
 from pathlib import Path
-try:
-    from project_path import module_path #the dot says looik in the current folder, this project_path.py file must be in the folder here
-except ModuleNotFoundError:
-    from project_path import module_path
+# try:
+#     from project_path import module_path #the dot says looik in the current folder, this project_path.py file must be in the folder here
+# except ModuleNotFoundError:
+#     from project_path import module_path
 
 from greta.Analytical_Well import *
 from greta.Substance_Transport import *
@@ -269,7 +269,6 @@ def test_travel_time_distribution_semiconfined():
     #     print("Success, no error in TTD!")
 
 
-
 def test_steady_concentration_temp_koc_correction_semiconfined(substance='benzene'):
 
     
@@ -352,6 +351,54 @@ def test_steady_concentration_temp_koc_correction_semiconfined(substance='benzen
 
 # %%
 
+def test_start_end_dates_contamination():
+    ''' Tests whether the correct exception is raised when the 'end_date_contamiantion' is before 'start_date_contamination' '''
+
+    with pytest.raises(EndDateBeforeStart) as exc:
+        phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+                                      what_to_export='omp_parameters',
+                                      well_discharge=319.4*24, #m3/day
+                                      recharge_rate=0.3/365.25, #m/day
+                                      start_date_contamination= '1990-01-01',
+                                      end_date_contamination='1950-01-01'
+                                      )
+    assert 'Error, "end_date_contamination" is before "start_date_contamination". Please enter an new "end_date_contamination" or "start_date_contamination" ' in str(exc.value)
+    assert exc.type == EndDateBeforeStart
+
+#%%
+def test_compute_for_date_start_dates_contamination():
+    ''' Tests whether the correct exception is raised when the 'computer_contamiantion_for_date' is before 'start_date_contamination' '''
+
+    with pytest.raises(ComputeDateBeforeStartDate) as exc:
+        phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+                                      what_to_export='omp_parameters',
+                                      well_discharge=319.4*24, #m3/day
+                                      recharge_rate=0.3/365.25, #m/day
+                                      start_date_contamination= '1960-01-01',
+                                      end_date_contamination='1990-01-01',
+                                      compute_contamination_for_date='1950-01-01'
+                                      )
+    assert 'Error, "compute_contamination_for_date" is before "start_date_contamination". Please enter an new "compute_contamination_for_date" or "start_date_contamination" ' in str(exc.value)
+    assert exc.type == ComputeDateBeforeStartDate
+
+#%%
+def test_compute_for_date_start_date_well():
+    ''' Tests whether the correct exception is raised when the 'computer_contamiantion_for_date' is before 'start_date_contamination' '''
+
+    with pytest.raises(ComputeDateBeforeStartWellDate) as exc:
+        phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+                                      what_to_export='omp_parameters',
+                                      well_discharge=319.4*24, #m3/day
+                                      recharge_rate=0.3/365.25, #m/day
+                                      start_date_contamination= '1950-01-01',
+                                      end_date_contamination='1990-01-01',
+                                      compute_contamination_for_date='1960-01-01', 
+                                      start_date_well='1975-01-01', 
+                                      )
+    assert 'Error, "compute_contamination_for_date" is before "start_date_well". Please enter an new "compute_contamination_for_date" or "start_date_well" ' in str(exc.value)
+    assert exc.type == ComputeDateBeforeStartWellDate
+
+#%%
 output_semiconfined = pd.read_csv(path / 'semiconfined_test.csv')
 output_semiconfined = output_semiconfined.round(7)
 test_ = HydroChemicalSchematisation(schematisation_type='semiconfined',
