@@ -370,6 +370,120 @@ class SubstanceTransport():
 
         self._calculcate_total_breakthrough_travel_time()
 
+        #something here to deal with start date well, start date contamination, end date contamination
+
+        #start date contamination -> LEFT OFF HERE NEED TO ADD SOMETHING FOR THE START/END DATE CONTAMINATION ETC ah_TODO
+
+        ''' start_date_contamination < start_date_well'''
+        # Check travel time to the target aquifer w/out pumping to set the background concentration..? @MartinvdS
+
+        ''' start_date_well < start_date_contamintion, compute_contamination end_date_contamination'''
+        if self.schematisation.schematisation.compute_contamination_for_date < self.schematisation.schematisation.end_date_contamination:
+            self.df_flowline
+            pass
+
+    def compute_concentration_in_well_at_date(self):
+
+        # reduce the amount of text per line by extracting the following parameters
+        compute_contamination_for_date = self.schematisation.schematisation.compute_contamination_for_date
+        start_date_well = self.schematisation.schematisation.start_date_well
+        start_date_contamination = self.schematisation.schematisation.start_date_contamination
+
+        if start_date_well > start_date_contamination:
+            start_date = start_date_well
+            back_date_start = start_date_contamination
+
+        elif start_date_well <= start_date_contamination:
+            start_date = start_date_contamination
+            back_date_start = start_date_well
+
+        compute_date = compute_contamination_for_date - start_date
+        back_compute_date = start_date - back_date_start
+
+        time_array = np.arange(0, compute_date.days+1, 1)
+        back_date_array = np.arange(-back_compute_date.days,0, 1)
+        time_array = np.append(back_date_array,time_array)
+        time_array_dates = pd.date_range(start=back_date_start,end=compute_contamination_for_date)
+
+        #Calculate the concentration in the well, 
+        self.df_flowline['concentration_in_well'] = (self.df_flowline['breakthrough_concentration'] 
+                            * self.df_flowline['discharge']/ self.df_flowline['well_discharge'])
+        df_flowline = self.df_flowline
+        well_concentration = []
+
+        #sum the concentration in the well for each timestep
+        for i in range(len(time_array)):
+            t = time_array[i] 
+            well_concentration.append(sum(df_flowline['concentration_in_well'].loc[df_flowline['total_breakthrough_travel_time'] <= t]))
+        df_well_concentration = pd.DataFrame({'time':time_array, 'date':time_array_dates, 'total_concentration_in_well': well_concentration})
+
+        return df_well_concentration
+        #left off here need to look at the other cases, well before contamiantion (ask martin),
+        # contamiantion before well, end contamiantion before look at well conccentration
+
+    def plot_concentration(self, 
+                            xlim=None, 
+                            ylim=None, 
+                            as_fraction_input = None,
+                            x_axis = 'Date'):
+        ''' Plot the concentration of the given OMP as a function of time since the start of the contamination'''
+        # reduce the amount of text per line by extracting the following parameters
+        concentration_point_contamination = self.schematisation.schematisation.concentration_point_contamination
+        diffuse_input_concentration = self.schematisation.schematisation.diffuse_input_concentration
+        schematisation_type = self.schematisation.schematisation.schematisation_type
+        compute_contamination_for_date = self.schematisation.schematisation.compute_contamination_for_date
+        start_date_well = self.schematisation.schematisation.start_date_well
+        start_date_contamination = self.schematisation.schematisation.start_date_contamination
+        
+        start_date = max(start_date_well,start_date_contamination)
+        back_date_start = min(start_date_well,start_date_contamination)
+        compute_date = compute_contamination_for_date - start_date
+
+        if concentration_point_contamination is None:
+            input_concentration = diffuse_input_concentration 
+        else:
+            input_concentration = diffuse_input_concentration + concentration_point_contamination
+
+        df_well_concentration = self.compute_concentration_in_well_at_date()
+
+        # as fraction of the input concentration
+        if as_fraction_input:
+            df_well_concentration[:] = [x / input_concentration for x in df_well_concentration]
+            ylabel = 'Fraction of input concentration'
+        else: 
+            ylabel = 'Concentration'
+        
+        fig = plt.figure(figsize=[10, 5])
+        if x_axis == 'Date':
+            plt.plot(df_well_concentration.date, df_well_concentration.total_concentration_in_well, 'b', label =str(self.substance.substance_name)) 
+            plt.axvline(x=start_date_well, color= 'k', label = 'Start date well')
+            plt.axvline(x=start_date_contamination, color= 'r', label = 'Start date contamination')
+            plt.xlabel('Date')
+            if xlim == None:
+                plt.xlim([datetime.date((back_date_start.year-5), 1, 1), compute_contamination_for_date])
+            else: plt.xlim(xlim)
+
+        elif x_axis == 'Time':
+            plt.plot(df_well_concentration.time/365.24, df_well_concentration.total_concentration_in_well,  'b', label =str(self.substance.substance_name)) 
+            plt.axvline(x=(start_date_well-start_date).days/365.24, color= 'k', label = 'Start date well')
+            plt.axvline(x=(start_date_contamination-start_date).days/365.24, color= 'r', label = 'Start date contamination')
+
+            plt.xlabel('Time (years)')
+            if xlim == None:
+                plt.xlim([(back_date_start-start_date).days/365-5,compute_date.days/365.24])
+            else: plt.xlim(xlim)
+
+        if ylim == None:
+            plt.ylim([0, input_concentration])
+        else: plt.ylim(ylim) 
+        plt.legend(loc=2)
+        plt.ylabel(ylabel)
+        plt.title('Aquifer type: ' + schematisation_type)
+        plt.grid()
+        plt.legend()
+        plt.savefig('well_concentration_over_time_'+str(self.substance.substance_name)+'_'+schematisation_type+'.png', dpi=300, bbox_inches='tight')  # save_results_to + '/
+
+
     def compute_microbiology_removal(self):
         pass
 
@@ -381,52 +495,6 @@ class SubstanceTransport():
     #         select flowline with break_through_time < evaluation_time                                                  
     #         conc_flowline = concentration at end of selected flowline
     #         concentration_well = sum (conc_selected_flowline_i * discharge_flowline_i) / sum discharge_all_flowline                                                             
-
-
-    def plot_concentration(self, 
-                            xlim=[0, 500], 
-                            ylim=[0,1 ], 
-                            as_fraction_input = None):
-        ''' Plot the concentration of the given OMP as a function of time since the start of the contamination'''
-        time_array = np.arange(0, 505, 1)*365.24
-        
-        # reduce the amount of text per line by extracting the following parameters
-        concentration_point_contamination = self.schematisation.schematisation.concentration_point_contamination
-        diffuse_input_concentration = self.schematisation.schematisation.diffuse_input_concentration
-        schematisation_type = self.schematisation.schematisation.schematisation_type
-
-        if concentration_point_contamination is None:
-            input_concentration = diffuse_input_concentration 
-        else:
-            input_concentration = diffuse_input_concentration + concentration_point_contamination
-
-        #Calculate the concentration in the well, 
-        self.df_flowline['concentration_in_well'] = (self.df_flowline['breakthrough_concentration'] 
-                            * self.df_flowline['discharge']/ self.df_flowline['well_discharge'])
-        well_conc = []
-
-        #sum the concentration in the well for each timestep
-        for i in range(len(time_array)):
-            t = time_array[i]
-            well_conc.append(sum(self.df_flowline['concentration_in_well'].loc[self.df_flowline['total_breakthrough_travel_time'] <= t]))
-
-        # as fraction of the input concentration
-        if as_fraction_input:
-            well_conc[:] = [x / input_concentration for x in well_conc]
-            ylabel = 'Fraction of input concentration'
-        else: 
-            ylabel = 'Concentration'
-        fig = plt.figure(figsize=[10, 5])
-        plt.plot(time_array/365.24, well_conc, 'b', label =str(self.substance.substance_name))
-        plt.xlim(xlim)
-        plt.ylim(ylim) 
-        plt.ylabel(ylabel)
-        plt.xlabel('Time since start of contamination (years)')
-        plt.title('Aquifer type: ' + schematisation_type)
-        plt.grid()
-        plt.legend()
-        plt.savefig('well_concentration_over_time_'+str(self.substance.substance_name)+'_'+schematisation_type+'.png', dpi=300, bbox_inches='tight')  # save_results_to + '/
-
 
     def plot_age_distribution(self):
         #AH_todo
