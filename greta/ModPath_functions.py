@@ -223,7 +223,10 @@ class ModPathWell:
 
     """ Compute travel time distribution using MODFLOW and MODPATH.""" 
     def __init__(self, schematisation: dict,
-                       workspace: str or None = None, modelname: str or None = None): 
+                       workspace: str or None = None, modelname: str or None = None,
+                       bound_left: str = "xmin", bound_right: str = "xmax",
+                       bound_top: str = "top", bound_bot: str = "bot",
+                       bound_north: str = "ymin", bound_south: str = "ymax"): 
         """ 'unpack/parse' all the variables from the hydrogeochemical schematizization """
 
         '''Parameters
@@ -257,7 +260,13 @@ class ModPathWell:
         # Cbc unit flag (modflow oc-package input)
         iu_cbc = 130
         self.iu_cbc = iu_cbc
-        
+        # Expected boundary terms in dicts
+        self.bound_left = bound_left
+        self.bound_right = bound_right
+        self.bound_top = bound_top
+        self.bound_bot = bound_bot
+        self.bound_north = bound_north
+        self.bound_south = bound_south
 
         # Create output directories
         # Destination root
@@ -339,49 +348,47 @@ class ModPathWell:
 
     def cell_bounds(self,schematisation: dict, dict_key: str = "None",
                         dict_subkey: str = "None",
-                        bound_left: str = "xmin", bound_right: str = "xmax",
-                        bound_top: str = "top", bound_bot: str = "bot",
-                        bound_north: str = "ymin", bound_south: str = "ymax",
                         model_type = "axisymmetric"):
         ''' Create cell boundaries of box created using following boundaries:
-            bound_left: str = "xmin" 
-            bound_right: str = "xmax"
-            bound_top: str = "top"
-            bound_bot: str = "bot"
-            bound_north: str = "ymin"  # not required for axisymmetric or 2D model
-            bound_south: str = "ymax"  # not required for axisymmetric or 2D model  
+            self.bound_left: str = "xmin" 
+            self.bound_right: str = "xmax"
+            self.bound_top: str = "top"
+            self.bound_bot: str = "bot"
+            self.bound_north: str = "ymin"  # not required for axisymmetric or 2D model
+            self.bound_south: str = "ymax"  # not required for axisymmetric or 2D model  
             # Return boundary indices of row and columns plus parameter value
             return layidx_min,layidx_max,rowidx_min,rowidx_max,colidx_min,colidx_max                
         '''
+        
         # Loop through schematisation keys (dict_keys)
         iDict = dict_key
         # Use subkeys of schematisation dictionary
         iDict_sub = dict_subkey   
 
         # coordinate values of boundaries [float]
-        left = schematisation[iDict][iDict_sub][bound_left]
-        right = schematisation[iDict][iDict_sub][bound_right]
-        top = schematisation[iDict][iDict_sub][bound_top]
-        bot = schematisation[iDict][iDict_sub][bound_bot]
-        if not model_type == "axisymmetric":
+        left = schematisation[iDict][iDict_sub][self.bound_left]
+        right = schematisation[iDict][iDict_sub][self.bound_right]
+        top = schematisation[iDict][iDict_sub][self.bound_top]
+        bot = schematisation[iDict][iDict_sub][self.bound_bot]
+        if not self.model_type == "axisymmetric":
             try:
-                north = schematisation[iDict][iDict_sub][bound_north]
-                south = schematisation[iDict][iDict_sub][bound_south]
+                north = schematisation[iDict][iDict_sub][self.bound_north]
+                south = schematisation[iDict][iDict_sub][self.bound_south]
                 # Determine row indices
                 rowidx_min = int(np.argwhere((self.ymid - north <= 0.) & (self.ymid - south >= 0.))[0])
                 rowidx_max = int(np.argwhere((self.ymid - north <= 0.) & (self.ymid - south >= 0.))[-1])
             except KeyError as e:
-                print(e)
+                print(e,f"missing {iDict} {iDict_sub}. Continue")
         else:
-            north,south,rowidx_min,rowidx_max = None, None,0,self.nrow-1
+            north,south,rowidx_min,rowidx_max = None, None,0,0
 
         # Determine layer indices
         layidx_min = int(np.argwhere((self.zmid - top <= 0.) & (self.zmid - bot >= 0.))[0])
-        layidx_max = int(np.argwhere((self.zmid - top <= 0.) & (self.zmid - bot >= 0.))[-1] + 1)
+        layidx_max = int(np.argwhere((self.zmid - top <= 0.) & (self.zmid - bot >= 0.))[-1])
         # np.where((self.zmid < top) & (self.zmid > bot))
         # Determine column indices
         colidx_min = int(np.argwhere((self.xmid - left >= 0.) & (self.xmid - right <= 0.))[0])
-        colidx_max = int(np.argwhere((self.xmid - left >= 0.) & (self.xmid - right <= 0.))[-1] + 1)
+        colidx_max = int(np.argwhere((self.xmid - left >= 0.) & (self.xmid - right <= 0.))[-1])
         # np.where((self.xmid < right) & (self.xmid > left))    
         
         return layidx_min,layidx_max,rowidx_min,rowidx_max,colidx_min,colidx_max
@@ -391,9 +398,6 @@ class ModPathWell:
                         parameter: str = "None",
                         grid: np.array or None = None,
                         dtype: str or None = 'float',
-                        bound_left: str = "xmin", bound_right: str = "xmax",
-                        bound_top: str = "top", bound_bot: str = "bot",
-                        bound_north: str = "ymin", bound_south: str = "ymax",
                         model_type = "axisymmetric"):
         ''' Assign values to 'grid' [np.array] for parameter name 'parameter' [str], 
             using the keys dict_keys [list] in schematisation dictionary 'self.schematisation'.
@@ -402,12 +406,12 @@ class ModPathWell:
             
             Boundaries of the parameter values are to be included in the dictionaries:
 
-            bound_left: str = "xmin" 
-            bound_right: str = "xmax"
-            bound_top: str = "top"
-            bound_bot: str = "bot"
-            bound_north: str = "ymin"
-            bound_south: str = "ymax"
+            self.bound_left: str = "xmin" 
+            self.bound_right: str = "xmax"
+            self.bound_top: str = "top"
+            self.bound_bot: str = "bot"
+            self.bound_north: str = "ymin"
+            self.bound_south: str = "ymax"
 
             The function returns:
             - grid  # grid [np.array] filled with (numeric) values for parameter 'parameter'.
@@ -432,79 +436,39 @@ class ModPathWell:
             dict_keys = [iDict for iDict in schematisation.keys()]
        
         
-        if model_type in ["axisymmetric","2D"]:
-            # In 2D model or axisymmetric models an 
-            # inactive row is added to be able to run Modpath successfully.
-            grid[:,1,:] = 0
+        # Loop through schematisation keys (dict_keys)
+        for iDict in dict_keys:
+            # Loop through subkeys of schematisation dictionary
+            for iDict_sub in schematisation[iDict]:   
+                
+                if parameter in schematisation[iDict][iDict_sub]:
 
-            # Loop through schematisation keys (dict_keys)
-            for iDict in dict_keys:
-                # Loop through subkeys of schematisation dictionary
-                for iDict_sub in schematisation[iDict]:   
-                    
-                    if parameter in schematisation[iDict][iDict_sub]:
 
-                        left = schematisation[iDict][iDict_sub][bound_left]
-                        right = schematisation[iDict][iDict_sub][bound_right]
-                        top = schematisation[iDict][iDict_sub][bound_top]
-                        bot = schematisation[iDict][iDict_sub][bound_bot]
-                        # Obtain parameter value
-                        parm_val = schematisation[iDict][iDict_sub][parameter]
 
-                        # Only change constant head values for python row "0"
-                        iRow = 0  
-                        try:
-                            # Determine layer indices
-                            layidx_min = int(np.argwhere((self.zmid - top <= 0.) & (self.zmid - bot >= 0.))[0])
-                            layidx_max = int(np.argwhere((self.zmid - top <= 0.) & (self.zmid - bot >= 0.))[-1] + 1)
-                            # np.where((self.zmid < top) & (self.zmid > bot))
-                            # Determine column indices
-                            colidx_min = int(np.argwhere((self.xmid - left >= 0.) & (self.xmid - right <= 0.))[0])
-                            colidx_max = int(np.argwhere((self.xmid - left >= 0.) & (self.xmid - right <= 0.))[-1] + 1)
-                            # np.where((self.xmid < right) & (self.xmid > left))
-                            # Fill grid with parameter value 'parm_val'
-                            grid[layidx_min:layidx_max,\
-                                iRow,\
-                                colidx_min:colidx_max] = parm_val
-                        except Exception as e:
-                            print(e)
-                            continue
-        else:  # 3D grid
-
-            # Loop through schematisation keys (dict_keys)
-            for iDict in dict_keys:
-                # Loop through subkeys of schematisation dictionary
-                for iDict_sub in schematisation[iDict]:   
-                    
-                    if iDict_sub == parameter:
-
-                        left = schematisation[iDict][iDict_sub][bound_left]
-                        right = schematisation[iDict][iDict_sub][bound_right]
-                        top = schematisation[iDict][iDict_sub][bound_top]
-                        bot = schematisation[iDict][iDict_sub][bound_bot]
-                        north = schematisation[iDict][iDict_sub][bound_north]
-                        south = schematisation[iDict][iDict_sub][bound_south]
-                        # Obtain parameter value
-                        parm_val = schematisation[iDict][iDict_sub][parameter]
-
-                        # Determine row indices
-                        rowidx_min = int(np.argwhere((self.ymid - north <= 0.) & (self.ymid - south >= 0.))[0])
-                        rowidx_max = int(np.argwhere((self.ymid - north <= 0.) & (self.ymid - south >= 0.))[-1] + 1)
-                        # Determine layer indices
-                        layidx_min = int(np.argwhere((self.zmid - top <= 0.) & (self.zmid - bot >= 0.))[0])
-                        layidx_max = int(np.argwhere((self.zmid - top <= 0.) & (self.zmid - bot >= 0.))[-1] + 1)
-                        # np.where((self.zmid < top) & (self.zmid > bot))
-                        # Determine column indices
-                        colidx_min = int(np.argwhere((self.xmid - left >= 0.) & (self.xmid - right <= 0.))[0])
-                        colidx_max = int(np.argwhere((self.xmid - left >= 0.) & (self.xmid - right <= 0.))[-1] + 1)
-                        # np.where((self.xmid < right) & (self.xmid > left))
-                        # Fill grid with parameter value 'parm_val'
-                        grid[layidx_min: layidx_max,\
-                            rowidx_min: rowidx_max,\
-                            colidx_min: colidx_max] = parm_val
+                    # try:
+                    # Obtain parameter value
+                    parm_val = schematisation[iDict][iDict_sub][parameter]
+                    # Obtain cell boundary limits
+                    layidx_min,layidx_max,\
+                        rowidx_min,rowidx_max,\
+                        colidx_min,colidx_max = self.cell_bounds(schematisation,
+                                                dict_key = iDict,
+                                                dict_subkey = parameter,
+                                                model_type = model_type)
+                    # Fill grid with parameter value 'parm_val'
+                    grid[layidx_min: layidx_max+1,\
+                        rowidx_min: rowidx_max+1,\
+                        colidx_min: colidx_max+1] = parm_val
+                    if model_type in ["axisymmetric","2D"]:
+                        # In 2D model or axisymmetric models an 
+                        # inactive row is added to be able to run Modpath successfully.
+                        grid[:,1,:] = 0
+                    # except KeyError:
+                    #     print(f"Key error exception: {iDict} - {iDict_sub}. No grid filled.")
+                    #     continue
+  
         # Return the filled grid                
         return grid
-
 
     def _assign_cellboundaries(self,schematisation: dict, dict_keys: list or None = None,
                                 bound_min: str = "xmin", bound_max: str = "xmax",
@@ -685,11 +649,7 @@ class ModPathWell:
     def set_ibound(self,schematisation: dict,
                         dict_keys: dict or None = None,
                         ibound: np.array or None = None,
-                        strt: np.array or None = None,
-                        bound_left: str = "xmin", bound_right: str = "xmax",
-                        bound_top: str = "top", bound_bot: str = "bot",
-                        bound_north: str = "ymin", bound_south: str = "ymax",
-                        model_type = 'axisymmetric'):
+                        strt: np.array or None = None):
 
         ''' This function is used to assign the constant head cells (ibound --> "-1". 
         '''
@@ -707,68 +667,207 @@ class ModPathWell:
         # Relevant dictionary keys
         self.ibound = self.fill_grid(schematisation = self.schematisation,
                                     dict_keys = dict_keys,
-                                    parameter = "ibound_type",
+                                    parameter = "ibound",
                                     grid = ibound,
                                     dtype = 'int',
-                                    bound_left = "xmin", bound_right = "xmax",
-                                    bound_top = "top", bound_bot = "bot",
-                                    bound_north = "ymin", bound_south = "ymax",
-                                    model_type = model_type)
+                                    model_type = self.model_type)
         self.strt = self.fill_grid(schematisation = self.schematisation,
                                     dict_keys = dict_keys,
                                     parameter = "head",
                                     grid = strt,
                                     dtype = 'int',
-                                    bound_left = "xmin", bound_right = "xmax",
-                                    bound_top = "top", bound_bot = "bot",
-                                    bound_north = "ymin", bound_south = "ymax",
-                                    model_type = model_type)
-        
-    # def lpf_input(self, layavg = None, hk= {"hk": ["geo_parameters"]},
-    #     vani= 1., ss = 1.E-3,
-    #               storativity = True, model_type = "axisymmetric"):
-    #     ''' ### lpf package input parms ###
-            
-    #         hk: Horizontal conductivity
-    #         vka: Vertical conductivity (-> if layvka = 0 (default))
-    #         ss: Specific storage (1/m)
-    #         storativity: # If True (default): Ss stands for storativity [-] instead of specific storage [1/m]
-    #         layavg: Layer average of hydraulic conductivity
-    #             layavg: 0 --> harmonic mean 
-    #             layavg: 1 --> logarithmic mean (is used in axisymmetric models).
-    #     '''
-    #     self.storagecoefficient = storativity 
-
-    #     if model_type == "axisymmetric":
-    #         if layavg is None:
-    #             self.layavg = 1
-    #         else:  
-    #             self.layavg = layavg 
-    #     self.hk = hk            
-    #     self.vka = vka           
-    #     self.ss = ss             
+                                    model_type = self.model_type)
+         
         
     def oc_input(self, spd_oc = {(0, 0): ['save head', 'save budget']}):
         ''' Load OC package parms to model. '''
         self.spd_oc = spd_oc
+    def _validate_input(self):
+        # controleren op alle benodigde keys van de 
+        # schematization class
+        # if 'xmin' is not in dictionary.keys():
+        #     raise ValueError('xmin is not in dictionayr')
+        # dit soort validaties moet eigenlij in de schematization class
+        pass
 
-    # Load wel parms to model
-    def wel_input(self, spd_wel, well_nr = [1], well_lay = {1: [0]},
-                                well_row = {1: [0]}, well_col = {1: [0]},
-                                well_oper = None, Qwell_day = None,
-                                KD_Well = None, KD_Welltot = None):
-        ''' WEL package input parms.
-            Returns well stress period data. '''
+    def assign_wellloc(self,schematisation: dict,
+                        dict_key: str = "well_parameters",
+                        well_names: list or str or None = "None",
+                        discharge_parameter = "Q"):
+
+        ''' Determine the location of the pumping wells and the relative discharge per cell.
+            
+            Boundaries of the well locations are to be included in the dictionaries with 
+            keys "dict_keys" [list], based on presence of "discharge_parameter" [str (default = "Q")]:
+                       
+            bound_left: str = "xmin" 
+            bound_right: str = "xmax"
+            bound_top: str = "top"
+            bound_bot: str = "bot"
+            bound_north: str = "ymin"
+            bound_south: str = "ymax"
+
+            # Output:
+            # Creates a dict with list of tuples representing the well locations
+            well_loc = {"well1": [(5,0,0),(6,0,0)],
+                        "well2":}
+            
+            # Calculate cumulative KD per well [m2/day] (to calculate relative discharge per cell)
+            KD_well = {"well1": 500.,
+                        "well2": 100.,...}
+            # Create stress period data [list of lists per stress period]:
+            # wel_spd = {0: [[lay,row,col,discharge1],[lay,row,col,discharge2]]
+
+            # Total discharge per day per well
+            Qwell_day = = {"well1": -1000..,
+                        "well2": -1.,...}
+            
+        '''
+
+        if (well_names is None) or (well_names == "None"):
+            well_names = []
+            # Loop through "well_parameters" of schematisation dictionary
+            for iKey in schematisation[dict_key]:   
+                # Determine if wells exist (with a "discharge_parameter")  
+                if discharge_parameter in schematisation[dict_key][iKey]:
+                    well_names.append(iKey)
+                    
+        # Create empty dicts
+        well_loc = {}  # well locations
+        KD_well = {}   # KD (cumulative) per well
+        Qwell_day = {} # Daily flux [m3/d] per well
+        # stress period data for well package
+        spd_wel = {}
+        spd_wel[0] = []
+        for iWell in well_names:
+            # Daily flux [m3/d]     
+            Qwell_day[iWell] = schematisation[dict_key][iWell][discharge_parameter]
+            # Calculate boundary indices
+            layidx_min,layidx_max,\
+                rowidx_min,rowidx_max,\
+                colidx_min,colidx_max = self.cell_bounds(schematisation,
+                                        dict_key = dict_key,
+                                        dict_subkey = iWell,
+                                        model_type = self.model_type)
+
+
+            # print("Laymin_max:", (layidx_min,layidx_max),\
+            #       "Rowmin_max:", rowidx_min,rowidx_max,\
+            #       "Colmin_max:",colidx_min,colidx_max)
+            # print("(nlay,nrow,ncol)",(self.nlay,self.nrow,self.ncol))
+            # Add well locations and stress_period_data
+            well_loc[iWell] = []
+            KD_well[iWell] = 0.
+            for iLay in range(layidx_min,layidx_max+1):
+                for iRow in range(rowidx_min,rowidx_max+1):
+                    for iCol in range(colidx_min, colidx_max+1):
+                        # print(iLay,iRow,iCol)
+                        well_loc[iWell].append((iLay,iRow,iCol))
+                        # Correct discharge for K_hor near wells and for the possible difference in delv (K * D)
+                        KD_well[iWell] += self.hk[iLay,iRow,iCol] * self.delv[iLay]
+
+        
+            # stress period data for well package
+            for iLay in range(layidx_min,layidx_max+1):
+                for iRow in range(rowidx_min,rowidx_max+1):
+                   for iCol in range(colidx_min, colidx_max+1):
+                        spd_wel[0].append([iLay, iRow, iCol, Qwell_day[iWell] * \
+                                          (self.hk[iLay,iRow,iCol] * self.delv[iLay]) / KD_well[iWell]])
+        
+        return well_loc, KD_well, spd_wel, Qwell_day
+
+    ####################
+    ### Fill modules ###
+    def load_mfobject(self, mf_exe = 'mf2005.exe'):
+        self.mf_exe = mf_exe
+        
+        # Modflow object
+        self.mf = flopy.modflow.Modflow(modelname = self.modelname, exe_name= self.mf_exe, model_ws=self.workspace)
+
+    def load_dis(self, per_nr = 0):
+        ''' Add dis Package to the MODFLOW model '''
+        perlen = self.perlen[per_nr]
+        nstp = self.nstp[per_nr]
+        steady = self.steady[per_nr]
+        
+        self.dis = flopy.modflow.ModflowDis(self.mf, self.nlay, self.nrow, self.ncol, 
+                                            nper= 1, lenuni = 2, # meters
+                                            itmuni = 4, # 3: hours, 4: days
+                                            delr= self.delr, delc= self.delc, laycbd= 0, top= self.top,      
+                                            botm= self.botm, perlen = perlen, 
+                                            nstp= nstp, steady = steady)
+                                            # Laycbd --> 0, then no confining lay below
+
+    def spat_ref(self,xll = 0, yll = 0, delr = None, delc = None,
+                 units = "meters",lenuni = 1, length_multiplier=1):
+        # Define spatial reference of modflow run
+        self.mf.sr = flopy.utils.SpatialReference(xll=0, yll=0, delr=self.mf.dis.delr.array, delc=self.mf.dis.delc.array, 
+                                    units='meters', lenuni=1, length_multiplier=1)
+
+    def load_bas(self):
+        ''' Add basic Package to the MODFLOW model '''
+        self.bas = flopy.modflow.ModflowBas(self.mf, ibound = self.ibound, strt = self.strt)
+        
+    def load_lpf(self):
+        ''' Add lpf Package to the MODFLOW model '''
+        self.lpf = flopy.modflow.ModflowLpf(self.mf, layavg = 1, ipakcb = self.iu_cbc, hk=self.hk, vka=self.vka, 
+                                            ss = self.ss, storagecoefficient = self.storagecoefficient) 
+        # layavg = 1 (--> logarithmic mean); storagecoefficient = True (means: storativity)
+        
+    def load_pcg(self, hclose=1e-4, rclose = 0.001):
+        ''' Add PCG Package to the MODFLOW model '''
+        
+        self.pcg = flopy.modflow.ModflowPcg(self.mf, hclose=hclose, rclose = rclose)
+            
+    def load_oc(self, per_nr = 0):
+        ''' Add output control Package to the MODFLOW model. '''        
+        
+#        spd_oc = {}
+#        for istp in range(self.nstp[per_nr]):
+#            spd_oc[(0, istp)] = ['save head', 'print head', 'save budget', 'print budget']
+        extension = ['oc', 'hds', 'ddn', 'cbc', 'ibo']
+        unitnumber = [14, 51, 52, self.iu_cbc, 0]
+        filenames = []
+        for iExt in extension:
+            filenames.append(self.modelname + "." + iExt)
+        self.oc = flopy.modflow.ModflowOc(self.mf, stress_period_data= self.spd_oc,
+                                          extension = extension,  # Default extensions
+#                                          unitnumber = unitnumber,
+                                          filenames = filenames,
+                                          compact = True #,cboufm='(20i5)'
+                                          ) 
+ 
+#                                               
+                                    # compact option is a requirement for using Modpath
+
+    def load_rch(self, rech = None):
+        ''' Add recharge Package to the MODFLOW model. '''     
+                                           
+        # Stress period data dict 
+        if rech is not None:                       
+            self.rech = rech
+
+        self.rch = flopy.modflow.ModflowRch(self.mf, ipakcb = self.iu_cbc, #102, 
+                                     rech = self.rech, nrchop = 1)          
+
+    def load_wel(self, spd_wel = None):
+        ''' Add well Package to the MODFLOW model. '''     
+                                           
+        # Stress period data dict                        
         self.spd_wel = spd_wel
-        self.well_nr = well_nr      # Well screens (list of int)
-        self.well_lay = well_lay    # Well screen loc (layers) (dict with key per well_nr)  
-        self.well_row = well_row    # Well screen loc (rows) (dict with key per well_nr)
-        self.well_col = well_col    # Well screen loc (cols) (dict with key per well_nr)
-        self.well_oper = well_oper  # Operational well screen (dictionary)
-        self.Qwell_day = Qwell_day  # Daily well discharge (total) --> List per stress period
-        self.KD_Well = KD_Well      # Transmissivity correction for well discharge
-        self.KD_Welltot = KD_Welltot # Summed transmissivity correction for well discharge
-               
+
+        self.wel = flopy.modflow.ModflowWel(self.mf, ipakcb = self.iu_cbc,
+                                     stress_period_data= self.spd_wel)
+         # If ipakcb != 0: cell budget data is being saved.
+
+    def write_input_mf(self):
+        ''' Write package data MODFLOW model. '''
+        self.mf.write_input()
+
+    def run_modflowmod(self):         
+        ''' Run modflow model '''
+        self.success, self.buff = self.mf.run_model(silent=False)
+
 
 ### Functie: Check xmin, xmax,
     '''
@@ -871,8 +970,77 @@ class ModPathWell:
   		#delete the unwanted columns depending on what the user asks for here
   		# return df_flowline, df_particle
 
+    def mfmodelrun(self):
+        ''' Main model run code. '''
+        print ("Run model:",self.workspace, self.modelname +"\n")
+
+        # Start model run
+        # Load modflow packages
+        for iper in range(self.nper):
+            # If the starting heads have been changed during the first model run:
+            if iper != 0:
+
+                try:
+                    # Load head data
+                    _, self.strt = self.load_hdsobj(fname = self.model_hds,time = -1)
+                except Exception as e:
+                    print (e,"Error loading strt_fw data\nstrt_fw set to '0'.")
+                    self.strt = 0.
+            
+            # Open modflow object
+            self.load_mfobject(mf_exe = 'mf2005.exe')
+            # Load packages
+            self.load_dis(per_nr = iper)   
+            self.load_bas()   
+            self.load_lpf()   
+            self.load_pcg()   
+            self.load_oc(per_nr = iper)
+            if len(self.well_names) > 0:
+                try:                        
+                    self.load_wel(spd_wel = self.spd_wel)
+                except Exception as e:
+                    print(e, "error loading well package.")
+            try:
+                self.load_rch()
+            except Exception as e:
+                print(e, "no recharge assigned.")
+
+            # Assign spatial reference:
+            # this is a fix until the grid object is available                    
+            self.spat_ref(xll = self.xll, yll = self.yll, delr = self.delr,
+                     delc = self.delc, units = "meters",
+                     lenuni = 1, length_multiplier=1)
+
+            # Write modflow, mt3dms and seawat input
+            try: 
+    #            self.write_input_mf()
+    #                self.write_input_mt3dms()
+                self.write_input_mf()
+            finally:
+                pass
+            
+            # Finally removes the given exceptions from memory
+        
+            # Try to delete the previous output files, to prevent accidental use of older files
+            try:  
+                os.remove(self.model_hds)
+            except Exception:
+                pass
+            try:  
+                os.remove(self.model_cbc)
+            except Exception:
+                pass
+            
+            # Run modflow model
+            self.run_modflowmod()
+            print(self.success, self.buff)
+
+            # Model run completed succesfully
+            print("Model run", self.workspace, self.modelname, "completed succesfully.")
+
 
     def phreatic(self):
+        ''' Modflow & modpath calculation using subsurface schematisation type 'phreatic'. '''
         self._check_init_phreatic()
         # Model_type axisymmetric
         self.model_type = "axisymmetric"
@@ -890,8 +1058,7 @@ class ModPathWell:
         self.set_ibound(schematisation = self.schematisation,
                             dict_keys = dict_keys,
                             ibound = None,
-                            strt = self.strt,
-                            model_type = self.model_type)
+                            strt = self.strt)
 
 
         # list active packages
@@ -927,18 +1094,15 @@ class ModPathWell:
                             parameter = iParm,
                             grid = None,
                             dtype = 'float',
-                            bound_left = "rmin", bound_right = "rmax",
-                            bound_top = "top", bound_bot = "bot",
-                            bound_north = "ymin", bound_south = "ymax",
                             model_type = self.model_type)
             self.update_property(property = iParm, value = grid)
 
         # Create (uncorrected) array for kv ("vka"), using "kh" and "vani" (vertical anisotropy)
         self.vka = self.hk / self.vani
-        # and for 'storativity'
-        self.stor = np.ones((self.nlay,self.nrow,self.ncol), dtype = 'float') * 1.E-6
+        # and for 'storativity' ("ss": specific storage)
+        self.ss = np.ones((self.nlay,self.nrow,self.ncol), dtype = 'float') * 1.E-6
         # Axisymmetric flow properties
-        axisym_parms = ["hk","vka","stor"]
+        axisym_parms = ["hk","vka","ss"]
         if self.model_type == "axisymmetric":
             for iParm in axisym_parms:
                 grid_uncorr = getattr(self,iParm)
@@ -958,9 +1122,6 @@ class ModPathWell:
                             parameter = iParm,
                             grid = None,
                             dtype = 'float',
-                            bound_left = "rmin", bound_right = "rmax",
-                            bound_top = "top", bound_bot = "bot",
-                            bound_north = "ymin", bound_south = "ymax",
                             model_type = self.model_type)
             self.update_property(property = iParm, value = grid)
 
@@ -975,57 +1136,17 @@ class ModPathWell:
         # leakage discharge from well
         well_names = [iWell for iWell in self.schematisation["well_parameters"] if \
                         "Q" in self.schematisation["well_parameters"][iWell].keys()]
-    def assign_wellloc(self,schematisation: dict, 
-                        dict_keys: list or None = None,
-                        well_names: list or None,
-                        discharge_parameter = "Q",
-                        dtype: str or None = 'float',
-                        bound_left: str = "xmin", bound_right: str = "xmax",
-                        bound_top: str = "top", bound_bot: str = "bot",
-                        bound_north: str = "ymin", bound_south: str = "ymax",
-                        model_type = "axisymmetric")
-        ''' Determine the location of the pumping wells and the relative discharge per cell.
-            
-            Boundaries of the well locations are to be included in the dictionaries with 
-            keys "dict_keys" [list], based on presence of "discharge_parameter" [str (default = "Q")]:
-                       
-            bound_left: str = "xmin" 
-            bound_right: str = "xmax"
-            bound_top: str = "top"
-            bound_bot: str = "bot"
-            bound_north: str = "ymin"
-            bound_south: str = "ymax"
-
-            # Output:
-            # Creates a dict with list of tuples representing the well locations
-            well_loc = {"well1": [(5,0,0),(6,0,0)],
-                        "well2":}
-            # Create stress period data [list of lists per stress period]:
-            # wel_spd = {0: [[lay,row,col,discharge1],[lay,row,col,discharge2]]
-            
-        '''
-
-        # Create empty dicts
-        well_loc = {}
-        wel_spd = {}
-
-        leakage_day = -lek_params[iLek]["lekdebiet_pb"] # leak_flux[iFlux] 
-
-        # Correct discharge for K_hor near wells and for the possible difference in delv (K * D)
-        KD_Well = 0.
-        for iLay in leak_lay:
-            for iRow, iCol in zip(leak_row,leak_col):
-                KD_Well += kh[iLay,iRow,iCol] * delv[iLay]
-        
-        # stress period data for well package
-        spd_wel = {}
-        spd_wel[0] = []
-        for iLay in leak_lay:
-            for iRow, iCol in zip(leak_row,leak_col):
-                spd_wel[0].append([iLay, iRow, iCol, leakage_day * (kh[iLay,iRow,iCol] * delv[iLay]) / KD_Well])
+       
+        self.well_loc,\
+            self.KD_well,\
+                self.spd_wel,\
+                    self.Qwell_day = self.assign_wellloc(schematisation = self.schematisation,
+                                                        dict_key = "well_parameters",
+                                                        well_names = None,
+                                                        discharge_parameter = "Q")
 
         # Load wel parms to model
-        self.wel_input(spd_wel = spd_wel)
+        # self.wel_input(spd_wel = self.spd_wel)
 
         '''
         Function to create array of travel time distributionss
@@ -1211,9 +1332,24 @@ class ModPathWell:
                         
         return xyz_nodes, dist, tdiff, dist_tot, time_tot, pth_data
 
-    def run_model(self, simulation_parameters: dict or None = None,
-                    xll = 0., yll = 0., perlen = 365.*50, nstp = 1, steady = False):
+    def run_model(self,
+                    simulation_parameters: dict or None = None,
+                    xll = 0., yll = 0., perlen:dict or float or int = 365.*50, 
+                    nstp:dict or int = 1, steady:dict or bool = True,
+                    run_mfmodel = True, run_mpmodel = True):
+        ''' Run the combined modflow and modpath model using one 
+            of four possible schematisation types:
+            - "Phreatic"
+            - "Semi-confined"
+            - "Recharge basin (BAR)"
+            - "River bank filtration (RBF)"
+            Currently (13-7-2021) only the Phreatic schematisation is supported.'''
+
         # print(self.schematisation)
+        # Run modflow model (T/F)
+        self.run_mfmodel = run_mfmodel
+        # Run modpath model (T/F)
+        self.run_mpmodel = run_mpmodel
 
         if simulation_parameters is None:
             self.simulation_parameters = self.schematisation["simulation_parameters"]
@@ -1221,9 +1357,22 @@ class ModPathWell:
             self.simulation_parameters = simulation_parameters
 
         # Simulation parameters
-        self.perlen = perlen    # List with stress period lengths
-        self.nstp = nstp        # Nr of time periods per stress period (int)
-        self.steady = steady    # Steady state model run (True/False)
+        # Dict with stress period lengths
+        if type(perlen) != "dict":
+            self.perlen = {0: perlen}    
+        else:
+            self.perlen = perlen
+        # Nr of time periods per stress period (int)
+        if type(nstp) != "dict":
+            self.nstp = {0: nstp} 
+        else:
+            self.nstp = nstp 
+        # Steady state model run (True/False)
+        if type(steady) != "dict":
+            self.steady = {0: steady} 
+        else:    
+            self.steady = steady  
+
         # Define reference lowerleft
         self.xll = xll
         self.yll = yll
@@ -1237,6 +1386,10 @@ class ModPathWell:
         if self.schematisation_type == "phreatic":
             print("Run phreatic model")
             self.phreatic()
+            if self.run_mfmodel:
+                # Run modflow model
+                self.mfmodelrun()
+
         print("modelrun of type", self.schematisation_type, "completed.")
 '''
 #%%  

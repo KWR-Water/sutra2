@@ -34,6 +34,9 @@ from scipy.special import kn as besselk
 
 from pathlib import Path
 
+%load_ext autoreload
+%autoreload 2
+
 # %%
 # try:
 #     from project_path import module_path as module_path #the dot says looik in the current folder, this project_path.py file must be in the folder here
@@ -334,14 +337,14 @@ phreatic_scheme['geo_parameters']['mesh_refinement3'] =   {"rmin": model_thickne
 dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
                     "well_parameters"]
 
-# Change well discharge of well1 to -7665.6
-phreatic_scheme["well_parameters"]['well1']['Q'] = -7665.6
-# phreatic_scheme["well_parameters"]['well1']['res_vert'] = 0.5
-try:
-    phreatic_scheme["well_parameters"]['well1']['xmin'] = phreatic_scheme["well_parameters"]['well1']['rmin']
-    phreatic_scheme["well_parameters"]['well1']['xmax'] = phreatic_scheme["well_parameters"]['well1']['rmax']
-except:
-    pass
+# # Change well discharge of well1 to -7665.6
+# phreatic_scheme["well_parameters"]['well1']['Q'] = -7665.6
+# # phreatic_scheme["well_parameters"]['well1']['res_vert'] = 0.5
+# try:
+#     phreatic_scheme["well_parameters"]['well1']['xmin'] = phreatic_scheme["well_parameters"]['well1']['rmin']
+#     phreatic_scheme["well_parameters"]['well1']['xmax'] = phreatic_scheme["well_parameters"]['well1']['rmax']
+# except:
+#     pass
 
 # Add test well_parameters with leak from 9.9 to 10.0 m
 phreatic_scheme["well_parameters"]['well_leak'] = {'Q': -1.,
@@ -351,23 +354,27 @@ phreatic_scheme["well_parameters"]['well_leak'] = {'Q': -1.,
 'rmax': 0.1,
 'nlayers': 1}
 
-try:
-    # Place 'gravelpack1' and 'clayseal1' in scheme dictionary "well_parameters"
-    phreatic_scheme["well_parameters"]['gravelpack1'] = phreatic_scheme["geo_parameters"]['gravelpack1']
-    phreatic_scheme["well_parameters"]['clayseal1'] = phreatic_scheme["geo_parameters"]['clayseal1']
-except KeyError:
-    pass   
-# Delete (or 'pop') key from dictionary (use pop if you are not sure the key exists or not)
-phreatic_scheme["geo_parameters"].pop('gravelpack1', None)
-phreatic_scheme["geo_parameters"].pop('clayseal1', None)
+# try:
+#     # Place 'gravelpack1' and 'clayseal1' in scheme dictionary "well_parameters"
+#     phreatic_scheme["well_parameters"]['gravelpack1'] = phreatic_scheme["geo_parameters"]['gravelpack1']
+#     phreatic_scheme["well_parameters"]['clayseal1'] = phreatic_scheme["geo_parameters"]['clayseal1']
+# except KeyError:
+#     pass   
+# # Delete (or 'pop') key from dictionary (use pop if you are not sure the key exists or not)
+# phreatic_scheme["geo_parameters"].pop('gravelpack1', None)
+# phreatic_scheme["geo_parameters"].pop('clayseal1', None)
+
+# Names of well with a discharge "Q"
+well_names = [iWell for iWell in phreatic_scheme["well_parameters"] if \
+                        "Q" in phreatic_scheme["well_parameters"][iWell].keys()]
 
 # Add ibound parameters
-phreatic_scheme["ibound_parameters"]["outer_boundary"]["ibound_type"] = -1
-try:
-    phreatic_scheme["ibound_parameters"]["outer_boundary"]["xmin"] = phreatic_scheme["ibound_parameters"]["outer_boundary"]["rmin"]
-    phreatic_scheme["ibound_parameters"]["outer_boundary"]["xmax"] = phreatic_scheme["ibound_parameters"]["outer_boundary"]["rmax"]
-except:
-    pass
+phreatic_scheme["ibound_parameters"]["outer_boundary"]["ibound"] = -1
+# try:
+#     phreatic_scheme["ibound_parameters"]["outer_boundary"]["xmin"] = phreatic_scheme["ibound_parameters"]["outer_boundary"]["rmin"]
+#     phreatic_scheme["ibound_parameters"]["outer_boundary"]["xmax"] = phreatic_scheme["ibound_parameters"]["outer_boundary"]["rmax"]
+# except:
+#     pass
 
 # # Create model discretisation using schematisation dict
 # nlay,nrow,ncol,delv,delc,delr,zmid,ymid,xmid,top,bot = make_discretisation(schematisation = phreatic_scheme,
@@ -382,17 +389,20 @@ except:
 # Gaat het goed met freatische winning? --> grid + toewijzen concentraties
 
 
+
 #%%
 ''' Inititalize ModPath class'''
 modpath_phrea = ModPathWell(phreatic_scheme,
                             workspace = "test_ws",
-                            modelname = "phreatic")
+                            modelname = "phreatic",
+                            bound_left = "rmin",
+                            bound_right = "rmax")
 # modpath_phrea.schematisation
 
 # Refinement boundaries and column boundaries
 # Horizontal discretisation dictionary keys
-dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
-                    "well_parameters"]
+# dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
+#                     "well_parameters"]
 # Adds to object: delr, ncol, xmid
 # modpath_phrea.make_discretisation(dict_keys = dict_keys)
 # Adds to object: delv, nlay, top, bot, zmid
@@ -401,9 +411,10 @@ dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
 # Print all attributes in object
 # print(modpath_phrea.__dict__)
 # modpath_phrea.phreatic()
-modpath_phrea.run_model()
+modpath_phrea.run_model(run_mfmodel = False)
 #### HIER GEBLEVEN 14-6-2021 ####
 
+#%%
 # Check attributes in ModPath object
 check_attr_list = ["nlay","nrow","ncol","delv","delc","delr","zmid","ymid","xmid","top","bot"]
 for iAttr in check_attr_list:
