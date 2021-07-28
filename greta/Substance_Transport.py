@@ -374,20 +374,13 @@ class SubstanceTransport():
 
         #start date contamination -> LEFT OFF HERE NEED TO ADD SOMETHING FOR THE START/END DATE CONTAMINATION ETC ah_TODO
 
-        ''' start_date_contamination < start_date_well'''
-        # Check travel time to the target aquifer w/out pumping to set the background concentration..? @MartinvdS
-
-        ''' start_date_well < start_date_contamintion, compute_contamination end_date_contamination'''
-        if self.schematisation.schematisation.compute_contamination_for_date < self.schematisation.schematisation.end_date_contamination:
-            self.df_flowline
-            pass
-
     def compute_concentration_in_well_at_date(self):
 
         # reduce the amount of text per line by extracting the following parameters
         compute_contamination_for_date = self.schematisation.schematisation.compute_contamination_for_date
         start_date_well = self.schematisation.schematisation.start_date_well
         start_date_contamination = self.schematisation.schematisation.start_date_contamination
+        end_date_contamination = self.schematisation.schematisation.end_date_contamination
 
         if start_date_well > start_date_contamination:
             start_date = start_date_well
@@ -396,9 +389,16 @@ class SubstanceTransport():
         elif start_date_well <= start_date_contamination:
             start_date = start_date_contamination
             back_date_start = start_date_well
-
+        
         compute_date = compute_contamination_for_date - start_date
         back_compute_date = start_date - back_date_start
+
+        # calculate the time after which no more contamination
+        if end_date_contamination is None:
+            pass
+        else:
+            end_time = end_date_contamination- start_date
+            self.df_flowline['end_time_contamination_breakthrough'] = self.df_flowline['total_breakthrough_travel_time'] + end_time.days
 
         time_array = np.arange(0, compute_date.days+1, 1)
         back_date_array = np.arange(-back_compute_date.days,0, 1)
@@ -414,7 +414,11 @@ class SubstanceTransport():
         #sum the concentration in the well for each timestep
         for i in range(len(time_array)):
             t = time_array[i] 
-            well_concentration.append(sum(df_flowline['concentration_in_well'].loc[df_flowline['total_breakthrough_travel_time'] <= t]))
+            if end_date_contamination is None:
+                well_conc = sum(df_flowline['concentration_in_well'].loc[(df_flowline['total_breakthrough_travel_time'] <= t)])
+            else:
+                well_conc = sum(df_flowline['concentration_in_well'].loc[(df_flowline['total_breakthrough_travel_time'] <= t) & (df_flowline['end_time_contamination_breakthrough'] >= t)])
+            well_concentration.append(well_conc)
         df_well_concentration = pd.DataFrame({'time':time_array, 'date':time_array_dates, 'total_concentration_in_well': well_concentration})
 
         return df_well_concentration
@@ -434,7 +438,8 @@ class SubstanceTransport():
         compute_contamination_for_date = self.schematisation.schematisation.compute_contamination_for_date
         start_date_well = self.schematisation.schematisation.start_date_well
         start_date_contamination = self.schematisation.schematisation.start_date_contamination
-        
+        end_date_contamination = self.schematisation.schematisation.end_date_contamination
+
         start_date = max(start_date_well,start_date_contamination)
         back_date_start = min(start_date_well,start_date_contamination)
         compute_date = compute_contamination_for_date - start_date
@@ -458,6 +463,11 @@ class SubstanceTransport():
             plt.plot(df_well_concentration.date, df_well_concentration.total_concentration_in_well, 'b', label =str(self.substance.substance_name)) 
             plt.axvline(x=start_date_well, color= 'k', label = 'Start date well')
             plt.axvline(x=start_date_contamination, color= 'r', label = 'Start date contamination')
+            if end_date_contamination is None:
+                pass
+            else:
+                plt.axvline(x=end_date_contamination, color= 'g', label = 'End date contamination')
+
             plt.xlabel('Date')
             if xlim == None:
                 plt.xlim([datetime.date((back_date_start.year-5), 1, 1), compute_contamination_for_date])
@@ -467,6 +477,10 @@ class SubstanceTransport():
             plt.plot(df_well_concentration.time/365.24, df_well_concentration.total_concentration_in_well,  'b', label =str(self.substance.substance_name)) 
             plt.axvline(x=(start_date_well-start_date).days/365.24, color= 'k', label = 'Start date well')
             plt.axvline(x=(start_date_contamination-start_date).days/365.24, color= 'r', label = 'Start date contamination')
+            if end_date_contamination is None:
+                pass
+            else:
+                plt.axvline(x=(end_date_contamination-start_date).days/365.24, color= 'g', label = 'End date contamination')
 
             plt.xlabel('Time (years)')
             if xlim == None:

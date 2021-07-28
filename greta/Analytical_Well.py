@@ -246,7 +246,7 @@ class HydroChemicalSchematisation:
                 diffuse_input_concentration=1,
                 start_date_well='1950-01-01', #("Enter date in YYYY-MM-DD format")
                 start_date_contamination=None,
-                end_date_contamination='2000-01-01', #("Enter date in YYYY-MM-DD format")None, #AH my own default
+                end_date_contamination= None,#'2050-01-01', #("Enter date in YYYY-MM-DD format")None, #AH my own default
                 compute_contamination_for_date=None,
 
                 concentration_point_contamination=None,
@@ -395,7 +395,6 @@ class HydroChemicalSchematisation:
             return date
 
         self.start_date_well = date_to_datetime(start_date_well)
-        self.end_date_contamination = date_to_datetime(end_date_contamination)
 
         # Contamination
         if start_date_contamination is None: 
@@ -407,14 +406,19 @@ class HydroChemicalSchematisation:
         else:
             self.compute_contamination_for_date = date_to_datetime(compute_contamination_for_date)
         
+        if end_date_contamination is None:
+            self.end_date_contamination = end_date_contamination
+        else:
+            self.end_date_contamination = date_to_datetime(end_date_contamination)
+            if self.end_date_contamination < self.start_date_contamination:
+                raise EndDateBeforeStart('Error, "end_date_contamination" is before "start_date_contamination". Please enter an new "end_date_contamination" or "start_date_contamination" ')
+
         ''' Check logical things here for contamination'''
-        if self.end_date_contamination < self.start_date_contamination:
-            raise EndDateBeforeStart('Error, "end_date_contamination" is before "start_date_contamination". Please enter an new "end_date_contamination" or "start_date_contamination" ')
         if self.compute_contamination_for_date < self.start_date_contamination:
             raise ComputeDateBeforeStartDate('Error, "compute_contamination_for_date" is before "start_date_contamination". Please enter an new "compute_contamination_for_date" or "start_date_contamination" ')
         if self.compute_contamination_for_date < self.start_date_well:
             raise ComputeDateBeforeStartWellDate('Error, "compute_contamination_for_date" is before "start_date_well". Please enter an new "compute_contamination_for_date" or "start_date_well" ')
-        #AH_todo @MartinvdS -> if end_date_contamination<start_date_well what to do?
+        #AH_todo @MartinvdS -> if end_date_contamination < start_date_well what to do?
 
         if depth_point_contamination is None: 
             self.depth_point_contamination = self.ground_surface
