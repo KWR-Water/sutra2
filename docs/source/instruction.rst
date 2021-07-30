@@ -39,29 +39,29 @@ Operating the analytical module typically involves 5 steps:
     * Input the relevant geohydrological data
 
 #. Run the AnalyticalWell class to calculate the travel time distribution in the different aquifer zones
-#. Run the Substance class to retrieve the substance (removal) paramters
+#. Run the Substance class to retrieve the substance (removal) parameters
 #. Run the SubstanceTransport class to calculate the removal and concentration in each zone and in the well
 #. Plot the desired functions 
 
 Now, let’s try some examples.
 
-.. ipython:: python
+.. .. ipython:: python
 
-    import pandas as pd
-    from pathlib import Path
+..     import pandas as pd
+..     from pathlib import Path
 
-    import matplotlib.pyplot as plt
-    import numpy as np
-    import pandas as pd
-    import os
-    from pandas import read_csv
-    from pandas import read_excel
-    import math
-    from scipy.special import kn as besselk
-    from pathlib import Path
+..     import matplotlib.pyplot as plt
+..     import numpy as np
+..     import pandas as pd
+..     import os
+..     from pandas import read_csv
+..     from pandas import read_excel
+..     import math
+..     from scipy.special import kn as besselk
+..     from pathlib import Path
 
-    from greta.Analytical_Well import *
-    from greta.Substance_Transport import *
+..     from greta.Analytical_Well import *
+..     from greta.Substance_Transport import *
 
 
 Step 1: Define the HydroChemicalSchematisation
@@ -72,10 +72,10 @@ schematisation from the choice of 4 PSWFs, and the relevant parameters for the p
 media, the hydrochemistry, hydrology and the contamination of interest (OMP or 
 pathogen). 
 
-The class paramters can be roughly grouped into the following categories;
+The class parameters can be roughly grouped into the following categories;
 
-* System
-* Settings
+* System.
+* Settings.
 * Porous Medium
 * Hydrochemistry
 * Hydrology
@@ -86,13 +86,13 @@ The class paramters can be roughly grouped into the following categories;
 
 Units of input ate 
 
-* Time: days
-* Length: meters
-* Concentration: ug/L
-* Temperature: degree C
-* Depth: meters above sea level (m ASL)
-* Density: kg/L
-* DOC/TOC: mg/L
+    * Time: days
+    * Length: meters
+    * Concentration: ug/L
+    * Temperature: degree C
+    * Depth: meters above sea level (m ASL)
+    * Density: kg/L
+    * DOC/TOC: mg/L
 
 1A System parameters
 --------------------------------------
@@ -129,49 +129,49 @@ Choose the schematisaiton type of the model from one of the four well types;
 
 1G Modflow
 --------------------------------------
-Additional paramters about the model domain are input here
+Additional parameters about the model domain are input here
 
 In this example we calculate the analytical solution for a phreatic well, with a diffuse 
 contamination over the whole model domain.
 
-.. ipython:: python
+.. .. ipython:: python
     
-    from greta.Analytical_Well import HydroChemicalSchematisation
-    phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                        well_discharge=7500, #m3/day
-                                        vertical_anistropy_shallow_aquifer=0.0006,
-                                        porosity_vadose_zone=0.38,
-                                        porosity_shallow_aquifer=0.35,
-                                        porosity_target_aquifer=0.35,
-                                        recharge_rate=0.00082, #m/day
-                                        moisture_content_vadose_zone=0.15,
-                                        ground_surface=22.,
-                                        thickness_vadose_zone_at_boundary=5.,
-                                        thickness_shallow_aquifer=10.,
-                                        thickness_target_aquifer=40.,
-                                        hor_permeability_target_aquifer=35.,
-                                        thickness_full_capillary_fringe=0.4,
-                                        redox_vadose_zone='suboxic',
-                                        redox_shallow_aquifer='anoxic',
-                                        redox_target_aquifer='deeply_anoxic',
-                                        pH_vadose_zone=5.,
-                                        pH_shallow_aquifer=6.,
-                                        pH_target_aquifer=7.,
-                                        dissolved_organic_carbon_vadose_zone=10., #mg/L
-                                        dissolved_organic_carbon_shallow_aquifer=4., 
-                                        dissolved_organic_carbon_target_aquifer=2.,
-                                        fraction_organic_carbon_vadose_zone=0.001,
-                                        fraction_organic_carbon_shallow_aquifer=0.0005,
-                                        fraction_organic_carbon_target_aquifer=0.0005, 
-                                        temperature=11.,
-                                        solid_density_vadose_zone=2.650, 
-                                        solid_density_shallow_aquifer=2.650, 
-                                        solid_density_target_aquifer=2.650, 
-                                        diameter_borehole=0.75,
-                                        diffuse_input_concentration=600, #ug/L
-                                        )
+..     from greta.Analytical_Well import HydroChemicalSchematisation
+..     phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
+..                                         well_discharge=7500, #m3/day
+..                                         vertical_anistropy_shallow_aquifer=0.0006,
+..                                         porosity_vadose_zone=0.38,
+..                                         porosity_shallow_aquifer=0.35,
+..                                         porosity_target_aquifer=0.35,
+..                                         recharge_rate=0.00082, #m/day
+..                                         moisture_content_vadose_zone=0.15,
+..                                         ground_surface=22.,
+..                                         thickness_vadose_zone_at_boundary=5.,
+..                                         thickness_shallow_aquifer=10.,
+..                                         thickness_target_aquifer=40.,
+..                                         hor_permeability_target_aquifer=35.,
+..                                         thickness_full_capillary_fringe=0.4,
+..                                         redox_vadose_zone='suboxic',
+..                                         redox_shallow_aquifer='anoxic',
+..                                         redox_target_aquifer='deeply_anoxic',
+..                                         pH_vadose_zone=5.,
+..                                         pH_shallow_aquifer=6.,
+..                                         pH_target_aquifer=7.,
+..                                         dissolved_organic_carbon_vadose_zone=10., #mg/L
+..                                         dissolved_organic_carbon_shallow_aquifer=4., 
+..                                         dissolved_organic_carbon_target_aquifer=2.,
+..                                         fraction_organic_carbon_vadose_zone=0.001,
+..                                         fraction_organic_carbon_shallow_aquifer=0.0005,
+..                                         fraction_organic_carbon_target_aquifer=0.0005, 
+..                                         temperature=11.,
+..                                         solid_density_vadose_zone=2.650, 
+..                                         solid_density_shallow_aquifer=2.650, 
+..                                         solid_density_target_aquifer=2.650, 
+..                                         diameter_borehole=0.75,
+..                                         diffuse_input_concentration=600, #ug/L
+..                                         )
 
-The paramters from the HydroChemicalSchematisation class are added as attributes to 
+The parameters from the HydroChemicalSchematisation class are added as attributes to 
 the class and can be accessed for example: 
 
 .. .. ipython:: python
