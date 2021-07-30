@@ -16,8 +16,6 @@
 # specific questions flagged for;
 # @MartinvdS // @steven //@martinK
 
-#@MartinK alternative to self.schematisaiton.schematisation... this becomes cumbersome the more classes we have
-
 ####
 
 #%% ----------------------------------------------------------------------------
@@ -311,7 +309,6 @@ class SubstanceTransport():
         df_particle: pandas.dataframe
             Column 'omp_half_life_temperature_corrected': float'''
         
-        #@MartinK this seems a bit roundabout way to access this?
         if self.analytical_well.schematisation.temp_correction_halflife:
             self.df_particle['omp_half_life_temperature_corrected'] = self.df_particle['omp_half_life'] * 10 ** (-63000 / (2.303 * 8.314) * (1 / (20 + 273.15) - 1 / (self.df_particle.temperature + 273.15)))
         else: 
@@ -492,14 +489,14 @@ class SubstanceTransport():
 
             if self.analytical_well.schematisation.schematisation_type == 'phreatic':
                 head = self.analytical_well.schematisation.calculate_hydraulic_head_phreatic(distance=distance)
-                df_flowline, df_particle = self.analytical_well.add_phreatic_point_sources(distance=distance, 
+                df_flowline, df_particle = self.analytical_well._add_phreatic_point_sources(distance=distance, 
                                             depth_point_contamination=depth, 
                                             cumulative_fraction_abstracted_water=cumulative_fraction_abstracted_water)
 
             elif self.analytical_well.schematisation.schematisation_type == 'semiconfined':
                 bottom_vadose_zone = self.analytical_well.schematisation.bottom_vadose_zone_at_boundary
                 
-                df_flowline, df_particle = self.analytical_well.add_semiconfined_point_sources(distance=distance, 
+                df_flowline, df_particle = self.analytical_well._add_semiconfined_point_sources(distance=distance, 
                                         depth_point_contamination=depth,  )
 
             df_particle['flowline_id'] = df_particle['flowline_id'] + ind
@@ -539,6 +536,7 @@ class SubstanceTransport():
         self._calculcate_total_breakthrough_travel_time()
 
     def compute_concentration_in_well_at_date(self):
+        #@Martink, this function is quite slow. I'm not sure how to make it go faster?
         ''' Calculates the concentration in the well up to a specific date, 
         taking into account the start and end date of the contamiantion and 
         start date of the well. 

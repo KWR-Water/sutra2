@@ -16,10 +16,7 @@
 # specific questions flagged for;
 # @MartinvdS // @steven //@martinK
 
-#To Do
-# RST file/explanation of how to use the model
-# comments ah_todo
-# @MartinK the testing functionality went away... worked for a few days just fine then stopped working today
+#To Do marked as ah_todo
 
 ####
 
@@ -44,7 +41,7 @@ path = os.getcwd()  # path of working directory
 
 #@MartinK - this is how I found online to check that the exception/error messages
 # are correct. Is this needed or it there a better/another way to check this? 
-# Seems like quite some extra work to check errors are raised correctly
+# Seems like quite some extra work to check that the correct error messaged are raised 
 class EndDateBeforeStart(Exception):
     """ Exception raised when the 'End_date_contamination' is before the 'start_date_contamination' """
 class ComputeDateBeforeStartDate(Exception):
@@ -373,7 +370,7 @@ class HydroChemicalSchematisation:
         self.fraction_organic_carbon_target_aquifer = fraction_organic_carbon_target_aquifer
 
         # Hydrochemistry
-        # @MartinK, this is alternative check, this format (with a class error)
+        # @MartinK, this format (with a class error)
         # allows me to test that the error raised is correct, how else to do
         # without making a class for every error?
         def redox_type(redox_zone):
@@ -775,8 +772,7 @@ class HydroChemicalSchematisation:
                     'q_point': self.discharge_point_contamination,
                     },
                 # 'point2': {} #AH_todo if there is more than one point source, 
-                # input a dictionary directly, @maritnK, @martinvdS we will discuss this
-                # and make a decision
+                # input a dictionary directly, @martinvdS we will discuss this
                 }
 
         #AH eventially to be computed by QSAR"
@@ -1660,14 +1656,14 @@ class AnalyticalWell():
         df_flowline['particle_release_date'] = self.schematisation.particle_release_date
 
 
-        # #AH_todo  Temporary solution here, @MartinK @MartinvdS, do we want to automatically 
+        # #AH_todo do we want to automatically 
         # make the dictionaries for modpath when running the analytical model? 
-        # so far this is the only use for hte dicitonaries so they are made here
+        # so far this is the only use for the dicitonaries so they are made here
         self.schematisation.make_dictionary()
         endpoint_id = 'well1' #AH_todo, @MartinvdS, what is this needed for? placeholder value here , #list(self.schematisation.well_parameters.items())[0][0]
         df_flowline['endpoint_id'] = endpoint_id 
         
-        # AH which parameters for the 'microbial_parameters' option? @MartinvdS or @steven
+        # AH which parameters for the 'pathogen' option? @MartinvdS or @steven
 
         if what_to_export == 'all' or what_to_export== 'omp':
 
@@ -1829,8 +1825,7 @@ class AnalyticalWell():
                     travel_time_target_aquifer=self.travel_time_target_aquifer,
                     discharge_point_contamination = self.schematisation.discharge_point_contamination)
 
-    #AH_todo make this a hidden _add_phreatic_point_sources function
-    def add_phreatic_point_sources(self, 
+    def _add_phreatic_point_sources(self, 
                 distance=None, 
                 depth_point_contamination=None,
                 cumulative_fraction_abstracted_water=None,
@@ -2070,8 +2065,8 @@ class AnalyticalWell():
                     travel_time_target_aquifer=self.travel_time_target_aquifer,
                     discharge_point_contamination = self.schematisation.discharge_point_contamination)
 
-    #AH_todo make this a hidden _add_semiconfined_point_sources function
-    def add_semiconfined_point_sources(self, 
+    #AH_todo make this a hidden __add_semiconfined_point_sources function
+    def _add_semiconfined_point_sources(self, 
                                     distance = None, 
                                     depth_point_contamination=None,  ):
         ''' Adds the point source contamination to the df_flowline dataframe 
