@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 
 project = 'Greta'
 copyright = '2021, KWR Water Research Institute'
-author = 'Martin Korevaar, Martin van der Schans, Steven ROs, Alex Hocking'
+author = 'Martin Korevaar, Martin van der Schans, Steven Rss, Alex Hockin'
 
 # The full version, including alpha/beta/rc tags
 release = '0.1'

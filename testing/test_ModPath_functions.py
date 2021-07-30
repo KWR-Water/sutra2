@@ -76,7 +76,7 @@ def test_travel_time_distribution_phreatic():
     output_phreatic = output_phreatic.round(7) #round to 7 digits (or any digit), keep same as for the output for the model to compare
 
     test_ = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                        what_to_export='omp_parameters',
+                                        what_to_export='omp',
                                         well_discharge=319.4*24,
                                         # vertical_resistance_aquitard=500,
                                         hor_permeability_shallow_aquifer = 0.02,

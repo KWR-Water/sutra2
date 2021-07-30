@@ -5,14 +5,15 @@
 
 Introduction
 ===============================
-HydroGeoChemistry - A python package for correction, validation and analysis of ground water quality samples
+SSTR - A python package to model the behavior of Organic MicroPollutants (OMPs) and pathogens for 4 standard types of Public Supply Well 
+Fields (PSWFs)
 
 .. toctree::
     :maxdepth: 2
     :glob:
 
     getting-started.rst
-    instructions.rst
+    instruction.rst
     tutorial.rst
     faq.rst
     glossary.rst

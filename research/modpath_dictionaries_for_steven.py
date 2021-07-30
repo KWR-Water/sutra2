@@ -68,7 +68,7 @@ test_steady_concentration_temp_koc_correction_semiconfined(substance='AMPA')
 
 semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfined',
                                     computation_method = 'modpath',
-                                    what_to_export='omp_parameters',
+                                    what_to_export='omp',
                                     # biodegradation_sorbed_phase = False,
                                       well_discharge=319.4*24,
                                       # vertical_resistance_aquitard=500,
@@ -104,7 +104,7 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 0.75,
                                       substance = 'benzo(a)pyrene',
-                                      halflife_oxic= 530,
+                                      halflife_suboxic= 530,
                                       halflife_anoxic= 2120,
                                       halflife_deeply_anoxic= 2120,
                                       partition_coefficient_water_organic_carbon= 6.43,
@@ -115,7 +115,7 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       top_clayseal = 17,
                                       compute_contamination_for_date='2020-01-01',
                                       # substance = 'benzene',
-                                      # halflife_oxic=600,
+                                      # halflife_suboxic=600,
                                       # partition_coefficient_water_organic_carbon = 3.3,
                                     )
 
@@ -141,7 +141,7 @@ semi_dict_1
 #%%
 semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfined',
                                     computation_method = 'modpath',
-                                    what_to_export='omp_parameters',
+                                    what_to_export='omp',
                                     # biodegradation_sorbed_phase = False,
                                       well_discharge=319.4*24,
                                       # vertical_resistance_aquitard=500,
@@ -176,7 +176,7 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 0.75,
                                       substance = 'benzo(a)pyrene',
-                                      halflife_oxic= 530,
+                                      halflife_suboxic= 530,
                                       halflife_anoxic= 2120,
                                       halflife_deeply_anoxic= 2120,
                                       partition_coefficient_water_organic_carbon= 6.43,
@@ -187,7 +187,7 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       top_clayseal = 17,
                                       compute_contamination_for_date='2020-01-01',
                                       # substance = 'benzene',
-                                      # halflife_oxic=600,
+                                      # halflife_suboxic=600,
                                       # partition_coefficient_water_organic_carbon = 3.3,
                                     )
 
@@ -229,7 +229,7 @@ test_steady_concentration_temp_koc_correction_phreatic(substance='AMPA')
 # %%
 phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                     computation_method = 'modpath',
-                                    what_to_export='omp_parameters',
+                                    what_to_export='omp',
                                     # biodegradation_sorbed_phase = False,
                                       well_discharge=319.4*24,
                                       # vertical_resistance_aquitard=500,
@@ -264,7 +264,7 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 0.75,
                                       substance = 'benzo(a)pyrene',
-                                      halflife_oxic= 530,
+                                      halflife_suboxic= 530,
                                       halflife_anoxic= 2120,
                                       halflife_deeply_anoxic= 2120,
                                       partition_coefficient_water_organic_carbon= 6.43,
@@ -276,7 +276,7 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       compute_contamination_for_date='2020-01-01',
 
                                       # substance = 'benzene',
-                                      # halflife_oxic=600,
+                                      # halflife_suboxic=600,
                                       # partition_coefficient_water_organic_carbon = 3.3,
                                     )
 
@@ -300,7 +300,7 @@ phreatic_dict_1
 #%%
 phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                     computation_method = 'modpath',
-                                    what_to_export='omp_parameters',
+                                    what_to_export='omp',
                                     # biodegradation_sorbed_phase = False,
                                       well_discharge=319.4*24,
                                       # vertical_resistance_aquitard=500,
@@ -335,7 +335,7 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 0.75,
                                       substance = 'benzo(a)pyrene',
-                                      halflife_oxic= 530,
+                                      halflife_suboxic= 530,
                                       halflife_anoxic= 2120,
                                       halflife_deeply_anoxic= 2120,
                                       partition_coefficient_water_organic_carbon= 6.43,
@@ -346,7 +346,7 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       top_clayseal = 17,
                                       compute_contamination_for_date='2020-01-01',
                                       # substance = 'benzene',
-                                      # halflife_oxic=600,
+                                      # halflife_suboxic=600,
                                       # partition_coefficient_water_organic_carbon = 3.3,
                                     )
 

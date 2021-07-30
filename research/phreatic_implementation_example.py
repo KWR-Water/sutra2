@@ -7,7 +7,8 @@
 #
 # ------------------------------------------------------------------------------
 
-#### CHANGE LOG ####
+#### Notes ####
+# Example for use in the read the docs 
 ####
 
 #%% ----------------------------------------------------------------------------
@@ -86,19 +87,19 @@ phreatic_well.phreatic()
 
 phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'OMP-X')
 phreatic_concentration.compute_omp_removal()
-phreatic_concentration.plot_concentration(xlim=[0, 500], ylim=[0,1 ])
+phreatic_concentration.plot_concentration(ylim=[0,100 ])
 
 phreatic_well = AnalyticalWell(phreatic_schematisation)
 phreatic_well.phreatic() 
 phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzene')
 phreatic_concentration.compute_omp_removal()
-phreatic_concentration.plot_concentration(xlim=[0, 500], ylim=[0,0.1 ])
+phreatic_concentration.plot_concentration(ylim=[0,10 ])
 
 phreatic_well = AnalyticalWell(phreatic_schematisation)
 phreatic_well.phreatic() 
 phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'AMPA')
 phreatic_concentration.compute_omp_removal()
-phreatic_concentration.plot_concentration(xlim=[0, 500], ylim=[0,0.001 ])
+phreatic_concentration.plot_concentration( ylim=[0,1 ])
 # %%
 phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 2000], ylim=[1e3, 1e6])
 

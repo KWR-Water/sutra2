@@ -24,18 +24,13 @@
 # INITIALISATION OF PYTHON e.g. packages, etc.
 # ------------------------------------------------------------------------------
 
-# %reset -f #reset all variables for each run, -f 'forces' reset, !! 
-# only seems to work in Python command window...
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import os
-# from pandas import read_excel
 from pandas import read_csv
 from pandas import read_excel
 from tqdm import tqdm  # tqdm gives a progress bar for the simultation
-# import pyarrow.parquet as pq
 import math
 from scipy.special import kn as besselk
 import datetime
@@ -61,7 +56,7 @@ class Substance:
         pKa: float
             disassociation constant for acid H-OMP, [-]
         omp_half_life: float
-            per redox zone ('suboxic', 'anoxic', deeply-anoxic'), [days] 
+            per redox zone ('suboxic', 'anoxic', deeply_anoxic'), [days] 
     '''
     def __init__(self, substance_name, ):
         """
@@ -204,7 +199,7 @@ class SubstanceTransport():
         pKa: float
             disassociation constant for acic H-OMP [-]
         omp_half_life: float
-            per redox zone ('suboxic', 'anoxic', deeply-anoxic'), [days] 
+            per redox zone ('suboxic', 'anoxic', deeply_anoxic'), [days] 
 
     """
     def __init__(self, 
@@ -270,7 +265,7 @@ class SubstanceTransport():
         self.omp_inialized = True
 
 
-    def _init_microbiology():
+    def _init_pathogen():
         ''' Initialisation if the Substance is a pathogen'''
 
         pass
@@ -700,7 +695,7 @@ class SubstanceTransport():
         plt.savefig('well_concentration_over_time_'+str(self.substance.substance_name)+'_'+schematisation_type+'.png', dpi=300, bbox_inches='tight')  # save_results_to + '/
 
 
-    def compute_microbiology_removal(self):
+    def compute_pathogen_removal(self):
         #AH_todo
         pass
 

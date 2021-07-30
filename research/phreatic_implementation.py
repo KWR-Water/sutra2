@@ -47,12 +47,13 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 # test_steady_concentration_temp_koc_correction_phreatic(substance='benzene')
 # test_steady_concentration_temp_koc_correction_phreatic(substance='benzo(a)pyrene')
 # test_steady_concentration_temp_koc_correction_phreatic(substance='AMPA')
-test_start_end_dates_contamination()
-test_compute_for_date_start_dates_contamination()
-test_compute_for_date_start_date_well()
+# test_start_end_dates_contamination()
+# test_compute_for_date_start_dates_contamination()
+# test_compute_for_date_start_date_well()
 # %%
 phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                      what_to_export='omp_parameters',
+                                        computation_method= 'analytical', 
+                                      what_to_export='omp',
                                       well_discharge=319.4*24, #m3/day
                                       vertical_anistropy_shallow_aquifer = (10/(35*500)),
                                       porosity_vadose_zone=0.38,
@@ -66,7 +67,7 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       thickness_target_aquifer=40,
                                       hor_permeability_target_aquifer=35,
                                       thickness_full_capillary_fringe=0.4,
-                                      redox_vadose_zone='anoxic', #'suboxic',
+                                      redox_vadose_zone='suboxic',
                                       redox_shallow_aquifer='anoxic',
                                       redox_target_aquifer='deeply_anoxic',
                                       pH_vadose_zone=5,
@@ -86,42 +87,31 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       #diffuse parameters
                                       diffuse_input_concentration=100, #ug/L
                                       #point paramters
-                                      concentration_point_contamination=100,
-                                      distance_point_contamination_from_well=25, #5.45045, #
-                                      depth_point_contamination=21, #m ASL
-                                      discharge_point_contamination=1000,
+                                    #   concentration_point_contamination=100,
+                                    #   distance_point_contamination_from_well=25, #5.45045, #
+                                    #   depth_point_contamination=21, #m ASL
+                                    #   discharge_point_contamination=1000,
                                       #dates
-                                      start_date_well='1965-01-01', 
-                                      start_date_contamination= '1966-01-01',
-                                    #   compute_contamination_for_date='2000-01-01',
-                                    #   end_date_contamination='1970-01-01',
+                                    #   start_date_well='1968-01-01', 
+                                    #   start_date_contamination= '1966-01-01',
+                                    #   compute_contamination_for_date='2010-01-01',
+                                    #   end_date_contamination='1990-01-01',
                                       )
 
 # phreatic_scheme.make_dictionary()  
 phreatic_well = AnalyticalWell(phreatic_scheme)
     
-phreatic_well.phreatic() #@MartinK in the functions run this? how to avoid errors running 'semiconfined' here when the schematisation_type was defined as 'phreatic'?
-# phreatic_well.df_particle
+phreatic_well.phreatic() 
+#^ @MartinK in the functions run this? how to avoid errors running 'semiconfined' 
+# here when the schematisation_type was defined as 'phreatic'?
+
 phreatic_conc = SubstanceTransport(phreatic_well, substance = 'OMP-X')
 # # phreatic_conc = SubstanceTransport(phreatic_well, substance = 'benzo(a)pyrene')
 # phreatic_conc = SubstanceTransport(phreatic_well, substance = 'AMPA')
 
 phreatic_conc.compute_omp_removal()
-# phreatic_conc.df_particle
-# phreatic_conc.df_particle['steady_state_concentration']
-# phreatic_conc.df_particle #.steady_state_concentration
 
-# phreatic_conc.plot_concentration(xlim=[0, 500], ylim=[0,1 ])
-# phreatic_conc.df_flowline
-# plt.plot(phreatic_conc.df_flowline.flowline_id, phreatic_conc.df_flowline.total_breakthrough_travel_time/365.25)
-# plt.xlabel('Flowline ID')
-# plt.ylabel('Breakthrough time (years)')
+# phreatic_conc.plot_concentration()
 
-# phreatic_conc.df_particle
-#
-# phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 1750], ylim=[1e3, 1e6])
-# phreatic_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
-phreatic_conc.plot_concentration() #xlim=[0, 25], ylim=[0,200])
-
-phreatic_conc.plot_concentration(x_axis='Time') 
+# phreatic_conc.plot_concentration(x_axis='Time') 
 # %%

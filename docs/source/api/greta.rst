@@ -7,9 +7,9 @@ Submodules
 .. toctree::
    :maxdepth: 2
 
+   greta.Analytical_Well
    greta.ModPath_functions
-   greta.draft_transport_function
-   greta.model_structure_overview_2021-04-01
+   greta.Substance_Transport
    greta.project_path
 
 Module contents
