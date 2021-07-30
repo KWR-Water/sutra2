@@ -350,6 +350,12 @@ class HydroChemicalSchematisation:
         self.bottom_vadose_zone_at_boundary = ground_surface - thickness_vadose_zone_at_boundary 
         # self.head_boundary = head_boundary #AH @MartinvdS is this used anywhere? I don't think so...
 
+        # check that thicknesses for shallow and target aquifer > 0
+        if thickness_shallow_aquifer <=0:
+            raise ValueError('Error, thickness_shallow_aquifer should be > 0.')
+        if thickness_target_aquifer <=0:
+            raise ValueError('Error, thickness_target_aquifer should be > 0.')
+
         self.thickness_shallow_aquifer = thickness_shallow_aquifer
         self.bottom_shallow_aquifer = ground_surface - thickness_vadose_zone_at_boundary - thickness_shallow_aquifer
         self.thickness_target_aquifer = thickness_target_aquifer
@@ -578,9 +584,6 @@ class HydroChemicalSchematisation:
             elif self.schematisation_type == 'semiconfined':
                 self.model_radius = math.sqrt(self.vertical_resistance_aquitard * self.KD * 3) # spreading_distance*3
 
-        # check when initialization
-        # thickness <=0 check, for all but the vadose zone
-        # vadose zone can be 0, but the others should not
 
     def make_dictionary(self,):
         ''' Returns dicitonaries of the different parameters for MODFLOW schematisation. '''
@@ -1087,7 +1090,8 @@ class AnalyticalWell():
         required_variables: list
             List of required variables for the phreatic or semiconfined cases
         '''
-        #AH_todo update these
+        # @ Martin, now with the default values in the schematisation, this is not really needed
+        # since if the user does not input, then these already exist. Keep?
         required_variables = ["schematisation_type", #repeat for all
                               "thickness_vadose_zone_at_boundary",
                               "thickness_shallow_aquifer",
@@ -1102,7 +1106,6 @@ class AnalyticalWell():
                               "KD",
                               "groundwater_level",
                               "thickness_full_capillary_fringe",
-                            #   self.test_variable,
                             ]
         self._check_required_variables(required_variables)
 
@@ -1190,7 +1193,8 @@ class AnalyticalWell():
         return travel_time_target_aquifer
 
     def _check_init_confined(self):
-        #AH_todo update these
+        # @ Martin, now with the default values in the schematisation, this is not really needed
+        # since if the user does not input, then these already exist. Keep?
 
         '''Check the variables that we need for the individual aquifer types are not NONE aka set by the user
         
@@ -1201,7 +1205,7 @@ class AnalyticalWell():
         '''
 
         required_variables = ["schematisation_type", #repeat for all
-                              "thickness_vadose_zone",
+                              "thickness_vadose_zone_at_boundary",
                               "thickness_shallow_aquifer",
                               "thickness_target_aquifer",
                               "porosity_vadose_zone",
@@ -1214,7 +1218,6 @@ class AnalyticalWell():
                               "KD",
                               "groundwater_level",
                               "thickness_full_capillary_fringe",
-                            #   self.test_variable,
                             ]
         self._check_required_variables(required_variables)
 
@@ -2012,7 +2015,7 @@ class AnalyticalWell():
 
         '''
         
-        # self._check_init_confined() #AH_todo this is not implemented correctly fix!
+        self._check_init_confined()
 
         if distance is None:
             self.schematisation._calculate_travel_time_unsaturated_zone()
