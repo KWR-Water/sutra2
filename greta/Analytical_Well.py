@@ -27,18 +27,13 @@
 # INITIALISATION OF PYTHON e.g. packages, etc.
 # ------------------------------------------------------------------------------
 
-# %reset -f #reset all variables for each run, -f 'forces' reset, !! 
-# only seems to work in Python command window...
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import os
-# from pandas import read_excel
 from pandas import read_csv
 from pandas import read_excel
 from tqdm import tqdm  # tqdm gives a progress bar for the simultation
-# import pyarrow.parquet as pq
 import math
 from scipy.special import kn as besselk
 import datetime
@@ -47,13 +42,18 @@ from datetime import timedelta
 path = os.getcwd()  # path of working directory
 
 
-#@MartinK - this is how I found online to check the assertion errors are correct. needed? another way to check this?
+#@MartinK - this is how I found online to check that the exception/error messages
+# are correct. Is this needed or it there a better/another way to check this? 
+# Seems like quite some extra work to check errors are raised correctly
 class EndDateBeforeStart(Exception):
     """ Exception raised when the 'End_date_contamination' is before the 'start_date_contamination' """
 class ComputeDateBeforeStartDate(Exception):
     """ Exception raised when the 'compute_contamination_for_date' is before the 'start_date_contamination' """
 class ComputeDateBeforeStartWellDate(Exception):
     """ Exception raised when the 'compute_contamination_for_date' is before the 'start_date_well' """
+
+class CheckRedoxZone(Exception):
+    """ Exception raised when the choice of redox zone is not one of 'suboxic', 'anoxic' or 'deeply_anoxic' """
 
 class HydroChemicalSchematisation:
 
@@ -71,10 +71,10 @@ class HydroChemicalSchematisation:
     computation_method: string
         Defines the computational method used, choice of 'analytical' or 'modpath'
     removal_function: string
-        Choice of removal function for 'omp' or 'microbiology'
+        Choice of removal function for 'omp' or 'pathogen'
     what_to_export: string
         Defines what paramters are exported, 'all' exports all paramters, 'omp' only those relevant to the OMP or
-        'microbiology' only exports paramters relevant for the microbiology
+        'pathogen' only exports paramters relevant for the pathogen
     temp_correction_Koc, temp_correction_halflife:: Bool
         KOC and half-life values generally refer to a standard lab temperature (tREF = 20-25oC) and should 
         therefore be corrected when field temperature is different. Default is True
@@ -144,7 +144,7 @@ class HydroChemicalSchematisation:
         Distribution coefficient of OMP between organic carbon and water, dimensionless.
     dissociation_constant: float
         Dissociation equilibirum constant of the OMP, dimensionless.
-    halflife_oxic, halflife_anoxic, halflife_deeply_anoxic: float 
+    halflife_suboxic, halflife_anoxic, halflife_deeply_anoxic: float 
         Time required to reduce the concentration of the OMP by half, from any concentration point in time [days].
     diffuse_input_concentration: float 
         Concentration of the diffuse source of the OMP in the groundwater recharge, [ug/L].
@@ -228,7 +228,7 @@ class HydroChemicalSchematisation:
                 fraction_organic_carbon_shallow_aquifer=0.0005,
                 fraction_organic_carbon_target_aquifer=0.0005,
 
-                redox_vadose_zone='oxic',
+                redox_vadose_zone='suboxic',
                 redox_shallow_aquifer='anoxic',
                 redox_target_aquifer='deeply_anoxic',
                 dissolved_organic_carbon_vadose_zone=0.0,
@@ -245,9 +245,9 @@ class HydroChemicalSchematisation:
                 temperature_target_aquifer=None,
 
                 recharge_rate=0.001,
-                well_discharge=-1000.0,
+                well_discharge=1000.0,
 
-                basin_length=None, # BAR params \/
+                basin_length=None, # BAR parameters \/
                 basin_width=None,
                 basin_xmin=None,
                 basin_xmax=None,
@@ -260,7 +260,7 @@ class HydroChemicalSchematisation:
                 travel_time_h20_shallow_aquifer=None,
                 minimum_travel_time_h20_shallow_aquifer=None,
                 travel_time_h20_deeper_aquifer=None,
-                minimum_travel_time_h20_target_aquifer=None, # BAR params /\
+                minimum_travel_time_h20_target_aquifer=None, # BAR parameters /\
 
                 diameter_borehole=0.75,
                 top_filterscreen=None,
@@ -286,7 +286,7 @@ class HydroChemicalSchematisation:
                 substance=None,
                 partition_coefficient_water_organic_carbon=None,
                 dissociation_constant=None,
-                halflife_oxic=None,
+                halflife_suboxic=None,
                 halflife_anoxic=None,
                 halflife_deeply_anoxic=None,
 
@@ -327,6 +327,18 @@ class HydroChemicalSchematisation:
         self.computation_method = computation_method
         self.removal_function = removal_function
         self.what_to_export = what_to_export
+
+        def check_parameter_choice(parameters_choice, options ):
+            for var in parameters_choice:
+                value = getattr(self, var)
+                if value not in options:
+                    raise ValueError(f'Invalid {var}. Expected one of: {options}')
+
+        check_parameter_choice(parameters_choice = ['schematisation_type'], options =['phreatic', 'semiconfined',])
+        check_parameter_choice(parameters_choice = ['computation_method'], options =['analytical', 'modpath',])
+        check_parameter_choice(parameters_choice = ['removal_function'], options =['omp',])
+        check_parameter_choice(parameters_choice = ['what_to_export'], options =['all','omp', 'pathogen'])
+
         self.temp_correction_Koc = temp_correction_Koc
         self.temp_correction_halflife = temp_correction_halflife
         self.biodegradation_sorbed_phase = biodegradation_sorbed_phase
@@ -355,6 +367,20 @@ class HydroChemicalSchematisation:
         self.fraction_organic_carbon_target_aquifer = fraction_organic_carbon_target_aquifer
 
         # Hydrochemistry
+        # @MartinK, this is alternative check, this format (with a class error)
+        # allows me to test that the error raised is correct, how else to do
+        # without making a class for every error?
+        def redox_type(redox_zone):
+            ''' Check redox zone options, if not one listed, raise error'''
+            redox_type = ['suboxic', 'anoxic', 'deeply_anoxic']
+            if redox_zone not in redox_type:
+                raise CheckRedoxZone("Invalid redox_type. Expected one of: %s" % redox_type)
+
+        # Check the redox zone choices
+        redox_type(redox_zone=redox_vadose_zone)
+        redox_type(redox_zone=redox_shallow_aquifer)
+        redox_type(redox_zone=redox_target_aquifer)
+
         self.redox_vadose_zone = redox_vadose_zone
         self.redox_shallow_aquifer = redox_shallow_aquifer
         self.redox_target_aquifer = redox_target_aquifer
@@ -416,15 +442,20 @@ class HydroChemicalSchematisation:
         self.substance = substance
         self.partition_coefficient_water_organic_carbon = partition_coefficient_water_organic_carbon
         self.dissociation_constant = dissociation_constant
-        self.halflife_oxic = halflife_oxic
+        self.halflife_suboxic = halflife_suboxic
         self.halflife_anoxic = halflife_anoxic
         self.halflife_deeply_anoxic = halflife_deeply_anoxic
 
         # Diffuse contamination override if point contamination specified
         self.diffuse_input_concentration = diffuse_input_concentration
         self.concentration_point_contamination = concentration_point_contamination
-
+                
         def date_to_datetime(date):
+            # try:
+            #     datetime.datetime.strptime(date, '%Y-%m-%d')
+            # except ValueError:
+            #     raise ValueError("Incorrect data format, should be YYYY-MM-DD")
+
             '''convert str input of date to datetime'''
             year, month, day = map(int, date.split('-'))
             date = datetime.date(year, month, day)
@@ -751,7 +782,7 @@ class HydroChemicalSchematisation:
                 'log_Koc': self.partition_coefficient_water_organic_carbon,
                 'pKa': self.dissociation_constant,
                 'omp_half_life': {
-                    'suboxic': self.halflife_oxic,
+                    'suboxic': self.halflife_suboxic,
                     'anoxic': self.halflife_anoxic,
                     'deeply_anoxic': self.halflife_deeply_anoxic,
                     },
@@ -800,8 +831,8 @@ class HydroChemicalSchematisation:
     def calculate_hydraulic_head_phreatic(self, distance):
         ''' Calcualtes the hydraulic head distribution for the phreatic schematisation case
         
-        Inputs
-        ------
+        Parameters
+        ----------
         distance: array
             Array of distance(s) [m] from the well, for diffuse sources given as 
             the array radial_distance, for point sources given as the distance_point_contamination_from_well.
@@ -818,7 +849,7 @@ class HydroChemicalSchematisation:
         return head
 
 
-    #ah_todo if time, split this into making the thickness, head and travel time (3 functions)
+    #ah_todo possibly split this into making the thickness, head and travel time (3 functions)? Advantages?
     def calculate_unsaturated_zone_travel_time_phreatic (self, 
                                                         distance, 
                                                         depth_point_contamination=None):
@@ -872,13 +903,13 @@ class HydroChemicalSchematisation:
                                 / self.recharge_rate)
         else:
             travel_time_unsaturated = np.array([0])
-            thickness_vadose_zone_drawdown = 0 #AH_todo if time, replace this with the travel distance, not thickness_vadose because this is a stand in for the travel distance
+            thickness_vadose_zone_drawdown = 0 #AH_todo possibly replace this with the travel distance, not thickness_vadose because this is a stand in for the travel distance?
 
         return travel_time_unsaturated, thickness_vadose_zone_drawdown, head 
 
 
     def _calculate_travel_time_unsaturated_zone(self, 
-                                                distance = None, 
+                                                distance=None, 
                                                 depth_point_contamination=None):
 
         ''' Calculates the travel time in the unsaturated zone for the phreatic and semiconfined cases. 
@@ -908,7 +939,7 @@ class HydroChemicalSchematisation:
                                                     / (math.pi * self.recharge_rate )))
         
         # Diffuse source or regular travel time calculation use radial distance array
-        # Point source use specified distance or array? or distances? #AH_todo if we use multiple point sources
+        # AH_todo alter here if we use multiple point sources
         if distance is None:
             self._create_radial_distance_array()
             distance= self.radial_distance
@@ -946,6 +977,7 @@ class HydroChemicalSchematisation:
     
 class AnalyticalWell():
     """ Compute travel time distribution using analytical well functions.
+    
     Attributes
     ----------
     schematisation: object
@@ -1209,7 +1241,6 @@ class AnalyticalWell():
         -------
         travel_time_shallow_aquifer: array
             Travel time in the shallow aquifer for each point in the given distance array, [days].
-
         '''
 
         if depth_point_contamination is None:
@@ -1635,7 +1666,7 @@ class AnalyticalWell():
         
         # AH which parameters for the 'microbial_parameters' option? @MartinvdS or @steven
 
-        if what_to_export == 'all' or what_to_export== 'omp_parameters':
+        if what_to_export == 'all' or what_to_export== 'omp':
 
             df_flowline['well_discharge'] = self.schematisation.well_discharge
             df_flowline['recharge_rate'] = self.schematisation.recharge_rate

@@ -25,7 +25,8 @@ def test_travel_time_distribution_phreatic():
     output_phreatic = output_phreatic.round(7) #round to 7 digits (or any digit), keep same as for the output for the model to compare
 
     test_ = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                        what_to_export='omp_parameters',
+                                        computation_method= 'analytical', 
+                                        what_to_export='omp',
                                         well_discharge=319.4*24,
                                         # vertical_resistance_aquitard=500,
                                         hor_permeability_shallow_aquifer = 0.02,
@@ -68,7 +69,8 @@ def test_travel_time_distribution_phreatic():
 
 def test_retardation_temp_koc_correction(substance = 'benzene', schematisation_type='phreatic'):
     test_ = HydroChemicalSchematisation(schematisation_type=schematisation_type,
-                                        what_to_export='omp_parameters',
+                                        computation_method= 'analytical', 
+                                        what_to_export='omp',
                                       well_discharge=319.4*24,
                                       hor_permeability_shallow_aquifer = 0.02,
                                       vertical_anistropy_shallow_aquifer = (10/(0.02*500)),
@@ -146,7 +148,8 @@ def test_retardation_temp_koc_correction(substance = 'benzene', schematisation_t
 
 def test_steady_concentration_temp_koc_correction_phreatic(substance='benzene'):
     test_ = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                        what_to_export='omp_parameters',
+                                        computation_method= 'analytical', 
+                                        what_to_export='omp',
                                       well_discharge=319.4*24,
                                     #   vertical_resistance_aquitard=500,
                                       hor_permeability_shallow_aquifer = 0.02,
@@ -228,7 +231,8 @@ def test_travel_time_distribution_semiconfined():
     output_semiconfined = pd.read_csv(path / 'semiconfined_test.csv')
     output_semiconfined = output_semiconfined.round(7)
     test_ = HydroChemicalSchematisation(schematisation_type='semiconfined',
-                                                what_to_export='omp_parameters',
+                                        computation_method= 'analytical', 
+                                                what_to_export='omp',
                                         well_discharge=319.4*24,
                                         # vertical_resistance_aquitard=500,
                                       hor_permeability_shallow_aquifer = 0.02,
@@ -273,7 +277,8 @@ def test_steady_concentration_temp_koc_correction_semiconfined(substance='benzen
 
     
     test_ = HydroChemicalSchematisation(schematisation_type='semiconfined',
-                                        what_to_export='omp_parameters',
+                                        computation_method= 'analytical', 
+                                        what_to_export='omp',
                                       well_discharge=319.4*24,
                                     #   vertical_resistance_aquitard=500,
                                       hor_permeability_shallow_aquifer = 0.02,
@@ -356,11 +361,12 @@ def test_start_end_dates_contamination():
 
     with pytest.raises(EndDateBeforeStart) as exc:
         phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                      what_to_export='omp_parameters',
-                                      well_discharge=319.4*24, #m3/day
-                                      recharge_rate=0.3/365.25, #m/day
-                                      start_date_contamination= '1990-01-01',
-                                      end_date_contamination='1950-01-01'
+                                                    computation_method= 'analytical', 
+                                                    what_to_export='omp',
+                                                    well_discharge=319.4*24, #m3/day
+                                                    recharge_rate=0.3/365.25, #m/day
+                                                    start_date_contamination= '1990-01-01',
+                                                    end_date_contamination='1950-01-01'
                                       )
     assert 'Error, "end_date_contamination" is before "start_date_contamination". Please enter an new "end_date_contamination" or "start_date_contamination" ' in str(exc.value)
     assert exc.type == EndDateBeforeStart
@@ -371,7 +377,8 @@ def test_compute_for_date_start_dates_contamination():
 
     with pytest.raises(ComputeDateBeforeStartDate) as exc:
         phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                      what_to_export='omp_parameters',
+                                                    computation_method= 'analytical', 
+                                      what_to_export='omp',
                                       well_discharge=319.4*24, #m3/day
                                       recharge_rate=0.3/365.25, #m/day
                                       start_date_contamination= '1960-01-01',
@@ -383,11 +390,13 @@ def test_compute_for_date_start_dates_contamination():
 
 #%%
 def test_compute_for_date_start_date_well():
-    ''' Tests whether the correct exception is raised when the 'computer_contamiantion_for_date' is before 'start_date_contamination' '''
+    ''' Tests whether the correct exception is raised when the 
+    'computer_contamiantion_for_date' is before 'start_date_contamination' '''
 
     with pytest.raises(ComputeDateBeforeStartWellDate) as exc:
         phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                      what_to_export='omp_parameters',
+                                                    computation_method= 'analytical', 
+                                      what_to_export='omp',
                                       well_discharge=319.4*24, #m3/day
                                       recharge_rate=0.3/365.25, #m/day
                                       start_date_contamination= '1950-01-01',
@@ -399,10 +408,28 @@ def test_compute_for_date_start_date_well():
     assert exc.type == ComputeDateBeforeStartWellDate
 
 #%%
+def test_redox_zone_options():
+    ''' Tests whether the correct exception is raised when one of the redox zones
+     is not one of'suboxic', 'anoxic', 'deeply_anoxic' '''
+    with pytest.raises(CheckRedoxZone) as exc:
+        phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+                                                    computation_method= 'analytical', 
+                                what_to_export='omp',
+                                well_discharge=319.4*24, #m3/day
+                                recharge_rate=0.3/365.25, #m/day
+                                redox_vadose_zone='oxic',
+                                redox_shallow_aquifer='anoxic',
+                                redox_target_aquifer='deeply_anoxic',
+                                )
+    assert "Invalid redox_type. Expected one of: ['suboxic', 'anoxic', 'deeply_anoxic']" in str(exc.value)
+    assert exc.type == CheckRedoxZone
+
+#%%
 output_semiconfined = pd.read_csv(path / 'semiconfined_test.csv')
 output_semiconfined = output_semiconfined.round(7)
 test_ = HydroChemicalSchematisation(schematisation_type='semiconfined',
-                                    what_to_export='omp_parameters',
+                                                    computation_method= 'analytical', 
+                                    what_to_export='omp',
                                     well_discharge=319.4*24,
                                     # vertical_resistance_aquitard=500,
                                     hor_permeability_shallow_aquifer = 0.02,
