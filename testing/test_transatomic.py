@@ -58,13 +58,8 @@ def test_travel_time_distribution_phreatic():
                      "radial_distance", ]]
     output = output.round(7)
 
-    try:
-        assert_frame_equal(output, output_phreatic,check_dtype=False)
+    assert_frame_equal(output, output_phreatic,check_dtype=False)
 
-    except AssertionError:
-        print("Assertion Exception Raised - TTD test")
-    else:
-        print("Success, no error in TTD!")
 
 def test_retardation_temp_koc_correction(substance = 'benzene', schematisation_type='phreatic'):
     test_ = HydroChemicalSchematisation(schematisation_type=schematisation_type,
