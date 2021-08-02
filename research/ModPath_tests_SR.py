@@ -321,18 +321,18 @@ if check_schematisation:
 
 model_top, model_bot,model_thickness, model_radius = calc_modeldim_phrea(phreatic_scheme["geo_parameters"])
 ''' change mesh refinement dicts SR '''
-phreatic_scheme['geo_parameters']['mesh_refinement1'] =   {"rmin": 0.,
-                                        "rmax": 0.5,
-                                        "res_hor": 0.025,
-                                        "ncols": 20}
-phreatic_scheme['geo_parameters']['mesh_refinement2'] =   {"rmin": 0.5,
-                                        "rmax": model_thickness,
-                                        "res_hor": 0.25,
-                                        "ncols": 100}
-phreatic_scheme['geo_parameters']['mesh_refinement3'] =   {"rmin": model_thickness,
-                                        "rmax": model_radius,
-                                        "res_hor": 5.,
-                                        "ncols": 100}
+# phreatic_scheme['geo_parameters']['mesh_refinement1'] =   {"rmin": 0.,
+#                                         "rmax": 0.5,
+#                                         "res_hor": 0.025,
+#                                         "ncols": 20}
+# phreatic_scheme['geo_parameters']['mesh_refinement2'] =   {"rmin": 0.5,
+#                                         "rmax": model_thickness,
+#                                         "res_hor": 0.25,
+#                                         "ncols": 100}
+# phreatic_scheme['geo_parameters']['mesh_refinement3'] =   {"rmin": model_thickness,
+#                                         "rmax": model_radius,
+#                                         "res_hor": 5.,
+#                                         "ncols": 100}
                                         
 dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
                     "well_parameters"]
@@ -346,13 +346,13 @@ dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
 # except:
 #     pass
 
-# Add test well_parameters with leak from 9.9 to 10.0 m
-phreatic_scheme["well_parameters"]['well_leak'] = {'Q': -1.,
-'top': 10.0,
-'bot': 9.9,
-'rmin': 0.0,
-'rmax': 0.1,
-'nlayers': 1}
+# # Add test well_parameters with leak from 9.9 to 10.0 m
+# phreatic_scheme["well_parameters"]['well_leak'] = {'Q': -1.,
+# 'top': 10.0,
+# 'bot': 9.9,
+# 'xmin': 0.0,
+# 'xmax': 0.1,
+# 'nlayers': 1}
 
 # try:
 #     # Place 'gravelpack1' and 'clayseal1' in scheme dictionary "well_parameters"
@@ -369,7 +369,7 @@ well_names = [iWell for iWell in phreatic_scheme["well_parameters"] if \
                         "Q" in phreatic_scheme["well_parameters"][iWell].keys()]
 
 # Add ibound parameters
-phreatic_scheme["ibound_parameters"]["outer_boundary"]["ibound"] = -1
+# phreatic_scheme["ibound_parameters"]["outer_boundary"]["ibound"] = -1
 # try:
 #     phreatic_scheme["ibound_parameters"]["outer_boundary"]["xmin"] = phreatic_scheme["ibound_parameters"]["outer_boundary"]["rmin"]
 #     phreatic_scheme["ibound_parameters"]["outer_boundary"]["xmax"] = phreatic_scheme["ibound_parameters"]["outer_boundary"]["rmax"]
@@ -395,8 +395,8 @@ phreatic_scheme["ibound_parameters"]["outer_boundary"]["ibound"] = -1
 modpath_phrea = ModPathWell(phreatic_scheme,
                             workspace = "test_ws",
                             modelname = "phreatic",
-                            bound_left = "rmin",
-                            bound_right = "rmax")
+                            bound_left = "xmin",
+                            bound_right = "xmax")
 # modpath_phrea.schematisation
 
 # Refinement boundaries and column boundaries
