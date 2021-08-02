@@ -368,37 +368,54 @@ class ModPathWell:
         # coordinate values of boundaries [float]
         left = schematisation[iDict][iDict_sub][self.bound_left]
         right = schematisation[iDict][iDict_sub][self.bound_right]
-        top = schematisation[iDict][iDict_sub][self.bound_top]
-        bot = schematisation[iDict][iDict_sub][self.bound_bot]
+        try:
+            top = schematisation[iDict][iDict_sub][self.bound_top]
+        except KeyError:
+            print("set top of", iDict, iDict_sub, "to 0.")
+        try: 
+            bot = schematisation[iDict][iDict_sub][self.bound_bot]
+        except KeyError:
+            print("set bottom of", iDict, iDict_sub, "to model bottom.")
+            bot = min(self.zmid[-1])
+
         if not self.model_type == "axisymmetric":
             try:
                 north = schematisation[iDict][iDict_sub][self.bound_north]
                 south = schematisation[iDict][iDict_sub][self.bound_south]
                 # Determine row indices
-                rowidx_min = int(np.argwhere((self.ymid - north <= 0.) & (self.ymid - south >= 0.))[0])
-                rowidx_max = int(np.argwhere((self.ymid - north <= 0.) & (self.ymid - south >= 0.))[-1])
+                rowidx_min = int(np.argwhere((self.ymid <= north) & (self.ymid >= south))[0])
+                rowidx_max = int(np.argwhere((self.ymid <= north) & (self.ymid >= south))[-1]) + 1
             except KeyError as e:
                 print(e,f"missing {iDict} {iDict_sub}. Continue")
         else:
             north,south,rowidx_min,rowidx_max = None, None,0,0
-
-        # Determine layer indices
-        layidx_min = int(np.argwhere((self.zmid - top <= 0.) & (self.zmid - bot >= 0.))[0])
-        layidx_max = int(np.argwhere((self.zmid - top <= 0.) & (self.zmid - bot >= 0.))[-1])
-        # np.where((self.zmid < top) & (self.zmid > bot))
-        # Determine column indices
-        colidx_min = int(np.argwhere((self.xmid - left >= 0.) & (self.xmid - right <= 0.))[0])
-        colidx_max = int(np.argwhere((self.xmid - left >= 0.) & (self.xmid - right <= 0.))[-1])
-        # np.where((self.xmid < right) & (self.xmid > left))    
+        try:
+            # Determine layer indices
+            layidx_min = int(np.argwhere((self.zmid <= top) & (self.zmid >= bot))[0])
+            layidx_max = int(np.argwhere((self.zmid <= top) & (self.zmid >= bot))[-1]) + 1
         
+        except IndexError as e:
+            print(e, iDict,iDict_sub,top,bot, "(top,bot)")
+            print("Set layidx_min and layidx_max to None.")
+            layidx_min, layidx_max = None, None
+
+        try:
+            # Determine column indices
+            colidx_min = int(np.argwhere((self.xmid >= left) & (self.xmid <= right))[0])
+            colidx_max = int(np.argwhere((self.xmid >= left) & (self.xmid <= right))[-1]) + 1
+            # np.where((self.xmid < right) & (self.xmid > left))    
+        except IndexError as e:
+            print(e, iDict,iDict_sub,left,right, "(left,right)")
+            print("Set colidx_min and colidx_max to None.")
+            colidx_min, colidx_max = None, None
+
         return layidx_min,layidx_max,rowidx_min,rowidx_max,colidx_min,colidx_max
             
 
     def fill_grid(self,schematisation: dict, dict_keys: list or None = None,
                         parameter: str = "None",
                         grid: np.array or None = None,
-                        dtype: str or None = 'float',
-                        model_type = "axisymmetric"):
+                        dtype: str or None = 'float'):
         ''' Assign values to 'grid' [np.array] for parameter name 'parameter' [str], 
             using the keys dict_keys [list] in schematisation dictionary 'self.schematisation'.
             'dtype' [grid dtype] --> grid dtype [str] is obtained from grid if initial array is given.
@@ -453,19 +470,17 @@ class ModPathWell:
                         rowidx_min,rowidx_max,\
                         colidx_min,colidx_max = self.cell_bounds(schematisation,
                                                 dict_key = iDict,
-                                                dict_subkey = parameter,
-                                                model_type = model_type)
+                                                dict_subkey = iDict_sub,
+                                                model_type = self.model_type)
                     # Fill grid with parameter value 'parm_val'
-                    grid[layidx_min: layidx_max+1,\
-                        rowidx_min: rowidx_max+1,\
-                        colidx_min: colidx_max+1] = parm_val
-                    if model_type in ["axisymmetric","2D"]:
+                    if not None in [layidx_min,layidx_max,colidx_min,colidx_max]:
+                        grid[layidx_min: layidx_max,\
+                            rowidx_min: rowidx_max,\
+                            colidx_min: colidx_max] = parm_val
+                    if self.model_type in ["axisymmetric","2D"]:
                         # In 2D model or axisymmetric models an 
                         # inactive row is added to be able to run Modpath successfully.
                         grid[:,1,:] = 0
-                    # except KeyError:
-                    #     print(f"Key error exception: {iDict} - {iDict_sub}. No grid filled.")
-                    #     continue
   
         # Return the filled grid                
         return grid
@@ -517,7 +532,7 @@ class ModPathWell:
                         n_ref = 1
                     else:
                         # Limit the cell resolution using 'res_max' (if not None)
-                        n_ref = max(1,math.ceil((bound_max-bound_min)/res_max))
+                        n_ref = max(1,math.ceil((val_max-val_min)/res_max))
                     pass  
 
                 # Calculate local resolution [L]
@@ -616,7 +631,7 @@ class ModPathWell:
         # Assign delv and zmid   
         self.nlay, self.delv, self.zmid, lay_bounds = self._assign_cellboundaries(schematisation = schematisation,
                                                                                   dict_keys = dict_keys,
-                                                                                  bound_min = "bot", bound_max = "top",
+                                                                                  bound_min = self.bound_bot, bound_max = self.bound_top,
                                                                                   n_refinement = "nlayers", ascending = False)                                   
  
         # Model top
@@ -626,7 +641,7 @@ class ModPathWell:
         # Assign delr and xmid
         self.ncol, self.delr, self.xmid, col_bounds = self._assign_cellboundaries(schematisation = schematisation,
                                                                                   dict_keys = dict_keys,
-                                                                    bound_min = "rmin", bound_max = "rmax",
+                                                                    bound_min = self.bound_left, bound_max = self.bound_top,
                                                                     n_refinement = "ncols", ascending = True)
 
         # Assign delc and ymid
@@ -638,7 +653,7 @@ class ModPathWell:
         else:
             self.nrow,self.delc,self.ymid,row_bounds = self._assign_cellboundaries(schematisation = schematisation,
                                                                                   dict_keys = dict_keys,
-                                                                    bound_min = "ymin", bound_max = "ymax",
+                                                                    bound_min = self.bound_north, bound_max = self.bound_south,
                                                                     n_refinement = "nrows", ascending = True)
 
         # Create empty model grid
