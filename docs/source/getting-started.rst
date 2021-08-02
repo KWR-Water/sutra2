@@ -1,39 +1,44 @@
 ===============
 Getting Started
 ===============
-HGC (HydroGeoChemistry) is a Python package for correction, validation and analysis of ground water quality samples.
+SSTR (SubSurface TRansport) is a python package to model the behavior of Organic 
+MicroPollutants (OMPs) and pathogens for 4 standard types of Public Supply Well 
+Fields (PSWFs). 
 
 Main features:
- - Handle common erros and peculiarities in hydrochemical data, such as negative concentrations, detection limits and non-numerical placeholders
- - Calculate common ratios, such as for example MONC, SUVA and HCO3 to the sum of all anions
- - Classify groundwater samples according to the Stuyfzand water types
- - Calculate missing concentrations through the ion balance, with PhreeqPython
+ - Calculate the travel time distribition for 4 PSWF types using an analytical or numerical (Modflow) solution
+ - Calculate the travel time for different aquifer zones
+ - Numerical solution using FloPy
+ - Includes database of substance paramters 
+ - Calculate the removal and concentration of the substance or pathogen is interest in each aquifer zone and the well
+
+..
+    @Steven/MartinvdS anythign to add here? for modflow? (#AH @MartinK, somehting about QSAR here)
 
 Install
 -------
-HGC requires Python 3.6 or later.
+SSTR requires Python 3.6 or later.
 
-To get HGC, use the following command::
+To get SSTR, use the following command::
 
-    pip install hgc
+    pip install SSTR 
+..
+  #AH @MartinK -> check how to do this 
 
 Philosophy
 ----------
-HGC is an extension of the Pandas DataFrame, giving your DataFrame hydrochemistry superpowers. You can thus
-mix HGC with your regular Pandas/Numpy workflows.
+..
+  #AH AH @MartinvdS @MartinK ...  what here?
+SSTR calculates the behavior of OMPs and pathogens for 4 standard types of PSWFs, which cover the most frequently occurring and most vulnerable 
+groundwater resources for drinking water supply in the Netherlands (and Flanders). 
+One of the aims of this approach is to forecast the behavior of new OMPs in 
+groundwater. Groundwater is often overlooked in current environmental risk 
+assessment methods, which are a priori or a posteriori applied when new organic 
+chemicals appear on the market. 
 
-A DataFrame does not need to conform to a specific format to work with HGC, however it is required that:
- - Each row in the DataFrame represents a groundwater quality sample
- - Each column represents a groundwater quality parameter
-
-HGC checks if column names in the DataFrame match with chemical parameters that it recognizes. Such columns
-should be in the units that HGC expects. In addition to 'HGC-enabled' columns, the DataFrame can contain
-an arbitrary number of non-hydrochemistry columns (such as XY-locations, comments, or other
-measured quantities), HGC simply ignores those columns.
 
 Conventions
 -----------
-The naming conventions of the column names is that they are all in lower case with
-an underscore between separate words. E.g. the EC measured in the lab is indicated with
-`ec_lab`. The only exception to this is the notation of chemical structures and atoms; there standard capitalization
-is used. E.g. the column name for total total nitrogen is `N_total` and for ortho-phosphate `PO4_ortho`.
+..
+  #AH AH @MartinvdS @MartinK ...  what here?
+The naming conventions follow the naming conventions for... FloPy?

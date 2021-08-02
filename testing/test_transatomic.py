@@ -25,7 +25,8 @@ def test_travel_time_distribution_phreatic():
     output_phreatic = output_phreatic.round(7) #round to 7 digits (or any digit), keep same as for the output for the model to compare
 
     test_ = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                        what_to_export='omp_parameters',
+                                        computation_method= 'analytical', 
+                                        what_to_export='omp',
                                         well_discharge=319.4*24,
                                         # vertical_resistance_aquitard=500,
                                         hor_permeability_shallow_aquifer = 0.02,
@@ -58,7 +59,6 @@ def test_travel_time_distribution_phreatic():
     output = output.round(7)
 
     try:
-        # assert output == output_phreatic
         assert_frame_equal(output, output_phreatic,check_dtype=False)
 
     except AssertionError:
@@ -68,7 +68,8 @@ def test_travel_time_distribution_phreatic():
 
 def test_retardation_temp_koc_correction(substance = 'benzene', schematisation_type='phreatic'):
     test_ = HydroChemicalSchematisation(schematisation_type=schematisation_type,
-                                        what_to_export='omp_parameters',
+                                        computation_method= 'analytical', 
+                                        what_to_export='omp',
                                       well_discharge=319.4*24,
                                       hor_permeability_shallow_aquifer = 0.02,
                                       vertical_anistropy_shallow_aquifer = (10/(0.02*500)),
@@ -146,7 +147,8 @@ def test_retardation_temp_koc_correction(substance = 'benzene', schematisation_t
 
 def test_steady_concentration_temp_koc_correction_phreatic(substance='benzene'):
     test_ = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                        what_to_export='omp_parameters',
+                                        computation_method= 'analytical', 
+                                        what_to_export='omp',
                                       well_discharge=319.4*24,
                                     #   vertical_resistance_aquitard=500,
                                       hor_permeability_shallow_aquifer = 0.02,
@@ -228,7 +230,8 @@ def test_travel_time_distribution_semiconfined():
     output_semiconfined = pd.read_csv(path / 'semiconfined_test.csv')
     output_semiconfined = output_semiconfined.round(7)
     test_ = HydroChemicalSchematisation(schematisation_type='semiconfined',
-                                                what_to_export='omp_parameters',
+                                        computation_method= 'analytical', 
+                                                what_to_export='omp',
                                         well_discharge=319.4*24,
                                         # vertical_resistance_aquitard=500,
                                       hor_permeability_shallow_aquifer = 0.02,
@@ -271,11 +274,10 @@ def test_travel_time_distribution_semiconfined():
 
 def test_steady_concentration_temp_koc_correction_semiconfined(substance='benzene'):
 
-    
     test_ = HydroChemicalSchematisation(schematisation_type='semiconfined',
-                                        what_to_export='omp_parameters',
+                                        computation_method= 'analytical', 
+                                        what_to_export='omp',
                                       well_discharge=319.4*24,
-                                    #   vertical_resistance_aquitard=500,
                                       hor_permeability_shallow_aquifer = 0.02,
                                       vertical_anistropy_shallow_aquifer = (10/(0.02*500)),
                                       porosity_vadose_zone=0.38,
@@ -356,11 +358,12 @@ def test_start_end_dates_contamination():
 
     with pytest.raises(EndDateBeforeStart) as exc:
         phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                      what_to_export='omp_parameters',
-                                      well_discharge=319.4*24, #m3/day
-                                      recharge_rate=0.3/365.25, #m/day
-                                      start_date_contamination= '1990-01-01',
-                                      end_date_contamination='1950-01-01'
+                                                    computation_method= 'analytical', 
+                                                    what_to_export='omp',
+                                                    well_discharge=319.4*24, #m3/day
+                                                    recharge_rate=0.3/365.25, #m/day
+                                                    start_date_contamination= '1990-01-01',
+                                                    end_date_contamination='1950-01-01'
                                       )
     assert 'Error, "end_date_contamination" is before "start_date_contamination". Please enter an new "end_date_contamination" or "start_date_contamination" ' in str(exc.value)
     assert exc.type == EndDateBeforeStart
@@ -371,7 +374,8 @@ def test_compute_for_date_start_dates_contamination():
 
     with pytest.raises(ComputeDateBeforeStartDate) as exc:
         phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                      what_to_export='omp_parameters',
+                                                    computation_method= 'analytical', 
+                                      what_to_export='omp',
                                       well_discharge=319.4*24, #m3/day
                                       recharge_rate=0.3/365.25, #m/day
                                       start_date_contamination= '1960-01-01',
@@ -383,11 +387,13 @@ def test_compute_for_date_start_dates_contamination():
 
 #%%
 def test_compute_for_date_start_date_well():
-    ''' Tests whether the correct exception is raised when the 'computer_contamiantion_for_date' is before 'start_date_contamination' '''
+    ''' Tests whether the correct exception is raised when the 
+    'computer_contamiantion_for_date' is before 'start_date_contamination' '''
 
     with pytest.raises(ComputeDateBeforeStartWellDate) as exc:
         phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                      what_to_export='omp_parameters',
+                                                    computation_method= 'analytical', 
+                                      what_to_export='omp',
                                       well_discharge=319.4*24, #m3/day
                                       recharge_rate=0.3/365.25, #m/day
                                       start_date_contamination= '1950-01-01',
@@ -399,40 +405,202 @@ def test_compute_for_date_start_date_well():
     assert exc.type == ComputeDateBeforeStartWellDate
 
 #%%
-output_semiconfined = pd.read_csv(path / 'semiconfined_test.csv')
-output_semiconfined = output_semiconfined.round(7)
-test_ = HydroChemicalSchematisation(schematisation_type='semiconfined',
-                                    what_to_export='omp_parameters',
-                                    well_discharge=319.4*24,
-                                    # vertical_resistance_aquitard=500,
-                                    hor_permeability_shallow_aquifer = 0.02,
-                                    vertical_anistropy_shallow_aquifer = (10/(0.02*500)),
+def test_redox_zone_options():
+    ''' Tests whether the correct exception is raised when one of the redox zones
+     is not one of'suboxic', 'anoxic', 'deeply_anoxic' '''
+    with pytest.raises(CheckRedoxZone) as exc:
+        phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+                                                    computation_method= 'analytical', 
+                                what_to_export='omp',
+                                well_discharge=319.4*24, #m3/day
+                                recharge_rate=0.3/365.25, #m/day
+                                redox_vadose_zone='oxic',
+                                redox_shallow_aquifer='anoxic',
+                                redox_target_aquifer='deeply_anoxic',
+                                )
+    assert "Invalid redox_type. Expected one of: ['suboxic', 'anoxic', 'deeply_anoxic']" in str(exc.value)
+    assert exc.type == CheckRedoxZone
+
+#%%
+
+def test_phreatic_diffuse_point_source():
+    ''' Test for phreatic case with both a diffuse and point source contamination'''
+
+    phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+                                      computation_method= 'analytical', 
+                                      what_to_export='omp',
+                                      well_discharge=319.4*24, #m3/day
+                                      vertical_anistropy_shallow_aquifer = (10/(35*500)),
+                                      porosity_vadose_zone=0.38,
+                                      porosity_shallow_aquifer=0.35,
+                                      porosity_target_aquifer=0.35,
+                                      recharge_rate=0.3/365.25, #m/day
+                                      moisture_content_vadose_zone=0.15,
+                                      ground_surface=22,
+                                      thickness_vadose_zone_at_boundary=5,
+                                      thickness_shallow_aquifer=10,
+                                      thickness_target_aquifer=40,
+                                      hor_permeability_target_aquifer=35,
+                                      thickness_full_capillary_fringe=0.4,
+                                      redox_vadose_zone='suboxic',
+                                      redox_shallow_aquifer='anoxic',
+                                      redox_target_aquifer='deeply_anoxic',
+                                      pH_vadose_zone=5,
+                                      pH_shallow_aquifer=6,
+                                      pH_target_aquifer=7,
+                                      dissolved_organic_carbon_vadose_zone=10, 
+                                      dissolved_organic_carbon_shallow_aquifer=4, 
+                                      dissolved_organic_carbon_target_aquifer=2,
+                                      fraction_organic_carbon_vadose_zone=0.001,
+                                      fraction_organic_carbon_shallow_aquifer=0.0005,
+                                      fraction_organic_carbon_target_aquifer=0.0005, 
+                                      temperature=11,
+                                      solid_density_vadose_zone=2.650, 
+                                      solid_density_shallow_aquifer=2.650, 
+                                      solid_density_target_aquifer=2.650, 
+                                      diameter_borehole=0.75,
+                                      #diffuse parameters
+                                      diffuse_input_concentration=100, #ug/L
+                                      #point paramters
+                                      concentration_point_contamination=100,
+                                      distance_point_contamination_from_well=25,
+                                      depth_point_contamination=21, #m ASL
+                                      discharge_point_contamination=1000,
+                                      #dates
+                                      start_date_well='1968-01-01', 
+                                      start_date_contamination= '1966-01-01',
+                                      compute_contamination_for_date='2050-01-01',
+                                      end_date_contamination='1990-01-01',
+                                      )
+    phreatic_well = AnalyticalWell(phreatic_scheme)
+    phreatic_well.phreatic() 
+    phreatic_conc = SubstanceTransport(phreatic_well, substance = 'OMP-X')
+    phreatic_conc.compute_omp_removal()
+    df_well_concentration = phreatic_conc.compute_concentration_in_well_at_date()
+    
+    df_well_concentration_test = read_csv(path / 'phreatic_diffuse_point_test.csv', index_col=0)
+    # AH the assert frame_equal is being difficult, so have to specify each data type
+    df_well_concentration_test = df_well_concentration_test.astype({'time': 'int32', 'date': 'datetime64[ns]', 'total_concentration_in_well': 'float64'}) #etc
+
+    assert_frame_equal(df_well_concentration, df_well_concentration_test, check_dtype=False)
+
+#%%
+
+def test_phreatic_diffuse_only_source():
+    ''' Test for phreatic case with only a diffuse source contamination'''
+
+    phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+                                    computation_method= 'analytical', 
+                                    what_to_export='omp',
+                                    well_discharge=319.4*24, #m3/day
+                                    vertical_anistropy_shallow_aquifer = (10/(35*500)),
                                     porosity_vadose_zone=0.38,
                                     porosity_shallow_aquifer=0.35,
                                     porosity_target_aquifer=0.35,
-                                    recharge_rate=0.3/365.25,
+                                    recharge_rate=0.3/365.25, #m/day
                                     moisture_content_vadose_zone=0.15,
-                                    ground_surface = 22,
+                                    ground_surface=22,
                                     thickness_vadose_zone_at_boundary=5,
                                     thickness_shallow_aquifer=10,
                                     thickness_target_aquifer=40,
                                     hor_permeability_target_aquifer=35,
-                                    # KD=1400,
                                     thickness_full_capillary_fringe=0.4,
+                                    redox_vadose_zone='suboxic',
+                                    redox_shallow_aquifer='anoxic',
+                                    redox_target_aquifer='deeply_anoxic',
+                                    pH_vadose_zone=5,
+                                    pH_shallow_aquifer=6,
+                                    pH_target_aquifer=7,
+                                    dissolved_organic_carbon_vadose_zone=10, 
+                                    dissolved_organic_carbon_shallow_aquifer=4, 
+                                    dissolved_organic_carbon_target_aquifer=2,
+                                    fraction_organic_carbon_vadose_zone=0.001,
+                                    fraction_organic_carbon_shallow_aquifer=0.0005,
+                                    fraction_organic_carbon_target_aquifer=0.0005, 
                                     temperature=11,
-                                    solid_density_vadose_zone= 2.650, 
-                                    solid_density_shallow_aquifer= 2.650, 
-                                    solid_density_target_aquifer= 2.650, 
-                                    diameter_borehole = 0.75,)
-well1 = AnalyticalWell(test_)
-well1.semiconfined() 
-output = well1.df_output
-# output = output_dict['df_output']
-output = output[["total_travel_time", "travel_time_unsaturated",
-                "travel_time_shallow_aquifer", "travel_time_target_aquifer",
-                "radial_distance",]]
-# try:
-    # assert output == output_semiconfirned
-assert_frame_equal(output, output_semiconfined, 
-                    check_dtype=False)
+                                    solid_density_vadose_zone=2.650, 
+                                    solid_density_shallow_aquifer=2.650, 
+                                    solid_density_target_aquifer=2.650, 
+                                    diameter_borehole=0.75,
+                                    #diffuse parameters
+                                    diffuse_input_concentration=100, #ug/L
+                                    #dates
+                                    start_date_well='1968-01-01', 
+                                    start_date_contamination= '1966-01-01',
+                                    compute_contamination_for_date='2050-01-01',
+                                    end_date_contamination='1990-01-01',
+                                    )
+    phreatic_well = AnalyticalWell(phreatic_scheme)
+    phreatic_well.phreatic() 
+    phreatic_conc = SubstanceTransport(phreatic_well, substance = 'OMP-X')
+    phreatic_conc.compute_omp_removal()
+    df_well_concentration = phreatic_conc.compute_concentration_in_well_at_date()
+
+    df_well_concentration_test = read_csv(path / 'phreatic_diffuse_only_test.csv', index_col=0)
+    # AH the assert frame_equal is being difficult, so have to specify each data type
+    df_well_concentration_test = df_well_concentration_test.astype({'time': 'int32', 'date': 'datetime64[ns]', 'total_concentration_in_well': 'float64'}) 
+
+    assert_frame_equal(df_well_concentration, df_well_concentration_test, check_dtype=False)
+
 #%%
+def test_phreatic_point_only_source():
+    ''' Test for phreatic case with only a diffuse source contamination'''
+
+    phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+                                    computation_method= 'analytical', 
+                                    what_to_export='omp',
+                                    well_discharge=319.4*24, #m3/day
+                                    vertical_anistropy_shallow_aquifer = (10/(35*500)),
+                                    porosity_vadose_zone=0.38,
+                                    porosity_shallow_aquifer=0.35,
+                                    porosity_target_aquifer=0.35,
+                                    recharge_rate=0.3/365.25, #m/day
+                                    moisture_content_vadose_zone=0.15,
+                                    ground_surface=22,
+                                    thickness_vadose_zone_at_boundary=5,
+                                    thickness_shallow_aquifer=10,
+                                    thickness_target_aquifer=40,
+                                    hor_permeability_target_aquifer=35,
+                                    thickness_full_capillary_fringe=0.4,
+                                    redox_vadose_zone='suboxic',
+                                    redox_shallow_aquifer='anoxic',
+                                    redox_target_aquifer='deeply_anoxic',
+                                    pH_vadose_zone=5,
+                                    pH_shallow_aquifer=6,
+                                    pH_target_aquifer=7,
+                                    dissolved_organic_carbon_vadose_zone=10, 
+                                    dissolved_organic_carbon_shallow_aquifer=4, 
+                                    dissolved_organic_carbon_target_aquifer=2,
+                                    fraction_organic_carbon_vadose_zone=0.001,
+                                    fraction_organic_carbon_shallow_aquifer=0.0005,
+                                    fraction_organic_carbon_target_aquifer=0.0005, 
+                                    temperature=11,
+                                    solid_density_vadose_zone=2.650, 
+                                    solid_density_shallow_aquifer=2.650, 
+                                    solid_density_target_aquifer=2.650, 
+                                    diameter_borehole=0.75,
+                                    #diffuse parameters
+                                    diffuse_input_concentration=0, #ug/L
+                                    #point paramters
+                                    concentration_point_contamination=100,
+                                    distance_point_contamination_from_well=25,
+                                    depth_point_contamination=21, #m ASL
+                                    discharge_point_contamination=1000,
+                                    #dates
+                                    start_date_well='1968-01-01', 
+                                    start_date_contamination= '1966-01-01',
+                                    compute_contamination_for_date='2050-01-01',
+                                    end_date_contamination='1990-01-01',
+                                    )
+    phreatic_well = AnalyticalWell(phreatic_scheme)
+    phreatic_well.phreatic() 
+    phreatic_conc = SubstanceTransport(phreatic_well, substance = 'OMP-X')
+    phreatic_conc.compute_omp_removal()
+    df_well_concentration = phreatic_conc.compute_concentration_in_well_at_date()
+
+    df_well_concentration.to_csv('phreatic_point_only_test.csv')
+    df_well_concentration_test = read_csv(path / 'phreatic_point_only_test.csv', index_col=0)
+    # AH the assert frame_equal is being difficult, so have to specify each data type
+    df_well_concentration_test = df_well_concentration_test.astype({'time': 'int32', 'date': 'datetime64[ns]', 'total_concentration_in_well': 'float64'}) 
+
+    assert_frame_equal(df_well_concentration, df_well_concentration_test, check_dtype=False)

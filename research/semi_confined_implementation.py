@@ -51,18 +51,19 @@ path = os.getcwd() #path of working directory
 
 #%%
 # Test
-test_travel_time_distribution_semiconfined()
-test_retardation_temp_koc_correction(substance='benzene', schematisation_type='semiconfined')
-test_retardation_temp_koc_correction(substance='benzo(a)pyrene', schematisation_type='semiconfined')
-test_retardation_temp_koc_correction(substance='AMPA', schematisation_type='semiconfined')
-test_steady_concentration_temp_koc_correction_semiconfined(substance='benzene')
-test_steady_concentration_temp_koc_correction_semiconfined(substance='benzo(a)pyrene')
-test_steady_concentration_temp_koc_correction_semiconfined(substance='AMPA')
+# test_travel_time_distribution_semiconfined()
+# test_retardation_temp_koc_correction(substance='benzene', schematisation_type='semiconfined')
+# test_retardation_temp_koc_correction(substance='benzo(a)pyrene', schematisation_type='semiconfined')
+# test_retardation_temp_koc_correction(substance='AMPA', schematisation_type='semiconfined')
+# test_steady_concentration_temp_koc_correction_semiconfined(substance='benzene')
+# test_steady_concentration_temp_koc_correction_semiconfined(substance='benzo(a)pyrene')
+# test_steady_concentration_temp_koc_correction_semiconfined(substance='AMPA')
 
 #%%
 
 semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfined',
-                                      what_to_export='omp_parameters',
+                                      computation_method= 'analytical', 
+                                      what_to_export='omp',
                                       well_discharge=319.4*24,
                                       vertical_anistropy_shallow_aquifer = (10/(0.02*500)),
                                       porosity_vadose_zone=0.38,
@@ -104,7 +105,7 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       diameter_borehole = 0.75,
                                       # substance = 'benzo(a)pyrene',
                                       # substance = 'benzene',
-                                      # halflife_oxic=600,
+                                      # halflife_suboxic=600,
                                       # partition_coefficient_water_organic_carbon = 3.3,
                                     )
 
@@ -122,6 +123,13 @@ semiconfined_conc = SubstanceTransport(semiconfined_well, substance = 'OMP-X')
 # semiconfined_conc = SubstanceTransport(semiconfined_well, substance = 'benzene')
 
 semiconfined_conc.compute_omp_removal()
+
+#%%
+semiconfined_conc.plot_concentration()
+
+semiconfined_conc.plot_concentration(x_axis='Time') 
+
+#%%
 semiconfined_conc.df_flowline
 # semiconfined_conc.df_particle
 

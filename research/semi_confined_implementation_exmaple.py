@@ -45,7 +45,7 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 #%%
 
 semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfined',
-                                      what_to_export='omp_parameters',
+                                      what_to_export='omp',
                                       well_discharge=7500, #m3/day
                                       vertical_anistropy_shallow_aquifer = 1,
                                       porosity_vadose_zone=0.38,

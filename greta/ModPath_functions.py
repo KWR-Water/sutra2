@@ -977,7 +977,7 @@ class ModPathWell:
         Parameters
         ----------
         what_to_export: String
-        		options: 'all', 'omp_parameters', 'microbial_parameters'
+        		options: 'all', 'omp', 'microbial_parameters'
         """
         # df_flowline = pd.DataFrame()
         # df_particle = pd.DataFrame()
@@ -1565,7 +1565,7 @@ class ModPathWell_OLD():
         Parameters
         ----------
         what_to_export: String
-        		options: 'all', 'omp_parameters', 'microbial_parameters'
+        		options: 'all', 'omp', 'microbial_parameters'
         """
   			#delete the unwanted columns depending on what the user asks for here
   			returns df_flowline, df_particle
@@ -1607,7 +1607,7 @@ class SubstanceTransport():
         Column 'redox_zone'
         Column 'temperature'
         Column 'Kow'  # only necessary for OMP
-        Column 'Labda'  # only necessary for microbiology
+        Column 'Labda'  # only necessary for pathogen
 
     Returns
     -------    
@@ -1625,7 +1625,7 @@ class SubstanceTransport():
    		self.omp_inialized = True
 
 
-  	def _init_microbiology()
+  	def _init_pathogen()
 
 
   	def compute_omp_removal(self):
@@ -1647,7 +1647,7 @@ class SubstanceTransport():
 			 self._init_omp()
        self.df_part...
 
-    def compute_microbiology_removal(self):
+    def compute_pathogen_removal(self):
                                                              
 	  def compute_well_concentration(self, evaluation_time = None)
         """ Returns the concentration in the raw water of each well (as defined by endpoind_id)."""
@@ -1684,7 +1684,7 @@ concentration = SubstanceTransport()
 if removal_function == 'omp':
 		concentration.compute_omp_removal
 elif removal_function = 'omp':
-		concentration.compute_microbiology_removal
+		concentration.compute_pathogen_removal
 else:
   	raise KeyError('schematisation argument not recognized')
                        
@@ -1730,7 +1730,7 @@ if __name__ == "__main__":
         'freatic', 'semi-confined', 'riverbankfiltration', 'basinfiltration'
     removal_function: string
         'omp' -> get parameters for OMP
-        'microbiology' -> get parameters for microbiology
+        'pathogen' -> get parameters for pathogen
     """
 
 
@@ -1787,7 +1787,7 @@ if __name__ == "__main__":
     #         Parameters
     #         ----------
     #         what_to_export: String
-    #         		options: 'all', 'omp_parameters', 'microbial_parameters'
+    #         		options: 'all', 'omp', 'microbial_parameters'
     #         """
     #   			#delete the unwanted columns depending on what the user asks for here
     #   			returns df_flowline, df_particle
