@@ -389,7 +389,7 @@ class ModPathWell:
             except KeyError as e:
                 print(e,f"missing {iDict} {iDict_sub}. Continue")
         else:
-            north,south,rowidx_min,rowidx_max = None, None,0,0
+            north,south,rowidx_min,rowidx_max = None, None,0,1
         try:
             # Determine layer indices
             layidx_min = int(np.argwhere((self.zmid <= top) & (self.zmid >= bot))[0])
@@ -642,7 +642,7 @@ class ModPathWell:
         # Assign delr and xmid
         self.ncol, self.delr, self.xmid, col_bounds = self._assign_cellboundaries(schematisation = schematisation,
                                                                                   dict_keys = dict_keys,
-                                                                    bound_min = self.bound_left, bound_max = self.bound_top,
+                                                                    bound_min = self.bound_left, bound_max = self.bound_right,
                                                                     n_refinement = "ncols", ascending = True)
 
         # Assign delc and ymid
@@ -769,6 +769,7 @@ class ModPathWell:
                   "Rowmin_max:", rowidx_min,rowidx_max,\
                   "Colmin_max:",colidx_min,colidx_max)
             print("(nlay,nrow,ncol)",(self.nlay,self.nrow,self.ncol))
+            
             # Add well locations and stress_period_data
             well_loc[iWell] = []
             KD_well[iWell] = 0.
@@ -780,11 +781,12 @@ class ModPathWell:
                         # Correct discharge for K_hor near wells and for the possible difference in delv (K * D)
                         KD_well[iWell] += self.hk[iLay,iRow,iCol] * self.delv[iLay]
 
-        
+            print("Well discharge:", Qwell_day[iWell])
+            print("KD_well:", iWell, KD_well[iWell])
             # stress period data for well package
-            for iLay in range(layidx_min,layidx_max+1):
-                for iRow in range(rowidx_min,rowidx_max+1):
-                   for iCol in range(colidx_min, colidx_max+1):
+            for iLay in range(layidx_min,layidx_max):
+                for iRow in range(rowidx_min,rowidx_max):
+                   for iCol in range(colidx_min, colidx_max):
                         spd_wel[0].append([iLay, iRow, iCol, Qwell_day[iWell] * \
                                           (self.hk[iLay,iRow,iCol] * self.delv[iLay]) / KD_well[iWell]])
         
@@ -1050,7 +1052,7 @@ class ModPathWell:
             print(self.success, self.buff)
 
             # Model run completed succesfully
-            print("Model run", self.workspace, self.modelname, "completed succesfully.")
+            print("Model run", self.workspace, self.modelname, "completed without errors:", self.success)
 
 
     def phreatic(self):
@@ -1097,16 +1099,18 @@ class ModPathWell:
             self.layavg = 0
         # geohydrological parameter names
         geoparm_names = {"moisture_content": ["geo_parameters"],
-                      "hk": ["geo_parameters","well_parameters"],
-                      "vani": ["geo_parameters","well_parameters"],
+                      "hk": ["geo_parameters"],
+                      "vani": ["geo_parameters"],
                       "porosity": ["geo_parameters"]}
 
         for iParm, dict_keys in geoparm_names.items():
-            # Temporary value
+            # Temporary value grid
+            unitgrid = np.ones((self.nlay,self.nrow,self.ncol), dtype = 'float')
+            # Fill grid with new values
             grid = self.fill_grid(schematisation = self.schematisation,
                             dict_keys = dict_keys,
                             parameter = iParm,
-                            grid = None,
+                            grid = unitgrid,
                             dtype = 'float')
             self.update_property(property = iParm, value = grid)
 
@@ -1408,7 +1412,7 @@ class ModPathWell:
             if self.run_mfmodel:
                 # Run modflow model
                 self.mfmodelrun()
-
+        
         print("modelrun of type", self.schematisation_type, "completed.")
 '''
 #%%  

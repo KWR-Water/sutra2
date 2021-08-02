@@ -346,13 +346,13 @@ dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
 # except:
 #     pass
 
-# Add test well_parameters with leak from 9.9 to 10.0 m
-phreatic_scheme["well_parameters"]['well_leak'] = {'Q': -1.,
-'top': 10.0,
-'bot': 9.9,
-'xmin': 0.0,
-'xmax': 0.375,
-'nlayers': 1}
+# # Add test well_parameters with leak from 9.9 to 10.0 m
+# phreatic_scheme["well_parameters"]['well_leak'] = {'Q': -1.,
+# 'top': 10.0,
+# 'bot': 9.9,
+# 'xmin': 0.375,
+# 'xmax': 1.,
+# 'nlayers': 1}
 
 # try:
 #     # Place 'gravelpack1' and 'clayseal1' in scheme dictionary "well_parameters"
@@ -412,37 +412,40 @@ modpath_phrea = ModPathWell(phreatic_scheme,
 # print(modpath_phrea.__dict__)
 # modpath_phrea.phreatic()
 modpath_phrea.run_model(run_mfmodel = True)
-#### HIER GEBLEVEN 14-6-2021 ####
+#### HIER GEBLEVEN 2-8-2021 ####
 
 #%%
-# Check attributes in ModPath object
-check_attr_list = ["nlay","nrow","ncol","delv","delc","delr","zmid","ymid","xmid","top","bot"]
-for iAttr in check_attr_list:
-    print(iAttr,getattr(modpath_phrea,iAttr))
 
-modpath_phrea.schematisation["ibound_parameters"]
-n_fixedcells = abs(modpath_phrea.ibound[modpath_phrea.ibound == -1].sum())
-n_inactivecells = abs(modpath_phrea.ibound[modpath_phrea.ibound == 0].sum())
-n_activecells = modpath_phrea.ibound[modpath_phrea.ibound == 1].sum()
-print("Number of fixed head model cells:",n_fixedcells)
-print("Number of inactive model cells:",n_inactivecells)
-print("Number of active model cells:",n_activecells)
-# # Create bas_parameters
-# modpath_phrea.assign_bas_parameters()
-# modpath_phrea.bas_parameters
 
-# Add material grid
-# Check attributes in ModPath object
-check_attr_list = ["moisture_content","hk","vka","vani","porosity"]
-test_var = {}
-for iAttr in check_attr_list:
-    try:
-        test_var[iAttr] = getattr(modpath_phrea,iAttr) 
-        print(iAttr, test_var[iAttr])
-    except Exception as e:
-        print(e)
 
-    ''' Phreatic function currently uses rmin, rmax instead of xmin,xmax'''
-# Model run completed
-print("Model run completed.")
+# # Check attributes in ModPath object
+# check_attr_list = ["nlay","nrow","ncol","delv","delc","delr","zmid","ymid","xmid","top","bot"]
+# for iAttr in check_attr_list:
+#     print(iAttr,getattr(modpath_phrea,iAttr))
+
+# modpath_phrea.schematisation["ibound_parameters"]
+# n_fixedcells = abs(modpath_phrea.ibound[modpath_phrea.ibound == -1].sum())
+# n_inactivecells = abs(modpath_phrea.ibound[modpath_phrea.ibound == 0].sum())
+# n_activecells = modpath_phrea.ibound[modpath_phrea.ibound == 1].sum()
+# print("Number of fixed head model cells:",n_fixedcells)
+# print("Number of inactive model cells:",n_inactivecells)
+# print("Number of active model cells:",n_activecells)
+# # # Create bas_parameters
+# # modpath_phrea.assign_bas_parameters()
+# # modpath_phrea.bas_parameters
+
+# # Add material grid
+# # Check attributes in ModPath object
+# check_attr_list = ["moisture_content","hk","vka","vani","porosity"]
+# test_var = {}
+# for iAttr in check_attr_list:
+#     try:
+#         test_var[iAttr] = getattr(modpath_phrea,iAttr) 
+#         print(iAttr, test_var[iAttr])
+#     except Exception as e:
+#         print(e)
+
+#     ''' Phreatic function currently uses rmin, rmax instead of xmin,xmax'''
+# # Model run completed
+# print("Model run completed.")
 #%%
