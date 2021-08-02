@@ -346,13 +346,13 @@ dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
 # except:
 #     pass
 
-# # Add test well_parameters with leak from 9.9 to 10.0 m
-# phreatic_scheme["well_parameters"]['well_leak'] = {'Q': -1.,
-# 'top': 10.0,
-# 'bot': 9.9,
-# 'xmin': 0.0,
-# 'xmax': 0.1,
-# 'nlayers': 1}
+# Add test well_parameters with leak from 9.9 to 10.0 m
+phreatic_scheme["well_parameters"]['well_leak'] = {'Q': -1.,
+'top': 10.0,
+'bot': 9.9,
+'xmin': 0.0,
+'xmax': 0.375,
+'nlayers': 1}
 
 # try:
 #     # Place 'gravelpack1' and 'clayseal1' in scheme dictionary "well_parameters"
@@ -411,7 +411,7 @@ modpath_phrea = ModPathWell(phreatic_scheme,
 # Print all attributes in object
 # print(modpath_phrea.__dict__)
 # modpath_phrea.phreatic()
-modpath_phrea.run_model(run_mfmodel = False)
+modpath_phrea.run_model(run_mfmodel = True)
 #### HIER GEBLEVEN 14-6-2021 ####
 
 #%%

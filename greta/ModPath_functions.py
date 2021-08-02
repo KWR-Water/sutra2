@@ -372,11 +372,12 @@ class ModPathWell:
             top = schematisation[iDict][iDict_sub][self.bound_top]
         except KeyError:
             print("set top of", iDict, iDict_sub, "to 0.")
+            top = 0.
         try: 
             bot = schematisation[iDict][iDict_sub][self.bound_bot]
         except KeyError:
             print("set bottom of", iDict, iDict_sub, "to model bottom.")
-            bot = min(self.zmid[-1])
+            bot = min(self.zmid)
 
         if not self.model_type == "axisymmetric":
             try:
@@ -684,14 +685,12 @@ class ModPathWell:
                                     dict_keys = dict_keys,
                                     parameter = "ibound",
                                     grid = ibound,
-                                    dtype = 'int',
-                                    model_type = self.model_type)
+                                    dtype = 'int')
         self.strt = self.fill_grid(schematisation = self.schematisation,
                                     dict_keys = dict_keys,
                                     parameter = "head",
                                     grid = strt,
-                                    dtype = 'int',
-                                    model_type = self.model_type)
+                                    dtype = 'int')
          
         
     def oc_input(self, spd_oc = {(0, 0): ['save head', 'save budget']}):
@@ -766,16 +765,16 @@ class ModPathWell:
                                         model_type = self.model_type)
 
 
-            # print("Laymin_max:", (layidx_min,layidx_max),\
-            #       "Rowmin_max:", rowidx_min,rowidx_max,\
-            #       "Colmin_max:",colidx_min,colidx_max)
-            # print("(nlay,nrow,ncol)",(self.nlay,self.nrow,self.ncol))
+            print("Laymin_max:", (layidx_min,layidx_max),\
+                  "Rowmin_max:", rowidx_min,rowidx_max,\
+                  "Colmin_max:",colidx_min,colidx_max)
+            print("(nlay,nrow,ncol)",(self.nlay,self.nrow,self.ncol))
             # Add well locations and stress_period_data
             well_loc[iWell] = []
             KD_well[iWell] = 0.
-            for iLay in range(layidx_min,layidx_max+1):
-                for iRow in range(rowidx_min,rowidx_max+1):
-                    for iCol in range(colidx_min, colidx_max+1):
+            for iLay in range(layidx_min,layidx_max):
+                for iRow in range(rowidx_min,rowidx_max):
+                    for iCol in range(colidx_min, colidx_max):
                         # print(iLay,iRow,iCol)
                         well_loc[iWell].append((iLay,iRow,iCol))
                         # Correct discharge for K_hor near wells and for the possible difference in delv (K * D)
@@ -789,7 +788,7 @@ class ModPathWell:
                         spd_wel[0].append([iLay, iRow, iCol, Qwell_day[iWell] * \
                                           (self.hk[iLay,iRow,iCol] * self.delv[iLay]) / KD_well[iWell]])
         
-        return well_loc, KD_well, spd_wel, Qwell_day
+        return well_names,well_loc,KD_well, spd_wel, Qwell_day
 
     ####################
     ### Fill modules ###
@@ -809,7 +808,7 @@ class ModPathWell:
                                             nper= 1, lenuni = 2, # meters
                                             itmuni = 4, # 3: hours, 4: days
                                             delr= self.delr, delc= self.delc, laycbd= 0, top= self.top,      
-                                            botm= self.botm, perlen = perlen, 
+                                            botm= self.bot, perlen = perlen, 
                                             nstp= nstp, steady = steady)
                                             # Laycbd --> 0, then no confining lay below
 
@@ -826,7 +825,7 @@ class ModPathWell:
     def load_lpf(self):
         ''' Add lpf Package to the MODFLOW model '''
         self.lpf = flopy.modflow.ModflowLpf(self.mf, layavg = 1, ipakcb = self.iu_cbc, hk=self.hk, vka=self.vka, 
-                                            ss = self.ss, storagecoefficient = self.storagecoefficient) 
+                                            ss = self.ss, storagecoefficient = True) 
         # layavg = 1 (--> logarithmic mean); storagecoefficient = True (means: storativity)
         
     def load_pcg(self, hclose=1e-4, rclose = 0.001):
@@ -1016,7 +1015,7 @@ class ModPathWell:
                 except Exception as e:
                     print(e, "error loading well package.")
             try:
-                self.load_rch()
+                self.load_rch(rech = self.recharge)
             except Exception as e:
                 print(e, "no recharge assigned.")
 
@@ -1108,8 +1107,7 @@ class ModPathWell:
                             dict_keys = dict_keys,
                             parameter = iParm,
                             grid = None,
-                            dtype = 'float',
-                            model_type = self.model_type)
+                            dtype = 'float')
             self.update_property(property = iParm, value = grid)
 
         # Create (uncorrected) array for kv ("vka"), using "kh" and "vani" (vertical anisotropy)
@@ -1136,15 +1134,15 @@ class ModPathWell:
                             dict_keys = dict_keys,
                             parameter = iParm,
                             grid = None,
-                            dtype = 'float',
-                            model_type = self.model_type)
-            self.update_property(property = iParm, value = grid)
-
+                            dtype = 'float')
+            
             if self.model_type == "axisymmetric":
-                grid_uncorr = getattr(self,iParm)
-                grid_axi = self.axisym_correction(grid = grid_uncorr)
+                grid_axi = self.axisym_correction(grid = grid)[0,:,:]
                 # Update attribute
                 self.update_property(property = iParm, value = grid_axi)
+            else:
+                # Update attribute
+                self.update_property(property = iParm, value = grid[0,:,:])
 
         # Well input
         # !!! Obtain node numbers of well locations (use indices) !!!
@@ -1152,10 +1150,11 @@ class ModPathWell:
         well_names = [iWell for iWell in self.schematisation["well_parameters"] if \
                         "Q" in self.schematisation["well_parameters"][iWell].keys()]
        
-        self.well_loc,\
-            self.KD_well,\
-                self.spd_wel,\
-                    self.Qwell_day = self.assign_wellloc(schematisation = self.schematisation,
+        self.well_names,\
+            self.well_loc,\
+                self.KD_well,\
+                    self.spd_wel,\
+                        self.Qwell_day = self.assign_wellloc(schematisation = self.schematisation,
                                                         dict_key = "well_parameters",
                                                         well_names = None,
                                                         discharge_parameter = "Q")
@@ -1350,7 +1349,8 @@ class ModPathWell:
     def run_model(self,
                     simulation_parameters: dict or None = None,
                     xll = 0., yll = 0., perlen:dict or float or int = 365.*50, 
-                    nstp:dict or int = 1, steady:dict or bool = True,
+                    nstp:dict or int = 1, nper:int = 1,
+                    steady:dict or bool = True,
                     run_mfmodel = True, run_mpmodel = True):
         ''' Run the combined modflow and modpath model using one 
             of four possible schematisation types:
@@ -1382,6 +1382,10 @@ class ModPathWell:
             self.nstp = {0: nstp} 
         else:
             self.nstp = nstp 
+
+        # Nr of stress periods  (int)
+        self.nper = nper
+
         # Steady state model run (True/False)
         if type(steady) != "dict":
             self.steady = {0: steady} 
