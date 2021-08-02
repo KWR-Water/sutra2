@@ -1432,7 +1432,7 @@ class AnalyticalWell():
         travel_time_target_aquifer,
         discharge_point_contamination=None, #AH_todo do we need this?
         ):
-        """ Export to dataframe....
+        """ Makes 'df_flowline' and 'df_particle'
 
             Parameters
             ----------
