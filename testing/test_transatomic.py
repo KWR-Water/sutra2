@@ -13,7 +13,7 @@ from pathlib import Path
 
 from greta.Analytical_Well import *
 from greta.Substance_Transport import *
-from pandas._testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
@@ -21,12 +21,13 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 
 #%%
 def test_travel_time_distribution_phreatic():
+    """ @alex: describe what the test does """
     output_phreatic = pd.read_csv(path / 'phreatic_test.csv')
     output_phreatic = output_phreatic.round(7) #round to 7 digits (or any digit), keep same as for the output for the model to compare
 
     test_ = HydroChemicalSchematisation(schematisation_type='phreatic',
                                         computation_method= 'analytical',
-                                        what_to_export='omp',
+                                        what_to_export='omp', # @alex: what_to_export sounds very cryptic and ad-hoc. maybe we can think of something better
                                         well_discharge=319.4*24,
                                         # vertical_resistance_aquitard=500,
                                         hor_permeability_shallow_aquifer = 0.02,
@@ -44,7 +45,7 @@ def test_travel_time_distribution_phreatic():
                                         # KD=1400,
                                         thickness_full_capillary_fringe=0.4,
                                         temperature=11,
-                                         solid_density_vadose_zone= 2.650,
+                                        solid_density_vadose_zone= 2.650,
                                         solid_density_shallow_aquifer= 2.650,
                                         solid_density_target_aquifer= 2.650,
                                         diameter_borehole = 0.75,
@@ -360,8 +361,8 @@ def test_start_end_dates_contamination():
                                                     start_date_contamination= '1990-01-01',
                                                     end_date_contamination='1950-01-01'
                                       )
+    #@ALEX only test for the message.
     assert 'Error, "end_date_contamination" is before "start_date_contamination". Please enter an new "end_date_contamination" or "start_date_contamination" ' in str(exc.value)
-    assert exc.type == EndDateBeforeStart
 
 #%%
 def test_compute_for_date_start_dates_contamination():

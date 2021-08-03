@@ -13,7 +13,7 @@ from pathlib import Path
 
 from greta.Analytical_Well import *
 from greta.Substance_Transport import *
-from pandas._testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory

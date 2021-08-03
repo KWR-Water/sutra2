@@ -42,7 +42,8 @@ path = os.getcwd()  # path of working directory
 #@MartinK - this is how I found online to check that the exception/error messages
 # are correct. Is this needed or it there a better/another way to check this?
 # Seems like quite some extra work to check that the correct error messaged are raised
-class EndDateBeforeStart(Exception):
+# @Alex: ValueError: see below
+class EndDateBeforeStart(ValueError):
     """ Exception raised when the 'End_date_contamination' is before the 'start_date_contamination' """
 class ComputeDateBeforeStartDate(Exception):
     """ Exception raised when the 'compute_contamination_for_date' is before the 'start_date_contamination' """
@@ -54,11 +55,8 @@ class CheckRedoxZone(Exception):
 
 class HydroChemicalSchematisation:
 
-    """ Converts input parameters of AquaPriori GUI to a complete parameterisation
-
-    Attributes
-    ----------
-    ...same as the parameters for the most part... include? @MartinK
+    """ This class holds all the parameters that define the (surrounding of the) well such that travel
+    times and removal rates can be determined.
 
     Parameters
     ----------
@@ -197,11 +195,11 @@ class HydroChemicalSchematisation:
     """
     # initialize non-defaults to None to start.
     def __init__(self,
-                schematisation_type= None,
+                schematisation_type,  # @ALEX I think you want this one to be always defined, thus giving it no default value
 
-                computation_method= None,
+                computation_method='analytical', #@ALEX I think you want to inititialize it to something, or leave it empty
                 removal_function= 'omp',
-                what_to_export = 'all',
+                what_to_export = 'all', # ALEX: cryptic
                 temp_correction_Koc=True,
                 temp_correction_halflife=True,
                 biodegradation_sorbed_phase=True,
@@ -288,6 +286,12 @@ class HydroChemicalSchematisation:
                 halflife_deeply_anoxic=None,
 
                 diffuse_input_concentration=1,
+                #ALEX it may be better to make it a datetime object, then you are sure it is always in the right format.
+                #   from datetime import datetime
+                #   start_date_well = datetime.strptime('1950-01-01', "%Y-%m-%d")
+                # this has consequences for the rest of the code though, so be careful! This should also be applied to
+                # all other date(time) variables for consistency.
+                # TODO: change all dates to datetime objects (see teams planner)
                 start_date_well='1950-01-01', #("Enter date in YYYY-MM-DD format")
                 start_date_contamination=None,
                 end_date_contamination= None,#("Enter date in YYYY-MM-DD format")
@@ -373,6 +377,16 @@ class HydroChemicalSchematisation:
         # @MartinK, this format (with a class error)
         # allows me to test that the error raised is correct, how else to do
         # without making a class for every error?
+        # @Alex, I like your approach here as it shows you dive deeper then
+        # just the surface of python scripting. But indeed, it is tedious
+        # to make a Exception Class for every (possible) error. Usually,
+        # it fulfulls to just raise standard Exception types: ValueError, KeyError
+        # https://docs.python.org/3/library/exceptions.html
+        # most of the time a ValueError is sufficient (this is used when
+        # checking values have correct value as you do here.)
+        # making custom exceptions is mostly relevant if you foresee that you
+        # want to catch them somewhere in your code wit a try...except...
+        # construct.
         def redox_type(redox_zone):
             ''' Check redox zone options, if not one listed, raise error'''
             redox_type = ['suboxic', 'anoxic', 'deeply_anoxic']
@@ -481,7 +495,7 @@ class HydroChemicalSchematisation:
         else:
             self.end_date_contamination = date_to_datetime(end_date_contamination)
             if self.end_date_contamination < self.start_date_contamination:
-                raise EndDateBeforeStart('Error, "end_date_contamination" is before "start_date_contamination". Please enter an new "end_date_contamination" or "start_date_contamination" ')
+                raise ValueError('Error, "end_date_contamination" is before "start_date_contamination". Please enter an new "end_date_contamination" or "start_date_contamination" ')
 
         ''' Check logical things here for contamination'''
         if self.compute_contamination_for_date < self.start_date_contamination:
@@ -583,13 +597,25 @@ class HydroChemicalSchematisation:
 
 
     def make_dictionary(self,):
-        ''' Returns dicitonaries of the different parameters for MODFLOW schematisation. '''
+        """ Returns dicitonaries of the different parameters for MODFLOW schematisation.
+        @alex: this still looks ugly as it basically repeats all the attributes. I think we need to think about something
+        better for this in a next iteration.
+        @alex: I assume al the logic here (e.g.
+                    'xmax': self.diameter_filterscreen/2,
+                    ) is only required for modflow? if so then it is now correctly
+                    implemented. If not, then it is confusing, because the docstring here says it is only for MODFLOW"""
 
         if self.schematisation_type == 'phreatic':
-            compute_thickness_vadose_zone = True # @MartinvdS what is this for?
+            compute_thickness_vadose_zone = True # @MartinvdS what is this for? @ALEX this is never used, remove it
 
             # Additional meter added to the model radius for the fixed head boundary
             # only for the phreatic case, not for the semiconfined case
+            # @alex: this is not initialized in __init__. Although not
+            # strictly necessary, it is good practice to initialize it to None. Although
+            # experts do not all agree: https://stackoverflow.com/a/20662650 or
+            # https://softwareengineering.stackexchange.com/a/357941
+            # generally, it is a reason at your code design (which is not so good atm
+            # as I mentioend above because of all the repeating of variables)
             self.model_radius_computed = self.model_radius + 1
 
             # only outer_boundary for phreatic
@@ -732,7 +758,7 @@ class HydroChemicalSchematisation:
         if self.schematisation_type == 'semiconfined':
             well_parameters = {
                 'well1': {
-                    'Q': self.well_discharge,
+                    'Q': self.well_discharge, #@ alex, here I see the nameing is different. I like your explicit approach much more. So apparently, the
                     'top': self.top_filterscreen,
                     'bot': self.bottom_filterscreen,
                     'xmin': 0.0,
@@ -776,6 +802,12 @@ class HydroChemicalSchematisation:
                 }
 
         #AH eventially to be computed by QSAR"
+        #@alex this does not belong to the schematization class. The same
+        # schematizaiton can used with different substances. So substance information
+        # and analyticalwell instance are input for the Concentration class
+        # And indeed, they can be computed by the QSAR, but that is out of the scope
+        # of this package, this package should be able to accept a dictionary like
+        # you define below.
         substance_parameters = {
                 'substance_name': self.substance,
                 'log_Koc': self.partition_coefficient_water_organic_carbon,
@@ -787,6 +819,7 @@ class HydroChemicalSchematisation:
                     },
             }
 
+        # @alex, should this be removed?
         bas_parameters = {
             }
 
@@ -863,6 +896,9 @@ class HydroChemicalSchematisation:
             For point sources 'distance' is 'distance_point_contamination_from_well'.
         depth_point_contamination: float
             Depth [mASL] of the point source contamination, if only diffuse contamination None is passed.
+            @ALEX: depth_point_contamination is an attribute right? dont need for argument here. Moreover, the
+                if depth_point_contamination is None:
+            case seem to be already caught in the __init__ of Schematisation class
 
         Returns
         -------
@@ -914,14 +950,21 @@ class HydroChemicalSchematisation:
         ''' Calculates the travel time in the unsaturated zone for the phreatic and semiconfined cases.
         The travel time is returned as an attribute of the object.
 
+        @ Alex: interesting that you put this method in this class and not in the Analytical Well class. From
+        a data point of view it is good that you do it here because all the data you need is in this class. However,
+        from a workflow point of view it makes less sense. Because the schematization is defined  in this class,
+        not its derived quantities. I would move it to AnalyticalWell class. /UNLESS/ it is used by Modflow as well.
+
         Parameters
         ----------
-        distance: array
+        distance: array, optional
             Array of distance(s) [m] from the well.
             For diffuse sources 'distance' is the 'radial_distance' array.
             For point sources 'distance' is 'distance_point_contamination_from_well'.
+            @Alex: what if None? see: https://numpydoc.readthedocs.io/en/latest/format.html#parameters
         depth_point_contamination: float
             Depth [mASL] of the point source contamination, if only diffuse contamination None is passed.
+            @Alex: what if None?
 
         Returns
         -------
@@ -939,6 +982,7 @@ class HydroChemicalSchematisation:
 
         # Diffuse source or regular travel time calculation use radial distance array
         # AH_todo alter here if we use multiple point sources
+        # what does None mean? or not None?
         if distance is None:
             self._create_radial_distance_array()
             distance= self.radial_distance
@@ -948,15 +992,23 @@ class HydroChemicalSchematisation:
         '''Equation A.11 in TRANSATOMIC report '''
 
         if self.schematisation_type =='phreatic':
+            # Alex: why does this one not have a leading underscore: _calculate_unsaturated_zone_travel_time_phreatic
+            # Alex: I think a better structure would have been:
+            # calculate_unsaturated_zone_travel_time_phreatic as main method that calls another method with the
+            # logic it has in common with schematization_type=semiconfined
             travel_time_unsaturated, self.thickness_vadose_zone_drawdown, self.head = self.calculate_unsaturated_zone_travel_time_phreatic (distance= distance,depth_point_contamination=depth_point_contamination)
 
         elif self.schematisation_type == 'semiconfined':
+            # Alex: couldn't you have put depth_pint_contamination at self.ground_surface in the __init__? then you
+            # don't need this if statement here.
             if depth_point_contamination is None:
                 travel_distance = self.ground_surface - self.groundwater_level - self.thickness_full_capillary_fringe
             else:
                 #if point contamination at depth, assign ground surface to depth
                 travel_distance =  depth_point_contamination - self.groundwater_level - self.thickness_full_capillary_fringe
 
+            # ALEX I use some abbrevations for analytical functions sometimes: e.g. dist, moist, thick_cap, por
+            # as it makes it easier to read this equation. But that is a matter of taste
             travel_time_unsaturated =(((travel_distance)
                                         * self.moisture_content_vadose_zone
                                         + self.thickness_full_capillary_fringe
@@ -967,9 +1019,8 @@ class HydroChemicalSchematisation:
                 travel_time_unsaturated = 0
 
             # travel time in semiconfined is one value, make it array by repeating the value
-            if isinstance(distance, float):
-                pass
-            else:
+            # do you have a test for this?
+            if not isinstance(distance, float):
                 travel_time_unsaturated = [travel_time_unsaturated] * (len(distance))
 
         self.travel_time_unsaturated = travel_time_unsaturated
@@ -1052,16 +1103,14 @@ class AnalyticalWell():
     def __init__(self, schematisation: HydroChemicalSchematisation): #change schematisation_instance to schematisation
         '''
         Initialize the AnalyticalWell object by making the dictionaries and adding the schematisation (and therefore attributes
-        of the schematisation) to the object.
+        of the schematisation) to the object. The `schematization` holds all parameters that define the simulation
 
-        Returs
-        ------
-        Dictionaries (Modflow) with all parameters as an attribute of the function.
 
         '''
         self.schematisation = schematisation
 
-        #Make dictionaries
+        # Translate HydroChemicalSchematizations attributes to dictionaries that
+        # are used by ModFlow
         self.schematisation.make_dictionary()
 
     def _check_required_variables(self,required_variables):
@@ -1088,6 +1137,8 @@ class AnalyticalWell():
         '''
         # @ Martin, now with the default values in the schematisation, this is not really needed
         # since if the user does not input, then these already exist. Keep?
+        # @alex: Yes, it seems you are right. This is not required anymore. Moreover, that kind of checking should
+        # be done in the Schematization class instead. So remove it here.
         required_variables = ["schematisation_type", #repeat for all
                               "thickness_vadose_zone_at_boundary",
                               "thickness_shallow_aquifer",
@@ -1126,6 +1177,7 @@ class AnalyticalWell():
             Travel time in the shallow aquifer for each point in the given distance array, [days].
         '''
 
+        # this is a complex if statement. please elaborate on what is happening in a comment
         if depth_point_contamination is None:
             travel_distance_shallow_aquifer = self.schematisation.thickness_shallow_aquifer - (self.schematisation.groundwater_level - head)
             travel_time_shallow_aquifer = ((travel_distance_shallow_aquifer)
@@ -1155,6 +1207,8 @@ class AnalyticalWell():
         array to calculate the travel time for all flowlines or if 'distance' is for a point source,
         the distance from the well is used to calculate the travel time.
 
+        @ALEX: Shouldnt distance and fractionflux be attributes? So you dont need to pass them to the method here?
+
         Parameters
         ----------
         fraction_flux: array
@@ -1171,6 +1225,8 @@ class AnalyticalWell():
 
         '''
 
+        # ALEX: this is not so save it seems.
+        # What happens if travel time is not None and fraction flux is not None? ALWAYS add the else:
         if fraction_flux is None:
             '''point source calculation'''
             travel_time_target_aquifer = (self.schematisation.porosity_target_aquifer * self.schematisation.thickness_target_aquifer
@@ -1185,6 +1241,8 @@ class AnalyticalWell():
             travel_time_target_aquifer = (self.schematisation.porosity_target_aquifer * self.schematisation.thickness_target_aquifer
                                 / self.schematisation.recharge_rate
                                 * np.log(1 / (1 -fraction_flux)))
+        else:
+            raise ValueError('Eiter fractin flux or distance should be None')
 
         return travel_time_target_aquifer
 
@@ -1361,6 +1419,8 @@ class AnalyticalWell():
         '''Create output array, used for testing purposes and also to creeate the 'df_flowline' and 'df_particle'
         dataframes.
 
+        @ALEX: these are all attributes, so dont pass them as arguments
+
         Parameters
         ----------
         total_travel_time: array
@@ -1401,6 +1461,18 @@ class AnalyticalWell():
                         "flowline_discharge"
                         ]
 
+        # ALEX: this is fragile and implicit. it may be better to add a property that makes it explicity how it is determined
+        # that a point source is used. E.g.
+        # @property
+        # def is_point_source(self):
+        # if len(self.distance) == 1:
+        #   return True
+        # elif len(self.distance) > 1:
+        #   return False
+        # else:
+        #   ValueError(f'cannot be determined whether it is point source or not from length of self.distance {self.distance}')
+        #
+        # if self.is_point_source:
         if len(distance) == 1:
             #point source
             flowline_discharge = cumulative_fraction_abstracted_water * self.schematisation.well_discharge
@@ -1433,6 +1505,7 @@ class AnalyticalWell():
         discharge_point_contamination=None, #AH_todo do we need this?
         ):
         """ Makes 'df_flowline' and 'df_particle'
+        # ALEX: attributes, dont make thema rguments
 
             Parameters
             ----------
@@ -1506,6 +1579,8 @@ class AnalyticalWell():
                 Column 'fraction_organic_carbon': float
                 Column 'solid_density_layer': float
             """
+        # ALEX this is something that I could imagine that you use it as an argument to the
+        # function.
         what_to_export = self.schematisation.what_to_export
 
         # Make df_particle
@@ -1665,6 +1740,7 @@ class AnalyticalWell():
 
         # AH which parameters for the 'pathogen' option? @MartinvdS or @steven
 
+        # ALEX Add an else statement
         if what_to_export == 'all' or what_to_export== 'omp':
 
             df_flowline['well_discharge'] = self.schematisation.well_discharge
@@ -1783,6 +1859,8 @@ class AnalyticalWell():
         # travel time unsaturated now calculated in the HydrochemicalSchematisation class
 
         if distance is None:
+            # @ALEX _calculate travel time can be taken out of the if loop because
+            # you check for distance = None there. And you could depth_point_contam. to its proper value as well
             self.schematisation._calculate_travel_time_unsaturated_zone()
             self.radial_distance = self.schematisation.radial_distance
             fraction_flux=self.schematisation.fraction_flux
@@ -1799,6 +1877,7 @@ class AnalyticalWell():
 
         self.travel_time_target_aquifer = self._calculate_travel_time_target_aquifer_phreatic(fraction_flux=fraction_flux, distance=distance)
 
+        # You could make @property of this: https://www.programiz.com/python-programming/property
         self.total_travel_time = (self.travel_time_unsaturated + self.travel_time_shallow_aquifer
                             + self.travel_time_target_aquifer)
 
@@ -1811,7 +1890,7 @@ class AnalyticalWell():
                     travel_time_unsaturated = self.travel_time_unsaturated,
                     travel_time_shallow_aquifer=self.travel_time_shallow_aquifer,
                     travel_time_target_aquifer=self.travel_time_target_aquifer,
-                    distance=self.radial_distance,
+                    distance=self.radial_distance,  # is this radial_distance? Sometimes you use radial_distance and sometimes distance.
                     head=self.head,
                     cumulative_fraction_abstracted_water = self.cumulative_fraction_abstracted_water,
                     )
@@ -1937,15 +2016,6 @@ class AnalyticalWell():
         '''
         Calculates the travel time distribution for the semiconfined schematisation
         for each of the aquifer zones and creates the df_flowline and df_particle dataframes.
-
-        Parameters
-        ---------
-        distance: array
-            Array of distance(s) [m] from the well.
-            For diffuse sources 'distance' is the 'radial_distance' array.
-            For point sources 'distance' is 'distance_point_contamination_from_well'.
-        depth_point_contamination: float
-            Depth [mASL] of the point source contamination, if only diffuse contamination None is passed.
 
         Returns
         -------

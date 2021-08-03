@@ -5,7 +5,7 @@
 
 Introduction
 ===============================
-SSTR - A python package to model the behavior of Organic MicroPollutants (OMPs) and pathogens for 4 standard types of Public Supply Well 
+SSTR - A python package to model the behavior of Organic MicroPollutants (OMPs) and pathogens for 4 standard types of Public Supply Well
 Fields (PSWFs)
 
 .. toctree::
@@ -13,7 +13,6 @@ Fields (PSWFs)
     :glob:
 
     getting-started.rst
-    instruction.rst
     tutorial.rst
     faq.rst
     glossary.rst
