@@ -19,13 +19,13 @@ from pandas._testing import assert_frame_equal
 path = Path(__file__).parent #os.getcwd() #path of working directory
 
 
-#%% 
+#%%
 def test_travel_time_distribution_phreatic():
     output_phreatic = pd.read_csv(path / 'phreatic_test.csv')
     output_phreatic = output_phreatic.round(7) #round to 7 digits (or any digit), keep same as for the output for the model to compare
 
     test_ = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                        computation_method= 'analytical', 
+                                        computation_method= 'analytical',
                                         what_to_export='omp',
                                         well_discharge=319.4*24,
                                         # vertical_resistance_aquitard=500,
@@ -44,9 +44,9 @@ def test_travel_time_distribution_phreatic():
                                         # KD=1400,
                                         thickness_full_capillary_fringe=0.4,
                                         temperature=11,
-                                         solid_density_vadose_zone= 2.650, 
-                                        solid_density_shallow_aquifer= 2.650, 
-                                        solid_density_target_aquifer= 2.650, 
+                                         solid_density_vadose_zone= 2.650,
+                                        solid_density_shallow_aquifer= 2.650,
+                                        solid_density_target_aquifer= 2.650,
                                         diameter_borehole = 0.75,
                                         )
 

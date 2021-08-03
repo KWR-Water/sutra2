@@ -1,6 +1,6 @@
 ipykernel
 matplotlib =3.3.4
-flopy = 3.3.3 
+flopy = 3.3.3
 python = 3.6
 pandas>=0.23
 sphinx_rtd_theme

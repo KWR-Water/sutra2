@@ -5,7 +5,7 @@
 # AquaPriori - Transport Model
 # With Martin Korevaar, Martin vd Schans, Steven Ros, Bas vd Grift
 #
-# Based on Stuyfzand, P. J. (2020). Predicting organic micropollutant behavior 
+# Based on Stuyfzand, P. J. (2020). Predicting organic micropollutant behavior
 #               for 4 public supply well field types, with TRANSATOMIC Lite+
 #               (Vol. 2). Nieuwegein, Netherlands.
 # ------------------------------------------------------------------------------
@@ -34,14 +34,14 @@ from tqdm import tqdm  # tqdm gives a progress bar for the simultation
 import math
 from scipy.special import kn as besselk
 import datetime
-from datetime import timedelta  
+from datetime import timedelta
 
 path = os.getcwd()  # path of working directory
 
 
 #@MartinK - this is how I found online to check that the exception/error messages
-# are correct. Is this needed or it there a better/another way to check this? 
-# Seems like quite some extra work to check that the correct error messaged are raised 
+# are correct. Is this needed or it there a better/another way to check this?
+# Seems like quite some extra work to check that the correct error messaged are raised
 class EndDateBeforeStart(Exception):
     """ Exception raised when the 'End_date_contamination' is before the 'start_date_contamination' """
 class ComputeDateBeforeStartDate(Exception):
@@ -55,14 +55,14 @@ class CheckRedoxZone(Exception):
 class HydroChemicalSchematisation:
 
     """ Converts input parameters of AquaPriori GUI to a complete parameterisation
-    
+
     Attributes
     ----------
     ...same as the parameters for the most part... include? @MartinK
 
     Parameters
     ----------
-    schematisation_type: string 
+    schematisation_type: string
         Choose the schematisation of the aquifer, choice of 4 public supply well fields
         'phreatic', 'semiconfined', 'riverbankfiltration', 'basinfiltration'
     computation_method: string
@@ -73,7 +73,7 @@ class HydroChemicalSchematisation:
         Defines what paramters are exported, 'all' exports all paramters, 'omp' only those relevant to the OMP or
         'pathogen' only exports paramters relevant for the pathogen
     temp_correction_Koc, temp_correction_halflife:: Bool
-        KOC and half-life values generally refer to a standard lab temperature (tREF = 20-25oC) and should 
+        KOC and half-life values generally refer to a standard lab temperature (tREF = 20-25oC) and should
         therefore be corrected when field temperature is different. Default is True
     biodegradation_sorbed_phase: Bool
         Include biodegradation in the sorbed phase or not. Default is True
@@ -82,37 +82,37 @@ class HydroChemicalSchematisation:
     ground_surface: float
         Meters above sea level (ASL)
     thickness_vadose_zone_at_boundary, thickness_shallow_aquifer, thickness_target_aquife: float
-        Thickness of each of the aquifer zones of interest (vadose, shallow and target), [m].  
+        Thickness of each of the aquifer zones of interest (vadose, shallow and target), [m].
     thickness_full_capillary_fringe: float
         Thickness of the capillary fringe (subsurface layer in which groundwater seeps up from a water table by capillary action to fill pores), [m].
-    porosity_vadose_zone, porosity_shallow_aquifer, porosity_target_aquifer: float 
+    porosity_vadose_zone, porosity_shallow_aquifer, porosity_target_aquifer: float
         Porosity of each of the zones of interest, dimensionless [volume fraction].
-    moisture_content_vadose_zone: float 
+    moisture_content_vadose_zone: float
         Mean multi-annual moisture content of unsaturated zone, dimensionless [volume fraction].
-    solid_density_vadose_zone, solid_density_shallow_aquifer, solid_density_target_aquifer: float 
+    solid_density_vadose_zone, solid_density_shallow_aquifer, solid_density_target_aquifer: float
         Solid density, in kg/L, of each of the aquifer zones of interest.
     fraction_organic_carbon_vadose_zone, fraction_organic_carbon_shallow_aquifer, fraction_organic_carbon_target_aquifer: float
-        Mass fraction of the organic carbon in the aquifer zone of interest. 
+        Mass fraction of the organic carbon in the aquifer zone of interest.
     redox_vadose_zone, redox_shallow_aquifer, redox_target_aquifer: string
-            Definition of redox zones follows the scheme presented by Stuyfzand (1993, 2012b), which is in simplified form: 
+            Definition of redox zones follows the scheme presented by Stuyfzand (1993, 2012b), which is in simplified form:
             'suboxic': NO3 ≥ 1 mg/L, Fe = Mn < 0.1 mg/L;
-            'anoxic': O2 and NO3 < 1 mg/L, no SO4-reduction; 
+            'anoxic': O2 and NO3 < 1 mg/L, no SO4-reduction;
             'deeply_anoxic': = O2 and NO3 < 1 mg/L, with SO4-reduction and/or methanogenesis.
-    dissolved_organic_carbon_vadose_zone, dissolved_organic_carbon_shallow_aquifer, dissolved_organic_carbon_target_aquifer: float 
+    dissolved_organic_carbon_vadose_zone, dissolved_organic_carbon_shallow_aquifer, dissolved_organic_carbon_target_aquifer: float
         Concentration of the dissolved organic carbon in each of the aquifer zones, [mg/L].
     dissolved_organic_carbon_infiltration_water: float
         Concentrtaion of the dissolved organic carbon in the infiltrating water, [mg/L].
-    total_organic_carbon_infiltration_water: float 
+    total_organic_carbon_infiltration_water: float
         Concentrtaion of the total organic carbon in the infiltrating water, [mg/L].
     pH_vadose_zone, pH_shallow_aquifer, pH_target_aquifer: float
         pH in each aquifer zone, dimensionless.
-    temperature, temperature_vadose_zone, temperature_shallow_aquifer, temperature_target_aquifer: float 
+    temperature, temperature_vadose_zone, temperature_shallow_aquifer, temperature_target_aquifer: float
         Temperature, in degrees Celcius, for each aquifer zone. If only 'temperature' is given, the temperature in each zone is set to 'temperature'.
-    recharge_rate: float 
+    recharge_rate: float
         Mean multi-annual groundwater recharge rate, [m/d].
     well_discharge: float
         Mean annual well discharge, [m3/d].
-    
+
     diameter_borehole: float
         Diameter of the borehole of the well, [m].
     top_filterscreen, bottom_filterscreen: float
@@ -128,7 +128,7 @@ class HydroChemicalSchematisation:
     diameter_clayseal: float
         Diameter of the clayseal of the well, [m].
 
-    hor_permeability_shallow_aquifer, hor_permeability_target_aquifer, hor_permebility_gravelpack, hor_permeability_clayseal: float 
+    hor_permeability_shallow_aquifer, hor_permeability_target_aquifer, hor_permebility_gravelpack, hor_permeability_clayseal: float
         Horizonatal permeability of each zone of the aquifer and the clayseal, [m/d].
     hor_permeability_clayseal: float
         Horizonatal permeability of the clayseal, [m/d].
@@ -141,41 +141,41 @@ class HydroChemicalSchematisation:
         Distribution coefficient of OMP between organic carbon and water, dimensionless.
     dissociation_constant: float
         Dissociation equilibirum constant of the OMP, dimensionless.
-    halflife_suboxic, halflife_anoxic, halflife_deeply_anoxic: float 
+    halflife_suboxic, halflife_anoxic, halflife_deeply_anoxic: float
         Time required to reduce the concentration of the OMP by half, from any concentration point in time [days].
-    diffuse_input_concentration: float 
+    diffuse_input_concentration: float
         Concentration of the diffuse source of the OMP in the groundwater recharge, [ug/L].
-    start_date_well: YYYY-MM-DD 
-        Start date of the well. 
-    start_date_contamination, end_date_contamination: YYYY-MM-DD 
-        Start and end date for both the diffuse and point sources. 
+    start_date_well: YYYY-MM-DD
+        Start date of the well.
+    start_date_contamination, end_date_contamination: YYYY-MM-DD
+        Start and end date for both the diffuse and point sources.
         @MartinvdS, is this a problem to use the start/end date for both?
     compute_contamination_for_date: YYYY-MM-DD
         Date for which to compute the contamination in the well.
-    concentration_point_contamination: float 
+    concentration_point_contamination: float
         Concentration of the point source contamintation [ug/L].
     distance_point_contamination_from_well, depth_point_contamination, discharge_point_contamination: float
-        Distance [m] from the well, depth [mASL] and discharge [m3/d] of the point source contamination. 
-    
+        Distance [m] from the well, depth [mASL] and discharge [m3/d] of the point source contamination.
+
     @Steven, @MartinvdS Check these definitions...
-    source_area_radius: float 
+    source_area_radius: float
         Radius of the source area, [m].
 
-    number_of_spreading_distance: float 
+    number_of_spreading_distance: float
         @Steven, what is this?
-    model_radius, model_width: float 
+    model_radius, model_width: float
         Radius and width of the model, [m].
     relative_position_starting_points_radial, relative_position_starting_points_in_basin, relative_position_starting_points_outside_basin: list of floats -
         @Steven, what are these?
-    ncols_filterscreen, ncols_gravelpack, ncols_near_well, ncols_far_well: int 
-        Number of model columns in the filterscreen, gravelpack, near and far from the well. 
-    delr_filterscreen, delr_gravelpack, delr_near_well, delr_far_well: float 
+    ncols_filterscreen, ncols_gravelpack, ncols_near_well, ncols_far_well: int
+        Number of model columns in the filterscreen, gravelpack, near and far from the well.
+    delr_filterscreen, delr_gravelpack, delr_near_well, delr_far_well: float
         delr (double) is the column spacing in the row direction for each of the filerscreen, gravelpak, near and far from the well.
-    delc: list of floats 
+    delc: list of floats
         @Steven, what is this? -> delc (double) is the row spacing in the column direction.
-    nlayer_shallow_aquifer, nlayer_target_aquifer:  
+    nlayer_shallow_aquifer, nlayer_target_aquifer:
         The number of layers in the model grid for the shallow and target aquifers.
-    delz_fixed_head: string 
+    delz_fixed_head: string
         @Steven, what is this?
 
     BAR specific parameters: #AH_todo, will define later
@@ -193,13 +193,13 @@ class HydroChemicalSchematisation:
         minimum_travel_time_h20_shallow_aquifer: float d
         travel_time_h20_deeper_aquifer: float d
         minimum_travel_time_h20_target_aquifer: float d
-    
+
     """
     # initialize non-defaults to None to start.
     def __init__(self,
-                schematisation_type= None, 
+                schematisation_type= None,
 
-                computation_method= None, 
+                computation_method= None,
                 removal_function= 'omp',
                 what_to_export = 'all',
                 temp_correction_Koc=True,
@@ -218,7 +218,7 @@ class HydroChemicalSchematisation:
                 porosity_shallow_aquifer=0.35,
                 porosity_target_aquifer=0.35,
                 moisture_content_vadose_zone=0.2,
-                solid_density_vadose_zone=2.65, 
+                solid_density_vadose_zone=2.65,
                 solid_density_shallow_aquifer=2.65,
                 solid_density_target_aquifer=2.65,
                 fraction_organic_carbon_vadose_zone=0.001,
@@ -296,7 +296,7 @@ class HydroChemicalSchematisation:
                 concentration_point_contamination=None,
                 distance_point_contamination_from_well=np.array([1]),
                 depth_point_contamination=None,
-                discharge_point_contamination=None, 
+                discharge_point_contamination=None,
 
                 source_area_radius=None,
                 number_of_spreading_distance=None,
@@ -307,18 +307,18 @@ class HydroChemicalSchematisation:
                 relative_position_starting_points_outside_basin=None,
 
                  particle_release_date=None,
-                
+
                 #modpath params
                  ncols_near_well = 20,
                  ncols_far_well = 30,
-                 nlayers_shallow_aquifer = None, 
+                 nlayers_shallow_aquifer = None,
                  nlayers_target_aquifer = None,
                  ):
-        
+
         ''' Assigns the parameters to be attributes of the class and sets the default values'''
 
         # System
-        self.schematisation_type = schematisation_type 
+        self.schematisation_type = schematisation_type
 
         # Settings
         self.computation_method = computation_method
@@ -344,7 +344,7 @@ class HydroChemicalSchematisation:
         # Porous Medium
         self.ground_surface = ground_surface #as meters above sea level (m ASL)
         self.thickness_vadose_zone_at_boundary = thickness_vadose_zone_at_boundary
-        self.bottom_vadose_zone_at_boundary = ground_surface - thickness_vadose_zone_at_boundary 
+        self.bottom_vadose_zone_at_boundary = ground_surface - thickness_vadose_zone_at_boundary
         # self.head_boundary = head_boundary #AH @MartinvdS is this used anywhere? I don't think so...
 
         # check that thicknesses for shallow and target aquifer > 0
@@ -439,7 +439,7 @@ class HydroChemicalSchematisation:
         self.vertical_anistropy_clayseal = vertical_anistropy_clayseal
         self.vertical_resistance_aquitard = thickness_shallow_aquifer / (hor_permeability_shallow_aquifer *vertical_anistropy_shallow_aquifer)
         self.KD = hor_permeability_target_aquifer*thickness_target_aquifer
-        self.groundwater_level =self.ground_surface-self.thickness_vadose_zone_at_boundary 
+        self.groundwater_level =self.ground_surface-self.thickness_vadose_zone_at_boundary
 
         # Substance
         self.substance = substance
@@ -452,7 +452,7 @@ class HydroChemicalSchematisation:
         # Diffuse contamination override if point contamination specified
         self.diffuse_input_concentration = diffuse_input_concentration
         self.concentration_point_contamination = concentration_point_contamination
-                
+
         def date_to_datetime(date):
             # try:
             #     datetime.datetime.strptime(date, '%Y-%m-%d')
@@ -467,15 +467,15 @@ class HydroChemicalSchematisation:
         self.start_date_well = date_to_datetime(start_date_well)
 
         # Contamination
-        if start_date_contamination is None: 
+        if start_date_contamination is None:
             self.start_date_contamination = self.start_date_well
-        else: 
+        else:
             self.start_date_contamination = date_to_datetime(start_date_contamination)
-        if compute_contamination_for_date is None: 
+        if compute_contamination_for_date is None:
             self.compute_contamination_for_date = self.start_date_well + timedelta(days=365.24*50)
         else:
             self.compute_contamination_for_date = date_to_datetime(compute_contamination_for_date)
-        
+
         if end_date_contamination is None:
             self.end_date_contamination = end_date_contamination
         else:
@@ -490,9 +490,9 @@ class HydroChemicalSchematisation:
             raise ComputeDateBeforeStartWellDate('Error, "compute_contamination_for_date" is before "start_date_well". Please enter an new "compute_contamination_for_date" or "start_date_well" ')
         #AH_todo @MartinvdS -> if end_date_contamination < start_date_well what to do?
 
-        if depth_point_contamination is None: 
+        if depth_point_contamination is None:
             self.depth_point_contamination = self.ground_surface
-        elif depth_point_contamination > self.ground_surface: 
+        elif depth_point_contamination > self.ground_surface:
             self.depth_point_contamination = self.ground_surface
         else:
             self.depth_point_contamination = depth_point_contamination
@@ -509,9 +509,9 @@ class HydroChemicalSchematisation:
         self.model_width = model_width
         self.relative_position_starting_points_radial = relative_position_starting_points_radial
         self.relative_position_starting_points_in_basin = relative_position_starting_points_in_basin
-        self.relative_position_starting_points_outside_basin = relative_position_starting_points_outside_basin       
-        
-        # Temperature 
+        self.relative_position_starting_points_outside_basin = relative_position_starting_points_outside_basin
+
+        # Temperature
         if self.temperature_vadose_zone is None:
             self.temperature_vadose_zone = self.temperature
         if self.temperature_shallow_aquifer is None:
@@ -522,37 +522,37 @@ class HydroChemicalSchematisation:
         #Modpath params
         if particle_release_date is None:
             self.particle_release_date = particle_release_date
-        else: 
+        else:
             self.particle_release_date =  date_to_datetime(particle_release_date)
 
         self.ncols_near_well = ncols_near_well
         self.ncols_far_well = ncols_far_well
         if nlayers_shallow_aquifer is None:
             self.nlayers_shallow_aquifer = int(self.thickness_shallow_aquifer)
-        else: 
+        else:
             self.nlayers_shallow_aquifer =nlayers_shallow_aquifer
 
         if nlayers_target_aquifer is None:
             self.nlayers_target_aquifer = int(self.thickness_target_aquifer)
-        else: 
+        else:
             self.nlayers_target_aquifer = nlayers_target_aquifer
-         
+
         top_shallow_aquifer = self.bottom_vadose_zone_at_boundary
         top_target_aquifer = self.bottom_shallow_aquifer
 
         if top_filterscreen	is None:
             self.top_filterscreen = top_target_aquifer
-        if bottom_filterscreen is None: 
+        if bottom_filterscreen is None:
             self.bottom_filterscreen = self.bottom_target_aquifer
-        if top_gravelpack is None: 
+        if top_gravelpack is None:
             self.top_gravelpack = top_target_aquifer
-        if bottom_gravelpack is None: 
+        if bottom_gravelpack is None:
             self.bottom_gravelpack = self.bottom_target_aquifer
-        if top_clayseal is None: 
+        if top_clayseal is None:
             self.top_clayseal = self.ground_surface
-        if bottom_clayseal is None: 
+        if bottom_clayseal is None:
             self.bottom_clayseal = top_target_aquifer
-        
+
         # DIAMETERS
         if diameter_gravelpack is None:
             self.diameter_gravelpack = self.diameter_borehole
@@ -565,16 +565,16 @@ class HydroChemicalSchematisation:
             self.inner_diameter_clayseal = self.diameter_filterscreen
 
         #other default params
-        if hor_permebility_gravelpack is None: 
+        if hor_permebility_gravelpack is None:
             self.hor_permebility_gravelpack = 1000
-        if hor_permeability_clayseal is None: 
+        if hor_permeability_clayseal is None:
             self.hor_permeability_clayseal = 0.001
-        if vertical_anistropy_gravelpack is None: 
+        if vertical_anistropy_gravelpack is None:
             self.vertical_anistropy_gravelpack = 1
-        if vertical_anistropy_clayseal is None: 
+        if vertical_anistropy_clayseal is None:
             self.vertical_anistropy_clayseal = 1
 
-        if model_radius is None: 
+        if model_radius is None:
             if self.schematisation_type == 'phreatic':
                 self.model_radius = (math.sqrt(self.well_discharge
                                                 / (math.pi * self.recharge_rate ))) #AH SA*recharge = well_discharge
@@ -584,21 +584,21 @@ class HydroChemicalSchematisation:
 
     def make_dictionary(self,):
         ''' Returns dicitonaries of the different parameters for MODFLOW schematisation. '''
-        
+
         if self.schematisation_type == 'phreatic':
             compute_thickness_vadose_zone = True # @MartinvdS what is this for?
-            
+
             # Additional meter added to the model radius for the fixed head boundary
             # only for the phreatic case, not for the semiconfined case
             self.model_radius_computed = self.model_radius + 1
 
-            # only outer_boundary for phreatic 
+            # only outer_boundary for phreatic
             ibound_parameters = {
                 'inner_boundary_shallow_aquifer': {
                     'top': self.bottom_vadose_zone_at_boundary,
                     'bot': self.bottom_shallow_aquifer,
-                    'xmin': 0, 
-                    'xmax': self.diameter_filterscreen/2, 
+                    'xmin': 0,
+                    'xmax': self.diameter_filterscreen/2,
                     'ibound':0,
                     },
 
@@ -606,7 +606,7 @@ class HydroChemicalSchematisation:
                     'head': self.bottom_vadose_zone_at_boundary,
                     'top': self.bottom_shallow_aquifer,
                     'bot': self.bottom_target_aquifer,
-                    'xmin': 0, 
+                    'xmin': 0,
                     'xmax': self.diameter_filterscreen/2,
                     'ibound':-1,
                     }
@@ -618,7 +618,7 @@ class HydroChemicalSchematisation:
             # ibound at the model radius (no additional meter added)
             self.model_radius_computed = self.model_radius
 
-            # only top_boundary for semiconfined 
+            # only top_boundary for semiconfined
             ibound_parameters = {
                 'top_boundary1': {
                     'head': self.bottom_vadose_zone_at_boundary,
@@ -626,14 +626,14 @@ class HydroChemicalSchematisation:
                     'bottom': self.bottom_vadose_zone_at_boundary,
                     'xmin': self.diameter_gravelpack/2,
                     'xmax': self.model_radius_computed,
-                    'ibound': -1, 
+                    'ibound': -1,
                         },
                     'inner_boundary_shallow_aquifer': {
                     'top': self.bottom_vadose_zone_at_boundary,
                     'bot':self.bottom_shallow_aquifer,
                     'xmin':0,
                     'xmax':self.diameter_filterscreen/2, #check this
-                    'ibound':0, 
+                    'ibound':0,
                     }
                     }
 
@@ -656,7 +656,7 @@ class HydroChemicalSchematisation:
                 'vadose': True,
                 'top': self.ground_surface,
                 'bot': self.bottom_vadose_zone_at_boundary,
-                'xmin': self.diameter_gravelpack/2, 
+                'xmin': self.diameter_gravelpack/2,
                 'xmax': self.model_radius,
                 'porosity': self.porosity_vadose_zone,
                 'moisture_content': self.moisture_content_vadose_zone,
@@ -670,7 +670,7 @@ class HydroChemicalSchematisation:
             'layer1': {
                 'top': self.bottom_vadose_zone_at_boundary,
                 'bot': self.bottom_shallow_aquifer,
-                'xmin': self.diameter_gravelpack/2, 
+                'xmin': self.diameter_gravelpack/2,
                 'xmax': self.model_radius_computed,
                 'porosity': self.porosity_shallow_aquifer,
                 'solid_density': self.solid_density_shallow_aquifer,
@@ -681,7 +681,7 @@ class HydroChemicalSchematisation:
                 'T': self.temperature_shallow_aquifer,
                 'hk': self.hor_permeability_shallow_aquifer,
                 'vani': self.vertical_anistropy_shallow_aquifer,
-                'nlayers': self.nlayers_shallow_aquifer, 
+                'nlayers': self.nlayers_shallow_aquifer,
                 },
             'layer2': {
                 'top': self.bottom_shallow_aquifer,
@@ -711,22 +711,22 @@ class HydroChemicalSchematisation:
                 'top': self.top_clayseal,
                 'bot': self.bottom_clayseal,
                 'xmin': self.inner_diameter_clayseal/2, #@MartinvdS correct?
-                'xmax': self.diameter_clayseal/2, 
+                'xmax': self.diameter_clayseal/2,
                 'hk': self.hor_permeability_clayseal,
                 'vani': self.vertical_anistropy_clayseal,
                 },
 
             'mesh_refinement1': {
-                'xmin': self.diameter_borehole/2, 
+                'xmin': self.diameter_borehole/2,
                 'xmax': self.thickness_target_aquifer,
                 'ncols': self.ncols_near_well, #indicates the number of columns close to the well
                 },
 
             'mesh_refinement2': {
-                'xmin': self.thickness_target_aquifer, #@Martin from email... correct? self.diameter_gravelpack, 
-                'xmax': self.model_radius, 
-                'ncols': self.ncols_far_well 
-                }, 
+                'xmin': self.thickness_target_aquifer, #@Martin from email... correct? self.diameter_gravelpack,
+                'xmax': self.model_radius,
+                'ncols': self.ncols_far_well
+                },
             }
 
         if self.schematisation_type == 'semiconfined':
@@ -735,15 +735,15 @@ class HydroChemicalSchematisation:
                     'Q': self.well_discharge,
                     'top': self.top_filterscreen,
                     'bot': self.bottom_filterscreen,
-                    'xmin': 0.0, 
+                    'xmin': 0.0,
                     'xmax': self.diameter_filterscreen/2,
                     },
-                } 
+                }
         # elif will come here for the BAR, RBF cases AH_todo
-        else: 
+        else:
             # no well_paramters dictionary needed for the phreatic case
             well_parameters = {
-            }  
+            }
 
         recharge_parameters = {
             'source1': { # source1 -> recharge & diffuse sources
@@ -753,25 +753,25 @@ class HydroChemicalSchematisation:
                 'xmax': self.model_radius,
                 'DOC': self.dissolved_organic_carbon_infiltration_water,
                 'TOC': self.total_organic_carbon_infiltration_water,
-                'c_in': self.diffuse_input_concentration, 
+                'c_in': self.diffuse_input_concentration,
                 },
             # 'source2' :{}> surface water (BAR & RBF) #@MartinvdS come back to this when we start this module
         }
 
-        # Create point diciontary if point source concentration specified, 
+        # Create point diciontary if point source concentration specified,
         # otherwise pass empty dictionary
         if self.concentration_point_contamination is None:
             point_parameters= {}
         else:
             point_parameters= {
-                'point1': { 
+                'point1': {
                     'substance_name': self.substance,
-                    'c_in': self.concentration_point_contamination, 
+                    'c_in': self.concentration_point_contamination,
                     'x_start': self.distance_point_contamination_from_well[0],
                     'z_start': self.depth_point_contamination,
                     'q_point': self.discharge_point_contamination,
                     },
-                # 'point2': {} #AH_todo if there is more than one point source, 
+                # 'point2': {} #AH_todo if there is more than one point source,
                 # input a dictionary directly, @martinvdS we will discuss this
                 }
 
@@ -816,7 +816,7 @@ class HydroChemicalSchematisation:
 
         radial_distance = self.radial_distance_recharge * \
             np.sqrt(self.fraction_flux)
-            
+
         if self.schematisation_type == 'semiconfined':
 
             radial_distance = np.append(radial_distance,
@@ -824,18 +824,18 @@ class HydroChemicalSchematisation:
                                     (radial_distance[-1] + 2 *
                                     ((self.spreading_distance * 3) - radial_distance[-1]) / 3),
                                         (self.spreading_distance * 3)])
-        
+
         self.radial_distance = radial_distance
 
     def calculate_hydraulic_head_phreatic(self, distance):
         ''' Calcualtes the hydraulic head distribution for the phreatic schematisation case
-        
+
         Parameters
         ----------
         distance: array
-            Array of distance(s) [m] from the well, for diffuse sources given as 
+            Array of distance(s) [m] from the well, for diffuse sources given as
             the array radial_distance, for point sources given as the distance_point_contamination_from_well.
-        
+
         Returns
         -------
         head: array
@@ -843,23 +843,23 @@ class HydroChemicalSchematisation:
         '''
 
         head = (self.groundwater_level - self.well_discharge
-                    / (2 * math.pi * self.KD) 
+                    / (2 * math.pi * self.KD)
                     * np.log(self.radial_distance_recharge / distance))
         return head
 
 
     #ah_todo possibly split this into making the thickness, head and travel time (3 functions)? Advantages?
-    def calculate_unsaturated_zone_travel_time_phreatic (self, 
-                                                        distance, 
+    def calculate_unsaturated_zone_travel_time_phreatic (self,
+                                                        distance,
                                                         depth_point_contamination=None):
-        ''' 
-        Calculates the travel time in the unsaturated zone for the phreatic case. 
+        '''
+        Calculates the travel time in the unsaturated zone for the phreatic case.
 
         Parameters
         ----------
         distance: array
-            Array of distance(s) [m] from the well. 
-            For diffuse sources 'distance' is the 'radial_distance' array. 
+            Array of distance(s) [m] from the well.
+            For diffuse sources 'distance' is the 'radial_distance' array.
             For point sources 'distance' is 'distance_point_contamination_from_well'.
         depth_point_contamination: float
             Depth [mASL] of the point source contamination, if only diffuse contamination None is passed.
@@ -877,7 +877,7 @@ class HydroChemicalSchematisation:
         head = self.calculate_hydraulic_head_phreatic(distance=distance)
 
         if depth_point_contamination is None:
-            thickness_vadose_zone_drawdown = (self.groundwater_level 
+            thickness_vadose_zone_drawdown = (self.groundwater_level
                                                 + self.thickness_vadose_zone_at_boundary) - head
 
             travel_time_unsaturated = (((self.groundwater_level + thickness_vadose_zone_drawdown
@@ -904,29 +904,29 @@ class HydroChemicalSchematisation:
             travel_time_unsaturated = np.array([0])
             thickness_vadose_zone_drawdown = 0 #AH_todo possibly replace this with the travel distance, not thickness_vadose because this is a stand in for the travel distance?
 
-        return travel_time_unsaturated, thickness_vadose_zone_drawdown, head 
+        return travel_time_unsaturated, thickness_vadose_zone_drawdown, head
 
 
-    def _calculate_travel_time_unsaturated_zone(self, 
-                                                distance=None, 
+    def _calculate_travel_time_unsaturated_zone(self,
+                                                distance=None,
                                                 depth_point_contamination=None):
 
-        ''' Calculates the travel time in the unsaturated zone for the phreatic and semiconfined cases. 
+        ''' Calculates the travel time in the unsaturated zone for the phreatic and semiconfined cases.
         The travel time is returned as an attribute of the object.
-        
+
         Parameters
         ----------
         distance: array
-            Array of distance(s) [m] from the well. 
-            For diffuse sources 'distance' is the 'radial_distance' array. 
+            Array of distance(s) [m] from the well.
+            For diffuse sources 'distance' is the 'radial_distance' array.
             For point sources 'distance' is 'distance_point_contamination_from_well'.
         depth_point_contamination: float
             Depth [mASL] of the point source contamination, if only diffuse contamination None is passed.
-        
+
         Returns
         -------
         travel_time_unsaturated: array
-            Travel time in the unsaturated zone for each point in the given distance array returned as 
+            Travel time in the unsaturated zone for each point in the given distance array returned as
             attrubute of the function, [days].
 
         '''
@@ -936,7 +936,7 @@ class HydroChemicalSchematisation:
         # AH do not change to model_radius, since the radial distance for recharge is based on the phreatic value for BOTH cases
         self.radial_distance_recharge =  (math.sqrt(self.well_discharge
                                                     / (math.pi * self.recharge_rate )))
-        
+
         # Diffuse source or regular travel time calculation use radial distance array
         # AH_todo alter here if we use multiple point sources
         if distance is None:
@@ -949,11 +949,11 @@ class HydroChemicalSchematisation:
 
         if self.schematisation_type =='phreatic':
             travel_time_unsaturated, self.thickness_vadose_zone_drawdown, self.head = self.calculate_unsaturated_zone_travel_time_phreatic (distance= distance,depth_point_contamination=depth_point_contamination)
-                                    
+
         elif self.schematisation_type == 'semiconfined':
             if depth_point_contamination is None:
                 travel_distance = self.ground_surface - self.groundwater_level - self.thickness_full_capillary_fringe
-            else: 
+            else:
                 #if point contamination at depth, assign ground surface to depth
                 travel_distance =  depth_point_contamination - self.groundwater_level - self.thickness_full_capillary_fringe
 
@@ -971,30 +971,30 @@ class HydroChemicalSchematisation:
                 pass
             else:
                 travel_time_unsaturated = [travel_time_unsaturated] * (len(distance))
-        
+
         self.travel_time_unsaturated = travel_time_unsaturated
-    
+
 class AnalyticalWell():
     """ Compute travel time distribution using analytical well functions.
-    
+
     Attributes
     ----------
     schematisation: object
         The HydroChemicalSchematisation object.
     total_travel_time: array
-        Sum of the unsaturated, shallow and target aquifer travel times for each 
+        Sum of the unsaturated, shallow and target aquifer travel times for each
         point in the given distance array, [days].
     travel_time_unsaturated: array
-        Travel time in the unsaturated zone for each point in the given distance array returned as 
+        Travel time in the unsaturated zone for each point in the given distance array returned as
         attrubute of the function, [days].
     travel_time_shallow_aquifer: array
         Travel time in the shallow aquifer for each point in the given distance array, [days].
     travel_time_target_aquifer: array
         Travel time in the target aquifer for each point in the given distance array, [days].
     distance: array
-        Array of distance(s) [m] from the well. 
-        For diffuse sources 'distance' is the 'radial_distance' array. 
-        For point sources 'distance' is 'distance_point_contamination_from_well'.        
+        Array of distance(s) [m] from the well.
+        For diffuse sources 'distance' is the 'radial_distance' array.
+        For point sources 'distance' is 'distance_point_contamination_from_well'.
     head: array
         Hydraulic head for each point in the given distance array, [mASL].
     cumulative_fraction_abstracted_water: array
@@ -1002,12 +1002,12 @@ class AnalyticalWell():
     flux_fraction: array
         Fraction of the pumping well flux at point in the 'radial_distance' array, [-].
     spreading_distance: float
-        The spreading length is a measure of length (in metres) for the distance 
+        The spreading length is a measure of length (in metres) for the distance
         over which the groundwater lowering caused by the extraction will be noticeable, [m]
     df_output: pandas.DataFrame
-        Column 'total_travel_time': float 
+        Column 'total_travel_time': float
         Column 'travel_time_unsaturated': float
-        Column 'travel_time_shallow_aquifer': float 
+        Column 'travel_time_shallow_aquifer': float
         Column 'travel_time_target_aquifer': float
         Column 'radial_distance': float
         Column 'head': float
@@ -1051,7 +1051,7 @@ class AnalyticalWell():
 
     def __init__(self, schematisation: HydroChemicalSchematisation): #change schematisation_instance to schematisation
         '''
-        Initialize the AnalyticalWell object by making the dictionaries and adding the schematisation (and therefore attributes 
+        Initialize the AnalyticalWell object by making the dictionaries and adding the schematisation (and therefore attributes
         of the schematisation) to the object.
 
         Returs
@@ -1060,12 +1060,12 @@ class AnalyticalWell():
 
         '''
         self.schematisation = schematisation
-        
+
         #Make dictionaries
         self.schematisation.make_dictionary()
 
     def _check_required_variables(self,required_variables):
-        ''' Checks if all required variables in the HydrogeochemicalSchematisation object. 
+        ''' Checks if all required variables in the HydrogeochemicalSchematisation object.
         If required variable is missing, raises error.
 
         Parameters
@@ -1080,7 +1080,7 @@ class AnalyticalWell():
 
     def _check_init_phreatic(self):
         '''Check the variables that we need for the individual aquifer types are not NONE aka set by the user
-        
+
         Parameters
         ----------
         required_variables: list
@@ -1105,21 +1105,21 @@ class AnalyticalWell():
                             ]
         self._check_required_variables(required_variables)
 
-    def _calculate_travel_time_shallow_aquifer_phreatic(self, 
-                                                        head, 
+    def _calculate_travel_time_shallow_aquifer_phreatic(self,
+                                                        head,
                                                         depth_point_contamination=None,
                                                         ):
-        ''' Calculates the travel time in the shallow aquifer for the phreatic case. 
-        
+        ''' Calculates the travel time in the shallow aquifer for the phreatic case.
+
         Parameters
         ----------
         distance: array
-            Array of distance(s) [m] from the well. 
-            For diffuse sources 'distance' is the 'radial_distance' array. 
+            Array of distance(s) [m] from the well.
+            For diffuse sources 'distance' is the 'radial_distance' array.
             For point sources 'distance' is 'distance_point_contamination_from_well'.
         depth_point_contamination: float
             Depth [mASL] of the point source contamination, if only diffuse contamination None is passed.
-        
+
         Returns
         -------
         travel_time_shallow_aquifer: array
@@ -1132,12 +1132,12 @@ class AnalyticalWell():
                             * self.schematisation.porosity_shallow_aquifer / self.schematisation.recharge_rate)
 
         else:
-            # travel_distance_shallow_aquifer = 
+            # travel_distance_shallow_aquifer =
             if depth_point_contamination <= head:
                 travel_distance_shallow_aquifer = depth_point_contamination - self.schematisation.bottom_shallow_aquifer
                 if travel_distance_shallow_aquifer < 0:
                     travel_time_shallow_aquifer = np.array([0])
-                else: 
+                else:
                     travel_time_shallow_aquifer = np.array([(travel_distance_shallow_aquifer
                             * self.schematisation.porosity_shallow_aquifer / self.schematisation.recharge_rate)])
             else:
@@ -1147,23 +1147,23 @@ class AnalyticalWell():
 
         return travel_time_shallow_aquifer
 
-    
-    def _calculate_travel_time_target_aquifer_phreatic(self, 
-                                                        fraction_flux = None, 
+
+    def _calculate_travel_time_target_aquifer_phreatic(self,
+                                                        fraction_flux = None,
                                                         distance= None):
-        ''' Calculates the travel time in the target aquifer for the phreatic case. Use a fraction_flux 
+        ''' Calculates the travel time in the target aquifer for the phreatic case. Use a fraction_flux
         array to calculate the travel time for all flowlines or if 'distance' is for a point source,
-        the distance from the well is used to calculate the travel time. 
-        
+        the distance from the well is used to calculate the travel time.
+
         Parameters
         ----------
         fraction_flux: array
-            Fraction of the flux of the pumping well for each flowline at each point in the radial_distance array, [-]. 
+            Fraction of the flux of the pumping well for each flowline at each point in the radial_distance array, [-].
         distance: array
-            Array of distance(s) [m] from the well. 
-            For diffuse sources 'distance' is the 'radial_distance' array. 
+            Array of distance(s) [m] from the well.
+            For diffuse sources 'distance' is the 'radial_distance' array.
             For point sources 'distance' is 'distance_point_contamination_from_well'.
-        
+
         Returns
         -------
         travel_time_target_aquifer: array
@@ -1173,19 +1173,19 @@ class AnalyticalWell():
 
         if fraction_flux is None:
             '''point source calculation'''
-            travel_time_target_aquifer = (self.schematisation.porosity_target_aquifer * self.schematisation.thickness_target_aquifer 
+            travel_time_target_aquifer = (self.schematisation.porosity_target_aquifer * self.schematisation.thickness_target_aquifer
                                         / self.schematisation.recharge_rate
-                                        * math.log(self.schematisation.well_discharge 
+                                        * math.log(self.schematisation.well_discharge
                                         / (self.schematisation.well_discharge - math.pi * self.schematisation.recharge_rate
-                                         * distance ** 2 ) )) 
+                                         * distance ** 2 ) ))
             travel_time_target_aquifer = np.array([travel_time_target_aquifer])
 
         elif distance is None:
             ''' diffuse calculation or regular TTD'''
-            travel_time_target_aquifer = (self.schematisation.porosity_target_aquifer * self.schematisation.thickness_target_aquifer 
+            travel_time_target_aquifer = (self.schematisation.porosity_target_aquifer * self.schematisation.thickness_target_aquifer
                                 / self.schematisation.recharge_rate
                                 * np.log(1 / (1 -fraction_flux)))
-    
+
         return travel_time_target_aquifer
 
     def _check_init_confined(self):
@@ -1193,7 +1193,7 @@ class AnalyticalWell():
         # since if the user does not input, then these already exist. Keep?
 
         '''Check the variables that we need for the individual aquifer types are not NONE aka set by the user
-        
+
         Parameters
         ----------
         required_variables: list
@@ -1217,25 +1217,25 @@ class AnalyticalWell():
                             ]
         self._check_required_variables(required_variables)
 
-    def _calculate_travel_time_aquitard_semiconfined(self, 
+    def _calculate_travel_time_aquitard_semiconfined(self,
                                                     distance,
                                                     depth_point_contamination):
-        ''' 
-        Calculates the travel time in the shallow aquifer (aquitard) for the semiconfined case 
-        using the the Peters (1985) solution (eq. 8.8 in \cite{Peters1985}, Equation A.12 in 
-        TRANSATOMIC report BUT now implemented with n' (fraction of aquitard contacted, to 
-        account for gaps in aquitard [-], here the porosity of the shallow 
+        '''
+        Calculates the travel time in the shallow aquifer (aquitard) for the semiconfined case
+        using the the Peters (1985) solution (eq. 8.8 in \cite{Peters1985}, Equation A.12 in
+        TRANSATOMIC report BUT now implemented with n' (fraction of aquitard contacted, to
+        account for gaps in aquitard [-], here the porosity of the shallow
         aquifer (aquitard)).
-        
+
         Parameters
         ----------
         distance: array
-            Array of distance(s) [m] from the well. 
-            For diffuse sources 'distance' is the 'radial_distance' array. 
+            Array of distance(s) [m] from the well.
+            For diffuse sources 'distance' is the 'radial_distance' array.
             For point sources 'distance' is 'distance_point_contamination_from_well'.
         depth_point_contamination: float
             Depth [mASL] of the point source contamination, if only diffuse contamination None is passed.
-        
+
         Returns
         -------
         travel_time_shallow_aquifer: array
@@ -1248,12 +1248,12 @@ class AnalyticalWell():
             travel_distance_shallow_aquifer  = self.schematisation.thickness_shallow_aquifer
 
         else:
-            travel_distance_shallow_aquifer  = depth_point_contamination - self.schematisation.bottom_shallow_aquifer 
+            travel_distance_shallow_aquifer  = depth_point_contamination - self.schematisation.bottom_shallow_aquifer
 
-        self.travel_time_shallow_aquifer = (self.schematisation.porosity_shallow_aquifer 
+        self.travel_time_shallow_aquifer = (self.schematisation.porosity_shallow_aquifer
                                             * (2 * math.pi * self.schematisation.KD * self.schematisation.vertical_resistance_aquitard
                                             / (self.schematisation.well_discharge)
-                                            * (travel_distance_shallow_aquifer 
+                                            * (travel_distance_shallow_aquifer
                                             / besselk(0, distance
                                             / math.sqrt(self.schematisation.KD * self.schematisation.vertical_resistance_aquitard)))
                             ))
@@ -1263,18 +1263,18 @@ class AnalyticalWell():
         return self.travel_time_shallow_aquifer
 
 
-    def _calculate_travel_time_target_aquifer_semiconfined(self, 
+    def _calculate_travel_time_target_aquifer_semiconfined(self,
                                                             distance):
         '''Calculate the travel time in target aquifer using the the Peters (1985) solution
-        Equation A.13/A.14 in TRANSATOMIC report for the semiconfined. 
-        
+        Equation A.13/A.14 in TRANSATOMIC report for the semiconfined.
+
         Parameters
         ----------
         distance: array
-            Array of distance(s) [m] from the well. 
-            For diffuse sources 'distance' is the 'radial_distance' array. 
+            Array of distance(s) [m] from the well.
+            For diffuse sources 'distance' is the 'radial_distance' array.
             For point sources 'distance' is 'distance_point_contamination_from_well'.
-        
+
         Returns
         -------
         travel_time_target_aquifer: array
@@ -1283,7 +1283,7 @@ class AnalyticalWell():
         '''
 
         # AH we keep this number for comparing to excel, but will change later to be the user defined porosities
-        porosity_target_aquifer=0.32  
+        porosity_target_aquifer=0.32
         thickness_target_aquifer=95
 
         self.travel_time_target_aquifer = (2 * math.pi * self.spreading_distance ** 2 / (self.schematisation.well_discharge)
@@ -1298,18 +1298,18 @@ class AnalyticalWell():
         return self.travel_time_target_aquifer
 
 
-    def _calculate_hydraulic_head_semiconfined(self, 
+    def _calculate_hydraulic_head_semiconfined(self,
                                               distance):
-        '''Calculate the hydraulic head in meters above sea level for the 
+        '''Calculate the hydraulic head in meters above sea level for the
         semiconfined case.
-        
+
         Parameters
         ----------
         distance: array
-            Array of distance(s) [m] from the well. 
-            For diffuse sources 'distance' is the 'radial_distance' array. 
+            Array of distance(s) [m] from the well.
+            For diffuse sources 'distance' is the 'radial_distance' array.
             For point sources 'distance' is 'distance_point_contamination_from_well'.
-        
+
         Returns
         -------
         head: array
@@ -1329,13 +1329,13 @@ class AnalyticalWell():
                                 spreading_distance,
                                 ):
         '''Calculates the fraction of the flux at distance x
-        
+
         Parameters
         ----------
         radial_distance: array
-            Array of distance(s) [m] from the well. 
+            Array of distance(s) [m] from the well.
         spreading_distance: float
-            The spreading length is a measure of length (in metres) for the distance 
+            The spreading length is a measure of length (in metres) for the distance
             over which the groundwater lowering caused by the extraction will be noticeable, [m]
 
         Returns
@@ -1349,34 +1349,34 @@ class AnalyticalWell():
 
         return flux_fraction
 
-    def _create_output_dataframe(self, 
-                                total_travel_time, 
-                                travel_time_unsaturated, 
-                                travel_time_shallow_aquifer, 
+    def _create_output_dataframe(self,
+                                total_travel_time,
+                                travel_time_unsaturated,
+                                travel_time_shallow_aquifer,
                                 travel_time_target_aquifer,
-                                distance, 
-                                head, 
-                                cumulative_fraction_abstracted_water,  
+                                distance,
+                                head,
+                                cumulative_fraction_abstracted_water,
                                 ):
         '''Create output array, used for testing purposes and also to creeate the 'df_flowline' and 'df_particle'
-        dataframes. 
-        
+        dataframes.
+
         Parameters
         ----------
         total_travel_time: array
-            Sum of the unsaturated, shallow and target aquifer travel times for each 
+            Sum of the unsaturated, shallow and target aquifer travel times for each
             point in the given distance array, [days].
         travel_time_unsaturated: array
-            Travel time in the unsaturated zone for each point in the given distance array returned as 
+            Travel time in the unsaturated zone for each point in the given distance array returned as
             attrubute of the function, [days].
         travel_time_shallow_aquifer: array
             Travel time in the shallow aquifer for each point in the given distance array, [days].
         travel_time_target_aquifer: array
             Travel time in the target aquifer for each point in the given distance array, [days].
         distance: array
-            Array of distance(s) [m] from the well. 
-            For diffuse sources 'distance' is the 'radial_distance' array. 
-            For point sources 'distance' is 'distance_point_contamination_from_well'.        
+            Array of distance(s) [m] from the well.
+            For diffuse sources 'distance' is the 'radial_distance' array.
+            For point sources 'distance' is 'distance_point_contamination_from_well'.
         head: array
             Hydraulic head for each point in the given distance array, [mASL].
         cumulative_fraction_abstracted_water: array
@@ -1385,9 +1385,9 @@ class AnalyticalWell():
         Returns
         -------
         df_output: pandas.DataFrame
-            Column 'total_travel_time': float 
+            Column 'total_travel_time': float
             Column 'travel_time_unsaturated': float
-            Column 'travel_time_shallow_aquifer': float 
+            Column 'travel_time_shallow_aquifer': float
             Column 'travel_time_target_aquifer': float
             Column 'radial_distance': float
             Column 'head': float
@@ -1395,9 +1395,9 @@ class AnalyticalWell():
             Column 'flowline_discharge': float
                 Flux of the flowline, flowline located at each point in the 'radial_distance' array, [m3/d].
         '''
-        column_names = ["total_travel_time", "travel_time_unsaturated", 
+        column_names = ["total_travel_time", "travel_time_unsaturated",
                         "travel_time_shallow_aquifer", "travel_time_target_aquifer",
-                        "radial_distance", "head", "cumulative_fraction_abstracted_water", 
+                        "radial_distance", "head", "cumulative_fraction_abstracted_water",
                         "flowline_discharge"
                         ]
 
@@ -1409,26 +1409,26 @@ class AnalyticalWell():
             #diffuse source
             flowline_discharge = (np.diff(np.insert(cumulative_fraction_abstracted_water,0,0., axis=0)))*self.schematisation.well_discharge
 
-        data = [total_travel_time, 
-                travel_time_unsaturated, 
-                travel_time_shallow_aquifer, 
+        data = [total_travel_time,
+                travel_time_unsaturated,
+                travel_time_shallow_aquifer,
                 travel_time_target_aquifer,
-                distance, 
-                head, 
-                cumulative_fraction_abstracted_water,  
+                distance,
+                head,
+                cumulative_fraction_abstracted_water,
                 flowline_discharge,
                 ]
         df_output = pd.DataFrame (data = np.transpose(data), columns=column_names, dtype="object")
-            
+
         return df_output
-        
+
 
     def _export_to_df(self,
-        df_output, 
+        df_output,
         distance,
-        total_travel_time, 
-        travel_time_unsaturated, 
-        travel_time_shallow_aquifer, 
+        total_travel_time,
+        travel_time_unsaturated,
+        travel_time_shallow_aquifer,
         travel_time_target_aquifer,
         discharge_point_contamination=None, #AH_todo do we need this?
         ):
@@ -1437,23 +1437,23 @@ class AnalyticalWell():
             Parameters
             ----------
             df_output: pandas.DataFrame
-                Column 'total_travel_time': float 
+                Column 'total_travel_time': float
                 Column 'travel_time_unsaturated': float
-                Column 'travel_time_shallow_aquifer': float 
+                Column 'travel_time_shallow_aquifer': float
                 Column 'travel_time_target_aquifer': float
                 Column 'radial_distance': float
                 Column 'head': float
                 Column 'cumulative_fraction_abstracted_water': float
                 Column 'flowline_discharge': float
             distance: array
-                Array of distance(s) [m] from the well. 
-                For diffuse sources 'distance' is the 'radial_distance' array. 
-                For point sources 'distance' is 'distance_point_contamination_from_well'.        
+                Array of distance(s) [m] from the well.
+                For diffuse sources 'distance' is the 'radial_distance' array.
+                For point sources 'distance' is 'distance_point_contamination_from_well'.
             total_travel_time: array
-                Sum of the unsaturated, shallow and target aquifer travel times for each 
+                Sum of the unsaturated, shallow and target aquifer travel times for each
                 point in the given distance array, [days].
             travel_time_unsaturated: array
-                Travel time in the unsaturated zone for each point in the given distance array returned as 
+                Travel time in the unsaturated zone for each point in the given distance array returned as
                 attrubute of the function, [days].
             travel_time_shallow_aquifer: array
                 Travel time in the shallow aquifer for each point in the given distance array, [days].
@@ -1491,7 +1491,7 @@ class AnalyticalWell():
                 Column 'zone': string
                     Zone in the aquifer, ground surface 'surface', 'vadose_zone', 'shallow_aquifer' or 'target_aquifer'
                 Column 'travel_time_zone': float
-                    Travel time in the respective aquifer zone given in column 'zone. 
+                    Travel time in the respective aquifer zone given in column 'zone.
                 Column 'xcoord': float
                 Column 'ycoord': float
                 Column 'zcoord': float
@@ -1509,31 +1509,31 @@ class AnalyticalWell():
         what_to_export = self.schematisation.what_to_export
 
         # Make df_particle
-        def fill_df_particle (df, 
-                            distance, 
-                            travel_time_unsaturated, 
-                            travel_time_shallow_aquifer, 
+        def fill_df_particle (df,
+                            distance,
+                            travel_time_unsaturated,
+                            travel_time_shallow_aquifer,
                             travel_time_target_aquifer,
                             total_travel_time):
             '''Fill the df_particle by flowline_id
-            
+
             Parameters
             ----------
             df: pandas.dataframe
                 Holder for df_particle, filled by the flowline_id
             distance: array
-                Array of distance(s) [m] from the well. 
-                For diffuse sources 'distance' is the 'radial_distance' array. 
-                For point sources 'distance' is 'distance_point_contamination_from_well'.        
+                Array of distance(s) [m] from the well.
+                For diffuse sources 'distance' is the 'radial_distance' array.
+                For point sources 'distance' is 'distance_point_contamination_from_well'.
             travel_time_unsaturated: array
-                Travel time in the unsaturated zone for each point in the given distance array returned as 
+                Travel time in the unsaturated zone for each point in the given distance array returned as
                 attrubute of the function, [days].
             travel_time_shallow_aquifer: array
                 Travel time in the shallow aquifer for each point in the given distance array, [days].
             travel_time_target_aquifer: array
                 Travel time in the target aquifer for each point in the given distance array, [days].
             total_travel_time: array
-                Sum of the unsaturated, shallow and target aquifer travel times for each 
+                Sum of the unsaturated, shallow and target aquifer travel times for each
                 point in the given distance array, [days].
 
             Returns
@@ -1542,30 +1542,30 @@ class AnalyticalWell():
                 Holder for df_particle, filled by the flowline_id
             '''
 
-            df.loc[0] = [flowline_id, 
-                        "surface", 
-                        0, 
-                        0, 
+            df.loc[0] = [flowline_id,
+                        "surface",
+                        0,
+                        0,
                         distance,
                         self.schematisation.model_width,
-                         self.schematisation.ground_surface, 
-                         None, 
-                         self.schematisation.temperature, 
-                         None, 
-                         None, 
-                         None, 
-                         None, 
+                         self.schematisation.ground_surface,
+                         None,
+                         self.schematisation.temperature,
+                         None,
+                         None,
+                         None,
+                         None,
                          None,
                          None]
 
-            df.loc[1] = [flowline_id, 
+            df.loc[1] = [flowline_id,
                          "vadose_zone",
                          travel_time_unsaturated,
                          travel_time_unsaturated,
                          distance,
                          self.schematisation.model_width,
                          self.schematisation.bottom_vadose_zone_at_boundary, # @MartinvdS should this be the thickness_vadose_zone_drawdown??
-                         self.schematisation.redox_vadose_zone, 
+                         self.schematisation.redox_vadose_zone,
                          self.schematisation.temperature,
                          self.schematisation.thickness_vadose_zone_at_boundary,
                          self.schematisation.porosity_vadose_zone,
@@ -1575,65 +1575,65 @@ class AnalyticalWell():
                          self.schematisation.solid_density_vadose_zone,
                          ]
 
-            df.loc[2] = [flowline_id, 
-                        "shallow_aquifer", 
+            df.loc[2] = [flowline_id,
+                        "shallow_aquifer",
                          travel_time_shallow_aquifer,
                          travel_time_unsaturated + travel_time_shallow_aquifer,
                          distance,
                          self.schematisation.model_width,
                          self.schematisation.bottom_shallow_aquifer,
-                         self.schematisation.redox_shallow_aquifer, 
+                         self.schematisation.redox_shallow_aquifer,
                          self.schematisation.temperature,
-                         self.schematisation.thickness_shallow_aquifer, # @MartinvdS does this need to account for the vadose zone drawdown? 
+                         self.schematisation.thickness_shallow_aquifer, # @MartinvdS does this need to account for the vadose zone drawdown?
                          self.schematisation.porosity_shallow_aquifer,
                          self.schematisation.dissolved_organic_carbon_shallow_aquifer,
                          self.schematisation.pH_shallow_aquifer,
                          self.schematisation.fraction_organic_carbon_shallow_aquifer,
-                         self.schematisation.solid_density_shallow_aquifer, 
+                         self.schematisation.solid_density_shallow_aquifer,
                          ]
 
-            df.loc[3] = [flowline_id, 
-                        "target_aquifer",  
+            df.loc[3] = [flowline_id,
+                        "target_aquifer",
                          travel_time_target_aquifer,
                          total_travel_time,
                          self.schematisation.diameter_borehole/2, #at the well
                          self.schematisation.model_width,
                          self.schematisation.bottom_target_aquifer,
-                         self.schematisation.redox_target_aquifer, 
+                         self.schematisation.redox_target_aquifer,
                          self.schematisation.temperature,
                          self.schematisation.thickness_target_aquifer,
                          self.schematisation.porosity_target_aquifer,
                          self.schematisation.dissolved_organic_carbon_target_aquifer,
                          self.schematisation.pH_target_aquifer,
                          self.schematisation.fraction_organic_carbon_target_aquifer,
-                         self.schematisation.solid_density_target_aquifer,                         
+                         self.schematisation.solid_density_target_aquifer,
                          ]
             return df
 
-        df_particle = pd.DataFrame(columns=['flowline_id', 
-                                                'zone', 
-                                                'travel_time_zone', 
-                                                'total_travel_time', 
+        df_particle = pd.DataFrame(columns=['flowline_id',
+                                                'zone',
+                                                'travel_time_zone',
+                                                'total_travel_time',
                                                  'xcoord', #= radial_distcance,
-                                                 'ycoord', #= the width of the cell .. default = 1 m 
+                                                 'ycoord', #= the width of the cell .. default = 1 m
                                                  'zcoord',
-                                                 'redox_zone', 
-                                                 'temperature', 
-                                                 'thickness_layer', 
-                                                 'porosity_layer', 
-                                                 'dissolved_organic_carbon', 
-                                                 'pH', 
-                                                 'fraction_organic_carbon', 
+                                                 'redox_zone',
+                                                 'temperature',
+                                                 'thickness_layer',
+                                                 'porosity_layer',
+                                                 'dissolved_organic_carbon',
+                                                 'pH',
+                                                 'fraction_organic_carbon',
                                                  'solid_density_layer'])
 
         df = df_particle.copy()
 
         for i in range(len(df_output)):
             flowline_id = i+1
-            df = fill_df_particle (df= df, 
-                                distance = distance[i], 
-                                travel_time_unsaturated = travel_time_unsaturated[i], 
-                                travel_time_shallow_aquifer=travel_time_shallow_aquifer[i], 
+            df = fill_df_particle (df= df,
+                                distance = distance[i],
+                                travel_time_unsaturated = travel_time_unsaturated[i],
+                                travel_time_shallow_aquifer=travel_time_shallow_aquifer[i],
                                 travel_time_target_aquifer = travel_time_target_aquifer[i],
                                 total_travel_time= total_travel_time[i])
 
@@ -1656,13 +1656,13 @@ class AnalyticalWell():
         df_flowline['particle_release_date'] = self.schematisation.particle_release_date
 
 
-        # #AH_todo do we want to automatically 
-        # make the dictionaries for modpath when running the analytical model? 
+        # #AH_todo do we want to automatically
+        # make the dictionaries for modpath when running the analytical model?
         # so far this is the only use for the dicitonaries so they are made here
         self.schematisation.make_dictionary()
         endpoint_id = 'well1' #AH_todo, @MartinvdS, what is this needed for? placeholder value here , #list(self.schematisation.well_parameters.items())[0][0]
-        df_flowline['endpoint_id'] = endpoint_id 
-        
+        df_flowline['endpoint_id'] = endpoint_id
+
         # AH which parameters for the 'pathogen' option? @MartinvdS or @steven
 
         if what_to_export == 'all' or what_to_export== 'omp':
@@ -1696,12 +1696,12 @@ class AnalyticalWell():
 
         return df_flowline, df_particle
 
-    def phreatic(self, 
-                distance=None, 
+    def phreatic(self,
+                distance=None,
                 depth_point_contamination=None,
                 cumulative_fraction_abstracted_water=None,
                 ):
-                
+
         '''
         Calculates the travel time distribution for the phreatic schematisation
         for each of the aquifer zones and creates the df_flowline and df_particle dataframes.
@@ -1709,9 +1709,9 @@ class AnalyticalWell():
         Parameters
         ----------
         distance: array
-            Array of distance(s) [m] from the well. 
-            For diffuse sources 'distance' is the 'radial_distance' array. 
-            For point sources 'distance' is 'distance_point_contamination_from_well'.        
+            Array of distance(s) [m] from the well.
+            For diffuse sources 'distance' is the 'radial_distance' array.
+            For point sources 'distance' is 'distance_point_contamination_from_well'.
         depth_point_contamination: float
             Depth [mASL] of the point source contamination, if only diffuse contamination None is passed.
         cumulative_fraction_abstracted_water: array
@@ -1725,19 +1725,19 @@ class AnalyticalWell():
         cumulative_fraction_abstracted_water: array
             Cumulative fraction of the abstrated water for each point in the distance array, [-].
         total_travel_time: array
-            Sum of the unsaturated, shallow and target aquifer travel times for each 
+            Sum of the unsaturated, shallow and target aquifer travel times for each
             point in the given distance array, [days].
         travel_time_unsaturated: array
-            Travel time in the unsaturated zone for each point in the given distance array returned as 
+            Travel time in the unsaturated zone for each point in the given distance array returned as
             attrubute of the function, [days].
         travel_time_shallow_aquifer: array
             Travel time in the shallow aquifer for each point in the given distance array, [days].
         travel_time_target_aquifer: array
             Travel time in the target aquifer for each point in the given distance array, [days].
         df_output: pandas.DataFrame
-            Column 'total_travel_time': float 
+            Column 'total_travel_time': float
             Column 'travel_time_unsaturated': float
-            Column 'travel_time_shallow_aquifer': float 
+            Column 'travel_time_shallow_aquifer': float
             Column 'travel_time_target_aquifer': float
             Column 'radial_distance': float
             Column 'head': float
@@ -1786,75 +1786,75 @@ class AnalyticalWell():
             self.schematisation._calculate_travel_time_unsaturated_zone()
             self.radial_distance = self.schematisation.radial_distance
             fraction_flux=self.schematisation.fraction_flux
-        else: 
+        else:
             self.schematisation._calculate_travel_time_unsaturated_zone(distance=distance, depth_point_contamination=depth_point_contamination)
             self.radial_distance = distance
             fraction_flux=None
-            
+
         self.travel_time_unsaturated = self.schematisation.travel_time_unsaturated
         self.head = self.schematisation.head
 
-        self.travel_time_shallow_aquifer = self._calculate_travel_time_shallow_aquifer_phreatic(head=self.head, 
+        self.travel_time_shallow_aquifer = self._calculate_travel_time_shallow_aquifer_phreatic(head=self.head,
                                                                                                 depth_point_contamination=depth_point_contamination)
-        
+
         self.travel_time_target_aquifer = self._calculate_travel_time_target_aquifer_phreatic(fraction_flux=fraction_flux, distance=distance)
 
         self.total_travel_time = (self.travel_time_unsaturated + self.travel_time_shallow_aquifer
                             + self.travel_time_target_aquifer)
-        
+
         if cumulative_fraction_abstracted_water is None:
-            self.cumulative_fraction_abstracted_water = self.schematisation.fraction_flux 
+            self.cumulative_fraction_abstracted_water = self.schematisation.fraction_flux
         else:
             self.cumulative_fraction_abstracted_water = cumulative_fraction_abstracted_water
 
-        self.df_output = self._create_output_dataframe(total_travel_time=self.total_travel_time, 
-                    travel_time_unsaturated = self.travel_time_unsaturated, 
-                    travel_time_shallow_aquifer=self.travel_time_shallow_aquifer, 
+        self.df_output = self._create_output_dataframe(total_travel_time=self.total_travel_time,
+                    travel_time_unsaturated = self.travel_time_unsaturated,
+                    travel_time_shallow_aquifer=self.travel_time_shallow_aquifer,
                     travel_time_target_aquifer=self.travel_time_target_aquifer,
                     distance=self.radial_distance,
-                    head=self.head, 
-                    cumulative_fraction_abstracted_water = self.cumulative_fraction_abstracted_water,  
+                    head=self.head,
+                    cumulative_fraction_abstracted_water = self.cumulative_fraction_abstracted_water,
                     )
-            
 
-        self.df_flowline, self.df_particle = self._export_to_df(df_output=self.df_output, 
+
+        self.df_flowline, self.df_particle = self._export_to_df(df_output=self.df_output,
                     distance=self.radial_distance,
-                    total_travel_time=self.total_travel_time, 
-                    travel_time_unsaturated = self.travel_time_unsaturated, 
-                    travel_time_shallow_aquifer=self.travel_time_shallow_aquifer, 
+                    total_travel_time=self.total_travel_time,
+                    travel_time_unsaturated = self.travel_time_unsaturated,
+                    travel_time_shallow_aquifer=self.travel_time_shallow_aquifer,
                     travel_time_target_aquifer=self.travel_time_target_aquifer,
                     discharge_point_contamination = self.schematisation.discharge_point_contamination)
 
-    def _add_phreatic_point_sources(self, 
-                distance=None, 
+    def _add_phreatic_point_sources(self,
+                distance=None,
                 depth_point_contamination=None,
                 cumulative_fraction_abstracted_water=None,
                 ):
-                
+
         '''
-        Adds the point source contamination to the df_flowline dataframe 
+        Adds the point source contamination to the df_flowline dataframe
         as additional rows in the dataframe.
-        Same as the self.phreatic() function except that the attributes are not updated, 
-        this ensures that the attributes of the well class remain as the ones for 
+        Same as the self.phreatic() function except that the attributes are not updated,
+        this ensures that the attributes of the well class remain as the ones for
         the flowlines from the well, not the point sources
-        
+
         Parameters
         ----------
         distance: array
-            Array of distance(s) [m] from the well. 
-            For diffuse sources 'distance' is the 'radial_distance' array. 
-            For point sources 'distance' is 'distance_point_contamination_from_well'.        
+            Array of distance(s) [m] from the well.
+            For diffuse sources 'distance' is the 'radial_distance' array.
+            For point sources 'distance' is 'distance_point_contamination_from_well'.
         cumulative_fraction_abstracted_water: array
             Cumulative fraction of the abstrated water for each point in the distance array, [-].
         depth_point_contamination: float
             Depth [mASL] of the point source contamination, if only diffuse contamination None is passed.
-        
+
         Returns
         -------
         df_output: pandas.DataFrame
-            Column 'total_travel_time': float 
+            Column 'total_travel_time': float
             Column 'travel_time_unsaturated': float
-            Column 'travel_time_shallow_aquifer': float 
+            Column 'travel_time_shallow_aquifer': float
             Column 'travel_time_target_aquifer': float
             Column 'radial_distance': float
             Column 'head': float
@@ -1889,49 +1889,49 @@ class AnalyticalWell():
             self.schematisation._calculate_travel_time_unsaturated_zone()
             radial_distance = self.schematisation.radial_distance
             fraction_flux=self.schematisation.fraction_flux
-        else: 
+        else:
             self.schematisation._calculate_travel_time_unsaturated_zone(distance=distance, depth_point_contamination=depth_point_contamination)
             radial_distance = distance
             fraction_flux=None
-            
+
         travel_time_unsaturated = self.schematisation.travel_time_unsaturated
         head = self.schematisation.head
 
-        travel_time_shallow_aquifer = self._calculate_travel_time_shallow_aquifer_phreatic(head=head, 
+        travel_time_shallow_aquifer = self._calculate_travel_time_shallow_aquifer_phreatic(head=head,
                                                                                         depth_point_contamination=depth_point_contamination)
-        
+
         travel_time_target_aquifer = self._calculate_travel_time_target_aquifer_phreatic(fraction_flux=fraction_flux,
                                                                                         distance=distance)
 
         total_travel_time = (travel_time_unsaturated + travel_time_shallow_aquifer
                             + travel_time_target_aquifer)
-        
+
         if cumulative_fraction_abstracted_water is None:
-            cumulative_fraction_abstracted_water = self.schematisation.fraction_flux 
+            cumulative_fraction_abstracted_water = self.schematisation.fraction_flux
         else:
             cumulative_fraction_abstracted_water = cumulative_fraction_abstracted_water
 
-        df_output = self._create_output_dataframe(total_travel_time=total_travel_time, 
-                    travel_time_unsaturated = travel_time_unsaturated, 
-                    travel_time_shallow_aquifer=travel_time_shallow_aquifer, 
+        df_output = self._create_output_dataframe(total_travel_time=total_travel_time,
+                    travel_time_unsaturated = travel_time_unsaturated,
+                    travel_time_shallow_aquifer=travel_time_shallow_aquifer,
                     travel_time_target_aquifer=travel_time_target_aquifer,
                     distance=radial_distance,
-                    head=head, 
-                    cumulative_fraction_abstracted_water = cumulative_fraction_abstracted_water,  
+                    head=head,
+                    cumulative_fraction_abstracted_water = cumulative_fraction_abstracted_water,
                     )
-            
-        df_flowline, df_particle=self._export_to_df(df_output=df_output, 
+
+        df_flowline, df_particle=self._export_to_df(df_output=df_output,
                     distance=radial_distance,
-                    total_travel_time=total_travel_time, 
-                    travel_time_unsaturated = travel_time_unsaturated, 
-                    travel_time_shallow_aquifer=travel_time_shallow_aquifer, 
+                    total_travel_time=total_travel_time,
+                    travel_time_unsaturated = travel_time_unsaturated,
+                    travel_time_shallow_aquifer=travel_time_shallow_aquifer,
                     travel_time_target_aquifer=travel_time_target_aquifer,
                     discharge_point_contamination = self.schematisation.discharge_point_contamination)
-        
+
         return df_flowline, df_particle
 
     def semiconfined(self,
-                    distance=None, 
+                    distance=None,
                     depth_point_contamination=None,):
 
         '''
@@ -1941,9 +1941,9 @@ class AnalyticalWell():
         Parameters
         ---------
         distance: array
-            Array of distance(s) [m] from the well. 
-            For diffuse sources 'distance' is the 'radial_distance' array. 
-            For point sources 'distance' is 'distance_point_contamination_from_well'.        
+            Array of distance(s) [m] from the well.
+            For diffuse sources 'distance' is the 'radial_distance' array.
+            For point sources 'distance' is 'distance_point_contamination_from_well'.
         depth_point_contamination: float
             Depth [mASL] of the point source contamination, if only diffuse contamination None is passed.
 
@@ -1955,19 +1955,19 @@ class AnalyticalWell():
         cumulative_fraction_abstracted_water: array
             Cumulative fraction of the abstrated water for each point in the distance array, [-].
         total_travel_time: array
-            Sum of the unsaturated, shallow and target aquifer travel times for each 
+            Sum of the unsaturated, shallow and target aquifer travel times for each
             point in the given distance array, [days].
         travel_time_unsaturated: array
-            Travel time in the unsaturated zone for each point in the given distance array returned as 
+            Travel time in the unsaturated zone for each point in the given distance array returned as
             attrubute of the function, [days].
         travel_time_shallow_aquifer: array
             Travel time in the shallow aquifer for each point in the given distance array, [days].
         travel_time_target_aquifer: array
             Travel time in the target aquifer for each point in the given distance array, [days].
         df_output: pandas.DataFrame
-            Column 'total_travel_time': float 
+            Column 'total_travel_time': float
             Column 'travel_time_unsaturated': float
-            Column 'travel_time_shallow_aquifer': float 
+            Column 'travel_time_shallow_aquifer': float
             Column 'travel_time_target_aquifer': float
             Column 'radial_distance': float
             Column 'head': float
@@ -2009,18 +2009,18 @@ class AnalyticalWell():
             Column 'solid_density_layer': float
 
         '''
-        
+
         self._check_init_confined()
 
         if distance is None:
             self.schematisation._calculate_travel_time_unsaturated_zone()
             self.radial_distance = self.schematisation.radial_distance
-        else: 
+        else:
             self.schematisation._calculate_travel_time_unsaturated_zone(distance=distance,
                                                                         depth_point_contamination = depth_point_contamination
                                                                         )
             self.radial_distance = distance
-        
+
         self.travel_time_unsaturated = self.schematisation.travel_time_unsaturated
         self.spreading_distance = self.schematisation.spreading_distance
 
@@ -2030,7 +2030,7 @@ class AnalyticalWell():
         self.travel_time_shallow_aquifer = self._calculate_travel_time_aquitard_semiconfined(distance=self.radial_distance,
                                                                                                 depth_point_contamination=depth_point_contamination)
 
-        self.travel_time_target_aquifer = self._calculate_travel_time_target_aquifer_semiconfined(distance=self.radial_distance) 
+        self.travel_time_target_aquifer = self._calculate_travel_time_target_aquifer_semiconfined(distance=self.radial_distance)
 
         self.total_travel_time = self.travel_time_unsaturated + self.travel_time_shallow_aquifer + self.travel_time_target_aquifer
 
@@ -2040,7 +2040,7 @@ class AnalyticalWell():
                                 spreading_distance = self.spreading_distance,)
 
         ''' Calculate the cumulative_fraction_abstracted_water
-        1.1369 comes form pg. 52 in TRANSATOMIC report, describes cutting off the 
+        1.1369 comes form pg. 52 in TRANSATOMIC report, describes cutting off the
         recharge_rate distance at 3 labda, need to increase the fraction abstracted from ~87%
         to 99.9% so multiply by 1.1369 to get to that
         Equation A.16 in TRANSATOMIC report'''
@@ -2048,51 +2048,51 @@ class AnalyticalWell():
         self.cumulative_fraction_abstracted_water = 1.1369 * (1 - self.flux_fraction)
 
 
-        self.df_output = self._create_output_dataframe(total_travel_time=self.total_travel_time, 
-                    travel_time_unsaturated = self.travel_time_unsaturated, 
-                    travel_time_shallow_aquifer=self.travel_time_shallow_aquifer, 
+        self.df_output = self._create_output_dataframe(total_travel_time=self.total_travel_time,
+                    travel_time_unsaturated = self.travel_time_unsaturated,
+                    travel_time_shallow_aquifer=self.travel_time_shallow_aquifer,
                     travel_time_target_aquifer=self.travel_time_target_aquifer,
                     distance=self.radial_distance,
-                    head=self.head, 
-                    cumulative_fraction_abstracted_water = self.cumulative_fraction_abstracted_water,  
+                    head=self.head,
+                    cumulative_fraction_abstracted_water = self.cumulative_fraction_abstracted_water,
                     )
 
-        self.df_flowline, self.df_particle=self._export_to_df(df_output=self.df_output, 
+        self.df_flowline, self.df_particle=self._export_to_df(df_output=self.df_output,
                     distance=self.radial_distance,
-                    total_travel_time=self.total_travel_time, 
-                    travel_time_unsaturated = self.travel_time_unsaturated, 
-                    travel_time_shallow_aquifer=self.travel_time_shallow_aquifer, 
+                    total_travel_time=self.total_travel_time,
+                    travel_time_unsaturated = self.travel_time_unsaturated,
+                    travel_time_shallow_aquifer=self.travel_time_shallow_aquifer,
                     travel_time_target_aquifer=self.travel_time_target_aquifer,
                     discharge_point_contamination = self.schematisation.discharge_point_contamination)
 
     #AH_todo make this a hidden __add_semiconfined_point_sources function
-    def _add_semiconfined_point_sources(self, 
-                                    distance = None, 
+    def _add_semiconfined_point_sources(self,
+                                    distance = None,
                                     depth_point_contamination=None,  ):
-        ''' Adds the point source contamination to the df_flowline dataframe 
+        ''' Adds the point source contamination to the df_flowline dataframe
         as additional rows in the dataframe.
-        
-        Same as the self.semiconfined() function except that the attributes are not updated, 
-        this ensures that the attributes of the well class remain as the ones for 
+
+        Same as the self.semiconfined() function except that the attributes are not updated,
+        this ensures that the attributes of the well class remain as the ones for
         the flowlines from the well, not the point sources
-        
+
         Parameters
         ----------
         distance: array
-            Array of distance(s) [m] from the well. 
-            For diffuse sources 'distance' is the 'radial_distance' array. 
-            For point sources 'distance' is 'distance_point_contamination_from_well'.        
+            Array of distance(s) [m] from the well.
+            For diffuse sources 'distance' is the 'radial_distance' array.
+            For point sources 'distance' is 'distance_point_contamination_from_well'.
         cumulative_fraction_abstracted_water: array
             Cumulative fraction of the abstrated water for each point in the distance array, [-].
         depth_point_contamination: float
             Depth [mASL] of the point source contamination, if only diffuse contamination None is passed.
-        
+
         Returns
         -------
         df_output: pandas.DataFrame
-            Column 'total_travel_time': float 
+            Column 'total_travel_time': float
             Column 'travel_time_unsaturated': float
-            Column 'travel_time_shallow_aquifer': float 
+            Column 'travel_time_shallow_aquifer': float
             Column 'travel_time_target_aquifer': float
             Column 'radial_distance': float
             Column 'head': float
@@ -2123,19 +2123,19 @@ class AnalyticalWell():
         if distance is None:
             self.schematisation._calculate_travel_time_unsaturated_zone()
             radial_distance = self.schematisation.radial_distance
-        else: 
+        else:
             self.schematisation._calculate_travel_time_unsaturated_zone(distance=distance,
                                                                         depth_point_contamination = depth_point_contamination
                                                                         )
             radial_distance = distance
-        
+
         travel_time_unsaturated = self.schematisation.travel_time_unsaturated
         spreading_distance = self.schematisation.spreading_distance
 
         travel_time_shallow_aquifer = self._calculate_travel_time_aquitard_semiconfined(distance=radial_distance,
                                                                                     depth_point_contamination=depth_point_contamination)
 
-        travel_time_target_aquifer = self._calculate_travel_time_target_aquifer_semiconfined(distance=radial_distance) 
+        travel_time_target_aquifer = self._calculate_travel_time_target_aquifer_semiconfined(distance=radial_distance)
 
         total_travel_time = travel_time_unsaturated + travel_time_shallow_aquifer + travel_time_target_aquifer
 
@@ -2145,7 +2145,7 @@ class AnalyticalWell():
                                 spreading_distance = spreading_distance,)
 
         ''' Calculate the cumulative_fraction_abstracted_water
-        1.1369 comes form pg. 52 in TRANSATOMIC report, describes cutting off the 
+        1.1369 comes form pg. 52 in TRANSATOMIC report, describes cutting off the
         recharge_rate distance at 3 labda, need to increase the fraction abstracted from ~87%
         to 99.9% so multiply by 1.1369 to get to that
         Equation A.16 in TRANSATOMIC report'''
@@ -2153,23 +2153,23 @@ class AnalyticalWell():
         cumulative_fraction_abstracted_water = 1.1369 * (1 - flux_fraction)
 
 
-        df_output = self._create_output_dataframe(total_travel_time=total_travel_time, 
-                    travel_time_unsaturated = travel_time_unsaturated, 
-                    travel_time_shallow_aquifer=travel_time_shallow_aquifer, 
+        df_output = self._create_output_dataframe(total_travel_time=total_travel_time,
+                    travel_time_unsaturated = travel_time_unsaturated,
+                    travel_time_shallow_aquifer=travel_time_shallow_aquifer,
                     travel_time_target_aquifer=travel_time_target_aquifer,
                     distance=radial_distance,
-                    head=head, 
-                    cumulative_fraction_abstracted_water = cumulative_fraction_abstracted_water,  
+                    head=head,
+                    cumulative_fraction_abstracted_water = cumulative_fraction_abstracted_water,
                     )
 
-        df_flowline, df_particle=self._export_to_df(df_output=df_output, 
+        df_flowline, df_particle=self._export_to_df(df_output=df_output,
                     distance=radial_distance,
-                    total_travel_time=total_travel_time, 
-                    travel_time_unsaturated = travel_time_unsaturated, 
-                    travel_time_shallow_aquifer=travel_time_shallow_aquifer, 
+                    total_travel_time=total_travel_time,
+                    travel_time_unsaturated = travel_time_unsaturated,
+                    travel_time_shallow_aquifer=travel_time_shallow_aquifer,
                     travel_time_target_aquifer=travel_time_target_aquifer,
                     discharge_point_contamination = self.schematisation.discharge_point_contamination)
-        
+
         return df_flowline, df_particle
 
 
@@ -2177,7 +2177,7 @@ class AnalyticalWell():
                                                 xlim=[0, 4000],
                                                 ylim=[1, 5000]):
         ''' Plot the travel time versus the radial distance
-        
+
         Parameters
         ----------
         xlim: array
@@ -2188,9 +2188,9 @@ class AnalyticalWell():
 
         fig = plt.figure(figsize=[10, 5])
         plt.plot(self.radial_distance, self.total_travel_time, 'r', label=self.schematisation.schematisation_type)
-        
+
         plt.xlim(xlim)
-        plt.ylim(ylim) 
+        plt.ylim(ylim)
         plt.yscale('log')
         plt.xlabel('Radial distance to well(s) (m)')
         plt.ylabel('Total travel time (days)')
@@ -2203,9 +2203,9 @@ class AnalyticalWell():
     def plot_travel_time_versus_cumulative_abstracted_water(self,
                                                             xlim,
                                                             ylim=[1, 5000]):
-        
-        ''' Plot the travel time versus the cumulative abstracted water 
-        
+
+        ''' Plot the travel time versus the cumulative abstracted water
+
         Parameters
         ----------
         xlim: array
@@ -2216,8 +2216,8 @@ class AnalyticalWell():
 
         fig = plt.figure(figsize=[10, 5])
         plt.plot(self.cumulative_fraction_abstracted_water, self.total_travel_time, 'r', label=self.schematisation.schematisation_type)
-        plt.xlim(xlim) 
-        plt.ylim(ylim) 
+        plt.xlim(xlim)
+        plt.ylim(ylim)
         plt.yscale('log')
         plt.xlabel('Cumulative fraction of abstracted water')
         plt.ylabel('Total travel time (days)')
