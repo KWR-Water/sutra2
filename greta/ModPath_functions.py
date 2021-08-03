@@ -884,6 +884,36 @@ class ModPathWell:
         ''' Run modflow model '''
         self.success, self.buff = self.mf.run_model(silent=False)
 
+    # Here are functions to calculate the travel time through vadose zone, shared functions for
+    # Analytical and Modflow models
+    def _create_radial_distance_array(self, fraction_flux:np.array or None = None):
+
+        ''' Create array of radial distances from the well to a maximum value, radial distance recharge, which
+        is the distance from the well needed to recharge the well to meet the pumping demand. '''
+        # ah_todo change this to single array of 0.001 to 100
+        # right now we have this set up to directly compare with P. Stuyfzand's results
+        # in the 'final' version of the model can be a more fine mesh
+        # but need to think about how we change the testing
+
+        if fraction_flux is None:
+            fraction_flux = np.array([0.00001, 0.0001, 0.001, 0.005])
+            fraction_flux = np.append(fraction_flux, np.arange(0.01, 1, 0.01))
+            fraction_flux = np.append(fraction_flux, [0.995, 0.9999])
+        
+        self.fraction_flux = fraction_flux
+
+        radial_distance = self.radial_distance_recharge * \
+            np.sqrt(self.fraction_flux)
+            
+        if self.schematisation_type == 'semiconfined':
+
+            radial_distance = np.append(radial_distance,
+                                    [(radial_distance[-1] + ((self.spreading_distance * 3) - radial_distance[-1]) / 3),
+                                    (radial_distance[-1] + 2 *
+                                    ((self.spreading_distance * 3) - radial_distance[-1]) / 3),
+                                        (self.spreading_distance * 3)])
+        
+        self.radial_distance = radial_distance
 
 ### Functie: Check xmin, xmax,
     '''
@@ -1412,6 +1442,14 @@ class ModPathWell:
             if self.run_mfmodel:
                 # Run modflow model
                 self.mfmodelrun()
+
+            if self.run_mpmodel:
+
+                # Create radial distance array with particle locations
+                self._create_radial_distance_array()
+                print("Fraction flux:",self.fraction_flux,
+                      "\nRadial distance array:",self.radial_distance)
+                # Run modpath model
         
         print("modelrun of type", self.schematisation_type, "completed.")
 '''
