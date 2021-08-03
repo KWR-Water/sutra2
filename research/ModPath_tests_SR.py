@@ -34,8 +34,8 @@ from scipy.special import kn as besselk
 
 from pathlib import Path
 
-%load_ext autoreload
-%autoreload 2
+#%load_ext autoreload
+#%autoreload 2
 
 # %%
 # try:
@@ -411,7 +411,8 @@ modpath_phrea = ModPathWell(phreatic_scheme,
 # Print all attributes in object
 # print(modpath_phrea.__dict__)
 # modpath_phrea.phreatic()
-modpath_phrea.run_model(run_mfmodel = True)
+modpath_phrea.run_model(run_mfmodel = True,
+                        run_mpmodel = True)
 #### HIER GEBLEVEN 2-8-2021 ####
 
 #%%

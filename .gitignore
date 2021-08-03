@@ -129,3 +129,14 @@ dmypy.json
 .pyre/
 .vscode/
 *.png
+research/test_ws/phreatic.bas
+research/test_ws/phreatic.cbc
+research/test_ws/phreatic.dis
+research/test_ws/phreatic.hds
+research/test_ws/phreatic.list
+research/test_ws/phreatic.lpf
+research/test_ws/phreatic.nam
+research/test_ws/phreatic.oc
+research/test_ws/phreatic.pcg
+research/test_ws/phreatic.rch
+research/test_ws/phreatic.wel
