@@ -38,7 +38,21 @@ import math
 import re # regular expressions
 from scipy.special import kn as besselk
 
-path = os.getcwd()  # path of working directory
+try:
+    from greta.Analytical_Well import * 
+    from greta.Substance_Transport import *
+except ModuleNotFoundError as e:
+    print(e, ": second try.")
+    module_path = os.path.join("..","greta")
+    if module_path not in sys.path:
+        sys.path.insert(0,module_path)
+    from Analytical_Well import * 
+    from Substance_Transport import *
+
+    print("Second try to import modules succeeded.")
+
+# path of working directory
+path = os.getcwd()  
 
 # run installed version of flopy or add local path 
 # (add flopy to requirements.txt: pip install flopy==3.3.1)
@@ -222,14 +236,14 @@ rmax -> diameter_filterscreen
 class ModPathWell:
 
     """ Compute travel time distribution using MODFLOW and MODPATH.""" 
-    def __init__(self, schematisation: dict,
+    def __init__(self, schematisation: object or dict,
                        workspace: str or None = None, modelname: str or None = None,
                        bound_left: str = "xmin", bound_right: str = "xmax",
                        bound_top: str = "top", bound_bot: str = "bot",
                        bound_north: str = "ymin", bound_south: str = "ymax"): 
-        """ 'unpack/parse' all the variables from the hydrogeochemical schematizization """
-
-        '''Parameters
+        ''''unpack/parse' all the variables from the hydrogeochemical schematizization """
+       
+        Parameters
         ----------
         df_flowline: pandas.DataFrame
             Column 'flowline_id': Integer
@@ -252,8 +266,6 @@ class ModPathWell:
 
         # get the non-default parameters
         # self.test_variable = None #AH test variable here to see if errors are caught....
-
-        self.schematisation = schematisation
         
         self.workspace = workspace  # workspace
         self.modelname = modelname  # modelname
@@ -283,7 +295,19 @@ class ModPathWell:
         # Source files
         self.model_hds = os.path.join(self.workspace, self.modelname + '.hds')
         self.model_cbc = os.path.join(self.workspace, self.modelname + '.cbc')
+        '''
+        Initialize the AnalyticalWell object by making the dictionaries and adding the schematisation (and therefore attributes 
+        of the schematisation) to the object.
 
+        Returs
+        ------
+        Dictionaries (Modflow) with all parameters as an attribute of the function.
+
+        '''
+        self.schematisation = schematisation
+        
+        #Make dictionaries
+        self.schematisation.make_dictionary()
 
     def _check_schematisation(self,required_keys):
         
@@ -882,7 +906,7 @@ class ModPathWell:
 
     def run_modflowmod(self):         
         ''' Run modflow model '''
-        self.success, self.buff = self.mf.run_model(silent=False)
+        self.success_mf, self.buff = self.mf.run_model(silent=False)
 
     # Here are functions to calculate the travel time through vadose zone, shared functions for
     # Analytical and Modflow models
@@ -1079,7 +1103,7 @@ class ModPathWell:
             
             # Run modflow model
             self.run_modflowmod()
-            print(self.success, self.buff)
+            print(self.success_mf, self.buff)
 
             # Model run completed succesfully
             print("Model run", self.workspace, self.modelname, "completed without errors:", self.success)
@@ -1446,7 +1470,7 @@ class ModPathWell:
             if self.run_mpmodel:
 
                 # Create radial distance array with particle locations
-                self._create_radial_distance_array()
+                self.schematisation._create_radial_distance_array()
                 print("Fraction flux:",self.fraction_flux,
                       "\nRadial distance array:",self.radial_distance)
                 # Run modpath model

@@ -51,6 +51,8 @@ from pathlib import Path
 # if module_path not in sys.path:
 #     sys.path.insert(0,module_path)
 # sys.path.insert(0,module_path)
+
+# Import schematisation functions
 try:
     from greta.ModPath_functions import ModPathWell   
     from greta.Analytical_Well import * 
@@ -68,15 +70,6 @@ except ModuleNotFoundError as e:
     print("Second try to import modules succeeded.")
 
 path = os.getcwd()
-# # Import schematisation functions
-# try:
-#     from greta.Analytical_Well import *
-#     from greta.Substance_Transport import *#     from greta.ModPath_functions import ModPathWell
-# except ModuleNotFoundError as e:
-#     print(e)
-#     # sys.path.append(str(module_path.parent))
-#     # from greta.Analytical_Well import *
-# from greta.Substance_Transport import * #     # from greta.ModPath_functions import ModPathWell
 
 #%%
 
