@@ -21,7 +21,8 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 
 #%%
 def test_travel_time_distribution_phreatic():
-    """ @alex: describe what the test does """
+    """ Compares the calculated travel times (total, unsaturated zone, shallow aquifer and target aquifer) 
+    against a known case from TRANSATOMIC excel """
     output_phreatic = pd.read_csv(path / 'phreatic_test.csv')
     output_phreatic = output_phreatic.round(7) #round to 7 digits (or any digit), keep same as for the output for the model to compare
 
@@ -63,6 +64,7 @@ def test_travel_time_distribution_phreatic():
 
 
 def test_retardation_temp_koc_correction(substance = 'benzene', schematisation_type='phreatic'):
+    """ Compares the calculated retardation coefficient for each redox zone against a known case from TRANSATOMIC excel """
     test_ = HydroChemicalSchematisation(schematisation_type=schematisation_type,
                                         computation_method= 'analytical',
                                         what_to_export='omp',
@@ -352,59 +354,71 @@ def test_steady_concentration_temp_koc_correction_semiconfined(substance='benzen
 def test_start_end_dates_contamination():
     ''' Tests whether the correct exception is raised when the 'end_date_contamiantion' is before 'start_date_contamination' '''
 
-    with pytest.raises(EndDateBeforeStart) as exc:
+    with pytest.raises(ValueError) as exc:
         phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                                     computation_method= 'analytical',
                                                     what_to_export='omp',
                                                     well_discharge=319.4*24, #m3/day
                                                     recharge_rate=0.3/365.25, #m/day
-                                                    start_date_contamination= '1990-01-01',
-                                                    end_date_contamination='1950-01-01'
+                                                    start_date_contamination= dt.datetime.strptime('1990-01-01', "%Y-%m-%d") ,
+                                                    end_date_contamination= dt.datetime.strptime('1950-01-01', "%Y-%m-%d"), #'1950-01-01'
                                       )
-    #@ALEX only test for the message.
     assert 'Error, "end_date_contamination" is before "start_date_contamination". Please enter an new "end_date_contamination" or "start_date_contamination" ' in str(exc.value)
 
 #%%
 def test_compute_for_date_start_dates_contamination():
     ''' Tests whether the correct exception is raised when the 'computer_contamiantion_for_date' is before 'start_date_contamination' '''
 
-    with pytest.raises(ComputeDateBeforeStartDate) as exc:
+    with pytest.raises(ValueError) as exc:
         phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                                     computation_method= 'analytical',
                                       what_to_export='omp',
                                       well_discharge=319.4*24, #m3/day
                                       recharge_rate=0.3/365.25, #m/day
-                                      start_date_contamination= '1960-01-01',
-                                      end_date_contamination='1990-01-01',
-                                      compute_contamination_for_date='1950-01-01'
+                                      start_date_contamination=dt.datetime.strptime('1960-01-01', "%Y-%m-%d") ,
+                                      end_date_contamination= dt.datetime.strptime('1990-01-01', "%Y-%m-%d"),
+                                      compute_contamination_for_date= dt.datetime.strptime('1950-01-01', "%Y-%m-%d")
                                       )
     assert 'Error, "compute_contamination_for_date" is before "start_date_contamination". Please enter an new "compute_contamination_for_date" or "start_date_contamination" ' in str(exc.value)
-    assert exc.type == ComputeDateBeforeStartDate
 
 #%%
 def test_compute_for_date_start_date_well():
     ''' Tests whether the correct exception is raised when the
     'computer_contamiantion_for_date' is before 'start_date_contamination' '''
 
-    with pytest.raises(ComputeDateBeforeStartWellDate) as exc:
+    with pytest.raises(ValueError) as exc:
         phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                                     computation_method= 'analytical',
                                       what_to_export='omp',
                                       well_discharge=319.4*24, #m3/day
                                       recharge_rate=0.3/365.25, #m/day
-                                      start_date_contamination= '1950-01-01',
-                                      end_date_contamination='1990-01-01',
-                                      compute_contamination_for_date='1960-01-01',
-                                      start_date_well='1975-01-01',
+                                      start_date_contamination=dt.datetime.strptime('1950-01-01', "%Y-%m-%d") ,
+                                      end_date_contamination= dt.datetime.strptime('1990-01-01', "%Y-%m-%d"),
+                                      compute_contamination_for_date= dt.datetime.strptime('1960-01-01', "%Y-%m-%d"),
+                                      start_date_well= dt.datetime.strptime('1975-01-01', "%Y-%m-%d"),
                                       )
     assert 'Error, "compute_contamination_for_date" is before "start_date_well". Please enter an new "compute_contamination_for_date" or "start_date_well" ' in str(exc.value)
-    assert exc.type == ComputeDateBeforeStartWellDate
+#%%
+
+def test_incorrect_date_input_format():
+    ''' Tests whether the correct exception is raised when the
+    'computer_contamiantion_for_date' is before 'start_date_contamination' '''
+
+    with pytest.raises(TypeError) as exc:
+        phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+                                                    computation_method= 'analytical',
+                                      what_to_export='omp',
+                                      well_discharge=319.4*24, #m3/day
+                                      recharge_rate=0.3/365.25, #m/day
+                                      start_date_well='1950-01-01',
+                                      )
+    assert "Error invalid date input, please enter a new start_date_well using the format dt.datetime.strptime('YYYY-MM-DD', '%Y-%m-%d')" in str(exc.value)
 
 #%%
 def test_redox_zone_options():
     ''' Tests whether the correct exception is raised when one of the redox zones
      is not one of'suboxic', 'anoxic', 'deeply_anoxic' '''
-    with pytest.raises(CheckRedoxZone) as exc:
+    with pytest.raises(ValueError) as exc:
         phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                                     computation_method= 'analytical',
                                 what_to_export='omp',
@@ -414,13 +428,13 @@ def test_redox_zone_options():
                                 redox_shallow_aquifer='anoxic',
                                 redox_target_aquifer='deeply_anoxic',
                                 )
-    assert "Invalid redox_type. Expected one of: ['suboxic', 'anoxic', 'deeply_anoxic']" in str(exc.value)
-    assert exc.type == CheckRedoxZone
+    assert "Invalid redox_vadose_zone. Expected one of: ['suboxic', 'anoxic', 'deeply_anoxic']" in str(exc.value)
 
 #%%
 
 def test_phreatic_diffuse_point_source():
-    ''' Test for phreatic case with both a diffuse and point source contamination'''
+    ''' Test for phreatic case with both a diffuse and point source contamination, 
+    Checks if the concentration over time matches a known case'''
 
     phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       computation_method= 'analytical',
@@ -463,10 +477,11 @@ def test_phreatic_diffuse_point_source():
                                       depth_point_contamination=21, #m ASL
                                       discharge_point_contamination=1000,
                                       #dates
-                                      start_date_well='1968-01-01',
-                                      start_date_contamination= '1966-01-01',
-                                      compute_contamination_for_date='2050-01-01',
-                                      end_date_contamination='1990-01-01',
+                                      start_date_well=dt.datetime.strptime('1968-01-01',"%Y-%m-%d"),
+                                      start_date_contamination= dt.datetime.strptime('1966-01-01',"%Y-%m-%d"),
+                                      compute_contamination_for_date=dt.datetime.strptime('2050-01-01',"%Y-%m-%d"),
+                                      end_date_contamination=dt.datetime.strptime('1990-01-01',"%Y-%m-%d"),
+
                                       )
     phreatic_well = AnalyticalWell(phreatic_scheme)
     phreatic_well.phreatic()
@@ -483,7 +498,8 @@ def test_phreatic_diffuse_point_source():
 #%%
 
 def test_phreatic_diffuse_only_source():
-    ''' Test for phreatic case with only a diffuse source contamination'''
+    ''' Test for phreatic case with only a diffuse source contamination
+    Checks if the concentration over time matches a known case'''
 
     phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                     computation_method= 'analytical',
@@ -521,10 +537,10 @@ def test_phreatic_diffuse_only_source():
                                     #diffuse parameters
                                     diffuse_input_concentration=100, #ug/L
                                     #dates
-                                    start_date_well='1968-01-01',
-                                    start_date_contamination= '1966-01-01',
-                                    compute_contamination_for_date='2050-01-01',
-                                    end_date_contamination='1990-01-01',
+                                    start_date_well=dt.datetime.strptime('1968-01-01',"%Y-%m-%d"),
+                                    start_date_contamination= dt.datetime.strptime('1966-01-01',"%Y-%m-%d"),
+                                    compute_contamination_for_date=dt.datetime.strptime('2050-01-01',"%Y-%m-%d"),
+                                    end_date_contamination=dt.datetime.strptime('1990-01-01',"%Y-%m-%d"),
                                     )
     phreatic_well = AnalyticalWell(phreatic_scheme)
     phreatic_well.phreatic()
@@ -540,7 +556,8 @@ def test_phreatic_diffuse_only_source():
 
 #%%
 def test_phreatic_point_only_source():
-    ''' Test for phreatic case with only a diffuse source contamination'''
+    ''' Test for phreatic case with only a diffuse source contamination,
+    Checks if the concentration over time matches a known case'''
 
     phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                     computation_method= 'analytical',
@@ -583,10 +600,11 @@ def test_phreatic_point_only_source():
                                     depth_point_contamination=21, #m ASL
                                     discharge_point_contamination=1000,
                                     #dates
-                                    start_date_well='1968-01-01',
-                                    start_date_contamination= '1966-01-01',
-                                    compute_contamination_for_date='2050-01-01',
-                                    end_date_contamination='1990-01-01',
+                                    start_date_well=dt.datetime.strptime('1968-01-01', "%Y-%m-%d"),
+                                    start_date_contamination= dt.datetime.strptime('1966-01-01', "%Y-%m-%d"),
+                                    compute_contamination_for_date=dt.datetime.strptime('2050-01-01', "%Y-%m-%d"),
+                                    end_date_contamination=dt.datetime.strptime('1990-01-01', "%Y-%m-%d"),
+
                                     )
     phreatic_well = AnalyticalWell(phreatic_scheme)
     phreatic_well.phreatic()
