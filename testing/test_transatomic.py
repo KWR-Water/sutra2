@@ -144,6 +144,9 @@ def test_retardation_temp_koc_correction(substance = 'benzene', schematisation_t
         print("Success, no error in retardation!")
 
 def test_steady_concentration_temp_koc_correction_phreatic(substance='benzene'):
+    """ Compares the calculated steady state concentration for a specific radial distance
+    for each redox zone against a known case from TRANSATOMIC excel """
+
     test_ = HydroChemicalSchematisation(schematisation_type='phreatic',
                                         computation_method= 'analytical',
                                         what_to_export='omp',
@@ -225,6 +228,9 @@ def test_steady_concentration_temp_koc_correction_phreatic(substance='benzene'):
 # %%
 
 def test_travel_time_distribution_semiconfined():
+    """ Compares the calculated travel times (total, unsaturated zone, shallow aquifer and target aquifer) 
+    against a known case from TRANSATOMIC excel """
+
     output_semiconfined = pd.read_csv(path / 'semiconfined_test.csv')
     output_semiconfined = output_semiconfined.round(7)
     test_ = HydroChemicalSchematisation(schematisation_type='semiconfined',
@@ -271,6 +277,7 @@ def test_travel_time_distribution_semiconfined():
 
 
 def test_steady_concentration_temp_koc_correction_semiconfined(substance='benzene'):
+    """ Compares the calculated retardation coefficient for each redox zone against a known case from TRANSATOMIC excel """
 
     test_ = HydroChemicalSchematisation(schematisation_type='semiconfined',
                                         computation_method= 'analytical',

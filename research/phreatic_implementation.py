@@ -43,7 +43,6 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 
 # path = os.getcwd()  # path of working directory
 
-
 # %%
 phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       computation_method= 'analytical', 
@@ -95,20 +94,15 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
 
 # phreatic_scheme.make_dictionary()  
 phreatic_well = AnalyticalWell(phreatic_scheme)
-#%%    
 phreatic_well.phreatic() 
-#^ @MartinK in the functions run this? how to avoid errors running 'semiconfined' 
-# here when the schematisation_type was defined as 'phreatic'?
+# phreatic_conc = SubstanceTransport(phreatic_well, substance = 'OMP-X')
+# phreatic_conc = SubstanceTransport(phreatic_well, substance = 'benzene')
 
-phreatic_conc = SubstanceTransport(phreatic_well, substance = 'OMP-X')
-# # phreatic_conc = SubstanceTransport(phreatic_well, substance = 'benzo(a)pyrene')
-# phreatic_conc = SubstanceTransport(phreatic_well, substance = 'AMPA')
+# phreatic_conc = SubstanceTransport(phreatic_well, substance = 'benzo(a)pyrene')
+phreatic_conc = SubstanceTransport(phreatic_well, substance = 'AMPA')
 
 phreatic_conc.compute_omp_removal()
-
-df_well_concentration = phreatic_conc.compute_concentration_in_well_at_date()
-
-phreatic_conc.plot_concentration()
+# phreatic_conc.plot_concentration()
 
 # phreatic_conc.plot_concentration(x_axis='Time') 
 # %%

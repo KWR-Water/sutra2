@@ -367,14 +367,14 @@ class SubstanceTransport():
                 if self.df_particle.omp_half_life.loc[i+1] == 1e99:
                     self.df_particle.at[i+1, 'steady_state_concentration'] = self.df_particle.steady_state_concentration.loc[i]
 
-                # AH 300 limit only to avoid very small numnbers, makes no difference for other calculations therefore removed
                 # Column O in Phreatic excel sheet
+                # # AH 300 limit only to avoid very small numnbers, makes no difference for other calculations therefore left in
                 # Put back in, otherwise there is an error there are too many numbers in the output
-                # @MartinK or @MartinvdS alternative to the error? or this method?
-                # ALEX maybe make this comment little bit more clear what it is doing and why you keep it in
-                elif (self.df_particle.travel_time_zone.loc[i+1] * self.df_particle.retardation.loc[i+1]
-                                                                            / self.df_particle.omp_half_life_temperature_corrected.loc[i+1]) >300:
-                    self.df_particle.at[i+1, 'steady_state_concentration'] = 0
+                # can't reproduce the error, so take out again
+                
+                # elif (self.df_particle.travel_time_zone.loc[i+1] * self.df_particle.retardation.loc[i+1]
+                #                                                             / self.df_particle.omp_half_life_temperature_corrected.loc[i+1]) >300:
+                #     self.df_particle.at[i+1, 'steady_state_concentration'] = 0
 
                 # otherwise, calculate the outcoming concentration from the zone, given the input concentration to the zone.
                 # in the case of the vadose zone, the incoming concentration is the initial concentration
@@ -486,7 +486,7 @@ class SubstanceTransport():
             ind = self.df_particle.flowline_id.iloc[-1]
 
             if self.analytical_well.schematisation.schematisation_type == 'phreatic':
-                head = self.analytical_well.schematisation.calculate_hydraulic_head_phreatic(distance=distance)
+                head = self.analytical_well.schematisation._calculate_hydraulic_head_phreatic(distance=distance)
                 df_flowline, df_particle = self.analytical_well._add_phreatic_point_sources(distance=distance,
                                             depth_point_contamination=depth,
                                             cumulative_fraction_abstracted_water=cumulative_fraction_abstracted_water)
