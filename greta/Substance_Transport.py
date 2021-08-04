@@ -686,9 +686,8 @@ class SubstanceTransport():
         plt.title('Aquifer type: ' + schematisation_type)
         plt.grid()
         plt.legend()
-        plt.savefig('well_concentration_over_time_'+str(self.substance.substance_name)+'_'+schematisation_type+'.png', dpi=300, bbox_inches='tight')  # save_results_to + '/
-
-        return plt.gcf()
+        # plt.savefig('well_concentration_over_time_'+str(self.substance.substance_name)+'_'+schematisation_type+'.png', dpi=300, bbox_inches='tight')
+        return fig
 
 
     def compute_pathogen_removal(self):

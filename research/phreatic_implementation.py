@@ -95,14 +95,17 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
 # phreatic_scheme.make_dictionary()  
 phreatic_well = AnalyticalWell(phreatic_scheme)
 phreatic_well.phreatic() 
-# phreatic_conc = SubstanceTransport(phreatic_well, substance = 'OMP-X')
+phreatic_conc = SubstanceTransport(phreatic_well, substance = 'OMP-X')
 # phreatic_conc = SubstanceTransport(phreatic_well, substance = 'benzene')
 
 # phreatic_conc = SubstanceTransport(phreatic_well, substance = 'benzo(a)pyrene')
-phreatic_conc = SubstanceTransport(phreatic_well, substance = 'AMPA')
+# phreatic_conc = SubstanceTransport(phreatic_well, substance = 'AMPA')
 
 phreatic_conc.compute_omp_removal()
 # phreatic_conc.plot_concentration()
 
-# phreatic_conc.plot_concentration(x_axis='Time') 
+conc_plot = phreatic_conc.plot_concentration(x_axis='Time') 
+
+conc_plot.savefig('travel_time_versus_radial_distance_phreatic.png', dpi=300, bbox_inches='tight')  # save_results_to + '/
+
 # %%

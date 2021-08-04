@@ -2195,8 +2195,10 @@ class AnalyticalWell():
         plt.title('Aquifer type: ' + self.schematisation.schematisation_type)
         plt.grid()
         plt.legend()
-        plt.savefig('travel_time_versus_radial_distance_'+self.schematisation.schematisation_type+'.png', dpi=300, bbox_inches='tight')  # save_results_to + '/
+        # plt.savefig('travel_time_versus_radial_distance_'+self.schematisation.schematisation_type+'.png', dpi=300, bbox_inches='tight')
 
+        return fig
+    
 
     def plot_travel_time_versus_cumulative_abstracted_water(self,
                                                             xlim,
@@ -2222,7 +2224,7 @@ class AnalyticalWell():
         plt.title('Aquifer type: ' + self.schematisation.schematisation_type)
         plt.grid()
         plt.legend()
-        plt.savefig('travel_time_versus_cumulative_fraction_abstracted_water_'+self.schematisation.schematisation_type+'.png', dpi=300, bbox_inches='tight')  # save_results_to + '/
-
+        # plt.savefig('travel_time_versus_cumulative_fraction_abstracted_water_'+self.schematisation.schematisation_type+'.png', dpi=300, bbox_inches='tight')
+        return fig
 
 # %%
