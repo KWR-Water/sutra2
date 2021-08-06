@@ -26,7 +26,6 @@ import os
 # from pandas import read_excel
 from pandas import read_csv
 from pandas import read_excel
-from tqdm import tqdm  # tqdm gives a progress bar for the simultation
 # import pyarrow.parquet as pq
 import math
 from scipy.special import kn as besselk

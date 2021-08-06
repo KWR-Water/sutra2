@@ -1,11 +1,10 @@
 # for developers install with `pip install -r requirements-developers.txt`
 ipykernel
 matplotlib>=3.2
-flopy >=3.3
-tqdm
+flopy>=3.3
 # python ==3.6
 pandas>=1
 openpyxl>=3.0.0
 cloudpickle>=1.2.2
 xlrd>=1.0.0
-scipy >=1.5.2
+scipy>=1.5.2

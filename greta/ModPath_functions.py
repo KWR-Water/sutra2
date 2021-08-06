@@ -32,7 +32,6 @@ import sys
 from pandas import read_csv
 from pandas import read_excel
 import datetime
-from tqdm import tqdm  # tqdm gives a progress bar for the simultation
 # import pyarrow.parquet as pq
 import math
 import re # regular expressions

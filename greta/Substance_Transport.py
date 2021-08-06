@@ -28,7 +28,6 @@ import pandas as pd
 import os
 from pandas import read_csv
 from pandas import read_excel
-from tqdm import tqdm  # tqdm gives a progress bar for the simultation
 import math
 from scipy.special import kn as besselk
 import datetime
@@ -37,7 +36,8 @@ from datetime import timedelta
 path = os.getcwd()  # path of working directory
 
 class Substance:
-    ''' Placeholder class which will later be replaced by the QSAR functionality of AquaPriori.
+    ''' 
+    Placeholder class which will later be replaced by the QSAR functionality of AquaPriori.
 
     Attributes
     ---------
@@ -127,8 +127,12 @@ class Substance:
 
         self.substance_dict = substances_dict[substance_name]
 
+#ah_todo @MartinK, MartinvdS -> let the user specify the chemical in the Substance transport file instead of schematisation?
+# also let them feed it a dictionary with their own substance?
+
 class SubstanceTransport():
-    """ Returns concentration in a groundwater well for a given Organic Micro Pollutant or microbial species.
+    """ 
+    Returns concentration in a groundwater well for a given Organic Micro Pollutant or microbial species.
 
     Attributes
     ----------
@@ -249,7 +253,9 @@ class SubstanceTransport():
         # self.df_flowline['substance'] = self.substance_dict['substance_name']
 
     def _init_omp(self):
-        ''' Initialisation if the Substance is an OMP'''
+        ''' 
+        Initialisation if the Substance is an OMP
+        '''
         if self.omp_inialized:
             pass
         else:
@@ -372,9 +378,9 @@ class SubstanceTransport():
                 # Put back in, otherwise there is an error there are too many numbers in the output
                 # can't reproduce the error, so take out again
                 
-                # elif (self.df_particle.travel_time_zone.loc[i+1] * self.df_particle.retardation.loc[i+1]
-                #                                                             / self.df_particle.omp_half_life_temperature_corrected.loc[i+1]) >300:
-                #     self.df_particle.at[i+1, 'steady_state_concentration'] = 0
+                elif (self.df_particle.travel_time_zone.loc[i+1] * self.df_particle.retardation.loc[i+1]
+                                                                            / self.df_particle.omp_half_life_temperature_corrected.loc[i+1]) >300:
+                    self.df_particle.at[i+1, 'steady_state_concentration'] = 0
 
                 # otherwise, calculate the outcoming concentration from the zone, given the input concentration to the zone.
                 # in the case of the vadose zone, the incoming concentration is the initial concentration
@@ -404,7 +410,8 @@ class SubstanceTransport():
             self.df_flowline.at[i, 'breakthrough_concentration'] = df['steady_state_concentration'].iloc[-1]
 
     def compute_omp_removal(self):
-        """ Calculates the concentration in the well of each flowline. Returns
+        """ 
+        Calculates the concentration in the well of each flowline. Returns
         the values in 'df_flowline' and 'df_particle' as attributes of the object.
 
         Returns
@@ -535,7 +542,8 @@ class SubstanceTransport():
 
     def compute_concentration_in_well_at_date(self):
         #@Martink, this function is quite slow. I'm not sure how to make it go faster?
-        ''' Calculates the concentration in the well up to a specific date,
+        ''' 
+        Calculates the concentration in the well up to a specific date,
         taking into account the start and end date of the contamiantion and
         start date of the well.
 
@@ -575,6 +583,7 @@ class SubstanceTransport():
             end_time = end_date_contamination- start_date
             self.df_flowline['end_time_contamination_breakthrough'] = self.df_flowline['total_breakthrough_travel_time'] + end_time.days
 
+        # AH_todo, Solution to make this faster is to rduce this down to xx timestpes, e.g. once a month
         time_array = np.arange(0, compute_date.days+1, 1)
         back_date_array = np.arange(-back_compute_date.days,0, 1)
         time_array = np.append(back_date_array,time_array)
@@ -584,6 +593,8 @@ class SubstanceTransport():
         self.df_flowline['concentration_in_well'] = (self.df_flowline['breakthrough_concentration']
                             * self.df_flowline['discharge']/ self.df_flowline['well_discharge'])
         df_flowline = self.df_flowline
+
+        # AH_todo, preset the length of list to improve some time
         well_concentration = []
 
         #sum the concentration in the well for each timestep

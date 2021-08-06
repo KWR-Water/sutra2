@@ -31,19 +31,13 @@ Steps
 
 Operating the analytical module typically involves 5 steps:
 
-#. Define the hydrogeochemical system using the HydroChemicalSchematisation class. In the HydroChemicalSchematisation class choose the:
-
-    * Computational method ('analytical' or 'modpath').
-    * The schematisation type ('phreatic', 'semiconfined', 'riverbankfiltration', 'basinfiltration').
-    * The removal function ('omp', 'pathogen).
-    * Input the relevant geohydrological data
-
+#. Define the hydrogeochemical system using the HydroChemicalSchematisation class. 
 #. Run the AnalyticalWell class to calculate the travel time distribution in the different aquifer zones
 #. Run the Substance class to retrieve the substance (removal) parameters
 #. Run the SubstanceTransport class to calculate the removal and concentration in each zone and in the well
 #. Plot the desired functions
 
-Now, let’s try some examples.
+Now, let’s try some examples. First we import the necessary python packages
 
 .. ipython:: python
 
@@ -66,111 +60,58 @@ Now, let’s try some examples.
 
 
 Step 1: Define the HydroChemicalSchematisation
-===============================================
+==============================================
 The first step is to define the hydrogeochemistry of the system using the HydroChemicalSchematisation class.
-In this class you specify which solution you want (Analytical or Modflow), the
-schematisation from the choice of 4 PSWFs, and the relevant parameters for the porous
-media, the hydrochemistry, hydrology and the contamination of interest (OMP or
-pathogen).
+In this class you specify the:
 
-The class parameters can be roughly grouped into the following categories;
+    * Computational method ('analytical' or 'modpath').
+    * The schematisation type ('phreatic', 'semiconfined').
+    .. ('riverbankfiltration', 'basinfiltration' coming soon).
+    * The removal function ('omp' )
+    .. *  coming soon, 'pathogen).
+    * Input the relevant parameters for the porous media, the hydrochemistry, hydrology and the contamination of interest
 
-* System.
-* Settings.
-* Porous Medium
-* Hydrochemistry
-* Hydrology
-* Contaminant
-* Diffuse contamination
-* Point Contamination
-* Model size
+.. The class parameters can be roughly grouped into the following categories;
 
-Units of input ate
+.. * System.
+.. * Settings.
+.. * Porous Medium
+.. * Hydrochemistry
+.. * Hydrology
+.. * Contaminant
+.. * Diffuse contamination
+.. * Point Contamination
+.. * Model size
 
-    * Time: days
-    * Length: meters
-    * Concentration: ug/L
-    * Temperature: degree C
-    * Depth: meters above sea level (m ASL)
-    * Density: kg/L
-    * DOC/TOC: mg/L
+Units of input are:
 
-1A System parameters
---------------------------------------
-Choose the schematisaiton type of the model from one of the four well types;
+* Time: days
+* Length: meters
+* Concentration: ug/L
+* Temperature: degree C
+* Depth: meters above sea level (m ASL)
+* Density: kg/L
+* DOC/TOC: mg/L
 
-*'phreatic',
-*'semiconfined',
-*'riverbankfiltration',
-*'basinfiltration'
-
-1B Settings
---------------------------------------
-
-* computation_method
-* removal_function
-* temp_correction_Koc
-* temp_correction_halflife
-* biodegradation_sorbed_phase
-* compute_thickness_vadose_zone
-
-1C Porous Medium
---------------------------------------
-
-1D Hydrochemistry
---------------------------------------
-
-1E Hydrology
---------------------------------------
-
-1F Contaminant
---------------------------------------
-* Diffuse contamination
-* Point Contamination
-
-1G Modflow
---------------------------------------
-Additional parameters about the model domain are input here
-
-In this example we calculate the analytical solution for a phreatic well, with a diffuse
-contamination over the whole model domain.
+Lets start with a simple example defining a HydroChemicalSchematisation object for a phreatic aquifer:
 
 .. ipython:: python
 
-    from greta.Analytical_Well import HydroChemicalSchematisation
     phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                        well_discharge=7500, #m3/day
-                                        vertical_anistropy_shallow_aquifer=0.0006,
-                                        porosity_vadose_zone=0.38,
-                                        porosity_shallow_aquifer=0.35,
-                                        porosity_target_aquifer=0.35,
-                                        recharge_rate=0.00082, #m/day
-                                        moisture_content_vadose_zone=0.15,
-                                        ground_surface=22.,
-                                        thickness_vadose_zone_at_boundary=5.,
-                                        thickness_shallow_aquifer=10.,
-                                        thickness_target_aquifer=40.,
-                                        hor_permeability_target_aquifer=35.,
-                                        thickness_full_capillary_fringe=0.4,
-                                        redox_vadose_zone='suboxic',
-                                        redox_shallow_aquifer='anoxic',
-                                        redox_target_aquifer='deeply_anoxic',
-                                        pH_vadose_zone=5.,
-                                        pH_shallow_aquifer=6.,
-                                        pH_target_aquifer=7.,
-                                        dissolved_organic_carbon_vadose_zone=10., #mg/L
-                                        dissolved_organic_carbon_shallow_aquifer=4.,
-                                        dissolved_organic_carbon_target_aquifer=2.,
-                                        fraction_organic_carbon_vadose_zone=0.001,
-                                        fraction_organic_carbon_shallow_aquifer=0.0005,
-                                        fraction_organic_carbon_target_aquifer=0.0005,
-                                        temperature=11.,
-                                        solid_density_vadose_zone=2.650,
-                                        solid_density_shallow_aquifer=2.650,
-                                        solid_density_target_aquifer=2.650,
-                                        diameter_borehole=0.75,
-                                        diffuse_input_concentration=600, #ug/L
-                                        )
+                                                        well_discharge=7500, #m3/day
+                                                        recharge_rate=0.0008, #m/day
+                                                        thickness_vadose_zone_at_boundary=5, #m
+                                                        thickness_shallow_aquifer=10,  #m
+                                                        thickness_target_aquifer=40, #m
+                                                        hor_permeability_target_aquifer=35, #m/day
+                                                        redox_vadose_zone='anoxic',
+                                                        redox_shallow_aquifer='anoxic',
+                                                        redox_target_aquifer='deeply_anoxic',
+                                                        pH_target_aquifer=7.,
+                                                        temperature=11.,
+                                                        substance='benzene',
+                                                        diffuse_input_concentration = 100, #ug/L
+                                                        )
 
 The parameters from the HydroChemicalSchematisation class are added as attributes to
 the class and can be accessed for example:
@@ -181,48 +122,55 @@ the class and can be accessed for example:
     phreatic_schematisation.well_discharge
     phreatic_schematisation.porosity_shallow_aquifer
 
+If not defined, default values are used for the rest of the parameters. To view all parameters in the schematisation:
+
+.. ipython:: python
+
+    phreatic_schematisation.__dict__
+
+
 Step 2: Run the AnalyticalWell class
 =====================================
-In the AnalyticalWell class the analytical solution for the chosen PSWF is run and
-the travel time is calculated for each of the zones.
+Next we create an AnalyticalWell object for the HydroChemicalSchematisation object we just made.
 
-.. .. ipython:: python
-..     phreatic_well = AnalyticalWell(phreatic_schematisation) # pass the phreatic_well object to initailize the well object
-..     phreatic_well.phreatic() #calculate the travel time distribution for the phreatic analytical solution
+.. ipython:: python
 
-You can plot the travel time distribution of the AnalyticalWell function here, as
-well as the cumulative fraction of abstracted water
+    phreatic_well = AnalyticalWell(phreatic_schematisation)
 
-.. .. ipython:: python
-..     phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 2000], ylim=[1e3, 1e6])
-..     phreatic_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
+Then we calculate the travel time for each of the zones unsaturated, shallow aquifer and target aquifer zones
+by running the .phreatic() function for the well object. 
 
-.. .. include::
-..     travel_time_versus_cumulative_fraction_abstracted_water_phreatic.png
-..     travel_time_versus_radial_distance_phreatic.png
+.. ipython:: python
 
-From the AnalyticalWell class two important outputs are:
+    phreatic_well.phreatic()
 
-* df_particle - Pandas dataframe with the travel time per zone and
-* df_flowline
+The total travel time can be plotted as a function of radial distance from the well, or as a function
+of the cumulative fraction of abstracted water: 
 
+.. ipython:: python
+
+    radial_plot = phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 2000], ylim=[1e3, 1e6])
+    cumulative_plot = phreatic_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
+
+.. image:: travel_time_versus_radial_distance_phreatic.png
+
+.. image:: travel_time_versus_cumulative_abs_water_phreatic.png
+
+From the AnalyticalWell class two other important outputs are:
+
+* df_particle - Pandas dataframe with data about the different flowlines per zone (unsaturated/shallwo/target)
+* df_flowline - Pandas dataframe with data about the flowlines per flowline (eg. total travel time per flowline)
 
 Step 3: View the Substance class (Optional)
 ===========================================
 You can retrieve the default substance parameters used to calculate the removal in the
-SubstanceTransport class.
+SubstanceTransport class. The data are stored in a dictionary
 
-.. .. ipython:: python
-..     test_substance = Substance(substance_name='benzene')
+.. ipython:: python
+    
+    test_substance = Substance(substance_name='benzene')
+    test_substance.substance_dict
 
-You may specify a different value for the substance parameters, for example
-a different half-life for the anoxic redox zone. This can be input in the HydroChemicalSchematisation
-and this will be used in the calculation for the removal for the OMP.
-
-.. .. ipython:: python
-..     phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
-..                                 ....
-..                                 halflife_anoxic= 650, )
 
 Step 4: Run the SubstanceTransport class
 ========================================
@@ -230,42 +178,127 @@ To calculate the removal and the steady-state concentration in each zone, create
 object by running the SubstanceTransport class with the phreatic_well object and specifying
 the OMP (or pathogen) of interest.
 
-In this example we use benzene. First we create the object then compute the removal:
+In this example we use benzene. First we create the object and view the substance properties:
 
-.. .. ipython:: python
-..     phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzene')
-..     phreatic_concentration.compute_omp_removal()
+.. ipython:: python
 
+    phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzene')
+    phreatic_concentration.substance_dict
+
+Optional: You may specify a different value for the substance parameters, for example
+a different half-life for the anoxic redox zone. This can be input in the HydroChemicalSchematisation
+and this will be used in the calculation for the removal for the OMP. The AnalyticalWell and 
+phreatic() functions must be rerun:
+
+.. ipython:: python
+
+    phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
+                                                            well_discharge=7500, #m3/day
+                                                            recharge_rate=0.0008, #m/day
+                                                            thickness_vadose_zone_at_boundary=5,
+                                                            thickness_shallow_aquifer=10,
+                                                            thickness_target_aquifer=40,
+                                                            hor_permeability_target_aquifer=35,
+                                                            redox_vadose_zone='anoxic',
+                                                            redox_shallow_aquifer='anoxic',
+                                                            redox_target_aquifer='deeply_anoxic',
+                                                            pH_target_aquifer=7.,
+                                                            temperature=11.,
+                                                            substance='benzene',
+                                                            diffuse_input_concentration = 100, #ug/L
+                                                            partition_coefficient_water_organic_carbon=2,
+                                                            dissociation_constant=1,
+                                                            halflife_suboxic=12, 
+                                                            halflife_anoxic=420, 
+                                                            halflife_deeply_anoxic=6000,
+                                                            )
+    phreatic_well = AnalyticalWell(phreatic_schematisation)
+    phreatic_well.phreatic() 
+    phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzene')
+    
 If you have specified a values for the substance (e.g. half-life, pKa, log_Koc),
 the default value is overriden and used in the calculation of the removal. You can
 view the updated substance dictionary from the concentration object:
 
-.. .. ipython:: python
-..     phreatic_concentration.substance_dict
+.. ipython:: python
+
+    phreatic_concentration.substance_dict
+
+Then we compute the removal by running the 'compute_omp_removal' function:
+phreatic_concentration.compute_omp_removal()
+
+.. ipython:: python
+    
+    phreatic_concentration.compute_omp_removal()
+
 
 Once the removal has been calculated, you can view the steady-state concentration
-and breakthrough time for the OMP in the df_particle:
-.. .. ipython:: python
-..     phreatic_concentration.df_particle['steady_state_concentration]
-..     phreatic_concentration.df_particle['total_breakthrough_time']
+and breakthrough time per zone for the OMP in the df_particle:
+
+.. ipython:: python
+
+    phreatic_concentration.df_particle[['flowline_id', 'zone', 'steady_state_concentration', 'breakthrough_travel_time']].head(4)
 
 View the steady-state concentration of the flowline or the steady-state
 contribution of the flowline to the concentration in the well
-.. .. ipython:: python
-..     phreatic_concentration.df_particle['breakthrough_concentration]
-..     phreatic_concentration.df_particle['concentration_in_well']
 
-Plot the breakthrough curve at the well over time
-.. .. ipython:: python
-..     phreatic_concentration.plot_concentration(xlim=[0, 500], ylim=[0,0.1 ])
-.. .. include::
-..     travel_time_versus_cumulative_fraction_abstracted_water_phreatic.png
-..     travel_time_versus_radial_distance_phreatic.png
+.. ipython:: python
 
-Other possibilities
+    phreatic_concentration.df_flowline[['flowline_id', 'breakthrough_concentration', 'total_breakthrough_travel_time']].head(5)
 
+Plot the breakthrough curve at the well over time:
+
+.. ipython:: python
+
+    benzene_plot = phreatic_concentration.plot_concentration(ylim=[0,10 ])
+
+.. image:: benzene_plot.png
+
+You can also compute the removal for a different OMP of interest:
+
+* OMP-X: a ficticous OMP with no degradation or sorption
+* AMPA
+* benzo(a)pyrene
+
+To do so you can use the original schematisation, but specify a different OMP when you create
+the SubstanceTransport object.
+
+.. ipython:: python
+
+    phreatic_well = AnalyticalWell(phreatic_schematisation)
+    phreatic_well.phreatic() 
+    phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'OMP-X')
+    phreatic_concentration.compute_omp_removal()
+    omp_x_plot = phreatic_concentration.plot_concentration(ylim=[0,100 ])
+
+.. image:: omp_x_plot.png
+
+
+.. ipython:: python
+
+    phreatic_well = AnalyticalWell(phreatic_schematisation)
+    phreatic_well.phreatic() 
+    phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzo(a)pyrene')
+    phreatic_concentration.compute_omp_removal()
+    benzo_plot = phreatic_concentration.plot_concentration(ylim=[0,1])
+
+.. image:: benzo_plot.png
+
+.. ipython:: python
+
+    phreatic_well = AnalyticalWell(phreatic_schematisation)
+    phreatic_well.phreatic() 
+    phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'AMPA')
+    phreatic_concentration.compute_omp_removal()
+    ampa_plot = phreatic_concentration.plot_concentration( ylim=[0,1])
+
+.. image:: ampa_plot.png
+
+
+Other examples in the Bas_tutorial.py file are:
+
+* diffuse/point source example for phreatic 
 * semiconfined example
-* point source example
 
 
 

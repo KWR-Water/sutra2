@@ -18,4 +18,5 @@ Fields (PSWFs)
     glossary.rst
     API reference <api/modules.rst>
     about.rst
+.. example.rst very large snippet
 

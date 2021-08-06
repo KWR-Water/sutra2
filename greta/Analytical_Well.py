@@ -30,7 +30,6 @@ import pandas as pd
 import os
 from pandas import read_csv
 from pandas import read_excel
-from tqdm import tqdm  # tqdm gives a progress bar for the simultation
 import math
 from scipy.special import kn as besselk
 import datetime as dt
@@ -1099,6 +1098,9 @@ class AnalyticalWell():
                                                         depth_point_contamination=None,
                                                         ):
         ''' Calculates the travel time in the shallow aquifer for the phreatic case.
+        If the depth_point_contamination is None, then the calculation is for a 
+        diffuse flow lines
+        #AH_todo finish this explanation
 
         Parameters
         ----------
@@ -1115,11 +1117,15 @@ class AnalyticalWell():
             Travel time in the shallow aquifer for each point in the given distance array, [days].
         '''
 
-        # this is a complex if statement. please elaborate on what is happening in a comment
+        #MK: this is a complex if statement. please elaborate on what is happening in a comment
         if depth_point_contamination is None:
             travel_distance_shallow_aquifer = self.schematisation.thickness_shallow_aquifer - (self.schematisation.groundwater_level - head)
             travel_time_shallow_aquifer = ((travel_distance_shallow_aquifer)
                             * self.schematisation.porosity_shallow_aquifer / self.schematisation.recharge_rate)
+            
+            #@MartinvdS -> under the default conditions, the travel time in the shallow aquifer is negative
+            # should be alter the default values or do we do below?
+            travel_time_shallow_aquifer[travel_time_shallow_aquifer<0] = 0
 
         else:
             # travel_distance_shallow_aquifer =
