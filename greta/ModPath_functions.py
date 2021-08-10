@@ -303,13 +303,15 @@ class ModPathWell:
         Dictionaries (Modflow) with all parameters as an attribute of the function.
 
         '''
-        if type(schematisation) == "dict":
+        if type(schematisation) == "object":
             self.schematisation = schematisation
-            self.schematisation_dict = self.schematisation
-        else:
             #Make dictionaries
             self.schematisation.make_dictionary()
             self.schematisation_dict = {}
+        elif type(schematisation) == "dict":
+            self.schematisation = schematisation
+            self.schematisation_dict = self.schematisation
+
         
     def _create_schematisation_dict(self,required_keys):
         '''
