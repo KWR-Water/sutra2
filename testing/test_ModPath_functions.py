@@ -12,6 +12,7 @@ from pathlib import Path
 # except ModuleNotFoundError:
 #     from project_path import module_path
 
+# <<<<<<< HEAD
 # Import schematisation functions
 try:
     from greta.ModPath_functions import ModPathWell   
@@ -33,11 +34,16 @@ except ModuleNotFoundError as e:
 # from greta.Substance_Transport import *
 from pandas._testing import assert_frame_equal
 # from greta.ModPath_functions import ModPathWell  
+# =======
+from greta.Analytical_Well import *
+from greta.Substance_Transport import *
+from pandas.testing import assert_frame_equal
 
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
 
 
+# <<<<<<< HEAD
 #%% 
 def test_modflow_run_phreatic():
     test_phrea = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
@@ -77,12 +83,19 @@ def test_modflow_run_phreatic():
                         run_mpmodel = False)
     assert modpath_phrea.success_mf
 
+#=======
+#%%
+
 def test_travel_time_distribution_phreatic():
     output_phreatic = pd.read_csv(path / 'phreatic_test.csv')
     output_phreatic = output_phreatic.round(7) #round to 7 digits (or any digit), keep same as for the output for the model to compare
 
+#<<<<<<< HEAD
     test_ = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                         computation_method= 'analytical', 
+# =======
+    test_ = HydroChemicalSchematisation(schematisation_type='phreatic',
+                                        computation_method= 'analytical',
                                         what_to_export='omp',
                                         well_discharge=319.4*24,
                                         # vertical_resistance_aquitard=500,
@@ -101,9 +114,9 @@ def test_travel_time_distribution_phreatic():
                                         # KD=1400,
                                         thickness_full_capillary_fringe=0.4,
                                         temperature=11,
-                                         solid_density_vadose_zone= 2.650, 
-                                        solid_density_shallow_aquifer= 2.650, 
-                                        solid_density_target_aquifer= 2.650, 
+                                         solid_density_vadose_zone= 2.650,
+                                        solid_density_shallow_aquifer= 2.650,
+                                        solid_density_target_aquifer= 2.650,
                                         diameter_borehole = 0.75,
                                         )
 

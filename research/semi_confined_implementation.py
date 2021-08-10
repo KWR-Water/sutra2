@@ -25,7 +25,6 @@ import os
 # from pandas import read_excel
 from pandas import read_csv
 from pandas import read_excel
-from tqdm import tqdm  # tqdm gives a progress bar for the simultation
 # import pyarrow.parquet as pq
 import math
 from scipy.special import kn as besselk
@@ -116,57 +115,11 @@ semiconfined_well.df_flowline
 semiconfined_well.plot_travel_time_versus_radial_distance(xlim=[0, 4000], ylim=[1e3, 1e6])
 semiconfined_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
 
-#%%
 semiconfined_conc = SubstanceTransport(semiconfined_well, substance = 'OMP-X')
-# semiconfined_well.df_flowline
-# semiconfined_conc = SubstanceTransport(semiconfined_well, substance = 'benzo(a)pyrene')
-# semiconfined_conc = SubstanceTransport(semiconfined_well, substance = 'benzene')
 
 semiconfined_conc.compute_omp_removal()
 
-#%%
 semiconfined_conc.plot_concentration()
-
 semiconfined_conc.plot_concentration(x_axis='Time') 
 
-#%%
-semiconfined_conc.df_flowline
-# semiconfined_conc.df_particle
-
-semiconfined_conc.plot_concentration(xlim=[0, 100], ylim=[0,1 ])
-semiconfined_well.plot_travel_time_versus_radial_distance(xlim=[0, 4000], ylim=[1e3, 1e6])
-semiconfined_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
-
-# semiconfined_conc.compute_omp_removal()
-# # semiconfined_conc.df_particle #.steady_state_concentration
-# semiconfined_conc.df_particle
-# semiconfined_conc.substance_dict
-
-# %%
-#%%
-# Export dicts for steven
-
-all_dicts = { 'simulation_paramters' : semiconfined_scheme.simulation_paramters,
-        'geo_parameters' : semiconfined_scheme.geo_parameters,
-        'ibound_parameters' : semiconfined_scheme.ibound_parameters,
-        'recharge_parameters' : semiconfined_scheme.recharge_parameters,
-        'well_parameters' : semiconfined_scheme.well_parameters,
-        'point_parameters' : semiconfined_scheme.point_parameters,
-        'substance_parameters' : semiconfined_scheme.substance_parameters,
-        'bas_parameters' : semiconfined_scheme.bas_parameters,
-}
-
-
-f = open("semiconfined_dict.txt","w")
-f.write( str(all_dicts))
-f.close()
-#%%
-# import the dictionary
-file = open("semiconfined_dict.txt", "r")
-contents = file.read()
-dictionary = ast.literal_eval(contents)
-file.close()
-
-dictionary
-# recharge_parameters = dictionary['recharge_parameters']
 #%%

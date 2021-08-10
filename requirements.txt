@@ -1,19 +1,10 @@
+# for developers install with `pip install -r requirements-developers.txt`
 ipykernel
-matplotlib =3.3.4
-flopy = 3.3.3 
-python = 3.6
-pandas>=0.23
-sphinx_rtd_theme
+matplotlib>=3.2
+flopy>=3.3
+# python ==3.6
+pandas>=1
 openpyxl>=3.0.0
-cloudpickle==1.2.2
+cloudpickle>=1.2.2
 xlrd>=1.0.0
-pytest = 6.2.3
-scipy =1.5.2
-autopep8 =1.5.7
-
-# developers:
-# numpydoc
-# sphinx_rtd_theme
-# pytest
-# jupyter-sphinx?
-# matplotlib?
+scipy>=1.5.2

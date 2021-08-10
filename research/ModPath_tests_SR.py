@@ -22,12 +22,6 @@ from pandas import read_excel
 import datetime
 
 from scipy.special.orthogonal import chebyc
-try:
-    from tqdm import tqdm  # tqdm gives a progress bar for the simultation
-except Exception as e:
-    print(e)
-    pass
-# import pyarrow.parquet as pq
 import math
 import re # regular expressions
 from scipy.special import kn as besselk

@@ -1,3 +1,8 @@
 
--r ../requirements.txt
+-r requirements.txt
 sphinx_rtd_theme
+pytest
+pylint
+autopep8==1.5.7
+jupyter-sphinx
+numpydoc
