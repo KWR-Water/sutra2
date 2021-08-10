@@ -90,10 +90,6 @@ def test_travel_time_distribution_phreatic():
     output_phreatic = pd.read_csv(path / 'phreatic_test.csv')
     output_phreatic = output_phreatic.round(7) #round to 7 digits (or any digit), keep same as for the output for the model to compare
 
-#<<<<<<< HEAD
-    test_ = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
-                                        computation_method= 'analytical', 
-# =======
     test_ = HydroChemicalSchematisation(schematisation_type='phreatic',
                                         computation_method= 'analytical',
                                         what_to_export='omp',
