@@ -1241,7 +1241,7 @@ class AnalyticalWell():
         travel_time_shallow_aquifer: array
             Travel time in the shallow aquifer for each point in the given distance array, [days].
         '''
-
+        
         if depth_point_contamination is None:
             travel_distance_shallow_aquifer  = self.schematisation.thickness_shallow_aquifer
         elif depth_point_contamination > self.schematisation.bottom_shallow_aquifer:

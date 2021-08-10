@@ -312,7 +312,7 @@ class ModPathWell:
     def _check_schematisation(self,required_keys):
         
         for req_key in required_keys:
-            if not req_key in self.schematisation.keys():
+            if not hasattr(self.schematisation,req_key):
                 print(f'Error, required variable {req_key} is not defined in schematisation dict.')
 
     def _check_required_variables(self,required_variables):
@@ -475,7 +475,7 @@ class ModPathWell:
                 dtype = "float"
 
         if dict_keys is None:
-            dict_keys = [iDict for iDict in schematisation.keys()]
+            dict_keys = [iDict for iDict in self.schematisation.__dict__.keys()]
        
         
         # Loop through schematisation keys (dict_keys)
@@ -529,7 +529,7 @@ class ModPathWell:
         bound_list = []
 
         if dict_keys is None:
-            dict_keys = [iDict for iDict in schematisation.keys()]
+            dict_keys = [iDict for iDict in self.schematisation.__dict__.keys()]
 
         # Loop through schematisation keys (dict_keys)
         for iDict in dict_keys:
@@ -1425,7 +1425,7 @@ class ModPathWell:
         self.run_mpmodel = run_mpmodel
 
         if simulation_parameters is None:
-            self.simulation_parameters = self.schematisation["simulation_parameters"]
+            self.simulation_parameters = self.schematisation.simulation_parameters
         else:
             self.simulation_parameters = simulation_parameters
 

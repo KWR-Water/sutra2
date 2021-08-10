@@ -4,6 +4,7 @@ import pytest
 from pandas import read_csv
 import pandas as pd
 import os
+import sys
 # path = os.getcwd()  # path of working directory
 from pathlib import Path
 # try:
@@ -11,10 +12,27 @@ from pathlib import Path
 # except ModuleNotFoundError:
 #     from project_path import module_path
 
-from greta.Analytical_Well import *
-from greta.Substance_Transport import *
+# Import schematisation functions
+try:
+    from greta.ModPath_functions import ModPathWell   
+    import greta.Analytical_Well as AW
+    from greta.Substance_Transport import *
+except ModuleNotFoundError as e:
+    print(e, ": second try.")
+    module_path = os.path.join("..","greta")
+    if module_path not in sys.path:
+        sys.path.insert(0,module_path)
+
+    from ModPath_functions import ModPathWell   
+    import Analytical_Well as AW
+    from Substance_Transport import *
+
+    print("Second try to import modules succeeded.")
+
+# from greta.Analytical_Well import *
+# from greta.Substance_Transport import *
 from pandas._testing import assert_frame_equal
-from greta.ModPath_functions import ModPathWell  
+# from greta.ModPath_functions import ModPathWell  
 
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
@@ -22,7 +40,7 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 
 #%% 
 def test_modflow_run_phreatic():
-    test_phrea = HydroChemicalSchematisation(schematisation_type='phreatic',
+    test_phrea = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                         computation_method= 'analytical', 
                                         what_to_export='omp',
                                         well_discharge=319.4*24,
@@ -47,11 +65,13 @@ def test_modflow_run_phreatic():
                                         solid_density_target_aquifer= 2.650, 
                                         diameter_borehole = 0.75,
                                         )
+    test_phrea.make_dictionary()
     modpath_phrea = ModPathWell(test_phrea,
                             workspace = "test_ws",
                             modelname = "phreatic",
                             bound_left = "xmin",
                             bound_right = "xmax")
+
     # Run phreatic schematisation
     modpath_phrea.run_model(run_mfmodel = True,
                         run_mpmodel = False)
@@ -61,7 +81,7 @@ def test_travel_time_distribution_phreatic():
     output_phreatic = pd.read_csv(path / 'phreatic_test.csv')
     output_phreatic = output_phreatic.round(7) #round to 7 digits (or any digit), keep same as for the output for the model to compare
 
-    test_ = HydroChemicalSchematisation(schematisation_type='phreatic',
+    test_ = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                         computation_method= 'analytical', 
                                         what_to_export='omp',
                                         well_discharge=319.4*24,
@@ -102,3 +122,5 @@ def test_travel_time_distribution_phreatic():
         print("Assertion Exception Raised - TTD test")
     else:
         print("Success, no error in TTD!")
+
+# %%
