@@ -35,9 +35,9 @@ except ModuleNotFoundError as e:
 from pandas._testing import assert_frame_equal
 # from greta.ModPath_functions import ModPathWell  
 # =======
-from greta.Analytical_Well import *
-from greta.Substance_Transport import *
-from pandas.testing import assert_frame_equal
+# from greta.Analytical_Well import *
+# from greta.Substance_Transport import *
+# from pandas.testing import assert_frame_equal
 
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
@@ -72,6 +72,7 @@ def test_modflow_run_phreatic():
                                         diameter_borehole = 0.75,
                                         )
     test_phrea.make_dictionary()
+    print(test_phrea.__dict__)
     modpath_phrea = ModPathWell(test_phrea,
                             workspace = "test_ws",
                             modelname = "phreatic",
@@ -90,7 +91,7 @@ def test_travel_time_distribution_phreatic():
     output_phreatic = pd.read_csv(path / 'phreatic_test.csv')
     output_phreatic = output_phreatic.round(7) #round to 7 digits (or any digit), keep same as for the output for the model to compare
 
-    test_ = HydroChemicalSchematisation(schematisation_type='phreatic',
+    test_ = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                         computation_method= 'analytical',
                                         what_to_export='omp',
                                         well_discharge=319.4*24,
@@ -116,7 +117,7 @@ def test_travel_time_distribution_phreatic():
                                         diameter_borehole = 0.75,
                                         )
 
-    well1 = AnalyticalWell(test_)
+    well1 = AW.AnalyticalWell(test_)
     well1.phreatic()
     output = well1.df_output
     output = output[["total_travel_time", "travel_time_unsaturated",

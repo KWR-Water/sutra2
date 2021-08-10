@@ -303,10 +303,24 @@ class ModPathWell:
         Dictionaries (Modflow) with all parameters as an attribute of the function.
 
         '''
-        self.schematisation = schematisation
+        if type(schematisation) == "dict":
+            self.schematisation = schematisation
+            self.schematisation_dict = self.schematisation
+        else:
+            #Make dictionaries
+            self.schematisation.make_dictionary()
+            self.schematisation_dict = {}
         
-        #Make dictionaries
-        self.schematisation.make_dictionary()
+    def _create_schematisation_dict(self,required_keys):
+        '''
+        # Create schematisation_dict 
+        # required_keys = ["simulation_parameters","geo_parameters",
+        # "ibound_parameters","recharge_parameters",
+        # "well_parameters","point_parameters"]
+        '''
+        for iKey in required_keys:
+            if hasattr(self.schematisation,iKey):
+                self.schematisation_dict[iKey] = getattr(self.schematisation,iKey)
 
     def _check_schematisation(self,required_keys):
         
@@ -327,7 +341,7 @@ class ModPathWell:
         '''check the variables that we need for the individual aquifer types are not NONE aka set by the user'''
         
         # Required keys in self.schematisation
-        required_keys = ["simulation_parameters",#repeat for all
+        self.required_keys = ["simulation_parameters",#repeat for all
                               "geo_parameters",
                               "recharge_parameters",
                               "ibound_parameters",
@@ -340,9 +354,11 @@ class ModPathWell:
         required_variables = []
 
         # Check schematisation dictionary
-        self._check_schematisation(required_keys)
+        self._check_schematisation(self.required_keys)
         # Check required variables
         self._check_required_variables(required_variables)
+        # Fill schematisation dictionary
+        self._create_schematisation_dict(self.required_keys)
 
     def _check_init_semi_confined():
         ''' check the variables that we need for the individual aquifer types are not NONE aka set by the user '''
