@@ -67,101 +67,7 @@ except Exception as e:
 # flopy version
 print(flopy.__version__)
 
-#%%
-'''
-phreatic_scheme = {'simulation_parameters': 
-    {'schematisation_type': 'phreatic', 
-    'computation_method': 'modpath',
-    'temp_correction_Koc': True,
-    'temp_correction_halflife': True,
-    'biodegradation_sorbed_phase': True,
-    'compute_thickness_vadose_zone': True,
-    'start_date_well': datetime.date(1950, 1, 1),
-    'start_date_contamination': datetime.date(1950, 1, 1),
-    'compute_contamination_for_date': datetime.date(1950, 4, 11)},
-'geo_parameters': 
-    {'vadose': 
-        {'vadose': True,
-        'top': 22,
-        'bot': 17,
-        'rmin': 0.375,
-        'rmax': 1723.5846804982755,
-        'porosity': 0.38,
-        'moisture_content': 0.15,
-        'solid_density': 2.65,
-        'f_oc': 0.001,
-        'redox': 'anoxic',
-        'DOC': 10,
-        'pH': 5,
-        'T': 11},
-    'gravelpack1':
-        {'top': 7,
-        'bot': -33,
-        'rmin': 0.2,
-        'rmax': 1.0,
-        'hk': 1000,
-        'vani': 1},
-    'clayseal1':
-        {'top': 22,
-        'bot': 7,
-        'rmin': 0.2,
-        'rmax': 2.0,
-        'hk': 0.001,
-        'vani': 1},
-    'mesh_refinement1':
-        {'rmin': 0.75,
-        'rmax': 40,
-        'ncols': 20},
-    'mesh_refinement2': 
-        {'rmin': 40,
-        'rmax': 1723.5846804982755,
-        'ncols': 30}
-    },
-'ibound_parameters':
-    {'outer_boundary':
-        {'head': 17,
-        'top': 7,
-        'bot': -33,
-        'rmin': 1723.5846804982755,
-        'rmax': 1724.5846804982755}
-    }, 
-'recharge_parameters':
-    {'source1':
-        {'substance_name': 'benzo(a)pyrene',
-        'recharge': 0.0008213552361396304,
-        'rmin': 0.75,
-        'rmax': 1723.5846804982755,
-        'DOC': 0.0,
-        'TOC': 0.0,
-        'c_in': 0}
-    },
-'well_parameters':
-    {'well1':
-        {'Q': 7665.599999999999,
-        'top': 7,
-        'bot': -33,
-        'rmin': 0.0,
-        'rmax': 0.2}
-    },
-'point_parameters':
-    {'point1': 
-        {'substance_name': 'benzo(a)pyrene',
-        'c_in': 100.0,
-        'r_start': 0,
-        'z_start': 22,
-        'q_point': 100.0}
-    },
-'substance_parameters':
-    {'log_Koc': 6.43,
-    'pKa': 99,
-    'omp_half_life': 
-        {'suboxic': 530,
-        'anoxic': 2120,
-        'deeply_anoxic': 2120}
-    },
-'bas_parameters': {}
-}
-'''
+
 #%%
 '''
 Some clarifications in red below:
@@ -303,15 +209,19 @@ class ModPathWell:
         Dictionaries (Modflow) with all parameters as an attribute of the function.
 
         '''
-        if type(schematisation) == "object":
-            self.schematisation = schematisation
-            #Make dictionaries
-            self.schematisation.make_dictionary()
-            self.schematisation_dict = {}
-        elif type(schematisation) == "dict":
-            self.schematisation = schematisation
-            self.schematisation_dict = self.schematisation
+        self.schematisation = schematisation
 
+        if type(self.schematisation) == "dict":
+            self.schematisation_dict = self.schematisation
+        else:
+            #Make dictionaries
+            # self.schematisation.make_dictionary()
+            self.schematisation_dict = {}
+            # Required keys
+            self.required_keys = ["simulation_parameters","geo_parameters",
+            "ibound_parameters","recharge_parameters",
+            "well_parameters","point_parameters"]
+            self._create_schematisation_dict(self.required_keys)
         
     def _create_schematisation_dict(self,required_keys):
         '''
@@ -342,15 +252,16 @@ class ModPathWell:
         # check the variables that we need for the individual aquifer types are not NONE aka set by the user
         '''check the variables that we need for the individual aquifer types are not NONE aka set by the user'''
         
-        # Required keys in self.schematisation
-        self.required_keys = ["simulation_parameters",#repeat for all
-                              "geo_parameters",
-                              "recharge_parameters",
-                              "ibound_parameters",
-                              "well_parameters",
-                              "point_parameters",
-                              "substance_parameters"
-                            ]
+        
+        # # Required keys in self.schematisation
+        # required_keys = ["simulation_parameters",#repeat for all
+        #                       "geo_parameters",
+        #                       "recharge_parameters",
+        #                       "ibound_parameters",
+        #                       "well_parameters",
+        #                       "point_parameters",
+        #                       "substance_parameters"
+        #                     ]
 
         # Required variables (to run model)
         required_variables = []
@@ -359,8 +270,8 @@ class ModPathWell:
         self._check_schematisation(self.required_keys)
         # Check required variables
         self._check_required_variables(required_variables)
-        # Fill schematisation dictionary
-        self._create_schematisation_dict(self.required_keys)
+        # # Fill schematisation dictionary
+        # self._create_schematisation_dict(self.required_keys)
 
     def _check_init_semi_confined():
         ''' check the variables that we need for the individual aquifer types are not NONE aka set by the user '''
@@ -492,7 +403,7 @@ class ModPathWell:
                 dtype = "float"
 
         if dict_keys is None:
-            dict_keys = [iDict for iDict in self.schematisation.__dict__.keys()]
+            dict_keys = [iDict for iDict in self.schematisation_dict.keys()]
        
         
         # Loop through schematisation keys (dict_keys)
@@ -546,7 +457,7 @@ class ModPathWell:
         bound_list = []
 
         if dict_keys is None:
-            dict_keys = [iDict for iDict in self.schematisation.__dict__.keys()]
+            dict_keys = [iDict for iDict in self.schematisation_dict.keys()]
 
         # Loop through schematisation keys (dict_keys)
         for iDict in dict_keys:
@@ -668,7 +579,7 @@ class ModPathWell:
         '''
 
         if schematisation is None:
-            schematisation = getattr(self,"schematisation")
+            schematisation = getattr(self,"schematisation_dict")
 
         # Assign delv and zmid   
         self.nlay, self.delv, self.zmid, lay_bounds = self._assign_cellboundaries(schematisation = schematisation,
@@ -722,12 +633,12 @@ class ModPathWell:
         
         
         # Relevant dictionary keys
-        self.ibound = self.fill_grid(schematisation = self.schematisation,
+        self.ibound = self.fill_grid(schematisation = self.schematisation_dict,
                                     dict_keys = dict_keys,
                                     parameter = "ibound",
                                     grid = ibound,
                                     dtype = 'int')
-        self.strt = self.fill_grid(schematisation = self.schematisation,
+        self.strt = self.fill_grid(schematisation = self.schematisation_dict,
                                     dict_keys = dict_keys,
                                     parameter = "head",
                                     grid = strt,
@@ -1111,16 +1022,16 @@ class ModPathWell:
             # Try to delete the previous output files, to prevent accidental use of older files
             try:  
                 os.remove(self.model_hds)
-            except Exception:
+            except FileNotFoundError:
                 pass
             try:  
                 os.remove(self.model_cbc)
-            except Exception:
+            except FileNotFoundError:
                 pass
             
             # Run modflow model
             self.run_modflowmod()
-            print(self.success_mf, self.buff)
+            # print(self.success_mf, self.buff)
 
             # Model run completed succesfully
             print("Model run", self.workspace, self.modelname, "completed without errors:", self.success)
@@ -1136,13 +1047,13 @@ class ModPathWell:
         # Use dictionary keys from schematisation
         dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
                       "well_parameters"]
-        self.make_discretisation(schematisation = self.schematisation, dict_keys = dict_keys,
+        self.make_discretisation(schematisation = self.schematisation_dict, dict_keys = dict_keys,
                             model_type = self.model_type)
 
         # Set ibound grid and starting head
         dict_keys = ["ibound_parameters"]
         self.strt = np.zeros((self.nlay,self.nrow,self.ncol), dtype = 'float')
-        self.set_ibound(schematisation = self.schematisation,
+        self.set_ibound(schematisation = self.schematisation_dict,
                             dict_keys = dict_keys,
                             ibound = None,
                             strt = self.strt)
@@ -1178,7 +1089,7 @@ class ModPathWell:
             # Temporary value grid
             unitgrid = np.ones((self.nlay,self.nrow,self.ncol), dtype = 'float')
             # Fill grid with new values
-            grid = self.fill_grid(schematisation = self.schematisation,
+            grid = self.fill_grid(schematisation = self.schematisation_dict,
                             dict_keys = dict_keys,
                             parameter = iParm,
                             grid = unitgrid,
@@ -1205,7 +1116,7 @@ class ModPathWell:
         rech_parmnames = {"recharge": ["recharge_parameters"]}
         for iParm, dict_keys in rech_parmnames.items():
             # Temporary value
-            grid = self.fill_grid(schematisation = self.schematisation,
+            grid = self.fill_grid(schematisation = self.schematisation_dict,
                             dict_keys = dict_keys,
                             parameter = iParm,
                             grid = None,
@@ -1222,14 +1133,14 @@ class ModPathWell:
         # Well input
         # !!! Obtain node numbers of well locations (use indices) !!!
         # leakage discharge from well
-        well_names = [iWell for iWell in self.schematisation["well_parameters"] if \
-                        "Q" in self.schematisation["well_parameters"][iWell].keys()]
+        well_names = [iWell for iWell in self.schematisation_dict["well_parameters"] if \
+                        "Q" in self.schematisation_dict["well_parameters"][iWell].keys()]
        
         self.well_names,\
             self.well_loc,\
                 self.KD_well,\
                     self.spd_wel,\
-                        self.Qwell_day = self.assign_wellloc(schematisation = self.schematisation,
+                        self.Qwell_day = self.assign_wellloc(schematisation = self.schematisation_dict,
                                                         dict_key = "well_parameters",
                                                         well_names = None,
                                                         discharge_parameter = "Q")
@@ -1422,7 +1333,7 @@ class ModPathWell:
         return xyz_nodes, dist, tdiff, dist_tot, time_tot, pth_data
 
     def run_model(self,
-                    simulation_parameters: dict or None = None,
+                    # simulation_parameters: dict or None = None,
                     xll = 0., yll = 0., perlen:dict or float or int = 365.*50, 
                     nstp:dict or int = 1, nper:int = 1,
                     steady:dict or bool = True,
@@ -1440,11 +1351,12 @@ class ModPathWell:
         self.run_mfmodel = run_mfmodel
         # Run modpath model (T/F)
         self.run_mpmodel = run_mpmodel
-
-        if simulation_parameters is None:
-            self.simulation_parameters = self.schematisation.simulation_parameters
-        else:
-            self.simulation_parameters = simulation_parameters
+        # simulation parameters
+        self.simulation_parameters = self.schematisation_dict.get('simulation_parameters')
+        # if simulation_parameters is None:
+        #     self.simulation_parameters = self.schematisation_dict.simulation_parameters
+        # else:
+        #     self.simulation_parameters = simulation_parameters
 
         # Simulation parameters
         # Dict with stress period lengths
@@ -1473,7 +1385,7 @@ class ModPathWell:
 
         # Type of scenario
         try:
-            self.schematisation_type = self.simulation_parameters["schematisation_type"]
+            self.schematisation_type = self.simulation_parameters.get("schematisation_type")
         except KeyError as e:
             print(e)
 

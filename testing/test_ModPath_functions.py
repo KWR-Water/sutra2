@@ -72,13 +72,13 @@ def test_modflow_run_phreatic():
                                         diameter_borehole = 0.75,
                                         )
     test_phrea.make_dictionary()
-    print(test_phrea.__dict__)
+    # print(test_phrea.__dict__)
     modpath_phrea = ModPathWell(test_phrea,
                             workspace = "test_ws",
                             modelname = "phreatic",
                             bound_left = "xmin",
                             bound_right = "xmax")
-
+    # print(modpath_phrea.__dict__)
     # Run phreatic schematisation
     modpath_phrea.run_model(run_mfmodel = True,
                         run_mpmodel = False)
