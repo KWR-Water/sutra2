@@ -1030,7 +1030,11 @@ class ModPathWell:
                 pass
             
             # Run modflow model
-            self.run_modflowmod()
+            try:
+                self.run_modflowmod()
+            except Exception as e:
+                self.success_mf = False
+                print(e, self.success_mf)
             # print(self.success_mf, self.buff)
 
             # Model run completed succesfully
