@@ -1038,7 +1038,7 @@ class ModPathWell:
             # print(self.success_mf, self.buff)
 
             # Model run completed succesfully
-            print("Model run", self.workspace, self.modelname, "completed without errors:", self.success)
+            print("Model run", self.workspace, self.modelname, "completed without errors:", self.success_mf)
 
 
     def phreatic(self):
