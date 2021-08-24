@@ -847,6 +847,11 @@ class ModPathWell:
         # in the 'final' version of the model can be a more fine mesh
         # but need to think about how we change the testing
 
+        self.spreading_distance = math.sqrt(self.schematisation.vertical_resistance_aquitard * self.schematisation.KD)
+        # AH do not change to model_radius, since the radial distance for recharge is based on the phreatic value for BOTH cases
+        self.radial_distance_recharge =  (math.sqrt(self.schematisation.well_discharge
+                                                    / (math.pi * self.schematisation.recharge_rate)))
+
         if fraction_flux is None:
             fraction_flux = np.array([0.00001, 0.0001, 0.001, 0.005])
             fraction_flux = np.append(fraction_flux, np.arange(0.01, 1, 0.01))
@@ -854,8 +859,7 @@ class ModPathWell:
         
         self.fraction_flux = fraction_flux
 
-        radial_distance = self.radial_distance_recharge * \
-            np.sqrt(self.fraction_flux)
+        radial_distance = self.radial_distance_recharge * np.sqrt(self.fraction_flux)
             
         if self.schematisation_type == 'semiconfined':
 
@@ -866,6 +870,352 @@ class ModPathWell:
                                         (self.spreading_distance * 3)])
         
         self.radial_distance = radial_distance
+
+    def particle_data(self, partlocs=None, structured=True, particleids=[0],
+                                 localx=None, localy=0.5, localz=None,
+                                 timeoffset=0.0, drape=None,
+                                 pgname = "Recharge", pg_filename = "Recharge.sloc",
+                                 trackingdirection = 'forward',
+                                 releasedata=0.0):
+        ''' Class to create the most basic particle data type (starting location
+        input style 1). Input style 1 is the most general input style and provides
+        the highest flexibility in customizing starting locations, see flopy docs. '''
+        self.partlocs = partlocs # particle starting locations [(lay,row,col),(k,i,j),...]
+        # (structured): Boolean defining if a structured (True) or 
+        # unstructured particle recarray will be created
+        # (particleids) --> if not None: id-vals of particles added
+        self.localx = localx
+        self.localy = localy
+        self.localz = localz
+        # Particle id [part group, particle id] - zero based integers
+        if not hasattr(self, "pids"):
+            print("Create a new particle id dataset dict.")
+            self.pids = {}
+        if not hasattr(self, "pg"):
+            print("Create a new particle group dataset dict.")
+            self.pg = {}
+            
+        self.pids[pgname] = particleids
+        #mp7particledata.
+        # Particle distribution package - particle allocation
+        #modpath.mp7particledata.Part...
+        self.pd = flopy.modpath.ParticleData(partlocs = self.partlocs, structured=True,
+                                             drape=0, localx= self.localx, 
+                                             localy= self.localy, localz= self.localz,
+                                             timeoffset = timeoffset, 
+                                             particleids = particleids)
+
+    # def _create_radial_distance_particles_recharge(self, recharge_parameters = None,
+    #                                             fraction_flux:np.array or None = None):
+
+    #     ''' Create array of radial distances from the well to a maximum value, radial distance recharge, which
+    #     is the distance from the well needed to recharge the well to meet the pumping demand. '''
+
+        
+    #     if recharge_parameters is None:
+    #         recharge_parameters = self.schematisation_dict.get('recharge_parameters')
+        
+    #     if fraction_flux is None:
+    #         fraction_flux = np.array([0.00001, 0.0001, 0.001, 0.005])
+    #         fraction_flux = np.append(fraction_flux, np.arange(0.01, 1, 0.01))
+    #         fraction_flux = np.append(fraction_flux, [0.995, 0.9999])
+        
+    #     self.fraction_flux = fraction_flux
+
+    #     ## Particle group data ##
+    #     pgroups = list(recharge_parameters.keys())
+    #     # xmin and xmax per pg
+    #     self.pg_xmin, self.pg_xmax = {}, {}
+    #     # Recharge rate per particle group
+    #     self.recharge_pg = {}
+    #     # Cumulative flux per particle group
+    #     self.flux_pg = {}
+    #     # Radial distance array per pg
+    #     self.radial_distance = {}
+    #     for iPG in pgroups:
+    #         # xmin
+    #         self.pg_xmin[iPG] = recharge_parameters.get(iPG).get("xmin")
+    #         # xmax
+    #         self.pg_xmax[iPG] = recharge_parameters.get(iPG).get("xmax")
+    #         # recharge rate per particle group
+    #         self.recharge_pg[iPG] = recharge_parameters.get(iPG).get("recharge")
+    #         # cumulative flux per particle group
+    #         self.flux_pg[iPG] = math.pi * (self.pg_xmax[iPG]**2 - self.pg_xmin[iPG]**2) * self.recharge_pg[iPG]
+        
+    #         # Radial distance array per particle group
+    #         self.radial_distance[iPG] = self.pg_xmin[iPG] + ((self.pg_xmax[iPG] - self.pg_xmin[iPG]) * np.sqrt(self.fraction_flux))
+
+    def _create_radial_distance_particles_recharge(self, recharge_parameters = None,
+                                                fraction_flux:np.array or None = None):
+
+        ''' Create array of radial distances from the well to a maximum value, radial distance recharge, which
+        is the distance from the well needed to recharge the well to meet the pumping demand. '''
+
+        
+        if recharge_parameters is None:
+            recharge_parameters = self.schematisation_dict.get('recharge_parameters')
+        
+        if fraction_flux is None:
+            fraction_flux = np.array([0.00001, 0.0001, 0.001, 0.005])
+            fraction_flux = np.append(fraction_flux, np.arange(0.01, 1, 0.01))
+            fraction_flux = np.append(fraction_flux, [0.995, 0.9999])
+        
+        self.fraction_flux = fraction_flux
+
+        ## Particle group data ##
+        pgroups = list(recharge_parameters.keys())
+        # xmin and xmax per pg
+        self.pg_xmin, self.pg_xmax = {}, {}
+        # Recharge rate per particle group
+        self.recharge_pg = {}
+        # Cumulative flux per particle group
+        self.flux_pg = {}
+        # Radial distance array per pg
+        self.radial_distance = {}
+        for iPG in pgroups:
+            # xmin
+            self.pg_xmin[iPG] = recharge_parameters.get(iPG).get("xmin")
+            # xmax
+            self.pg_xmax[iPG] = recharge_parameters.get(iPG).get("xmax")
+            # recharge rate per particle group
+            self.recharge_pg[iPG] = recharge_parameters.get(iPG).get("recharge")
+            # cumulative flux per particle group
+            self.flux_pg[iPG] = math.pi * (self.pg_xmax[iPG]**2 - self.pg_xmin[iPG]**2) * self.recharge_pg[iPG]
+        
+            # Radial distance array per particle group
+            self.radial_distance[iPG] = self.pg_xmin[iPG] + ((self.pg_xmax[iPG] - self.pg_xmin[iPG]) * np.sqrt(self.fraction_flux))
+
+
+
+    def _create_recharge_particle_data(self, pgroups: list or None = None, 
+                                 radial_distance = None, structured=True,
+                                 localy=0.5, localz=0.5,
+                                 timeoffset=0.0, drape=None,
+                                #  pg_filename = "Recharge.sloc",
+                                 trackingdirection = 'forward',
+                                 releasedata=0.0):
+        ''' Create particle group data (per particle group 'pgroups') from recharge using a radial distance array.  
+            Uses Class to create the most basic particle data type (starting location
+        input style 1). Input style 1 is the most general input style and provides
+        the highest flexibility in customizing starting locations, see flopy docs. '''
+        # (structured): Boolean defining if a structured (True) or 
+        # unstructured particle recarray will be created
+
+        if radial_distance is None:
+            radial_distance = self.radial_distance
+        if pgroups is None:
+            pgroups = list(self.radial_distance.keys())
+        
+        # particle group filenames
+        self.pg_filenames = {iPG: iPG + ".sloc" for iPG in pgroups}
+        # particle starting locations [(lay,row,col),(k,i,j),...]
+        self.part_locs = {}  
+        # Relative location within grid cells (per particle group)
+        self.localx = {}
+        self.localy = {}
+        self.localz = {}
+        # Particle id [part group, particle id] - zero based integers
+        if not hasattr(self, "pids"):
+            print("Create a new particle id dataset dict.")
+            self.pids = {}
+        if not hasattr(self, "pg"):
+            print("Create a new particle group dataset dict.")
+            self.pg = {}
+
+        # Particle counter
+        pcount = -1
+        for iPG in pgroups:
+            # Particles ids (use counter)
+            self.pids[iPG] = []
+            for iParticle in range(len(radial_distance.get(iPG))):
+                pcount += 1
+                self.pids[iPG].append(pcount)
+
+        for iPG in pgroups:
+            # Particle location list per particle group
+            self.part_locs[iPG] = []
+            # Relative location within grid cells (per particle group)
+            self.localx[iPG] = []
+            self.localy[iPG] = []
+            self.localz[iPG] = []
+
+            for iParticle in range(len(radial_distance.get(iPG))):
+
+                # Particle lay, row, column location
+                prow = 0
+                play = 0 
+                pcol = np.argwhere((self.delr.cumsum() - radial_distance.get(iPG)[iParticle] > 0)[0])
+                # Add to particle location list
+                self.part_locs[iPG].append([play,prow,pcol])
+                # Relative location within grid cells (per particle group)
+                loc_x = (radial_distance.get(iPG)[iParticle] - self.delr[:pcol].cumsum()) / \
+                        (self.delr[:pcol+1].cumsum() - self.delr[:pcol].cumsum())
+                
+                self.localx[iPG].append(loc_x)
+                self.localy[iPG].append(localy)
+                self.localz[iPG].append(localz)
+
+
+    
+            
+
+        ## OLD analytical code ##
+        # self.spreading_distance = math.sqrt(self.schematisation.vertical_resistance_aquitard * self.schematisation.KD)
+        # # AH do not change to model_radius, since the radial distance for recharge is based on the phreatic value for BOTH cases
+        # self.radial_distance_recharge =  (math.sqrt(self.schematisation.well_discharge
+        #                                             / (math.pi * self.schematisation.recharge_rate)))
+
+        # if fraction_flux is None:
+        #     fraction_flux = np.array([0.00001, 0.0001, 0.001, 0.005])
+        #     fraction_flux = np.append(fraction_flux, np.arange(0.01, 1, 0.01))
+        #     fraction_flux = np.append(fraction_flux, [0.995, 0.9999])
+        
+        # self.fraction_flux = fraction_flux
+
+        # radial_distance = self.radial_distance_recharge * np.sqrt(self.fraction_flux)
+            
+        # if self.schematisation_type == 'semiconfined':
+
+        #     radial_distance = np.append(radial_distance,
+        #                             [(radial_distance[-1] + ((self.spreading_distance * 3) - radial_distance[-1]) / 3),
+        #                             (radial_distance[-1] + 2 *
+        #                             ((self.spreading_distance * 3) - radial_distance[-1]) / 3),
+        #                                 (self.spreading_distance * 3)])
+        
+        # self.radial_distance = radial_distance
+
+    ####################################
+    ### ModPath 7 input and analyses ###
+    ####################################
+    ####### Fill Modpath modules #######
+    def load_MP7object(self, mp_exe = 'mpath7', mf_model = None,
+                      headfilename = None, budgetfilename = None):
+        ''' Load modpath7 model, using input from modflow model 'mf_model' (DIS),
+            results from head calculations, and cell-by-cell data.'''
+        self.mp_exe = mp_exe
+        if mf_model is not None:
+            self.mf = mf_model
+        if headfilename is None:  # Filename of the MODFLOW output head file.
+            self.headfile = self.model_hds # os.path.join(self.workspace, 
+        else:
+            self.headfile = headfilename
+        if budgetfilename is None: # Filename of the MODFLOW output cell-by-cell budget file.
+            self.cbcfile = self.model_cbc
+        else:     
+            self.cbcfile = budgetfilename
+            
+        # Modpath object
+        self.mp7 = flopy.modpath.Modpath7(modelname = self.modelname + "_mp", model_ws=self.workspace,
+                                             exe_name= self.mp_exe, flowmodel = self.mf)#,
+                                             #headfilename = self.headfile, budgetfilename = self.cbcfile)
+
+    def mpbas_input(self, prsity = 0.3, defaultiface = {'RECHARGE': 6}):
+        ''' Read model prsity and iface values into object. '''
+        self.prsity = prsity
+        self.defaultiface = defaultiface
+        
+    def load_mpbas(self):
+        ''' Add BAS Package to the ModPath model '''
+        
+        self.mpbas = flopy.modpath.Modpath7Bas(model = self.mp7, porosity = self.prsity,
+                                                      defaultiface = self.defaultiface)
+
+
+
+
+    def particle_data(self, partlocs=None, structured=True, particleids=[0],
+                                 localx=None, localy=0.5, localz=None,
+                                 timeoffset=0.0, drape=None,
+                                 pgname = "Recharge", pg_filename = "Recharge.sloc",
+                                 trackingdirection = 'forward',
+                                 releasedata=0.0):
+        ''' Class to create the most basic particle data type (starting location
+        input style 1). Input style 1 is the most general input style and provides
+        the highest flexibility in customizing starting locations, see flopy docs. '''
+        self.partlocs = partlocs # particle starting locations [(lay,row,col),(k,i,j),...]
+        # (structured): Boolean defining if a structured (True) or 
+        # unstructured particle recarray will be created
+        # (particleids) --> if not None: id-vals of particles added
+        self.localx = localx
+        self.localy = localy
+        self.localz = localz
+        # Particle id [part group, particle id] - zero based integers
+        if not hasattr(self, "pids"):
+            print("Create a new particle id dataset dict.")
+            self.pids = {}
+        if not hasattr(self, "pg"):
+            print("Create a new particle group dataset dict.")
+            self.pg = {}
+            
+        self.pids[pgname] = particleids
+        #mp7particledata.
+        # Particle distribution package - particle allocation
+        #modpath.mp7particledata.Part...
+        self.pd = flopy.modpath.ParticleData(partlocs = self.partlocs, structured=True,
+                                             drape=0, localx= self.localx, 
+                                             localy= self.localy, localz= self.localz,
+                                             timeoffset = timeoffset, 
+                                             particleids = particleids)
+#        # Write data to disk
+#        with open(self.modelname + ".txt","w") as f:
+#            self.pd.write(f= f)
+
+#    def particle_group(self, pgname = "PG1", particledata = None,
+#                               pg_filename = "partdata.pg1.sloc", releasedata=0.0):
+        
+                
+        # particle group filename
+        self.pg_filename = pg_filename
+        # particle group object
+        # modpath.mp7particlegroup.Part.......
+        self.pg[pgname] = flopy.modpath.ParticleGroup(particlegroupname=pgname,
+                                                               filename=self.pg_filename,
+                                                               releasedata=releasedata,
+                                                               particledata=self.pd)
+        ''' ParticleGroup class to create MODPATH 7 particle group data for
+            location input style 1.  '''
+        self.trackingdirection = trackingdirection
+
+    def modpath_simulation(self,mp_model = None, trackingdirection = 'backward',
+                           simulationtype = 'combined', stoptimeoption = 'extend',
+                           particlegroups = None, zones = None):        
+        ''' input MODPATH Simulation File Package Class, see flopy docs. '''
+        if mp_model is not None:
+            self.mp7 = mp_model
+            
+        if self.trackingdirection is None:
+            self.trackingdirection = trackingdirection
+            
+            
+        # Zones are not read in detail
+        if zones is None:
+            self.zones = [1] * self.nlay
+        else:
+            self.zones = zones
+        
+        self.mp7sim = flopy.modpath.Modpath7Sim(model = self.mp7, mpnamefilename=None, 
+                                         listingfilename=None, endpointfilename=None,
+                                         pathlinefilename=None, timeseriesfilename=None,
+                                         tracefilename=None, simulationtype = simulationtype,
+                                         trackingdirection = self.trackingdirection, 
+                                         weaksinkoption='stop_at', weaksourceoption='pass_through',
+                                         budgetoutputoption='summary', traceparticledata=None, #[0,0], #self.pid, 
+                                         budgetcellnumbers=None, referencetime=0.,
+                                         stoptimeoption = stoptimeoption, stoptime=None,
+                                         timepointdata=None, zonedataoption='off',  # timepointdata=[100*24,1/24.]
+                                         stopzone='off', zones=self.zones, retardationfactoroption='off',
+                                         retardation=1.0, particlegroups=particlegroups,
+                                         extension='mpsim')
+        # stoptimeoption: "extend" --> particle simulation continues beyond time specified in modflow BAS package
+        # timepointdata = [100*24,1/24.] # max 100 days of data
+    def write_input_mp(self):
+        ''' Write package data ModPath model. '''
+        self.mp7.write_input()
+
+    def run_ModPathmod(self):         
+        ''' Run ModPath model '''
+        self.mp7.run_model(silent=False)
+
 
 ### Functie: Check xmin, xmax,
     '''
@@ -1403,10 +1753,24 @@ class ModPathWell:
             if self.run_mpmodel:
 
                 # Create radial distance array with particle locations
-                self.schematisation._create_radial_distance_array()
+                # self._create_radial_distance_array() # Analytische fluxverdeling
+                self._create_radial_distance_particles_recharge()  # Numerieke fluxverdeling
+
                 print("Fraction flux:",self.fraction_flux,
                       "\nRadial distance array:",self.radial_distance)
+                # Create particle input data
+                # Recharge
+                self._create_recharge_particle_data(pgroups = None, 
+                                 radial_distance = self.radial_distance, structured=True,
+                                 localy=0.5, localz=0.5,
+                                 timeoffset=0.0, drape=None,
+                                 trackingdirection = 'forward',
+                                 releasedata=0.0)
                 # Run modpath model
+
+
+                
+                self.success_mp = True
         
         print("modelrun of type", self.schematisation_type, "completed.")
 '''
