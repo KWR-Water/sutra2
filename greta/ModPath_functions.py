@@ -946,7 +946,7 @@ class ModPathWell:
     #         self.radial_distance[iPG] = self.pg_xmin[iPG] + ((self.pg_xmax[iPG] - self.pg_xmin[iPG]) * np.sqrt(self.fraction_flux))
 
     def _create_radial_distance_particles_recharge(self, recharge_parameters = None,
-                                                fraction_flux:np.array or None = None):
+                                                   particles_cell: int = 1):
 
         ''' Create array of radial distances from the well to a maximum value, radial distance recharge, which
         is the distance from the well needed to recharge the well to meet the pumping demand. '''
@@ -954,22 +954,11 @@ class ModPathWell:
         
         if recharge_parameters is None:
             recharge_parameters = self.schematisation_dict.get('recharge_parameters')
-        
-        if fraction_flux is None:
-            fraction_flux = np.array([0.00001, 0.0001, 0.001, 0.005])
-            fraction_flux = np.append(fraction_flux, np.arange(0.01, 1, 0.01))
-            fraction_flux = np.append(fraction_flux, [0.995, 0.9999])
-        
-        self.fraction_flux = fraction_flux
 
         ## Particle group data ##
         pgroups = list(recharge_parameters.keys())
         # xmin and xmax per pg
         self.pg_xmin, self.pg_xmax = {}, {}
-        # Recharge rate per particle group
-        self.recharge_pg = {}
-        # Cumulative flux per particle group
-        self.flux_pg = {}
         # Radial distance array per pg
         self.radial_distance = {}
         for iPG in pgroups:
@@ -977,29 +966,56 @@ class ModPathWell:
             self.pg_xmin[iPG] = recharge_parameters.get(iPG).get("xmin")
             # xmax
             self.pg_xmax[iPG] = recharge_parameters.get(iPG).get("xmax")
-            # recharge rate per particle group
-            self.recharge_pg[iPG] = recharge_parameters.get(iPG).get("recharge")
-            # cumulative flux per particle group
-            self.flux_pg[iPG] = math.pi * (self.pg_xmax[iPG]**2 - self.pg_xmin[iPG]**2) * self.recharge_pg[iPG]
-        
+
+
             # Radial distance array per particle group
             self.radial_distance[iPG] = self.pg_xmin[iPG] + ((self.pg_xmax[iPG] - self.pg_xmin[iPG]) * np.sqrt(self.fraction_flux))
 
 
 
-    def _create_recharge_particle_data(self, pgroups: list or None = None, 
-                                 radial_distance = None, structured=True,
-                                 localy=0.5, localz=0.5,
-                                 timeoffset=0.0, drape=None,
-                                #  pg_filename = "Recharge.sloc",
-                                 trackingdirection = 'forward',
-                                 releasedata=0.0):
+    def _create_recharge_particle_data(self, recharge_parameters = None,
+                                            particles_cell: int = 1,
+                                        pgroups: list or None = None, 
+                                        radial_distance = None, structured=True,
+                                        localy=0.5, localz=0.5,
+                                        timeoffset=0.0, drape=None,
+                                        #  pg_filename = "Recharge.sloc",
+                                        trackingdirection = 'forward',
+                                        releasedata=0.0):
         ''' Create particle group data (per particle group 'pgroups') from recharge using a radial distance array.  
             Uses Class to create the most basic particle data type (starting location
         input style 1). Input style 1 is the most general input style and provides
         the highest flexibility in customizing starting locations, see flopy docs. '''
         # (structured): Boolean defining if a structured (True) or 
         # unstructured particle recarray will be created
+
+        ''' Create array of radial distances from the well to a maximum value, radial distance recharge, which
+        is the distance from the well needed to recharge the well to meet the pumping demand. '''
+
+        
+        if recharge_parameters is None:
+            recharge_parameters = getattr(self.schematisation_dict, 'recharge_parameters')
+
+        ## Particle group data ##
+        pgroups = list(recharge_parameters.keys())
+        # xmin and xmax per pg
+        self.pg_xmin, self.pg_xmax = {}, {}
+        # Radial distance array per pg
+        self.radial_distance = {}
+        for iPG in pgroups:
+            # xmin
+            self.pg_xmin[iPG] = recharge_parameters.get(iPG).get("xmin")
+            # xmax
+            self.pg_xmax[iPG] = recharge_parameters.get(iPG).get("xmax")
+
+            # First column within range
+            colidx_min = int(np.argwhere((self.xmid >= self.pg_xmin[iPG]) & (self.xmid <= self.pg_xmax[iPG]))[0])
+            # Last column within range
+            colidx_max = int(np.argwhere((self.xmid >= self.pg_xmin[iPG]) & (self.xmid <= self.pg_xmax[iPG]))[-1]) + 1
+
+            # Radial distance array per particle group
+            self.radial_distance[iPG] = self.pg_xmin[iPG] + ((self.pg_xmax[iPG] - self.pg_xmin[iPG]) * np.sqrt(self.fraction_flux))
+
 
         if radial_distance is None:
             radial_distance = self.radial_distance

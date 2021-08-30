@@ -381,7 +381,8 @@ well_names = [iWell for iWell in phreatic_scheme["well_parameters"] if \
 ''' Inititalize ModPath class'''
 modpath_phrea = ModPathWell(phreatic_scheme,
                             workspace = "test_ws",
-                            modelname = "phreatic",
+                   awra; aewdsakkljawdojklaskldojawdwe[;
+                   ]         modelname = "phreatic",
                             bound_left = "xmin",
                             bound_right = "xmax")
 # modpath_phrea.schematisation
