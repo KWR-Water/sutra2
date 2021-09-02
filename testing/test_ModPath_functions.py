@@ -121,8 +121,7 @@ def test_modpath_run_phreatic():
     # Run phreatic schematisation
     modpath_phrea.run_model(run_mfmodel = True,
                         run_mpmodel = True)
-    # SR --> define self.radial_distance_recharge --> self.model_radius
-
+                        
     assert modpath_phrea.success_mp
 
 #=======

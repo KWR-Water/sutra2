@@ -656,6 +656,46 @@ class ModPathWell:
         # dit soort validaties moet eigenlij in de schematization class
         pass
 
+    def assign_material(self,schematisation: dict,
+                        dict_keys: dict or None = None):
+        ''' Assign grid material using subkeys in schematisation_dict.'''
+
+        if schematisation is None:
+            schematisation = getattr(self,"schematisation_dict")
+
+        # dtype of material grid
+        dtype = 'object'  # to assign a string without length limitation
+        if dict_keys is None:
+            dict_keys = [iDict for iDict in self.schematisation_dict.keys()]
+
+        self.material = np.empty((self.nlay,self.nrow,self.ncol), dtype = dtype)
+        # Loop through schematisation keys (dict_keys)
+        for iDict in dict_keys:
+            # Loop through subkeys of schematisation dictionary
+            for iDict_sub in schematisation[iDict]:   
+                # Grid indices
+                try:
+                    layidx_min,layidx_max,\
+                        rowidx_min,rowidx_max,\
+                        colidx_min,colidx_max = self.cell_bounds(schematisation,
+                                                dict_key = iDict,
+                                                dict_subkey = iDict_sub,
+                                                model_type = self.model_type)
+                except Exception as e:
+                    print(e,"Continue.")
+                    continue
+                # Fill grid with parameter value 'parm_val'
+                if not None in [layidx_min,layidx_max,colidx_min,colidx_max]:
+
+                    self.material[layidx_min: layidx_max,\
+                        rowidx_min: rowidx_max,\
+                        colidx_min: colidx_max] = iDict_sub
+                
+        if self.model_type in ["axisymmetric","2D"]:
+                # In 2D model or axisymmetric models an 
+                # inactive row is added to be able to run Modpath successfully.
+                self.material[:,1,:] = "inactive"
+
     def assign_wellloc(self,schematisation: dict,
                         dict_key: str = "well_parameters",
                         well_names: list or str or None = "None",
@@ -967,9 +1007,6 @@ class ModPathWell:
         pgroups = list(recharge_parameters.keys())
         # xmin and xmax per pg
         self.pg_xmin, self.pg_xmax = {}, {}
-        # Min 
-        # Radial distance array per pg
-        self.radial_distance = {}
         for iPG in pgroups:
             # xmin
             self.pg_xmin[iPG] = recharge_parameters.get(iPG).get("xmin")
@@ -1211,8 +1248,8 @@ class ModPathWell:
 
     def run_ModPathmod(self):         
         ''' Run ModPath model '''
-        self.mp7.run_model(silent=False)
-        # self.success_mp, _ = self.mp7.run_model(silent=False)
+        # self.mp7.run_model(silent=False)
+        self.success_mp,_ = self.mp7.run_model(silent=False)
 
 ### Functie: Check xmin, xmax,
     '''
@@ -1301,19 +1338,313 @@ class ModPathWell:
   			if condition X is met:
 						self.modpath_has_run = True
     '''
-    def export_to_df(self, grid_material, what_to_export='all'):
-  	    """ Export to dataframe....
+    # def export_to_df(self, grid_material, what_to_export='all'):
+  	#     """ Export to dataframe....
 
-        Parameters
-        ----------
-        what_to_export: String
-        		options: 'all', 'omp', 'microbial_parameters'
-        """
-        # df_flowline = pd.DataFrame()
-        # df_particle = pd.DataFrame()
+    #     Parameters
+    #     ----------
+    #     what_to_export: String
+    #     		options: 'all', 'omp', 'microbial_parameters'
+    #     """
+    #     # df_flowline = pd.DataFrame()
+    #     # df_particle = pd.DataFrame()
 
-  		#delete the unwanted columns depending on what the user asks for here
-  		# return df_flowline, df_particle
+  	# 	#delete the unwanted columns depending on what the user asks for here
+  	# 	# return df_flowline, df_particle
+
+    def _export_to_df(self,
+        df_output,
+        distance,
+        total_travel_time,
+        travel_time_unsaturated,
+        travel_time_shallow_aquifer,
+        travel_time_target_aquifer,
+        discharge_point_contamination=None, #AH_todo do we need this?
+        ):
+        """ Makes 'df_flowline' and 'df_particle'
+        # MK: attributes, dont make thema rguments
+        #AH_todo review the logic of how the diffusion/point sources are calculated with @martinK
+
+            Parameters
+            ----------
+            df_output: pandas.DataFrame
+                Column 'total_travel_time': float
+                Column 'travel_time_unsaturated': float
+                Column 'travel_time_shallow_aquifer': float
+                Column 'travel_time_target_aquifer': float
+                Column 'radial_distance': float
+                Column 'head': float
+                Column 'cumulative_fraction_abstracted_water': float
+                Column 'flowline_discharge': float
+            distance: array
+                Array of distance(s) [m] from the well.
+                For diffuse sources 'distance' is the 'radial_distance' array.
+                For point sources 'distance' is 'distance_point_contamination_from_well'.
+            total_travel_time: array
+                Sum of the unsaturated, shallow and target aquifer travel times for each
+                point in the given distance array, [days].
+            travel_time_unsaturated: array
+                Travel time in the unsaturated zone for each point in the given distance array returned as
+                attrubute of the function, [days].
+            travel_time_shallow_aquifer: array
+                Travel time in the shallow aquifer for each point in the given distance array, [days].
+            travel_time_target_aquifer: array
+                Travel time in the target aquifer for each point in the given distance array, [days].
+
+            Returns
+            -------
+            df_flowline: pandas.DataFrame
+                Column 'flowline_id': Integer
+                Column 'flowline_type': string
+                    Described the type of contamination associated with the flowline,
+                    either 'diffuse_source' or 'point_source'.
+                Column 'discharge': Float
+                    Discharge associated with the flowline, [m3/d].
+                Column 'particle_release_date': Float
+                Column 'input_concentration'
+                Column 'endpoint_id': Integer
+                    ID of Well (or drain) where the flowline ends.
+                Column 'well_discharge': float
+                Column 'recharge_rate': float
+                Column 'vertical_resistance_aquitard': float
+                Column 'KD': float
+                Column 'thickness_full_capillary_fringe': float
+                Column 'substance': string
+                Column 'moisture_content_vadose_zone': float
+                Column 'diameter_borehole': float
+                Column 'removal_function': string
+                Column 'solid_density_vadose_zone': float
+                Column 'solid_density_shallow_aquifer': float
+                Column 'solid_density_target_aquifer': float
+
+            df_particle: pandas.DataFrame
+                Column 'flowline_id': int
+                Column 'zone': string
+                    Zone in the aquifer, ground surface 'surface', 'vadose_zone', 'shallow_aquifer' or 'target_aquifer'
+                Column 'travel_time_zone': float
+                    Travel time in the respective aquifer zone given in column 'zone.
+                Column 'xcoord': float
+                Column 'ycoord': float
+                Column 'zcoord': float
+                Column 'redox_zone': float
+                    'suboxic', 'anoxic', deeply_anoxic'
+                Column 'temperature': float
+                    Of the respective aquifer zone.
+                Column 'thickness_layer': float
+                Column 'porosity_layer': float
+                Column 'dissolved_organic_carbon': float
+                Column 'pH': float
+                Column 'fraction_organic_carbon': float
+                Column 'solid_density_layer': float
+            """
+        # MK:  this is something that I could imagine that you use it as an argument to the
+        # function.
+        #AH_todo, @MartinK, what is the advantage over using the attribute?
+        what_to_export = self.schematisation.what_to_export
+
+        # Make df_particle
+        def fill_df_particle (df,
+                            distance,
+                            travel_time_unsaturated,
+                            travel_time_shallow_aquifer,
+                            travel_time_target_aquifer,
+                            total_travel_time):
+            '''Fill the df_particle by flowline_id
+
+            Parameters
+            ----------
+            df: pandas.dataframe
+                Holder for df_particle, filled by the flowline_id
+            distance: array
+                Array of distance(s) [m] from the well.
+                For diffuse sources 'distance' is the 'radial_distance' array.
+                For point sources 'distance' is 'distance_point_contamination_from_well'.
+            travel_time_unsaturated: array
+                Travel time in the unsaturated zone for each point in the given distance array returned as
+                attrubute of the function, [days].
+            travel_time_shallow_aquifer: array
+                Travel time in the shallow aquifer for each point in the given distance array, [days].
+            travel_time_target_aquifer: array
+                Travel time in the target aquifer for each point in the given distance array, [days].
+            total_travel_time: array
+                Sum of the unsaturated, shallow and target aquifer travel times for each
+                point in the given distance array, [days].
+
+            Returns
+            -------
+            df: pandas.dataframe
+                Holder for df_particle, filled by the flowline_id
+            '''
+
+            df.loc[0] = [flowline_id,
+                        "surface",
+                        0,
+                        0,
+                        distance,
+                        self.schematisation.model_width,
+                         self.schematisation.ground_surface,
+                         None,
+                         self.schematisation.temperature,
+                         None,
+                         None,
+                         None,
+                         None,
+                         None,
+                         None]
+
+            df.loc[1] = [flowline_id,
+                         "vadose_zone",
+                         travel_time_unsaturated,
+                         travel_time_unsaturated,
+                         distance,
+                         self.schematisation.model_width,
+                         self.schematisation.bottom_vadose_zone_at_boundary, # @MartinvdS should this be the thickness_vadose_zone_drawdown??
+                         self.schematisation.redox_vadose_zone,
+                         self.schematisation.temperature,
+                         self.schematisation.thickness_vadose_zone_at_boundary,
+                         self.schematisation.porosity_vadose_zone,
+                         self.schematisation.dissolved_organic_carbon_vadose_zone,
+                         self.schematisation.pH_vadose_zone,
+                         self.schematisation.fraction_organic_carbon_vadose_zone,
+                         self.schematisation.solid_density_vadose_zone,
+                         ]
+
+            df.loc[2] = [flowline_id,
+                        "shallow_aquifer",
+                         travel_time_shallow_aquifer,
+                         travel_time_unsaturated + travel_time_shallow_aquifer,
+                         distance,
+                         self.schematisation.model_width,
+                         self.schematisation.bottom_shallow_aquifer,
+                         self.schematisation.redox_shallow_aquifer,
+                         self.schematisation.temperature,
+                         self.schematisation.thickness_shallow_aquifer, # @MartinvdS does this need to account for the vadose zone drawdown?
+                         self.schematisation.porosity_shallow_aquifer,
+                         self.schematisation.dissolved_organic_carbon_shallow_aquifer,
+                         self.schematisation.pH_shallow_aquifer,
+                         self.schematisation.fraction_organic_carbon_shallow_aquifer,
+                         self.schematisation.solid_density_shallow_aquifer,
+                         ]
+
+            df.loc[3] = [flowline_id,
+                        "target_aquifer",
+                         travel_time_target_aquifer,
+                         total_travel_time,
+                         self.schematisation.diameter_borehole/2, #at the well
+                         self.schematisation.model_width,
+                         self.schematisation.bottom_target_aquifer,
+                         self.schematisation.redox_target_aquifer,
+                         self.schematisation.temperature,
+                         self.schematisation.thickness_target_aquifer,
+                         self.schematisation.porosity_target_aquifer,
+                         self.schematisation.dissolved_organic_carbon_target_aquifer,
+                         self.schematisation.pH_target_aquifer,
+                         self.schematisation.fraction_organic_carbon_target_aquifer,
+                         self.schematisation.solid_density_target_aquifer,
+                         ]
+            return df
+
+        df_particle = pd.DataFrame(columns=['flowline_id',
+                                                'zone',
+                                                'travel_time_zone',
+                                                'total_travel_time',
+                                                 'xcoord', #= radial_distcance,
+                                                 'ycoord', #= the width of the cell .. default = 1 m
+                                                 'zcoord',
+                                                 'redox_zone',
+                                                 'temperature',
+                                                 'thickness_layer',
+                                                 'porosity_layer',
+                                                 'dissolved_organic_carbon',
+                                                 'pH',
+                                                 'fraction_organic_carbon',
+                                                 'solid_density_layer'])
+
+        df = df_particle.copy()
+
+        for i in range(len(df_output)):
+            flowline_id = i+1
+            df = fill_df_particle (df= df,
+                                distance = distance[i],
+                                travel_time_unsaturated = travel_time_unsaturated[i],
+                                travel_time_shallow_aquifer=travel_time_shallow_aquifer[i],
+                                travel_time_target_aquifer = travel_time_target_aquifer[i],
+                                total_travel_time= total_travel_time[i])
+
+            df_particle = df_particle.append(df, ignore_index=True)
+            df_particle['redox_zone'] = df_particle['redox_zone'].fillna('').astype(str)
+            df_particle['flowline_id'] = df_particle['flowline_id'].astype(int)
+
+        # Make df_flowline
+        df_flowline = pd.DataFrame(columns=['flowline_id',
+                                            'flowline_type', #diffuse_source or point_source
+                                            'discharge',
+                                            'particle_release_date',
+                                            # 'input_concentration',
+                                            'endpoint_id', ])
+        df_flowline['discharge'] = df_output['flowline_discharge']
+        df_flowline['flowline_type'] = 'diffuse_source'
+
+
+        df_flowline['flowline_id'] =  df_flowline.index + 1
+        df_flowline['particle_release_date'] = self.schematisation.particle_release_date
+
+
+        # #AH_todo do we want to automatically
+        # make the dictionaries for modpath when running the analytical model?
+        # so far this is the only use for the dicitonaries so they are made here
+        self.schematisation.make_dictionary()
+        endpoint_id = 'well1' #AH_todo, @MartinvdS, what is this needed for? placeholder value here , #list(self.schematisation.well_parameters.items())[0][0]
+        df_flowline['endpoint_id'] = endpoint_id
+
+        # AH which parameters for the 'pathogen' option? @MartinvdS or @steven
+        if what_to_export == 'all' or what_to_export== 'omp':
+
+            df_flowline['well_discharge'] = self.schematisation.well_discharge
+            df_flowline['recharge_rate'] = self.schematisation.recharge_rate
+            df_flowline['vertical_resistance_aquitard'] = self.schematisation.vertical_resistance_aquitard
+            df_flowline['KD'] = self.schematisation.KD
+            df_flowline['thickness_full_capillary_fringe'] = self.schematisation.thickness_full_capillary_fringe
+            df_flowline['substance'] = self.schematisation.substance
+            df_flowline['particle_release_date'] = self.schematisation.particle_release_date
+            df_flowline['moisture_content_vadose_zone'] = self.schematisation.moisture_content_vadose_zone
+            df_flowline['diameter_borehole'] = self.schematisation.diameter_borehole
+            df_flowline['removal_function'] = self.schematisation.removal_function
+            df_flowline['solid_density_vadose_zone'] = self.schematisation.solid_density_vadose_zone
+            df_flowline['solid_density_shallow_aquifer'] = self.schematisation.solid_density_shallow_aquifer
+            df_flowline['solid_density_target_aquifer'] = self.schematisation.solid_density_target_aquifer
+        else:
+            # export everything anyways. 
+            #AH_todo when we have the other options sorted out ('pathogen') then 
+            # adjust this.
+            df_flowline['well_discharge'] = self.schematisation.well_discharge
+            df_flowline['recharge_rate'] = self.schematisation.recharge_rate
+            df_flowline['vertical_resistance_aquitard'] = self.schematisation.vertical_resistance_aquitard
+            df_flowline['KD'] = self.schematisation.KD
+            df_flowline['thickness_full_capillary_fringe'] = self.schematisation.thickness_full_capillary_fringe
+            df_flowline['substance'] = self.schematisation.substance
+            df_flowline['particle_release_date'] = self.schematisation.particle_release_date
+            df_flowline['moisture_content_vadose_zone'] = self.schematisation.moisture_content_vadose_zone
+            df_flowline['diameter_borehole'] = self.schematisation.diameter_borehole
+            df_flowline['removal_function'] = self.schematisation.removal_function
+            df_flowline['solid_density_vadose_zone'] = self.schematisation.solid_density_vadose_zone
+            df_flowline['solid_density_shallow_aquifer'] = self.schematisation.solid_density_shallow_aquifer
+            df_flowline['solid_density_target_aquifer'] = self.schematisation.solid_density_target_aquifer
+
+        # if what_to_export == 'all':
+        # AH_todo come back to this and fill in with the final parameters of interest
+            # df_flowline['borehole_diameter'] = self.schematisation.borehole_diameter
+            # df_flowline['k_hor_aquifer'] = self.schematisation.k_hor_aquifer
+            # df_flowline['vani_aquifer'] = self.schematisation.vani_aquifer
+            # df_flowline['k_hor_confining'] = self.schematisation.k_hor_confining
+            # df_flowline['vani_confining'] = self.schematisation.vani_confining
+            # df_flowline['k_hor_gravelpack'] = self.schematisation.k_hor_gravelpack
+            # df_flowline['vani_gravelpack'] = self.schematisation.vani_gravelpack
+            # df_flowline['k_hor_clayseal'] = self.schematisation.k_hor_clayseal
+            # df_flowline['vani_clayseal'] = self.schematisation.vani_clayseal
+            # df_flowline['dz_well'] = self.schematisation.dz_well
+
+        return df_flowline, df_particle
 
     def load_mfmodel(self, fname_nam):
         ''' Load modflow model from namefile. '''
@@ -1513,6 +1844,10 @@ class ModPathWell:
                             dtype = 'float')
             self.update_property(property = iParm, value = grid)
 
+        # Assign material grid
+        self.assign_material(schematisation = self.schematisation_dict,
+                            dict_keys = None)
+
         # Create (uncorrected) array for kv ("vka"), using "kh" and "vani" (vertical anisotropy)
         self.vka = self.hk / self.vani
         # and for 'storativity' ("ss": specific storage)
@@ -1683,7 +2018,7 @@ class ModPathWell:
 
         return node_indices
 
-    def read_pathlinedata(fpth, nodes):
+    def read_pathlinedata(self,fpth, nodes):
         ''' read pathlinedata from file fpth (extension: '*.mppth'), 
             given the particle release node index 'nodes' obtained from 
             a tuple or list of tuples (iLay,iRow,iCol).
@@ -1818,7 +2153,7 @@ class ModPathWell:
                 # Create radial distance array with particle locations
                 # self._create_radial_distance_array() # Analytische fluxverdeling
                 self._create_radial_distance_particles_recharge(recharge_parameters = None,
-                                                                nparticles_cell = 2,
+                                                                nparticles_cell = 1,
                                                                 localy=0.5, localz=0.5,
                                                                 timeoffset=0.0, drape=0,
                                                                 trackingdirection = 'forward',
@@ -1834,10 +2169,75 @@ class ModPathWell:
                 # Run modpath model
                 self.MP7modelrun()
 
-                
-                self.success_mp = True
+                # self.success_mp = True
         
-        print("modelrun of type", self.schematisation_type, "completed.")
+                print("modelrun of type", self.schematisation_type, "completed.")
+
+                # Post-processing:
+                # ##cbc
+                # cbcfile = os.path.join(self.workspace, self.modelname + '.cbc')#r"r:\P402045_014\microbiologisch_risico_lekke_peilbuis\python\MP7_V5_20200429\GHscen_A_onvzone_afwezig_lek_klein_lekdiepte0_5\GHscen_A_onvzone_afwezig_lek_klein_lekdiepte0_5.cbc"
+                # cbb = flopy.utils.binaryfile.CellBudgetFile(filename = cbcfile,
+                #                                             precision='single',
+                #                                             verbose=False)
+                
+                # # Flux per particle group, per path
+                # fluxnode_frf = {}
+                # frf = cbb.get_data(kstpkper=(0,0), text='FLOW RIGHT FACE')
+                # for iPG in self.pg:
+                #     fluxnode_frf[iPG] = {}
+                #     for id_,iNode in enumerate(self.part_locs[iPG]):
+                #         print(id_,iNode, "right face flux:", frf[0][iNode])
+                #         fluxnode_frf[iPG][iNode] = frf[0][iNode]
+                # # close budget object afterwards
+                # cbb.close()
+
+                # Empty output dicts
+                self.xyz_nodes = {}
+                self.time_diff = {}
+
+                # Pathline output file
+                self.mppth = os.path.join(self.workspace, self.modelname + '_mp.mppth')
+
+                for iPG in self.part_locs:
+                    # xyz_locs
+                    self.xyz_nodes[iPG] = {}
+                    # Save flow duration (time_diff) of pathlines
+                    self.time_diff[iPG] = {}
+
+                    # Nodes to retrieve
+                    print("Particle group",iPG, "nr of nodes:", str(len(self.part_locs.get(iPG))))
+                    for id_,iNode in enumerate(self.part_locs.get(iPG)):
+                        # print(id_,iNode)
+                        try:
+                            self.nodes = self.get_nodes(iNode)
+                        except Exception:
+                            self.nodes = self.get_nodes([iNode])
+                        print(id_,iNode, self.nodes)
+
+                        # nodes_rel[ = flopy.utils.ra_slice(m.wel.stress_period_data[0], ['k', 'i', 'j'])
+                        #     nodes_well = prf.get_nodes(locs = wel_locs, nrow = nrow, ncol = ncol) # m.dis.get_node(wel_locs.tolist())
+
+                        # Read pathline data
+                        self.xyz_nodes[iPG][iNode], \
+                        self.dist_data,  \
+                        self.time_diff[iPG][iNode],  \
+                        self.dist_tot,   \
+                        self.time_tot,   \
+                        self.pth_data =  \
+                                    self.read_pathlinedata(fpth = self.mppth,
+                                                        nodes = self.nodes) #pg_nodes[iGroup])  
+                        '''                             
+                    xyz_points, \    # XYZ data 
+                    dist_data,  \    # Distance araay between nodes
+                    time_diff,  \    # Time difference array
+                    dist_tot,   \    # Total distance covered per particle
+                    time_tot,   \    # Total time covered per particle
+                    pth_data =  \    # Raw pathline data
+                    '''        
+
+                print("Post-processing modpathrun of type", self.schematisation_type, "completed.")
+
+
 '''
 #%%  
 class ModPathWell_OLD():
