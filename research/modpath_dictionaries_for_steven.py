@@ -395,6 +395,16 @@ f = open("phreatic_test_scheme_dict.txt","w")
 f.write( str(phreatic_test_scheme_dict))
 f.close()
 phreatic_test_scheme_dict
+
+phreatic_test_well= AnalyticalWell(phreatic_test_scheme)
+
+phreatic_test_well.phreatic()
+
+df_particle =phreatic_test_well.df_particle
+df_flowline = phreatic_test_well.df_flowline
+
+df_particle.to_excel('phreatic_df_particle_Modflow.xlsx')
+df_flowline.to_excel('phreatic_df_flowline_Modflow.xlsx')
 #%%
 # SEMICONFINED TEST CASE SAME AS FOR THE UNIT TEST FOR SEMICONFINED TTD
 
@@ -422,6 +432,7 @@ semiconfined_test_scheme = HydroChemicalSchematisation(schematisation_type='semi
                                       solid_density_shallow_aquifer= 2.650,
                                       solid_density_target_aquifer= 2.650,
                                       diameter_borehole = 0.75,)
+
 semiconfined_test_scheme.make_dictionary()  
 
 semiconfined_test_scheme_dict= { 'simulation_parameters' : phreatic_scheme.simulation_parameters,
@@ -438,3 +449,13 @@ f = open("semiconfined_test_scheme_dict.txt","w")
 f.write( str(semiconfined_test_scheme_dict))
 f.close()
 semiconfined_test_scheme_dict
+
+semiconfined_test_well= AnalyticalWell(semiconfined_test_scheme)
+
+semiconfined_test_well.semiconfined()
+
+df_particle =semiconfined_test_well.df_particle
+df_flowline = semiconfined_test_well.df_flowline
+
+df_particle.to_excel('semiconfined_df_particle_Modflow.xlsx')
+df_flowline.to_excel('semiconfined_df_flowline_Modflow.xlsx')
