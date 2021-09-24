@@ -232,7 +232,9 @@ def test_travel_time_distribution_semiconfined():
     """ Compares the calculated travel times (total, unsaturated zone, shallow aquifer and target aquifer) 
     against a known case from TRANSATOMIC excel """
 
-    output_semiconfined = pd.read_csv(path / 'semiconfined_test.csv')
+    # output_semiconfined = pd.read_csv(path / 'semiconfined_test.csv')
+    output_semiconfined = pd.read_csv(path / 'semiconfined_test_fixed_TTD.csv')
+
     output_semiconfined = output_semiconfined.round(7)
     test_ = HydroChemicalSchematisation(schematisation_type='semiconfined',
                                         computation_method= 'analytical',
@@ -654,7 +656,7 @@ def test_drawdown_lower_than_target_aquifer():
 
 # def test_warning_drawdown_in_target_aquifer():
 #     ''' Tests whether a warning is issued when the head drawdown reaches the target aquifer' '''
-        #@MartinK how to raise a warning here?
+#     @MartinK how to raise a warning here?
 #     with AnalyticalWell.assertWarns(Warning) as exc:
 #         phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
 #                                         computation_method= 'analytical',
