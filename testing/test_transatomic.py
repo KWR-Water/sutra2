@@ -14,6 +14,7 @@ from pathlib import Path
 from greta.Analytical_Well import *
 from greta.Substance_Transport import *
 from pandas.testing import assert_frame_equal
+import warnings
 
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
@@ -625,3 +626,60 @@ def test_phreatic_point_only_source():
     df_well_concentration_test = df_well_concentration_test.astype({'time': 'int32', 'date': 'datetime64[ns]', 'total_concentration_in_well': 'float64'})
 
     assert_frame_equal(df_well_concentration, df_well_concentration_test, check_dtype=False)
+
+def test_drawdown_lower_than_target_aquifer():
+    ''' Tests whether the correct exception is raised when the drawdown of the 
+    well is lower than the bottom of the target aquifer' '''
+    with pytest.raises(ValueError) as exc:
+        phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+                                        computation_method= 'analytical',
+                                        what_to_export='omp', # @alex: what_to_export sounds very cryptic and ad-hoc. maybe we can think of something better
+                                        well_discharge=319.4*24,
+                                        # vertical_resistance_aquitard=500,
+                                        hor_permeability_shallow_aquifer = 0.02,
+                                        vertical_anisotropy_shallow_aquifer = (10/(0.02*500)),
+                                        porosity_vadose_zone=0.38,
+                                        porosity_shallow_aquifer=0.35,
+                                        porosity_target_aquifer=0.35,
+                                        recharge_rate=0.3/365.25,
+                                        moisture_content_vadose_zone=0.15,
+                                        ground_surface = 22,)
+
+        phreatic_well = AnalyticalWell(phreatic_scheme)
+
+        phreatic_well.phreatic()                                         
+    assert "The drawdown at the well is lower than the bottom of the target aquifer. Please select a different schematisation." in str(exc.value)
+
+
+
+# def test_warning_drawdown_in_target_aquifer():
+#     ''' Tests whether a warning is issued when the head drawdown reaches the target aquifer' '''
+        #@MartinK how to raise a warning here?
+#     with AnalyticalWell.assertWarns(Warning) as exc:
+#         phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+#                                         computation_method= 'analytical',
+#                                         what_to_export='omp', # @alex: what_to_export sounds very cryptic and ad-hoc. maybe we can think of something better
+#                                         well_discharge=319.4*24,
+#                                         # vertical_resistance_aquitard=500,
+#                                         hor_permeability_shallow_aquifer = 0.02,
+#                                         vertical_anisotropy_shallow_aquifer = (10/(0.02*500)),
+#                                         porosity_vadose_zone=0.38,
+#                                         porosity_shallow_aquifer=0.35,
+#                                         porosity_target_aquifer=0.35,
+#                                         recharge_rate=0.3/365.25,
+#                                         moisture_content_vadose_zone=0.15,
+#                                         ground_surface = 22,
+#                                         thickness_vadose_zone_at_boundary=1,
+#                                         thickness_shallow_aquifer=1,
+#                                         thickness_target_aquifer=20,
+#                                         hor_permeability_target_aquifer=35,
+#                                         thickness_full_capillary_fringe=0.4,
+#                                         temperature=11,
+#                                         solid_density_vadose_zone= 2.650,
+#                                         solid_density_shallow_aquifer= 2.650,
+#                                         solid_density_target_aquifer= 2.650,
+#                                         diameter_borehole = 0.75,
+
+#                                       )
+
+#     assert 'The drawdown is lower than the bottom of the shallow aquifer' in str(exc.value)

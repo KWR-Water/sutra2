@@ -35,6 +35,7 @@ from scipy.special import kn as besselk
 import datetime as dt
 from datetime import timedelta
 from datetime import datetime
+import warnings
 
 path = os.getcwd()  # path of working directory
 
@@ -917,6 +918,20 @@ class HydroChemicalSchematisation:
             travel_time_unsaturated = np.array([0])
             thickness_vadose_zone_drawdown = 0 #AH_todo possibly replace this with the travel distance, not thickness_vadose because this is a stand in for the travel distance?
 
+        # raise warning is the thickness of the drawdown at the well is such that
+        # it reaches the target aquifer
+
+        #@MartinK -> how to raise this warning properly in the web interface? #AH_todo
+        drawdown_at_well = self.ground_surface - thickness_vadose_zone_drawdown
+        if drawdown_at_well[0] < self.bottom_target_aquifer:
+            raise ValueError('The drawdown at the well is lower than the bottom of the target aquifer. Please select a different schematisation.') 
+
+        elif drawdown_at_well[0] < self.bottom_shallow_aquifer:
+            warnings.warn('The drawdown at the well is lower than the bottom of the shallow aquifer')
+        
+        else:
+            pass
+
         return travel_time_unsaturated, thickness_vadose_zone_drawdown, head
 
 
@@ -1125,7 +1140,7 @@ class AnalyticalWell():
                             * self.schematisation.porosity_shallow_aquifer / self.schematisation.recharge_rate)
             
             #@MartinvdS -> under the default conditions, the travel time in the shallow aquifer is negative
-            # should be alter the default values or do we do below?
+            # should we alter the default values or do we do below?
             travel_time_shallow_aquifer[travel_time_shallow_aquifer<0] = 0
 
         else:
@@ -1257,8 +1272,8 @@ class AnalyticalWell():
         '''
 
         # AH we keep this number for comparing to excel, but will change later to be the user defined porosities
-        porosity_target_aquifer=0.32
-        thickness_target_aquifer=95
+        porosity_target_aquifer=0.32 #self.porosity_target_aquifer
+        thickness_target_aquifer=95 #self.thickness_target_aquifer
 
         self.travel_time_target_aquifer = (2 * math.pi * self.spreading_distance ** 2 / (self.schematisation.well_discharge)
                             * porosity_target_aquifer * thickness_target_aquifer
@@ -2272,5 +2287,7 @@ class AnalyticalWell():
         plt.text(xmax, vadose_midpoint, "Vadose Zone", ha='right')
         plt.xlabel("Radial Distance (m)")
         plt.ylabel("Meters above sea level")
+
+        return fig
 
 # %%

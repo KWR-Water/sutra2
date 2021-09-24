@@ -143,19 +143,19 @@ phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phrea
                                         recharge_rate=0.3/365.25,
                                         moisture_content_vadose_zone=0.15,
                                         ground_surface = 22,
-                                        thickness_vadose_zone_at_boundary=1,
-                                        thickness_shallow_aquifer=1,
-                                        thickness_target_aquifer=20,
-                                        hor_permeability_target_aquifer=35,
-                                        # KD=1400,
-                                        thickness_full_capillary_fringe=0.4,
-                                        temperature=11,
-                                        solid_density_vadose_zone= 2.650,
-                                        solid_density_shallow_aquifer= 2.650,
-                                        solid_density_target_aquifer= 2.650,
-                                        diameter_borehole = 0.75,
+                                        # thickness_vadose_zone_at_boundary=1,
+                                        # thickness_shallow_aquifer=1,
+                                        # thickness_target_aquifer=20,
+                                        # hor_permeability_target_aquifer=35,
+                                        # thickness_full_capillary_fringe=0.4,
+                                        # temperature=11,
+                                        # solid_density_vadose_zone= 2.650,
+                                        # solid_density_shallow_aquifer= 2.650,
+                                        # solid_density_target_aquifer= 2.650,
+                                        # diameter_borehole = 0.75,
 
                                       )
+#%%
 
 phreatic_well = AnalyticalWell(phreatic_schematisation)
 
@@ -174,7 +174,7 @@ df_particle =phreatic_well.df_particle
 
 # df_particle.to_excel('bas_testing_QA_df_particle.xlsx')
 
-#%% Plotting the situation modelled
+##%% Plotting the situation modelled
 
 crosssection_plot = phreatic_well.plot_depth_aquifers()
 
