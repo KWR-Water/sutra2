@@ -84,7 +84,7 @@ In this class you specify the:
 .. * Model size
 
 Units of input are:
-
+* Dischage : m3/d
 * Time: days
 * Length: meters
 * Concentration: ug/L

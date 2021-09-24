@@ -124,6 +124,7 @@ class HydroChemicalSchematisation:
     vertical_anisotropy_shallow_aquifer, vertical_anisotropy_target_aquifer, vertical_anisotropy_gravelpack, vertical_anisotropy_clayseal: float
         Vertical anisotropy of each zone of the aquifer and the clayseal, [m/d].
         @MartinvdS  ratio of horizontal to vertical hydraulic conductivity?
+        #AH MartinvdS error in this?
     substance: string
         Name of the OMP to use in the model.
     partition_coefficient_water_organic_carbon: float
