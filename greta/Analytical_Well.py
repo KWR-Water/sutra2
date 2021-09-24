@@ -120,7 +120,7 @@ class HydroChemicalSchematisation:
         Horizonatal permeability of each zone of the aquifer and the clayseal, [m/d].
     hor_permeability_clayseal: float
         Horizonatal permeability of the clayseal, [m/d].
-    vertical_anistropy_shallow_aquifer, vertical_anistropy_target_aquifer, vertical_anistropy_gravelpack, vertical_anistropy_clayseal: float
+    vertical_anisotropy_shallow_aquifer, vertical_anisotropy_target_aquifer, vertical_anisotropy_gravelpack, vertical_anisotropy_clayseal: float
         Vertical anisotropy of each zone of the aquifer and the clayseal, [m/d].
         @MartinvdS  ratio of horizontal to vertical hydraulic conductivity?
     substance: string
@@ -174,7 +174,7 @@ class HydroChemicalSchematisation:
         bottom_basin: float mASL
         bottom_sludge: float mASL
         hor_permeability_sludge: float m/d
-        vertical_anistropy_sludge: float -
+        vertical_anisotropy_sludge: float -
         head_basin: float mASL
         basin_infiltration_rate: float m3/d
         travel_time_h20_shallow_aquifer: float d
@@ -239,7 +239,7 @@ class HydroChemicalSchematisation:
                 bottom_basin=None,
                 bottom_sludge=None,
                 hor_permeability_sludge=None,
-                vertical_anistropy_sludge=None,
+                vertical_anisotropy_sludge=None,
                 head_basin=None,
                 basin_infiltration_rate=None,
                 travel_time_h20_shallow_aquifer=None,
@@ -263,10 +263,10 @@ class HydroChemicalSchematisation:
                 hor_permeability_target_aquifer=10.0,
                 hor_permebility_gravelpack=None,
                 hor_permeability_clayseal=None,
-                vertical_anistropy_shallow_aquifer=1.0,
-                vertical_anistropy_target_aquifer=1.0,
-                vertical_anistropy_gravelpack=None,
-                vertical_anistropy_clayseal=None,
+                vertical_anisotropy_shallow_aquifer=1.0,
+                vertical_anisotropy_target_aquifer=1.0,
+                vertical_anisotropy_gravelpack=None,
+                vertical_anisotropy_clayseal=None,
 
                 substance=None,
                 partition_coefficient_water_organic_carbon=None,
@@ -393,7 +393,7 @@ class HydroChemicalSchematisation:
         self.bottom_basin = bottom_basin
         self.bottom_sludge = bottom_sludge
         self.hor_permeability_sludge = hor_permeability_sludge
-        self.vertical_anistropy_sludge = vertical_anistropy_sludge
+        self.vertical_anisotropy_sludge = vertical_anisotropy_sludge
         self.head_basin = head_basin
         self.basin_infiltration_rate = basin_infiltration_rate
         self.travel_time_h20_shallow_aquifer = travel_time_h20_shallow_aquifer
@@ -416,11 +416,12 @@ class HydroChemicalSchematisation:
         self.hor_permeability_target_aquifer = hor_permeability_target_aquifer
         self.hor_permebility_gravelpack = hor_permebility_gravelpack
         self.hor_permeability_clayseal = hor_permeability_clayseal
-        self.vertical_anistropy_shallow_aquifer = vertical_anistropy_shallow_aquifer
-        self.vertical_anistropy_target_aquifer = vertical_anistropy_target_aquifer
-        self.vertical_anistropy_gravelpack = vertical_anistropy_gravelpack
-        self.vertical_anistropy_clayseal = vertical_anistropy_clayseal
-        self.vertical_resistance_aquitard = thickness_shallow_aquifer / (hor_permeability_shallow_aquifer *vertical_anistropy_shallow_aquifer)
+        self.vertical_anisotropy_shallow_aquifer = vertical_anisotropy_shallow_aquifer
+        self.vertical_anisotropy_target_aquifer = vertical_anisotropy_target_aquifer
+        self.vertical_anisotropy_gravelpack = vertical_anisotropy_gravelpack
+        self.vertical_anisotropy_clayseal = vertical_anisotropy_clayseal
+        #@MartinvdS something is wrong here for the vertical_anisotropy_shallow_aquifer
+        self.vertical_resistance_aquitard = thickness_shallow_aquifer / (hor_permeability_shallow_aquifer *vertical_anisotropy_shallow_aquifer)
         self.KD = hor_permeability_target_aquifer*thickness_target_aquifer
         self.groundwater_level =self.ground_surface-self.thickness_vadose_zone_at_boundary
 
@@ -558,10 +559,10 @@ class HydroChemicalSchematisation:
             self.hor_permebility_gravelpack = 1000
         if hor_permeability_clayseal is None:
             self.hor_permeability_clayseal = 0.001
-        if vertical_anistropy_gravelpack is None:
-            self.vertical_anistropy_gravelpack = 1
-        if vertical_anistropy_clayseal is None:
-            self.vertical_anistropy_clayseal = 1
+        if vertical_anisotropy_gravelpack is None:
+            self.vertical_anisotropy_gravelpack = 1
+        if vertical_anisotropy_clayseal is None:
+            self.vertical_anisotropy_clayseal = 1
 
         if model_radius is None:
             if self.schematisation_type == 'phreatic':
@@ -676,7 +677,7 @@ class HydroChemicalSchematisation:
                 'pH': self.pH_shallow_aquifer,
                 'T': self.temperature_shallow_aquifer,
                 'hk': self.hor_permeability_shallow_aquifer,
-                'vani': self.vertical_anistropy_shallow_aquifer,
+                'vani': self.vertical_anisotropy_shallow_aquifer,
                 'nlayers': self.nlayers_shallow_aquifer,
                 },
             'layer2': {
@@ -692,7 +693,7 @@ class HydroChemicalSchematisation:
                 'pH': self.pH_target_aquifer,
                 'T': self.temperature_target_aquifer,
                 'hk': self.hor_permeability_target_aquifer,
-                'vani': self.vertical_anistropy_target_aquifer,
+                'vani': self.vertical_anisotropy_target_aquifer,
                 'nlayers': self.nlayers_target_aquifer, #AH maybe this will change to vertical_resolution
                 },
             'gravelpack1': {
@@ -701,7 +702,7 @@ class HydroChemicalSchematisation:
                 'xmin': self.inner_diameter_gravelpack/2,
                 'xmax': self.diameter_gravelpack/2,
                 'hk': self.hor_permebility_gravelpack,
-                'vani': self.vertical_anistropy_gravelpack,
+                'vani': self.vertical_anisotropy_gravelpack,
                 },
             'clayseal1':{
                 'top': self.top_clayseal,
@@ -709,7 +710,7 @@ class HydroChemicalSchematisation:
                 'xmin': self.inner_diameter_clayseal/2, #@MartinvdS correct?
                 'xmax': self.diameter_clayseal/2,
                 'hk': self.hor_permeability_clayseal,
-                'vani': self.vertical_anistropy_clayseal,
+                'vani': self.vertical_anisotropy_clayseal,
                 },
 
             'mesh_refinement1': {
@@ -2219,9 +2220,20 @@ class AnalyticalWell():
         ylim: array
             The y-axis limits
         '''
+        df = pd.DataFrame({"fraction_flux": self.schematisation.fraction_flux,
+                "total_travel_time": self.total_travel_time})
+
+        df_plot = df.sort_values(by=['total_travel_time'], ascending=True)
+
+        percent_diffs = np.diff(self.schematisation.fraction_flux)
+        percent_diffs = np.insert(percent_diffs,0,0., axis=0)
+
+        df_plot['percent_diffs'] = percent_diffs
+
+        df_plot['cumulative_fraction_abstracted_water'] = df_plot['percent_diffs'].cumsum()
 
         fig = plt.figure(figsize=[10, 5])
-        plt.plot(self.cumulative_fraction_abstracted_water, self.total_travel_time, 'r', label=self.schematisation.schematisation_type)
+        plt.plot(df_plot.cumulative_fraction_abstracted_water, df_plot.total_travel_time, 'r', label=self.schematisation.schematisation_type)
         plt.xlim(xlim)
         plt.ylim(ylim)
         plt.yscale('log')
@@ -2232,5 +2244,33 @@ class AnalyticalWell():
         plt.legend()
         # plt.savefig('travel_time_versus_cumulative_fraction_abstracted_water_'+self.schematisation.schematisation_type+'.png', dpi=300, bbox_inches='tight')
         return fig
+
+    def plot_depth_aquifers(self,):
+        ''' Plot the depths of the different aquifers (top/bottom boundaries), 
+            and the drawdown of the groundwater level with radial distance to the well.
+
+
+        Parameters
+        ----------
+
+        '''
+        xmax = self.schematisation.radial_distance_recharge
+        fig = plt.figure(figsize=[10, 5])
+        plt.hlines(self.schematisation.ground_surface, xmin = 0, xmax = xmax, label ='Ground Surface', colors= 'g')
+        plt.hlines(self.schematisation.groundwater_level, xmin = 0, xmax = xmax, label = 'Groundwater_level/ top shallow aquifer', colors='k')
+        plt.hlines(self.schematisation.bottom_shallow_aquifer, xmin = 0, xmax = xmax, label = 'Bottom shallow aquifer', colors='c')
+        plt.hlines(self.schematisation.bottom_target_aquifer, xmin = 0, xmax = xmax, label = 'Bottom target aquifer bottom', colors='y')
+        plt.plot(self.schematisation.radial_distance, self.schematisation.ground_surface - self.schematisation.thickness_vadose_zone_drawdown, label ='Head-drawdown')
+
+        vadose_midpoint = (self.schematisation.ground_surface + self.schematisation.groundwater_level)/2
+        shallow_midpoint = (self.schematisation.groundwater_level + self.schematisation.bottom_shallow_aquifer)/2
+        target_midpoint = (self.schematisation.bottom_target_aquifer+self.schematisation.bottom_shallow_aquifer)/2
+
+        plt.legend(bbox_to_anchor=(1.04,1), loc="upper left")
+        plt.text(xmax, target_midpoint, "Target Aquifer", ha='right')
+        plt.text(xmax, shallow_midpoint, "Shallow Aquifer", ha='right')
+        plt.text(xmax, vadose_midpoint, "Vadose Zone", ha='right')
+        plt.xlabel("Radial Distance (m)")
+        plt.ylabel("Meters above sea level")
 
 # %%
