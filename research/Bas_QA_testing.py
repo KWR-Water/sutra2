@@ -65,9 +65,9 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 
 
 #Lets start with a simple example defining a HydroChemicalSchematisation object for a phreatic aquifer:
-
+#%% SCHEME 1
 phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                      well_discharge=7500, #m3/day
+                                      well_discharge= 319.4*24, #7500, #m3/day
                                       recharge_rate=0.0008, #m/day
                                       thickness_vadose_zone_at_boundary=5,
                                       thickness_shallow_aquifer=10,
@@ -81,44 +81,133 @@ phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phrea
                                       substance='benzene',
                                       diffuse_input_concentration = 100, #ug/L
                                       )
-# The parameters from the HydroChemicalSchematisation class are added as attributes to
-# the class and can be accessed for example:
-
-print(phreatic_schematisation.schematisation_type)
-print(phreatic_schematisation.well_discharge)
-print(phreatic_schematisation.porosity_shallow_aquifer)
-
-# If not defined, default values are used for the rest of the parameters. To view all parameters in the schematisation:
-# phreatic_schematisation.__dict__
-
-#%% Step 2: Run the AnalyticalWell class
-# =====================================
-# Next we create an AnalyticalWell object for the HydroChemicalSchematisation object we just made.
 
 phreatic_well = AnalyticalWell(phreatic_schematisation)
 
-# Then we calculate the travel time for each of the zones unsaturated, shallow aquifer and target aquifer zones
-# by running the .phreatic() function for the well object. 
-
 phreatic_well.phreatic() 
-
-# The total travel time can be plotted as a function of radial distance from the well, or as a function
-# of the cumulative fraction of abstracted water: 
 
 radial_plot = phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 2000], ylim=[1e3, 1e6])
 cumulative_plot = phreatic_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
 
-# Save the plots
-radial_plot.savefig('travel_time_versus_radial_distance_phreatic.png', dpi=300, bbox_inches='tight')
-cumulative_plot.savefig('travel_time_versus_cumulative_abs_water_phreatic.png', dpi=300, bbox_inches='tight')
+# # Save the plots
+# radial_plot.savefig('travel_time_versus_radial_distance_phreatic.png', dpi=300, bbox_inches='tight')
+# cumulative_plot.savefig('travel_time_versus_cumulative_abs_water_phreatic.png', dpi=300, bbox_inches='tight')
 
-# From the AnalyticalWell class two other important outputs are:
-# * df_particle - Pandas dataframe with data about the different flowlines per zone (unsaturated/shallwo/target)
-# * df_flowline - Pandas dataframe with data about the flowlines per flowline (eg. total travel time per flowline)
+phreatic_well.df_particle.head(10)
+# phreatic_well.df_flowline.head(10)
+
+#%% SCHEME 2
+
+phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
+                                      well_discharge=7500, #m3/day
+                                      recharge_rate=0.0008, #m/day
+                                      thickness_vadose_zone_at_boundary=1,
+                                      thickness_shallow_aquifer=10,
+                                      thickness_target_aquifer=20,
+                                      hor_permeability_target_aquifer=35,
+                                      redox_vadose_zone='anoxic',
+                                      redox_shallow_aquifer='anoxic',
+                                      redox_target_aquifer='deeply_anoxic',
+                                      pH_target_aquifer=7.,
+                                      temperature=11.,
+                                      substance='benzene',
+                                      diffuse_input_concentration = 100, #ug/L
+                                      )
+
+phreatic_well = AnalyticalWell(phreatic_schematisation)
+
+phreatic_well.phreatic() 
+
+radial_plot = phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 2000], ylim=[1e3, 1e6])
+cumulative_plot = phreatic_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
+
+# # Save the plots
+# radial_plot.savefig('travel_time_versus_radial_distance_phreatic.png', dpi=300, bbox_inches='tight')
+# cumulative_plot.savefig('travel_time_versus_cumulative_abs_water_phreatic.png', dpi=300, bbox_inches='tight')
 
 phreatic_well.df_particle.head(10)
 phreatic_well.df_flowline.head(10)
 
+#%% SCHEME 3
+
+phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
+                                        computation_method= 'analytical',
+                                        what_to_export='omp', # @alex: what_to_export sounds very cryptic and ad-hoc. maybe we can think of something better
+                                        well_discharge=319.4*24,
+                                        # vertical_resistance_aquitard=500,
+                                        hor_permeability_shallow_aquifer = 0.02,
+                                        vertical_anisotropy_shallow_aquifer = (10/(0.02*500)),
+                                        porosity_vadose_zone=0.38,
+                                        porosity_shallow_aquifer=0.35,
+                                        porosity_target_aquifer=0.35,
+                                        recharge_rate=0.3/365.25,
+                                        moisture_content_vadose_zone=0.15,
+                                        ground_surface = 22,
+                                        thickness_vadose_zone_at_boundary=1,
+                                        thickness_shallow_aquifer=1,
+                                        thickness_target_aquifer=20,
+                                        hor_permeability_target_aquifer=35,
+                                        # KD=1400,
+                                        thickness_full_capillary_fringe=0.4,
+                                        temperature=11,
+                                        solid_density_vadose_zone= 2.650,
+                                        solid_density_shallow_aquifer= 2.650,
+                                        solid_density_target_aquifer= 2.650,
+                                        diameter_borehole = 0.75,
+
+                                      )
+
+phreatic_well = AnalyticalWell(phreatic_schematisation)
+
+phreatic_well.phreatic() 
+
+radial_plot = phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 2000], ylim=[1e3, 1e6])
+cumulative_plot = phreatic_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
+
+# # Save the plots
+# radial_plot.savefig('travel_time_versus_radial_distance_phreatic.png', dpi=300, bbox_inches='tight')
+# cumulative_plot.savefig('travel_time_versus_cumulative_abs_water_phreatic.png', dpi=300, bbox_inches='tight')
+
+phreatic_well.df_particle.head(10)
+
+df_particle =phreatic_well.df_particle
+
+# df_particle.to_excel('bas_testing_QA_df_particle.xlsx')
+
+#%% Plotting the situation modelled
+
+crosssection_plot = phreatic_well.plot_depth_aquifers()
+
+#%%
+df_x = pd.DataFrame({"fraction_flux": phreatic_well.schematisation.fraction_flux,
+        "total_travel_time": phreatic_well.total_travel_time})
+
+# fig = plt.figure(figsize=[10, 5])
+# plt.plot(df_x.cumulative_fraction_abstracted_water, df_x.total_travel_time)
+# plt.yscale('log')
+# plt.xlabel('Cumulative fraction of abstracted water')
+# plt.ylabel('Total travel time (days)')
+
+# df_x.sort_values(by=['total_travel_time'])
+df_x = pd.DataFrame({"fraction_flux": phreatic_well.schematisation.fraction_flux,
+        "total_travel_time": phreatic_well.total_travel_time})
+
+dfx = df_x.sort_values(by=['total_travel_time'], ascending=True)
+
+percent_diffs = np.diff(phreatic_well.schematisation.fraction_flux)
+percent_diffs = np.insert(percent_diffs,0,0., axis=0)
+
+dfx['percent_diffs'] = percent_diffs
+
+dfx['cumulative_fraction_abstracted_water'] = dfx['percent_diffs'].cumsum()
+
+fig = plt.figure(figsize=[10, 5])
+plt.plot(dfx.cumulative_fraction_abstracted_water, dfx.total_travel_time)
+plt.yscale('log')
+plt.xlabel('Cumulative fraction of abstracted water')
+plt.ylabel('Total travel time (days)')
+
+# df_x
 #%%
 # Step 3: View the Substance class (Optional)
 # ===========================================
