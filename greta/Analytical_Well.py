@@ -1273,8 +1273,8 @@ class AnalyticalWell():
         '''
 
         # AH we keep this number for comparing to excel, but will change later to be the user defined porosities
-        porosity_target_aquifer=0.32 #self.porosity_target_aquifer
-        thickness_target_aquifer=95 #self.thickness_target_aquifer
+        porosity_target_aquifer=self.schematisation.porosity_target_aquifer #0.32 #
+        thickness_target_aquifer=self.schematisation.thickness_target_aquifer #95 #
 
         self.travel_time_target_aquifer = (2 * math.pi * self.spreading_distance ** 2 / (self.schematisation.well_discharge)
                             * porosity_target_aquifer * thickness_target_aquifer
