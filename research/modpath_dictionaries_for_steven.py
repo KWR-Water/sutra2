@@ -45,23 +45,6 @@ from testing.test_transatomic import *
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
 
-#FIX
-# FIX THE DIAMETERS
-# FIX THE DICIOTNARY FOR the UBSTANCE, ADD SUBSTANCE NAME,
-# FIX R_START not r = zero (default) for steven
- 
-# IS GRAVEL RMIN GRVEL = RMAX WELL SCREEN
-# CHECK THE DIAMETERS CAREFULLY FOR THESE INTERLINKING FUNCTION OF HTE WELLS
-
-# #%%
-# # Test
-test_travel_time_distribution_semiconfined()
-test_retardation_temp_koc_correction(substance='benzene', schematisation_type='semiconfined')
-test_retardation_temp_koc_correction(substance='benzo(a)pyrene', schematisation_type='semiconfined')
-test_retardation_temp_koc_correction(substance='AMPA', schematisation_type='semiconfined')
-test_steady_concentration_temp_koc_correction_semiconfined(substance='benzene')
-test_steady_concentration_temp_koc_correction_semiconfined(substance='benzo(a)pyrene')
-test_steady_concentration_temp_koc_correction_semiconfined(substance='AMPA')
 
 #%%
 
@@ -82,7 +65,7 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       thickness_target_aquifer=40.0,
                                       hor_permeability_target_aquifer=35.0,
                                       hor_permeability_shallow_aquifer = 0.02,
-                                      vertical_anistropy_shallow_aquifer = (10/(0.02*500)),
+                                      vertical_anisotropy_shallow_aquifer = (10/(0.02*500)),
                                       thickness_full_capillary_fringe=0.4,
                                       redox_vadose_zone='anoxic', #'suboxic',
                                       redox_shallow_aquifer='anoxic',
@@ -112,7 +95,8 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       concentration_point_contamination = 100.,
                                       discharge_point_contamination = 100.,#made up value
                                       top_clayseal = 17,
-                                      compute_contamination_for_date='2020-01-01',
+                                      compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
+                                      
                                       # substance = 'benzene',
                                       # halflife_suboxic=600,
                                       # partition_coefficient_water_organic_carbon = 3.3,
@@ -155,7 +139,7 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       thickness_target_aquifer=40.0,
                                       hor_permeability_target_aquifer=35.0,
                                       hor_permeability_shallow_aquifer = 0.02,
-                                      vertical_anistropy_shallow_aquifer = (10/(0.02*500)),
+                                      vertical_anisotropy_shallow_aquifer = (10/(0.02*500)),
                                       thickness_full_capillary_fringe=0.4,
                                       redox_vadose_zone='anoxic', #'suboxic',
                                       redox_shallow_aquifer='anoxic',
@@ -184,7 +168,7 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       concentration_point_contamination = 100.,
                                       discharge_point_contamination = 100.,#made up value
                                       top_clayseal = 17,
-                                      compute_contamination_for_date='2020-01-01',
+                                      compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
                                       # substance = 'benzene',
                                       # halflife_suboxic=600,
                                       # partition_coefficient_water_organic_carbon = 3.3,
@@ -243,7 +227,7 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       thickness_target_aquifer=40.0,
                                       hor_permeability_target_aquifer=35.0,
                                       hor_permeability_shallow_aquifer = 0.02,
-                                      vertical_anistropy_shallow_aquifer = (10/(0.02*500)),
+                                      vertical_anisotropy_shallow_aquifer = (10/(0.02*500)),
                                       thickness_full_capillary_fringe=0.4,
                                       redox_vadose_zone='anoxic', #'suboxic',
                                       redox_shallow_aquifer='anoxic',
@@ -272,7 +256,7 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       concentration_point_contamination = 100.,
                                       discharge_point_contamination = 100.,#made up value
                                       top_clayseal = 17,
-                                      compute_contamination_for_date='2020-01-01',
+                                      compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
 
                                       # substance = 'benzene',
                                       # halflife_suboxic=600,
@@ -314,7 +298,7 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       thickness_target_aquifer=40.0,
                                       hor_permeability_target_aquifer=35.0,
                                       hor_permeability_shallow_aquifer = 0.02,
-                                      vertical_anistropy_shallow_aquifer = (10/(0.02*500)),
+                                      vertical_anisotropy_shallow_aquifer = (10/(0.02*500)),
                                       thickness_full_capillary_fringe=0.4,
                                       redox_vadose_zone='anoxic', #'suboxic',
                                       redox_shallow_aquifer='anoxic',
@@ -343,7 +327,7 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       concentration_point_contamination = 100.,
                                       discharge_point_contamination = 100.,#made up value
                                       top_clayseal = 17,
-                                      compute_contamination_for_date='2020-01-01',
+                                      compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
                                       # substance = 'benzene',
                                       # halflife_suboxic=600,
                                       # partition_coefficient_water_organic_carbon = 3.3,
@@ -367,3 +351,111 @@ f.close()
 phreatic_dict_2
 
 #%%
+# PHREATIC TEST CASE SAME AS FOR THE UNIT TEST FOR PHREATIC TTD
+
+phreatic_test_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+                                      computation_method= 'analytical',
+                                      what_to_export='omp', # @alex: what_to_export sounds very cryptic and ad-hoc. maybe we can think of something better
+                                      well_discharge=319.4*24,
+                                      # vertical_resistance_aquitard=500,
+                                      hor_permeability_shallow_aquifer = 0.02,
+                                      vertical_anisotropy_shallow_aquifer = (10/(0.02*500)),
+                                      porosity_vadose_zone=0.38,
+                                      porosity_shallow_aquifer=0.35,
+                                      porosity_target_aquifer=0.35,
+                                      recharge_rate=0.3/365.25,
+                                      moisture_content_vadose_zone=0.15,
+                                      ground_surface = 22,
+                                      thickness_vadose_zone_at_boundary=5,
+                                      thickness_shallow_aquifer=10,
+                                      thickness_target_aquifer=40,
+                                      hor_permeability_target_aquifer=35,
+                                      # KD=1400,
+                                      thickness_full_capillary_fringe=0.4,
+                                      temperature=11,
+                                      solid_density_vadose_zone= 2.650,
+                                      solid_density_shallow_aquifer= 2.650,
+                                      solid_density_target_aquifer= 2.650,
+                                      diameter_borehole = 0.75,
+                                      )
+
+phreatic_test_scheme.make_dictionary()  
+
+phreatic_test_scheme_dict= { 'simulation_parameters' : phreatic_scheme.simulation_parameters,
+        'geo_parameters' : phreatic_scheme.geo_parameters,
+        'ibound_parameters' : phreatic_scheme.ibound_parameters,
+        'recharge_parameters' : phreatic_scheme.recharge_parameters,
+        'well_parameters' : phreatic_scheme.well_parameters,
+        'point_parameters' : phreatic_scheme.point_parameters,
+        'substance_parameters' : phreatic_scheme.substance_parameters,
+        'bas_parameters' : phreatic_scheme.bas_parameters,
+}
+
+f = open("phreatic_test_scheme_dict.txt","w")
+f.write( str(phreatic_test_scheme_dict))
+f.close()
+phreatic_test_scheme_dict
+
+phreatic_test_well= AnalyticalWell(phreatic_test_scheme)
+
+phreatic_test_well.phreatic()
+
+df_particle =phreatic_test_well.df_particle
+df_flowline = phreatic_test_well.df_flowline
+
+df_particle.to_excel('phreatic_df_particle_Modflow.xlsx')
+df_flowline.to_excel('phreatic_df_flowline_Modflow.xlsx')
+#%%
+# SEMICONFINED TEST CASE SAME AS FOR THE UNIT TEST FOR SEMICONFINED TTD
+
+semiconfined_test_scheme = HydroChemicalSchematisation(schematisation_type='semiconfined',
+                                        computation_method= 'analytical',
+                                                what_to_export='omp',
+                                        well_discharge=319.4*24,
+                                        # vertical_resistance_aquitard=500,
+                                      hor_permeability_shallow_aquifer = 0.02,
+                                      vertical_anisotropy_shallow_aquifer = (10/(0.02*500)),
+                                      porosity_vadose_zone=0.38,
+                                        porosity_shallow_aquifer=0.35,
+                                        porosity_target_aquifer=0.35,
+                                        recharge_rate=0.3/365.25,
+                                        moisture_content_vadose_zone=0.15,
+                                        ground_surface = 22,
+                                        thickness_vadose_zone_at_boundary=5,
+                                        thickness_shallow_aquifer=10,
+                                        thickness_target_aquifer=40,
+                                        hor_permeability_target_aquifer=35,
+                                        # KD=1400,
+                                        thickness_full_capillary_fringe=0.4,
+                                        temperature=11,
+                                         solid_density_vadose_zone= 2.650,
+                                      solid_density_shallow_aquifer= 2.650,
+                                      solid_density_target_aquifer= 2.650,
+                                      diameter_borehole = 0.75,)
+
+semiconfined_test_scheme.make_dictionary()  
+
+semiconfined_test_scheme_dict= { 'simulation_parameters' : phreatic_scheme.simulation_parameters,
+        'geo_parameters' : phreatic_scheme.geo_parameters,
+        'ibound_parameters' : phreatic_scheme.ibound_parameters,
+        'recharge_parameters' : phreatic_scheme.recharge_parameters,
+        'well_parameters' : phreatic_scheme.well_parameters,
+        'point_parameters' : phreatic_scheme.point_parameters,
+        'substance_parameters' : phreatic_scheme.substance_parameters,
+        'bas_parameters' : phreatic_scheme.bas_parameters,
+}
+
+f = open("semiconfined_test_scheme_dict.txt","w")
+f.write( str(semiconfined_test_scheme_dict))
+f.close()
+semiconfined_test_scheme_dict
+
+semiconfined_test_well= AnalyticalWell(semiconfined_test_scheme)
+
+semiconfined_test_well.semiconfined()
+
+df_particle =semiconfined_test_well.df_particle
+df_flowline = semiconfined_test_well.df_flowline
+
+df_particle.to_excel('semiconfined_df_particle_Modflow.xlsx')
+df_flowline.to_excel('semiconfined_df_flowline_Modflow.xlsx')

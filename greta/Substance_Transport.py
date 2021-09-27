@@ -658,7 +658,7 @@ class SubstanceTransport():
             df_well_concentration[:] = [x / input_concentration for x in df_well_concentration]
             ylabel = 'Fraction of input concentration'
         else:
-            ylabel = 'Concentration'
+            ylabel = 'Concentration (ug/L)'
 
         fig = plt.figure(figsize=[10, 5])
         if x_axis == 'Date':
