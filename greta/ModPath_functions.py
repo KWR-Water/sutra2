@@ -673,24 +673,27 @@ class ModPathWell:
         for iDict in dict_keys:
             # Loop through subkeys of schematisation dictionary
             for iDict_sub in schematisation[iDict]:   
-                # Grid indices
-                try:
-                    layidx_min,layidx_max,\
-                        rowidx_min,rowidx_max,\
-                        colidx_min,colidx_max = self.cell_bounds(schematisation,
-                                                dict_key = iDict,
-                                                dict_subkey = iDict_sub,
-                                                model_type = self.model_type)
-                except Exception as e:
-                    print(e,"Continue.")
-                    continue
-                # Fill grid with parameter value 'parm_val'
-                if not None in [layidx_min,layidx_max,colidx_min,colidx_max]:
 
-                    self.material[layidx_min: layidx_max,\
-                        rowidx_min: rowidx_max,\
-                        colidx_min: colidx_max] = iDict_sub
-                
+                if 'mesh_refinement' not in iDict_sub:
+
+                    # Grid indices
+                    try:
+                        layidx_min,layidx_max,\
+                            rowidx_min,rowidx_max,\
+                            colidx_min,colidx_max = self.cell_bounds(schematisation,
+                                                    dict_key = iDict,
+                                                    dict_subkey = iDict_sub,
+                                                    model_type = self.model_type)
+                    except Exception as e:
+                        print(e,"Continue.")
+                        continue
+                    # Fill grid with parameter value 'parm_val'
+                    if not None in [layidx_min,layidx_max,colidx_min,colidx_max]:
+
+                        self.material[layidx_min: layidx_max,\
+                            rowidx_min: rowidx_max,\
+                            colidx_min: colidx_max] = iDict_sub
+                    
         if self.model_type in ["axisymmetric","2D"]:
                 # In 2D model or axisymmetric models an 
                 # inactive row is added to be able to run Modpath successfully.
