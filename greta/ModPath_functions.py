@@ -1846,7 +1846,7 @@ class ModPathWell:
 
         # Assign material grid
         self.assign_material(schematisation = self.schematisation_dict,
-                            dict_keys = None)
+                            dict_keys = ["geo_parameters","well_parameters"])
 
         # Create (uncorrected) array for kv ("vka"), using "kh" and "vani" (vertical anisotropy)
         self.vka = self.hk / self.vani
@@ -2147,95 +2147,97 @@ class ModPathWell:
             if self.run_mfmodel:
                 # Run modflow model
                 self.mfmodelrun()
+        # elif self.schematisation_type == "Semi-confined":
 
-            if self.run_mpmodel:
+        # Modpath simulation
+        if self.run_mpmodel:
 
-                # Create radial distance array with particle locations
-                # self._create_radial_distance_array() # Analytische fluxverdeling
-                self._create_radial_distance_particles_recharge(recharge_parameters = None,
-                                                                nparticles_cell = 1,
-                                                                localy=0.5, localz=0.5,
-                                                                timeoffset=0.0, drape=0,
-                                                                trackingdirection = 'forward',
-                                                                releasedata=0.0)  
+            # Create radial distance array with particle locations
+            # self._create_radial_distance_array() # Analytische fluxverdeling
+            self._create_radial_distance_particles_recharge(recharge_parameters = None,
+                                                            nparticles_cell = 1,
+                                                            localy=0.5, localz=0.5,
+                                                            timeoffset=0.0, drape=0,
+                                                            trackingdirection = 'forward',
+                                                            releasedata=0.0)  
 
-                # Default flux interfaces
-                defaultiface = {'RECHARGE': 6, 'ET': 6}
-                
-                
-                ## Model mpbas input ##
-                self.mpbas_input(prsity = self.porosity, defaultiface = defaultiface)
+            # Default flux interfaces
+            defaultiface = {'RECHARGE': 6, 'ET': 6}
+            
+            
+            ## Model mpbas input ##
+            self.mpbas_input(prsity = self.porosity, defaultiface = defaultiface)
 
-                # Run modpath model
-                self.MP7modelrun()
+            # Run modpath model
+            self.MP7modelrun()
 
-                # self.success_mp = True
-        
-                print("modelrun of type", self.schematisation_type, "completed.")
+            # self.success_mp = True
+    
+            print("modelrun of type", self.schematisation_type, "completed.")
 
-                # Post-processing:
-                # ##cbc
-                # cbcfile = os.path.join(self.workspace, self.modelname + '.cbc')#r"r:\P402045_014\microbiologisch_risico_lekke_peilbuis\python\MP7_V5_20200429\GHscen_A_onvzone_afwezig_lek_klein_lekdiepte0_5\GHscen_A_onvzone_afwezig_lek_klein_lekdiepte0_5.cbc"
-                # cbb = flopy.utils.binaryfile.CellBudgetFile(filename = cbcfile,
-                #                                             precision='single',
-                #                                             verbose=False)
-                
-                # # Flux per particle group, per path
-                # fluxnode_frf = {}
-                # frf = cbb.get_data(kstpkper=(0,0), text='FLOW RIGHT FACE')
-                # for iPG in self.pg:
-                #     fluxnode_frf[iPG] = {}
-                #     for id_,iNode in enumerate(self.part_locs[iPG]):
-                #         print(id_,iNode, "right face flux:", frf[0][iNode])
-                #         fluxnode_frf[iPG][iNode] = frf[0][iNode]
-                # # close budget object afterwards
-                # cbb.close()
+            ## Post-processing: ##
+            # ##cbc
+            # cbcfile = os.path.join(self.workspace, self.modelname + '.cbc') # r"r:\P402045_014\microbiologisch_risico_lekke_peilbuis\python\MP7_V5_20200429\GHscen_A_onvzone_afwezig_lek_klein_lekdiepte0_5\GHscen_A_onvzone_afwezig_lek_klein_lekdiepte0_5.cbc"
+            # cbb = flopy.utils.binaryfile.CellBudgetFile(filename = cbcfile,
+            #                                             precision='single',
+            #                                             verbose=False)
+            
+            # # Flux per particle group, per path
+            # fluxnode_frf = {}
+            # frf = cbb.get_data(kstpkper=(0,0), text='FLOW RIGHT FACE')
+            # for iPG in self.pg:
+            #     fluxnode_frf[iPG] = {}
+            #     for id_,iNode in enumerate(self.part_locs[iPG]):
+            #         print(id_,iNode, "right face flux:", frf[0][iNode])
+            #         fluxnode_frf[iPG][iNode] = frf[0][iNode]
+            # # close budget object afterwards
+            # cbb.close()
 
-                # Empty output dicts
-                self.xyz_nodes = {}
-                self.time_diff = {}
+            # Empty output dicts
+            self.xyz_nodes = {}
+            self.time_diff = {}
 
-                # Pathline output file
-                self.mppth = os.path.join(self.workspace, self.modelname + '_mp.mppth')
+            # Pathline output file
+            self.mppth = os.path.join(self.workspace, self.modelname + '_mp.mppth')
 
-                for iPG in self.part_locs:
-                    # xyz_locs
-                    self.xyz_nodes[iPG] = {}
-                    # Save flow duration (time_diff) of pathlines
-                    self.time_diff[iPG] = {}
+            for iPG in self.part_locs:
+                # xyz_locs
+                self.xyz_nodes[iPG] = {}
+                # Save flow duration (time_diff) of pathlines
+                self.time_diff[iPG] = {}
 
-                    # Nodes to retrieve
-                    print("Particle group",iPG, "nr of nodes:", str(len(self.part_locs.get(iPG))))
-                    for id_,iNode in enumerate(self.part_locs.get(iPG)):
-                        # print(id_,iNode)
-                        try:
-                            self.nodes = self.get_nodes(iNode)
-                        except Exception:
-                            self.nodes = self.get_nodes([iNode])
-                        print(id_,iNode, self.nodes)
+                # Nodes to retrieve
+                print("Particle group",iPG, "nr of nodes:", str(len(self.part_locs.get(iPG))))
+                for id_,iNode in enumerate(self.part_locs.get(iPG)):
+                    # print(id_,iNode)
+                    try:
+                        self.nodes = self.get_nodes(iNode)
+                    except Exception:
+                        self.nodes = self.get_nodes([iNode])
+                    print(id_,iNode, self.nodes)
 
-                        # nodes_rel[ = flopy.utils.ra_slice(m.wel.stress_period_data[0], ['k', 'i', 'j'])
-                        #     nodes_well = prf.get_nodes(locs = wel_locs, nrow = nrow, ncol = ncol) # m.dis.get_node(wel_locs.tolist())
+                    # nodes_rel[ = flopy.utils.ra_slice(m.wel.stress_period_data[0], ['k', 'i', 'j'])
+                    #     nodes_well = prf.get_nodes(locs = wel_locs, nrow = nrow, ncol = ncol) # m.dis.get_node(wel_locs.tolist())
 
-                        # Read pathline data
-                        self.xyz_nodes[iPG][iNode], \
-                        self.dist_data,  \
-                        self.time_diff[iPG][iNode],  \
-                        self.dist_tot,   \
-                        self.time_tot,   \
-                        self.pth_data =  \
-                                    self.read_pathlinedata(fpth = self.mppth,
-                                                        nodes = self.nodes) #pg_nodes[iGroup])  
-                        '''                             
-                    xyz_points, \    # XYZ data 
-                    dist_data,  \    # Distance araay between nodes
-                    time_diff,  \    # Time difference array
-                    dist_tot,   \    # Total distance covered per particle
-                    time_tot,   \    # Total time covered per particle
-                    pth_data =  \    # Raw pathline data
-                    '''        
+                    # Read pathline data
+                    self.xyz_nodes[iPG][iNode], \
+                    self.dist_data,  \
+                    self.time_diff[iPG][iNode],  \
+                    self.dist_tot,   \
+                    self.time_tot,   \
+                    self.pth_data =  \
+                                self.read_pathlinedata(fpth = self.mppth,
+                                                    nodes = self.nodes) #pg_nodes[iGroup])  
+                    '''                             
+                xyz_points, \    # XYZ data 
+                dist_data,  \    # Distance araay between nodes
+                time_diff,  \    # Time difference array
+                dist_tot,   \    # Total distance covered per particle
+                time_tot,   \    # Total time covered per particle
+                pth_data =  \    # Raw pathline data
+                '''        
 
-                print("Post-processing modpathrun of type", self.schematisation_type, "completed.")
+            print("Post-processing modpathrun of type", self.schematisation_type, "completed.")
 
 
 '''

@@ -165,3 +165,8 @@ test_ws/phreatic_mp.mppth
 test_ws/phreatic_mp.mpsim
 test_ws/phreatic_mp.timeseries
 test_ws/source1.sloc
+testing/test_files/hk_phrea.npy
+testing/test_files/material_phrea.npy
+testing/test_files/porosity_phrea.npy
+testing/test_files/recharge_phrea.npy
+testing/test_files/vani_phrea.npy

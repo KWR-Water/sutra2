@@ -2,6 +2,7 @@
 #%%
 import pytest
 from pandas import read_csv
+import numpy as np
 import pandas as pd
 import os
 import sys
@@ -42,6 +43,10 @@ from pandas._testing import assert_frame_equal
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
 
+# Create test files dir
+testfiles_dir = os.path.join(path,"test_files")
+if not os.path.exists(testfiles_dir):
+    os.makedirs(testfiles_dir)
 
 # <<<<<<< HEAD
 #%% 
@@ -121,8 +126,13 @@ def test_modpath_run_phreatic():
     # Run phreatic schematisation
     modpath_phrea.run_model(run_mfmodel = True,
                         run_mpmodel = True)
-                        
+    print(modpath_phrea.material)
+    parms = ["material","hk","vani","porosity","recharge"]
+    for iParm in parms:
+        np.save(os.path.join(testfiles_dir, iParm + "_phrea.npy"), getattr(modpath_phrea,iParm))
+                     
     assert modpath_phrea.success_mp
+
 
 #=======
 #%%
@@ -174,3 +184,5 @@ def test_travel_time_distribution_phreatic():
         print("Success, no error in TTD!")
 
 # %%
+if __name__ == "__main__":
+    test_modpath_run_phreatic()
