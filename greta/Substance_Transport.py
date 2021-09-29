@@ -148,17 +148,8 @@ class SubstanceTransport():
         Column 'input_concentration': float
         Column 'endpoint_id': Integer
         Column 'well_discharge': float
-        Column 'recharge_rate': float
-        Column 'vertical_resistance_aquitard': float
-        Column 'KD': float
-        Column 'thickness_full_capillary_fringe': float
         Column 'substance': string
-        Column 'moisture_content_vadose_zone': float
-        Column 'diameter_borehole': float
         Column 'removal_function': string
-        Column 'solid_density_vadose_zone': float
-        Column 'solid_density_shallow_aquifer': float
-        Column 'solid_density_target_aquifer': float
         Column 'total_breakthrough_travel_time': float
         Column 'breakthrough_concentration': float
 
@@ -424,17 +415,8 @@ class SubstanceTransport():
             Column 'input_concentration': float
             Column 'endpoint_id': Integer
             Column 'well_discharge': float
-            Column 'recharge_rate': float
-            Column 'vertical_resistance_aquitard': float
-            Column 'KD': float
-            Column 'thickness_full_capillary_fringe': float
             Column 'substance': string
-            Column 'moisture_content_vadose_zone': float
-            Column 'diameter_borehole': float
             Column 'removal_function': string
-            Column 'solid_density_vadose_zone': float
-            Column 'solid_density_shallow_aquifer': float
-            Column 'solid_density_target_aquifer': float
             Column 'total_breakthrough_travel_time': float
                 The breakthrough concentration in the well for the OMP taking into account retardation.
             Column 'breakthrough_concentration': float

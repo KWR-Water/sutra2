@@ -687,11 +687,11 @@ class HydroChemicalSchematisation:
                 'porosity': self.porosity_vadose_zone,
                 'moisture_content': self.moisture_content_vadose_zone,
                 'solid_density': self.solid_density_vadose_zone,
-                'f_oc': self.fraction_organic_carbon_vadose_zone,
+                'fraction_organic_carbon': self.fraction_organic_carbon_vadose_zone,
                 'redox': self.redox_vadose_zone,
-                'DOC': self.dissolved_organic_carbon_vadose_zone,
+                'dissolved_organic_carbon': self.dissolved_organic_carbon_vadose_zone,
                 'pH': self.pH_vadose_zone,
-                'T': self.temperature_vadose_zone,
+                'temperature': self.temperature_vadose_zone,
                 },
             'layer1': {
                 'top': self.bottom_vadose_zone_at_boundary,
@@ -700,11 +700,11 @@ class HydroChemicalSchematisation:
                 'xmax': self.model_radius_computed,
                 'porosity': self.porosity_shallow_aquifer,
                 'solid_density': self.solid_density_shallow_aquifer,
-                'f_oc': self.fraction_organic_carbon_shallow_aquifer,
+                'fraction_organic_carbon': self.fraction_organic_carbon_shallow_aquifer,
                 'redox': self.redox_shallow_aquifer,
-                'DOC': self.dissolved_organic_carbon_shallow_aquifer,
+                'dissolved_organic_carbon': self.dissolved_organic_carbon_shallow_aquifer,
                 'pH': self.pH_shallow_aquifer,
-                'T': self.temperature_shallow_aquifer,
+                'temperature': self.temperature_shallow_aquifer,
                 'hk': self.hor_permeability_shallow_aquifer,
                 'vani': self.vertical_anisotropy_shallow_aquifer,
                 'nlayers': self.nlayers_shallow_aquifer,
@@ -716,11 +716,11 @@ class HydroChemicalSchematisation:
                 'xmax': self.model_radius_computed,
                 'porosity': self.porosity_target_aquifer,
                 'solid_density': self.solid_density_target_aquifer,
-                'f_oc': self.fraction_organic_carbon_target_aquifer,
+                'fraction_organic_carbon': self.fraction_organic_carbon_target_aquifer,
                 'redox': self.redox_target_aquifer,
-                'DOC': self.dissolved_organic_carbon_target_aquifer,
+                'dissolved_organic_carbon': self.dissolved_organic_carbon_target_aquifer,
                 'pH': self.pH_target_aquifer,
-                'T': self.temperature_target_aquifer,
+                'temperature': self.temperature_target_aquifer,
                 'hk': self.hor_permeability_target_aquifer,
                 'vani': self.vertical_anisotropy_target_aquifer,
                 'nlayers': self.nlayers_target_aquifer, #AH maybe this will change to vertical_resolution
@@ -771,7 +771,7 @@ class HydroChemicalSchematisation:
                 'recharge': self.recharge_rate,
                 'xmin': self.diameter_gravelpack/2,
                 'xmax': self.model_radius,
-                'DOC': self.dissolved_organic_carbon_infiltration_water,
+                'dissolved_organic_carbon': self.dissolved_organic_carbon_infiltration_water,
                 'TOC': self.total_organic_carbon_infiltration_water,
                 'input_concentration': self.diffuse_input_concentration,
                 },
@@ -789,7 +789,7 @@ class HydroChemicalSchematisation:
                     'input_concentration': self.point_input_concentration,
                     'x_start': self.distance_point_contamination_from_well[0],
                     'z_start': self.depth_point_contamination,
-                    'q_point': self.discharge_point_contamination,
+                    'discharge': self.discharge_point_contamination,
                     },
                 # 'point2': {} #AH_todo if there is more than one point source,
                 # input a dictionary directly, @martinvdS we will discuss this
@@ -1089,17 +1089,8 @@ class AnalyticalWell():
         Column 'input_concentration'
         Column 'endpoint_id': Integer
         Column 'well_discharge': float
-        Column 'recharge_rate': float
-        Column 'vertical_resistance_aquitard': float
-        Column 'KD': float
-        Column 'thickness_full_capillary_fringe': float
         Column 'substance': string
-        Column 'moisture_content_vadose_zone': float
-        Column 'diameter_borehole': float
         Column 'removal_function': string
-        Column 'solid_density_vadose_zone': float
-        Column 'solid_density_shallow_aquifer': float
-        Column 'solid_density_target_aquifer': float
     df_particle: pandas.DataFrame
         Column 'flowline_id': int
         Column 'zone': string
@@ -1502,17 +1493,8 @@ class AnalyticalWell():
                 Column 'endpoint_id': Integer
                     ID of Well (or drain) where the flowline ends.
                 Column 'well_discharge': float
-                Column 'recharge_rate': float
-                Column 'vertical_resistance_aquitard': float
-                Column 'KD': float
-                Column 'thickness_full_capillary_fringe': float
                 Column 'substance': string
-                Column 'moisture_content_vadose_zone': float
-                Column 'diameter_borehole': float
                 Column 'removal_function': string
-                Column 'solid_density_vadose_zone': float
-                Column 'solid_density_shallow_aquifer': float
-                Column 'solid_density_target_aquifer': float
 
             df_particle: pandas.DataFrame
                 Column 'flowline_id': int
@@ -1725,36 +1707,18 @@ class AnalyticalWell():
         if what_to_export == 'all' or what_to_export== 'omp':
 
             df_flowline['well_discharge'] = self.schematisation.well_discharge
-            df_flowline['recharge_rate'] = self.schematisation.recharge_rate
-            df_flowline['vertical_resistance_aquitard'] = self.schematisation.vertical_resistance_aquitard
-            df_flowline['KD'] = self.schematisation.KD
-            df_flowline['thickness_full_capillary_fringe'] = self.schematisation.thickness_full_capillary_fringe
             df_flowline['substance'] = self.schematisation.substance
             df_flowline['particle_release_day'] = self.schematisation.particle_release_day
-            df_flowline['moisture_content_vadose_zone'] = self.schematisation.moisture_content_vadose_zone
-            df_flowline['diameter_borehole'] = self.schematisation.diameter_borehole
             df_flowline['removal_function'] = self.schematisation.removal_function
-            df_flowline['solid_density_vadose_zone'] = self.schematisation.solid_density_vadose_zone
-            df_flowline['solid_density_shallow_aquifer'] = self.schematisation.solid_density_shallow_aquifer
-            df_flowline['solid_density_target_aquifer'] = self.schematisation.solid_density_target_aquifer
-            
+
         else:
             # export everything anyways. 
             #AH_todo when we have the other options sorted out ('pathogen') then 
             # adjust this.
             df_flowline['well_discharge'] = self.schematisation.well_discharge
-            df_flowline['recharge_rate'] = self.schematisation.recharge_rate
-            df_flowline['vertical_resistance_aquitard'] = self.schematisation.vertical_resistance_aquitard
-            df_flowline['KD'] = self.schematisation.KD
-            df_flowline['thickness_full_capillary_fringe'] = self.schematisation.thickness_full_capillary_fringe
             df_flowline['substance'] = self.schematisation.substance
             df_flowline['particle_release_day'] = self.schematisation.particle_release_day
-            df_flowline['moisture_content_vadose_zone'] = self.schematisation.moisture_content_vadose_zone
-            df_flowline['diameter_borehole'] = self.schematisation.diameter_borehole
             df_flowline['removal_function'] = self.schematisation.removal_function
-            df_flowline['solid_density_vadose_zone'] = self.schematisation.solid_density_vadose_zone
-            df_flowline['solid_density_shallow_aquifer'] = self.schematisation.solid_density_shallow_aquifer
-            df_flowline['solid_density_target_aquifer'] = self.schematisation.solid_density_target_aquifer
 
         # if what_to_export == 'all':
         # AH_todo come back to this and fill in with the final parameters of interest
@@ -1826,17 +1790,8 @@ class AnalyticalWell():
             Column 'input_concentration'
             Column 'endpoint_id': Integer
             Column 'well_discharge': float
-            Column 'recharge_rate': float
-            Column 'vertical_resistance_aquitard': float
-            Column 'KD': float
-            Column 'thickness_full_capillary_fringe': float
             Column 'substance': string
-            Column 'moisture_content_vadose_zone': float
-            Column 'diameter_borehole': float
             Column 'removal_function': string
-            Column 'solid_density_vadose_zone': float
-            Column 'solid_density_shallow_aquifer': float
-            Column 'solid_density_target_aquifer': float
         df_particle: pandas.DataFrame
             Column 'flowline_id': int
             Column 'zone': string
@@ -1950,17 +1905,8 @@ class AnalyticalWell():
             Column 'input_concentration'
             Column 'endpoint_id': Integer
             Column 'well_discharge': float
-            Column 'recharge_rate': float
-            Column 'vertical_resistance_aquitard': float
-            Column 'KD': float
-            Column 'thickness_full_capillary_fringe': float
             Column 'substance': string
-            Column 'moisture_content_vadose_zone': float
-            Column 'diameter_borehole': float
             Column 'removal_function': string
-            Column 'solid_density_vadose_zone': float
-            Column 'solid_density_shallow_aquifer': float
-            Column 'solid_density_target_aquifer': float
 
         '''
         # travel time unsaturated now calculated in the HydrochemicalSchematisation class
@@ -2053,17 +1999,8 @@ class AnalyticalWell():
             Column 'input_concentration'
             Column 'endpoint_id': Integer
             Column 'well_discharge': float
-            Column 'recharge_rate': float
-            Column 'vertical_resistance_aquitard': float
-            Column 'KD': float
-            Column 'thickness_full_capillary_fringe': float
             Column 'substance': string
-            Column 'moisture_content_vadose_zone': float
-            Column 'diameter_borehole': float
             Column 'removal_function': string
-            Column 'solid_density_vadose_zone': float
-            Column 'solid_density_shallow_aquifer': float
-            Column 'solid_density_target_aquifer': float
         df_particle: pandas.DataFrame
             Column 'flowline_id': int
             Column 'zone': string
@@ -2176,17 +2113,8 @@ class AnalyticalWell():
             Column 'input_concentration'
             Column 'endpoint_id': Integer
             Column 'well_discharge': float
-            Column 'recharge_rate': float
-            Column 'vertical_resistance_aquitard': float
-            Column 'KD': float
-            Column 'thickness_full_capillary_fringe': float
             Column 'substance': string
-            Column 'moisture_content_vadose_zone': float
-            Column 'diameter_borehole': float
             Column 'removal_function': string
-            Column 'solid_density_vadose_zone': float
-            Column 'solid_density_shallow_aquifer': float
-            Column 'solid_density_target_aquifer': float
 
         '''
 
