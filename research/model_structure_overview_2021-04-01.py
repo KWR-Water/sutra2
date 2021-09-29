@@ -149,7 +149,7 @@ class Substance():
 		pass
   def getSmiles(cid):
   	pass
-  def getKow(self, redox_zone):
+  def getKow(self, redox):
   	pass
 # -> check hoe dit in huidige AQP zit. alleen getKow etc. is nieuw
 
@@ -309,7 +309,7 @@ class SubstanceTransport():
         Column 'flowline_id': Integer
         Column 'discharge': Float
             Discharge associated with the flowline (m3/d)
-        Column 'particle_release_date': Float
+        Column 'particle_release_day': Float
         Column 'input_concentration'
         Column 'endpoint_id': Integer
         		ID of Well (or drain) where the flowline ends
@@ -320,7 +320,7 @@ class SubstanceTransport():
         Column 'xcoord'
         Column 'ycoord'
         Column 'zcoord'
-        Column 'redox_zone'
+        Column 'redox'
         Column 'temperature'
         Column 'Kow'  # only necessary for OMP
         Column 'Labda'  # only necessary for pathogen 
@@ -337,7 +337,7 @@ class SubstanceTransport():
   
   	def _init_omp()
   		if self.omp_inialized:
-	  		self.df_part['Kow'] = self.df_part['redox_zone'].apply(lambda x: substance.get_Kow(x)
+	  		self.df_part['Kow'] = self.df_part['redox'].apply(lambda x: substance.get_Kow(x)
    		self.omp_inialized = True
 
 

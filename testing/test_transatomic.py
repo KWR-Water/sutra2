@@ -425,7 +425,7 @@ def test_incorrect_date_input_format():
     assert "Error invalid date input, please enter a new start_date_well using the format dt.datetime.strptime('YYYY-MM-DD', '%Y-%m-%d')" in str(exc.value)
 
 #%%
-def test_redox_zone_options():
+def test_redox_options():
     ''' Tests whether the correct exception is raised when one of the redox zones
      is not one of'suboxic', 'anoxic', 'deeply_anoxic' '''
     with pytest.raises(ValueError) as exc:
@@ -482,7 +482,7 @@ def test_phreatic_diffuse_point_source():
                                       #diffuse parameters
                                       diffuse_input_concentration=100, #ug/L
                                       #point paramters
-                                      concentration_point_contamination=100,
+                                      point_input_concentration=100,
                                       distance_point_contamination_from_well=25,
                                       depth_point_contamination=21, #m ASL
                                       discharge_point_contamination=1000,
@@ -605,7 +605,7 @@ def test_phreatic_point_only_source():
                                     #diffuse parameters
                                     diffuse_input_concentration=0, #ug/L
                                     #point paramters
-                                    concentration_point_contamination=100,
+                                    point_input_concentration=100,
                                     distance_point_contamination_from_well=25,
                                     depth_point_contamination=21, #m ASL
                                     discharge_point_contamination=1000,
