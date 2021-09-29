@@ -522,6 +522,27 @@ class SubstanceTransport():
 
         self._calculcate_total_breakthrough_travel_time()
 
+        # reduce the amount of text per line by extracting the following parameters
+        self.compute_contamination_for_date = self.analytical_well.schematisation.compute_contamination_for_date
+        start_date_well = self.analytical_well.schematisation.start_date_well
+        start_date_contamination = self.analytical_well.schematisation.start_date_contamination
+        self.end_date_contamination = self.analytical_well.schematisation.end_date_contamination
+
+        if start_date_well > start_date_contamination:
+            self.start_date = start_date_well
+            self.back_date_start = start_date_contamination
+
+        elif start_date_well <= start_date_contamination:
+            self.start_date = start_date_contamination
+            self.back_date_start = start_date_well
+
+        self.compute_date = self.compute_contamination_for_date - self.start_date
+        self.back_compute_date = self.start_date - self.back_date_start
+        
+        # add the particle release date
+        self.df_flowline['particle_release_day'] = (self.start_date - start_date_contamination).days
+
+
     def compute_concentration_in_well_at_date(self):
         #@Martink, this function is quite slow. I'm not sure how to make it go faster?
         ''' 
@@ -541,35 +562,18 @@ class SubstanceTransport():
                 Summed concentration of the OMP in the well.
         '''
 
-        # reduce the amount of text per line by extracting the following parameters
-        compute_contamination_for_date = self.analytical_well.schematisation.compute_contamination_for_date
-        start_date_well = self.analytical_well.schematisation.start_date_well
-        start_date_contamination = self.analytical_well.schematisation.start_date_contamination
-        end_date_contamination = self.analytical_well.schematisation.end_date_contamination
-
-        if start_date_well > start_date_contamination:
-            start_date = start_date_well
-            back_date_start = start_date_contamination
-
-        elif start_date_well <= start_date_contamination:
-            start_date = start_date_contamination
-            back_date_start = start_date_well
-
-        compute_date = compute_contamination_for_date - start_date
-        back_compute_date = start_date - back_date_start
-
         # calculate the time after which no more contamination
-        if end_date_contamination is None:
+        if self.end_date_contamination is None:
             pass
         else:
-            end_time = end_date_contamination- start_date
+            end_time = self.end_date_contamination- self.start_date
             self.df_flowline['end_time_contamination_breakthrough'] = self.df_flowline['total_breakthrough_travel_time'] + end_time.days
 
-        # AH_todo, Solution to make this faster is to rduce this down to xx timestpes, e.g. once a month
-        time_array = np.arange(0, compute_date.days+1, 1)
-        back_date_array = np.arange(-back_compute_date.days,0, 1)
+        # AH_todo, Solution to make this faster is to erduce this down to xx timesteps, e.g. once a month
+        time_array = np.arange(0, self.compute_date.days+1, 1)
+        back_date_array = np.arange(-self.back_compute_date.days,0, 1)
         time_array = np.append(back_date_array,time_array)
-        time_array_dates = pd.date_range(start=back_date_start,end=compute_contamination_for_date)
+        time_array_dates = pd.date_range(start=self.back_date_start,end=self.compute_contamination_for_date)
 
         #Calculate the concentration in the well,
         self.df_flowline['concentration_in_well'] = (self.df_flowline['breakthrough_concentration']
@@ -582,7 +586,7 @@ class SubstanceTransport():
         #sum the concentration in the well for each timestep
         for i in range(len(time_array)):
             t = time_array[i]
-            if end_date_contamination is None:
+            if self.end_date_contamination is None:
                 well_conc = sum(df_flowline['concentration_in_well'].loc[(df_flowline['total_breakthrough_travel_time'] <= t)])
             else:
                 well_conc = sum(df_flowline['concentration_in_well'].loc[(df_flowline['total_breakthrough_travel_time'] <= t) & (df_flowline['end_time_contamination_breakthrough'] >= t)])
@@ -602,7 +606,7 @@ class SubstanceTransport():
         Parameters
         ----------
         x_axis: string
-            Choice of the x-axis as time in years starting at 0, or as the 'Date' since the
+            Choice of the x-axis as 'Time' in years starting at 0, or as the 'Date' since the
             minimum of 'start_date_well' or 'start_date_contamination'
         as_fraction_input: bool
             If 'True' plots concentration on y-axis as a fraction of the sum of the

@@ -405,7 +405,6 @@ f.close()
 phreatic_test_scheme_dict
 
 phreatic_test_well= AnalyticalWell(phreatic_test_scheme)
-
 phreatic_test_well.phreatic()
 
 df_particle =phreatic_test_well.df_particle
