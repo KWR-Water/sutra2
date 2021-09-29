@@ -37,7 +37,21 @@ import math
 import re # regular expressions
 from scipy.special import kn as besselk
 
-path = os.getcwd()  # path of working directory
+try:
+    from greta.Analytical_Well import * 
+    from greta.Substance_Transport import *
+except ModuleNotFoundError as e:
+    print(e, ": second try.")
+    module_path = os.path.join("..","greta")
+    if module_path not in sys.path:
+        sys.path.insert(0,module_path)
+    from Analytical_Well import * 
+    from Substance_Transport import *
+
+    print("Second try to import modules succeeded.")
+
+# path of working directory
+path = os.getcwd()  
 
 # run installed version of flopy or add local path 
 # (add flopy to requirements.txt: pip install flopy==3.3.1)
@@ -53,101 +67,7 @@ except Exception as e:
 # flopy version
 print(flopy.__version__)
 
-#%%
-'''
-phreatic_scheme = {'simulation_parameters': 
-    {'schematisation_type': 'phreatic', 
-    'computation_method': 'modpath',
-    'temp_correction_Koc': True,
-    'temp_correction_halflife': True,
-    'biodegradation_sorbed_phase': True,
-    'compute_thickness_vadose_zone': True,
-    'start_date_well': datetime.date(1950, 1, 1),
-    'start_date_contamination': datetime.date(1950, 1, 1),
-    'compute_contamination_for_date': datetime.date(1950, 4, 11)},
-'geo_parameters': 
-    {'vadose': 
-        {'vadose': True,
-        'top': 22,
-        'bot': 17,
-        'rmin': 0.375,
-        'rmax': 1723.5846804982755,
-        'porosity': 0.38,
-        'moisture_content': 0.15,
-        'solid_density': 2.65,
-        'f_oc': 0.001,
-        'redox': 'anoxic',
-        'DOC': 10,
-        'pH': 5,
-        'T': 11},
-    'gravelpack1':
-        {'top': 7,
-        'bot': -33,
-        'rmin': 0.2,
-        'rmax': 1.0,
-        'hk': 1000,
-        'vani': 1},
-    'clayseal1':
-        {'top': 22,
-        'bot': 7,
-        'rmin': 0.2,
-        'rmax': 2.0,
-        'hk': 0.001,
-        'vani': 1},
-    'mesh_refinement1':
-        {'rmin': 0.75,
-        'rmax': 40,
-        'ncols': 20},
-    'mesh_refinement2': 
-        {'rmin': 40,
-        'rmax': 1723.5846804982755,
-        'ncols': 30}
-    },
-'ibound_parameters':
-    {'outer_boundary':
-        {'head': 17,
-        'top': 7,
-        'bot': -33,
-        'rmin': 1723.5846804982755,
-        'rmax': 1724.5846804982755}
-    }, 
-'recharge_parameters':
-    {'source1':
-        {'substance_name': 'benzo(a)pyrene',
-        'recharge': 0.0008213552361396304,
-        'rmin': 0.75,
-        'rmax': 1723.5846804982755,
-        'DOC': 0.0,
-        'TOC': 0.0,
-        'c_in': 0}
-    },
-'well_parameters':
-    {'well1':
-        {'Q': 7665.599999999999,
-        'top': 7,
-        'bot': -33,
-        'rmin': 0.0,
-        'rmax': 0.2}
-    },
-'point_parameters':
-    {'point1': 
-        {'substance_name': 'benzo(a)pyrene',
-        'c_in': 100.0,
-        'r_start': 0,
-        'z_start': 22,
-        'q_point': 100.0}
-    },
-'substance_parameters':
-    {'log_Koc': 6.43,
-    'pKa': 99,
-    'omp_half_life': 
-        {'suboxic': 530,
-        'anoxic': 2120,
-        'deeply_anoxic': 2120}
-    },
-'bas_parameters': {}
-}
-'''
+
 #%%
 '''
 Some clarifications in red below:
@@ -221,14 +141,14 @@ rmax -> diameter_filterscreen
 class ModPathWell:
 
     """ Compute travel time distribution using MODFLOW and MODPATH.""" 
-    def __init__(self, schematisation: dict,
+    def __init__(self, schematisation: object or dict,
                        workspace: str or None = None, modelname: str or None = None,
                        bound_left: str = "xmin", bound_right: str = "xmax",
                        bound_top: str = "top", bound_bot: str = "bot",
                        bound_north: str = "ymin", bound_south: str = "ymax"): 
-        """ 'unpack/parse' all the variables from the hydrogeochemical schematizization """
-
-        '''Parameters
+        ''''unpack/parse' all the variables from the hydrogeochemical schematizization """
+       
+        Parameters
         ----------
         df_flowline: pandas.DataFrame
             Column 'flowline_id': Integer
@@ -251,8 +171,6 @@ class ModPathWell:
 
         # get the non-default parameters
         # self.test_variable = None #AH test variable here to see if errors are caught....
-
-        self.schematisation = schematisation
         
         self.workspace = workspace  # workspace
         self.modelname = modelname  # modelname
@@ -282,12 +200,44 @@ class ModPathWell:
         # Source files
         self.model_hds = os.path.join(self.workspace, self.modelname + '.hds')
         self.model_cbc = os.path.join(self.workspace, self.modelname + '.cbc')
+        '''
+        Initialize the AnalyticalWell object by making the dictionaries and adding the schematisation (and therefore attributes 
+        of the schematisation) to the object.
 
+        Returs
+        ------
+        Dictionaries (Modflow) with all parameters as an attribute of the function.
+
+        '''
+        self.schematisation = schematisation
+
+        if type(self.schematisation) == "dict":
+            self.schematisation_dict = self.schematisation
+        else:
+            #Make dictionaries
+            # self.schematisation.make_dictionary()
+            self.schematisation_dict = {}
+            # Required keys
+            self.required_keys = ["simulation_parameters","geo_parameters",
+            "ibound_parameters","recharge_parameters",
+            "well_parameters","point_parameters"]
+            self._create_schematisation_dict(self.required_keys)
+        
+    def _create_schematisation_dict(self,required_keys):
+        '''
+        # Create schematisation_dict 
+        # required_keys = ["simulation_parameters","geo_parameters",
+        # "ibound_parameters","recharge_parameters",
+        # "well_parameters","point_parameters"]
+        '''
+        for iKey in required_keys:
+            if hasattr(self.schematisation,iKey):
+                self.schematisation_dict[iKey] = getattr(self.schematisation,iKey)
 
     def _check_schematisation(self,required_keys):
         
         for req_key in required_keys:
-            if not req_key in self.schematisation.keys():
+            if not hasattr(self.schematisation,req_key):
                 print(f'Error, required variable {req_key} is not defined in schematisation dict.')
 
     def _check_required_variables(self,required_variables):
@@ -302,23 +252,26 @@ class ModPathWell:
         # check the variables that we need for the individual aquifer types are not NONE aka set by the user
         '''check the variables that we need for the individual aquifer types are not NONE aka set by the user'''
         
-        # Required keys in self.schematisation
-        required_keys = ["simulation_parameters",#repeat for all
-                              "geo_parameters",
-                              "recharge_parameters",
-                              "ibound_parameters",
-                              "well_parameters",
-                              "point_parameters",
-                              "substance_parameters"
-                            ]
+        
+        # # Required keys in self.schematisation
+        # required_keys = ["simulation_parameters",#repeat for all
+        #                       "geo_parameters",
+        #                       "recharge_parameters",
+        #                       "ibound_parameters",
+        #                       "well_parameters",
+        #                       "point_parameters",
+        #                       "substance_parameters"
+        #                     ]
 
         # Required variables (to run model)
         required_variables = []
 
         # Check schematisation dictionary
-        self._check_schematisation(required_keys)
+        self._check_schematisation(self.required_keys)
         # Check required variables
         self._check_required_variables(required_variables)
+        # # Fill schematisation dictionary
+        # self._create_schematisation_dict(self.required_keys)
 
     def _check_init_semi_confined():
         ''' check the variables that we need for the individual aquifer types are not NONE aka set by the user '''
@@ -388,7 +341,7 @@ class ModPathWell:
             except KeyError as e:
                 print(e,f"missing {iDict} {iDict_sub}. Continue")
         else:
-            north,south,rowidx_min,rowidx_max = None, None,0,0
+            north,south,rowidx_min,rowidx_max = None, None,0,1
         try:
             # Determine layer indices
             layidx_min = int(np.argwhere((self.zmid <= top) & (self.zmid >= bot))[0])
@@ -450,7 +403,7 @@ class ModPathWell:
                 dtype = "float"
 
         if dict_keys is None:
-            dict_keys = [iDict for iDict in schematisation.keys()]
+            dict_keys = [iDict for iDict in self.schematisation_dict.keys()]
        
         
         # Loop through schematisation keys (dict_keys)
@@ -504,7 +457,7 @@ class ModPathWell:
         bound_list = []
 
         if dict_keys is None:
-            dict_keys = [iDict for iDict in schematisation.keys()]
+            dict_keys = [iDict for iDict in self.schematisation_dict.keys()]
 
         # Loop through schematisation keys (dict_keys)
         for iDict in dict_keys:
@@ -626,7 +579,7 @@ class ModPathWell:
         '''
 
         if schematisation is None:
-            schematisation = getattr(self,"schematisation")
+            schematisation = getattr(self,"schematisation_dict")
 
         # Assign delv and zmid   
         self.nlay, self.delv, self.zmid, lay_bounds = self._assign_cellboundaries(schematisation = schematisation,
@@ -641,7 +594,7 @@ class ModPathWell:
         # Assign delr and xmid
         self.ncol, self.delr, self.xmid, col_bounds = self._assign_cellboundaries(schematisation = schematisation,
                                                                                   dict_keys = dict_keys,
-                                                                    bound_min = self.bound_left, bound_max = self.bound_top,
+                                                                    bound_min = self.bound_left, bound_max = self.bound_right,
                                                                     n_refinement = "ncols", ascending = True)
 
         # Assign delc and ymid
@@ -680,12 +633,12 @@ class ModPathWell:
         
         
         # Relevant dictionary keys
-        self.ibound = self.fill_grid(schematisation = self.schematisation,
+        self.ibound = self.fill_grid(schematisation = self.schematisation_dict,
                                     dict_keys = dict_keys,
                                     parameter = "ibound",
                                     grid = ibound,
                                     dtype = 'int')
-        self.strt = self.fill_grid(schematisation = self.schematisation,
+        self.strt = self.fill_grid(schematisation = self.schematisation_dict,
                                     dict_keys = dict_keys,
                                     parameter = "head",
                                     grid = strt,
@@ -702,6 +655,46 @@ class ModPathWell:
         #     raise ValueError('xmin is not in dictionayr')
         # dit soort validaties moet eigenlij in de schematization class
         pass
+
+    def assign_material(self,schematisation: dict,
+                        dict_keys: dict or None = None):
+        ''' Assign grid material using subkeys in schematisation_dict.'''
+
+        if schematisation is None:
+            schematisation = getattr(self,"schematisation_dict")
+
+        # dtype of material grid
+        dtype = 'object'  # to assign a string without length limitation
+        if dict_keys is None:
+            dict_keys = [iDict for iDict in self.schematisation_dict.keys()]
+
+        self.material = np.empty((self.nlay,self.nrow,self.ncol), dtype = dtype)
+        # Loop through schematisation keys (dict_keys)
+        for iDict in dict_keys:
+            # Loop through subkeys of schematisation dictionary
+            for iDict_sub in schematisation[iDict]:   
+                # Grid indices
+                try:
+                    layidx_min,layidx_max,\
+                        rowidx_min,rowidx_max,\
+                        colidx_min,colidx_max = self.cell_bounds(schematisation,
+                                                dict_key = iDict,
+                                                dict_subkey = iDict_sub,
+                                                model_type = self.model_type)
+                except Exception as e:
+                    print(e,"Continue.")
+                    continue
+                # Fill grid with parameter value 'parm_val'
+                if not None in [layidx_min,layidx_max,colidx_min,colidx_max]:
+
+                    self.material[layidx_min: layidx_max,\
+                        rowidx_min: rowidx_max,\
+                        colidx_min: colidx_max] = iDict_sub
+                
+        if self.model_type in ["axisymmetric","2D"]:
+                # In 2D model or axisymmetric models an 
+                # inactive row is added to be able to run Modpath successfully.
+                self.material[:,1,:] = "inactive"
 
     def assign_wellloc(self,schematisation: dict,
                         dict_key: str = "well_parameters",
@@ -768,6 +761,7 @@ class ModPathWell:
                   "Rowmin_max:", rowidx_min,rowidx_max,\
                   "Colmin_max:",colidx_min,colidx_max)
             print("(nlay,nrow,ncol)",(self.nlay,self.nrow,self.ncol))
+            
             # Add well locations and stress_period_data
             well_loc[iWell] = []
             KD_well[iWell] = 0.
@@ -779,11 +773,12 @@ class ModPathWell:
                         # Correct discharge for K_hor near wells and for the possible difference in delv (K * D)
                         KD_well[iWell] += self.hk[iLay,iRow,iCol] * self.delv[iLay]
 
-        
+            print("Well discharge:", Qwell_day[iWell])
+            print("KD_well:", iWell, KD_well[iWell])
             # stress period data for well package
-            for iLay in range(layidx_min,layidx_max+1):
-                for iRow in range(rowidx_min,rowidx_max+1):
-                   for iCol in range(colidx_min, colidx_max+1):
+            for iLay in range(layidx_min,layidx_max):
+                for iRow in range(rowidx_min,rowidx_max):
+                   for iCol in range(colidx_min, colidx_max):
                         spd_wel[0].append([iLay, iRow, iCol, Qwell_day[iWell] * \
                                           (self.hk[iLay,iRow,iCol] * self.delv[iLay]) / KD_well[iWell]])
         
@@ -879,8 +874,382 @@ class ModPathWell:
 
     def run_modflowmod(self):         
         ''' Run modflow model '''
-        self.success, self.buff = self.mf.run_model(silent=False)
+        self.success_mf, _ = self.mf.run_model(silent=False)
 
+    # Here are functions to calculate the travel time through vadose zone, shared functions for
+    # Analytical and Modflow models
+    def _create_radial_distance_array(self, fraction_flux:np.array or None = None):
+
+        ''' Create array of radial distances from the well to a maximum value, radial distance recharge, which
+        is the distance from the well needed to recharge the well to meet the pumping demand. '''
+        # ah_todo change this to single array of 0.001 to 100
+        # right now we have this set up to directly compare with P. Stuyfzand's results
+        # in the 'final' version of the model can be a more fine mesh
+        # but need to think about how we change the testing
+
+        self.spreading_distance = math.sqrt(self.schematisation.vertical_resistance_aquitard * self.schematisation.KD)
+        # AH do not change to model_radius, since the radial distance for recharge is based on the phreatic value for BOTH cases
+        self.radial_distance_recharge =  (math.sqrt(self.schematisation.well_discharge
+                                                    / (math.pi * self.schematisation.recharge_rate)))
+
+        if fraction_flux is None:
+            fraction_flux = np.array([0.00001, 0.0001, 0.001, 0.005])
+            fraction_flux = np.append(fraction_flux, np.arange(0.01, 1, 0.01))
+            fraction_flux = np.append(fraction_flux, [0.995, 0.9999])
+        
+        self.fraction_flux = fraction_flux
+
+        radial_distance = self.radial_distance_recharge * np.sqrt(self.fraction_flux)
+            
+        if self.schematisation_type == 'semiconfined':
+
+            radial_distance = np.append(radial_distance,
+                                    [(radial_distance[-1] + ((self.spreading_distance * 3) - radial_distance[-1]) / 3),
+                                    (radial_distance[-1] + 2 *
+                                    ((self.spreading_distance * 3) - radial_distance[-1]) / 3),
+                                        (self.spreading_distance * 3)])
+        
+        self.radial_distance = radial_distance
+
+    def particle_data(self, partlocs=None, structured=True, particleids=[0],
+                                 localx=None, localy=0.5, localz=None,
+                                 timeoffset=0.0, drape=None,
+                                 pgname = "Recharge", pg_filename = "Recharge.sloc",
+                                 trackingdirection = 'forward',
+                                 releasedata=0.0):
+        ''' Class to create the most basic particle data type (starting location
+        input style 1). Input style 1 is the most general input style and provides
+        the highest flexibility in customizing starting locations, see flopy docs. '''
+        self.partlocs = partlocs # particle starting locations [(lay,row,col),(k,i,j),...]
+        # (structured): Boolean defining if a structured (True) or 
+        # unstructured particle recarray will be created
+        # (particleids) --> if not None: id-vals of particles added
+        self.localx = localx
+        self.localy = localy
+        self.localz = localz
+        # Particle id [part group, particle id] - zero based integers
+        if not hasattr(self, "pids"):
+            print("Create a new particle id dataset dict.")
+            self.pids = {}
+        if not hasattr(self, "pg"):
+            print("Create a new particle group dataset dict.")
+            self.pg = {}
+            
+        self.pids[pgname] = particleids
+        #mp7particledata.
+        # Particle distribution package - particle allocation
+        #modpath.mp7particledata.Part...
+        self.pd = flopy.modpath.ParticleData(partlocs = self.partlocs, structured=True,
+                                             drape=0, localx= self.localx, 
+                                             localy= self.localy, localz= self.localz,
+                                             timeoffset = timeoffset, 
+                                             particleids = particleids)
+
+    # def _create_radial_distance_particles_recharge(self, recharge_parameters = None,
+    #                                             fraction_flux:np.array or None = None):
+
+    #     ''' Create array of radial distances from the well to a maximum value, radial distance recharge, which
+    #     is the distance from the well needed to recharge the well to meet the pumping demand. '''
+
+        
+    #     if recharge_parameters is None:
+    #         recharge_parameters = self.schematisation_dict.get('recharge_parameters')
+        
+    #     if fraction_flux is None:
+    #         fraction_flux = np.array([0.00001, 0.0001, 0.001, 0.005])
+    #         fraction_flux = np.append(fraction_flux, np.arange(0.01, 1, 0.01))
+    #         fraction_flux = np.append(fraction_flux, [0.995, 0.9999])
+        
+    #     self.fraction_flux = fraction_flux
+
+    #     ## Particle group data ##
+    #     pgroups = list(recharge_parameters.keys())
+    #     # xmin and xmax per pg
+    #     self.pg_xmin, self.pg_xmax = {}, {}
+    #     # Recharge rate per particle group
+    #     self.recharge_pg = {}
+    #     # Cumulative flux per particle group
+    #     self.flux_pg = {}
+    #     # Radial distance array per pg
+    #     self.radial_distance = {}
+    #     for iPG in pgroups:
+    #         # xmin
+    #         self.pg_xmin[iPG] = recharge_parameters.get(iPG).get("xmin")
+    #         # xmax
+    #         self.pg_xmax[iPG] = recharge_parameters.get(iPG).get("xmax")
+    #         # recharge rate per particle group
+    #         self.recharge_pg[iPG] = recharge_parameters.get(iPG).get("recharge")
+    #         # cumulative flux per particle group
+    #         self.flux_pg[iPG] = math.pi * (self.pg_xmax[iPG]**2 - self.pg_xmin[iPG]**2) * self.recharge_pg[iPG]
+        
+    #         # Radial distance array per particle group
+    #         self.radial_distance[iPG] = self.pg_xmin[iPG] + ((self.pg_xmax[iPG] - self.pg_xmin[iPG]) * np.sqrt(self.fraction_flux))
+
+    def _create_radial_distance_particles_recharge(self, recharge_parameters = None,
+                                                   nparticles_cell: int = 1,
+                                                   localy=0.5, localz=0.5,
+                                                   timeoffset=0.0, drape=0,
+                                                   trackingdirection = 'forward',
+                                                   releasedata=0.0):
+        ''' Class to create the most basic particle data type (starting location
+        input style 1). Input style 1 is the most general input style and provides
+        the highest flexibility in customizing starting locations, see flopy docs.
+        ###########################################################################
+        Create array of radial distances from the well to a maximum value, radial distance recharge, which
+        is the distance from the well needed to recharge the well to meet the pumping demand.
+        '''
+        # SUGGESTION SR: --> add term to dictionary 'recharge_parameters' as 'nparticles_cell'
+        
+        if recharge_parameters is None:
+            recharge_parameters = self.schematisation_dict.get('recharge_parameters')
+
+        ## Particle group data ##
+        pgroups = list(recharge_parameters.keys())
+        # xmin and xmax per pg
+        self.pg_xmin, self.pg_xmax = {}, {}
+        for iPG in pgroups:
+            # xmin
+            self.pg_xmin[iPG] = recharge_parameters.get(iPG).get("xmin")
+            # xmax
+            self.pg_xmax[iPG] = recharge_parameters.get(iPG).get("xmax")
+
+        try:
+            # Determine column indices
+            colidx_min = int(np.argwhere((self.xmid >= self.pg_xmin[iPG]) & (self.xmid <= self.pg_xmax[iPG]))[0])
+            colidx_max = int(np.argwhere((self.xmid >= self.pg_xmin[iPG]) & (self.xmid <= self.pg_xmax[iPG]))[-1])
+            # np.where((self.xmid < right) & (self.xmid > left))    
+        except IndexError as e:
+            print(e,"Set colidx_min and colidx_max to None.")
+            colidx_min, colidx_max = None, None            
+
+                
+        # particle group filenames
+        self.pg_filenames = {iPG: iPG + ".sloc" for iPG in pgroups}
+        # particle starting locations [(lay,row,col),(k,i,j),...]
+        self.part_locs = {}  
+        # Relative location within grid cells (per particle group)
+        self.localx = {}
+        self.localy = {}
+        self.localz = {}
+        # Particle id [part group, particle id] - zero based integers
+        if not hasattr(self, "pids"):
+            print("Create a new particle id dataset dict.")
+            self.pids = {}
+        if not hasattr(self, "pg"):
+            print("Create a new particle group dataset dict.")
+            self.pg = {}
+
+        # Particle dta objects
+        self.pd = {}
+        # Particle counter
+        pcount = -1
+        for iPG in pgroups:
+            # Particles ids (use counter)
+            self.pids[iPG] = []
+            # Particle location list per particle group
+            self.part_locs[iPG] = []
+            # Relative location within grid cells (per particle group)
+            self.localx[iPG] = []
+            self.localy[iPG] = []
+            self.localz[iPG] = []
+            for iCol in range(colidx_min,colidx_max):
+                # Particle row
+                p_row = 0
+                # Particle layer
+                p_lay = 0
+                # Particle column
+                p_col = iCol
+
+                for iPart_cell in range(nparticles_cell):
+                    # Add particle locations (lay,row,col)
+                    self.part_locs[iPG].append((p_lay,p_row,p_col))                    
+                    # Relative location of the particles in the cells
+                    self.localx[iPG].append((iPart_cell + 0.5)/(float(nparticles_cell)))
+                    self.localy[iPG].append(localy)
+                    self.localz[iPG].append(localz)
+                    # particle count
+                    pcount += 1 
+                    self.pids[iPG].append(pcount)
+
+            # Particle distribution package - particle allocation
+            #modpath.mp7particledata.Part...
+            self.pd[iPG] = flopy.modpath.ParticleData(partlocs = self.part_locs[iPG], structured=True,
+                                                drape=drape, localx= self.localx[iPG], 
+                                                localy= self.localy[iPG], localz= self.localz[iPG],
+                                                timeoffset = timeoffset, 
+                                                particleids = self.pids[iPG])
+
+            # particle group filename
+            self.pg_filename = self.pg_filenames[iPG]
+            # particle group object
+            # modpath.mp7particlegroup.Part.......
+            self.pg[iPG] = flopy.modpath.ParticleGroup(particlegroupname=iPG,
+                                                                filename=self.pg_filenames[iPG],
+                                                                releasedata=releasedata,
+                                                                particledata=self.pd[iPG])
+            ''' ParticleGroup class to create MODPATH 7 particle group data for
+                location input style 1.  '''
+            self.trackingdirection = trackingdirection
+        
+
+        ## OLD analytical code ##
+        # self.spreading_distance = math.sqrt(self.schematisation.vertical_resistance_aquitard * self.schematisation.KD)
+        # # AH do not change to model_radius, since the radial distance for recharge is based on the phreatic value for BOTH cases
+        # self.radial_distance_recharge =  (math.sqrt(self.schematisation.well_discharge
+        #                                             / (math.pi * self.schematisation.recharge_rate)))
+
+        # if fraction_flux is None:
+        #     fraction_flux = np.array([0.00001, 0.0001, 0.001, 0.005])
+        #     fraction_flux = np.append(fraction_flux, np.arange(0.01, 1, 0.01))
+        #     fraction_flux = np.append(fraction_flux, [0.995, 0.9999])
+        
+        # self.fraction_flux = fraction_flux
+
+        # radial_distance = self.radial_distance_recharge * np.sqrt(self.fraction_flux)
+            
+        # if self.schematisation_type == 'semiconfined':
+
+        #     radial_distance = np.append(radial_distance,
+        #                             [(radial_distance[-1] + ((self.spreading_distance * 3) - radial_distance[-1]) / 3),
+        #                             (radial_distance[-1] + 2 *
+        #                             ((self.spreading_distance * 3) - radial_distance[-1]) / 3),
+        #                                 (self.spreading_distance * 3)])
+        
+        # self.radial_distance = radial_distance
+
+    ####################################
+    ### ModPath 7 input and analyses ###
+    ####################################
+    ####### Fill Modpath modules #######
+    def load_MP7object(self, mp_exe = 'mpath7', mf_model = None,
+                      headfilename = None, budgetfilename = None):
+        ''' Load modpath7 model, using input from modflow model 'mf_model' (DIS),
+            results from head calculations, and cell-by-cell data.'''
+        self.mp_exe = mp_exe
+        if mf_model is not None:
+            self.mf = mf_model
+        if headfilename is None:  # Filename of the MODFLOW output head file.
+            self.headfile = self.model_hds # os.path.join(self.workspace, 
+        else:
+            self.headfile = headfilename
+        if budgetfilename is None: # Filename of the MODFLOW output cell-by-cell budget file.
+            self.cbcfile = self.model_cbc
+        else:     
+            self.cbcfile = budgetfilename
+            
+        # Modpath object
+        self.mp7 = flopy.modpath.Modpath7(modelname = self.modelname + "_mp", model_ws=self.workspace,
+                                             exe_name= self.mp_exe, flowmodel = self.mf)#,
+                                             #headfilename = self.headfile, budgetfilename = self.cbcfile)
+
+    def mpbas_input(self, prsity = 0.3, defaultiface = {'RECHARGE': 6}):
+        ''' Read model prsity and iface values into object. '''
+        self.prsity = prsity
+        self.defaultiface = defaultiface
+        
+    def load_mpbas(self):
+        ''' Add BAS Package to the ModPath model '''
+        
+        self.mpbas = flopy.modpath.Modpath7Bas(model = self.mp7, porosity = self.porosity,
+                                                      defaultiface = self.defaultiface)
+
+
+
+
+#     def particle_data(self, partlocs=None, structured=True, particleids=[0],
+#                                  localx=None, localy=0.5, localz=None,
+#                                  timeoffset=0.0, drape=None,
+#                                  pgname = "Recharge", pg_filename = "Recharge.sloc",
+#                                  trackingdirection = 'forward',
+#                                  releasedata=0.0):
+#         ''' Class to create the most basic particle data type (starting location
+#         input style 1). Input style 1 is the most general input style and provides
+#         the highest flexibility in customizing starting locations, see flopy docs. '''
+#         self.partlocs = partlocs # particle starting locations [(lay,row,col),(k,i,j),...]
+#         # (structured): Boolean defining if a structured (True) or 
+#         # unstructured particle recarray will be created
+#         # (particleids) --> if not None: id-vals of particles added
+#         self.localx = localx
+#         self.localy = localy
+#         self.localz = localz
+#         # Particle id [part group, particle id] - zero based integers
+#         if not hasattr(self, "pids"):
+#             print("Create a new particle id dataset dict.")
+#             self.pids = {}
+#         if not hasattr(self, "pg"):
+#             print("Create a new particle group dataset dict.")
+#             self.pg = {}
+            
+#         self.pids[pgname] = particleids
+#         #mp7particledata.
+#         # Particle distribution package - particle allocation
+#         #modpath.mp7particledata.Part...
+#         self.pd = flopy.modpath.ParticleData(partlocs = self.partlocs, structured=True,
+#                                              drape=0, localx= self.localx, 
+#                                              localy= self.localy, localz= self.localz,
+#                                              timeoffset = timeoffset, 
+#                                              particleids = particleids)
+# #        # Write data to disk
+# #        with open(self.modelname + ".txt","w") as f:
+# #            self.pd.write(f= f)
+
+# #    def particle_group(self, pgname = "PG1", particledata = None,
+# #                               pg_filename = "partdata.pg1.sloc", releasedata=0.0):
+        
+                
+#         # particle group filename
+#         self.pg_filename = pg_filename
+#         # particle group object
+#         # modpath.mp7particlegroup.Part.......
+#         self.pg[pgname] = flopy.modpath.ParticleGroup(particlegroupname=pgname,
+#                                                                filename=self.pg_filename,
+#                                                                releasedata=releasedata,
+#                                                                particledata=self.pd)
+#         ''' ParticleGroup class to create MODPATH 7 particle group data for
+#             location input style 1.  '''
+#         self.trackingdirection = trackingdirection
+
+    def modpath_simulation(self,mp_model = None, trackingdirection = 'backward',
+                           simulationtype = 'combined', stoptimeoption = 'extend',
+                           particlegroups = None, zones = None):        
+        ''' input MODPATH Simulation File Package Class, see flopy docs. '''
+        if mp_model is not None:
+            self.mp7 = mp_model
+            
+        if self.trackingdirection is None:
+            self.trackingdirection = trackingdirection
+            
+            
+        # Zones are not read in detail
+        if zones is None:
+            self.zones = [1] * self.nlay
+        else:
+            self.zones = zones
+        
+        self.mp7sim = flopy.modpath.Modpath7Sim(model = self.mp7, mpnamefilename=None, 
+                                         listingfilename=None, endpointfilename=None,
+                                         pathlinefilename=None, timeseriesfilename=None,
+                                         tracefilename=None, simulationtype = simulationtype,
+                                         trackingdirection = self.trackingdirection, 
+                                         weaksinkoption='stop_at', weaksourceoption='pass_through',
+                                         budgetoutputoption='summary', traceparticledata=None, #[0,0], #self.pid, 
+                                         budgetcellnumbers=None, referencetime=0.,
+                                         stoptimeoption = stoptimeoption, stoptime=None,
+                                         timepointdata=None, zonedataoption='off',  # timepointdata=[100*24,1/24.]
+                                         stopzone='off', zones=self.zones, retardationfactoroption='off',
+                                         retardation=1.0, particlegroups=particlegroups,
+                                         extension='mpsim')
+        # stoptimeoption: "extend" --> particle simulation continues beyond time specified in modflow BAS package
+        # timepointdata = [100*24,1/24.] # max 100 days of data
+
+    def write_input_mp(self):
+        ''' Write package data ModPath model. '''
+        self.mp7.write_input()
+
+    def run_ModPathmod(self):         
+        ''' Run ModPath model '''
+        # self.mp7.run_model(silent=False)
+        self.success_mp,_ = self.mp7.run_model(silent=False)
 
 ### Functie: Check xmin, xmax,
     '''
@@ -969,19 +1338,317 @@ class ModPathWell:
   			if condition X is met:
 						self.modpath_has_run = True
     '''
-    def export_to_df(self, grid_material, what_to_export='all'):
-  	    """ Export to dataframe....
+    # def export_to_df(self, grid_material, what_to_export='all'):
+  	#     """ Export to dataframe....
 
-        Parameters
-        ----------
-        what_to_export: String
-        		options: 'all', 'omp', 'microbial_parameters'
-        """
-        # df_flowline = pd.DataFrame()
-        # df_particle = pd.DataFrame()
+    #     Parameters
+    #     ----------
+    #     what_to_export: String
+    #     		options: 'all', 'omp', 'microbial_parameters'
+    #     """
+    #     # df_flowline = pd.DataFrame()
+    #     # df_particle = pd.DataFrame()
 
-  		#delete the unwanted columns depending on what the user asks for here
-  		# return df_flowline, df_particle
+  	# 	#delete the unwanted columns depending on what the user asks for here
+  	# 	# return df_flowline, df_particle
+
+    def _export_to_df(self,
+        df_output,
+        distance,
+        total_travel_time,
+        travel_time_unsaturated,
+        travel_time_shallow_aquifer,
+        travel_time_target_aquifer,
+        discharge_point_contamination=None, #AH_todo do we need this?
+        ):
+        """ Makes 'df_flowline' and 'df_particle'
+        # MK: attributes, dont make thema rguments
+        #AH_todo review the logic of how the diffusion/point sources are calculated with @martinK
+
+            Parameters
+            ----------
+            df_output: pandas.DataFrame
+                Column 'total_travel_time': float
+                Column 'travel_time_unsaturated': float
+                Column 'travel_time_shallow_aquifer': float
+                Column 'travel_time_target_aquifer': float
+                Column 'radial_distance': float
+                Column 'head': float
+                Column 'cumulative_fraction_abstracted_water': float
+                Column 'flowline_discharge': float
+            distance: array
+                Array of distance(s) [m] from the well.
+                For diffuse sources 'distance' is the 'radial_distance' array.
+                For point sources 'distance' is 'distance_point_contamination_from_well'.
+            total_travel_time: array
+                Sum of the unsaturated, shallow and target aquifer travel times for each
+                point in the given distance array, [days].
+            travel_time_unsaturated: array
+                Travel time in the unsaturated zone for each point in the given distance array returned as
+                attrubute of the function, [days].
+            travel_time_shallow_aquifer: array
+                Travel time in the shallow aquifer for each point in the given distance array, [days].
+            travel_time_target_aquifer: array
+                Travel time in the target aquifer for each point in the given distance array, [days].
+
+            Returns
+            -------
+            df_flowline: pandas.DataFrame
+                Column 'flowline_id': Integer
+                Column 'flowline_type': string
+                    Described the type of contamination associated with the flowline,
+                    either 'diffuse_source' or 'point_source'.
+                Column 'discharge': Float
+                    Discharge associated with the flowline, [m3/d].
+                Column 'particle_release_date': Float
+                Column 'input_concentration'
+                Column 'endpoint_id': Integer
+                    ID of Well (or drain) where the flowline ends.
+                Column 'well_discharge': float
+                Column 'recharge_rate': float
+                Column 'vertical_resistance_aquitard': float
+                Column 'KD': float
+                Column 'thickness_full_capillary_fringe': float
+                Column 'substance': string
+                Column 'moisture_content_vadose_zone': float
+                Column 'diameter_borehole': float
+                Column 'removal_function': string
+                Column 'solid_density_vadose_zone': float
+                Column 'solid_density_shallow_aquifer': float
+                Column 'solid_density_target_aquifer': float
+
+            df_particle: pandas.DataFrame
+                Column 'flowline_id': int
+                Column 'zone': string
+                    Zone in the aquifer, ground surface 'surface', 'vadose_zone', 'shallow_aquifer' or 'target_aquifer'
+                Column 'travel_time_zone': float
+                    Travel time in the respective aquifer zone given in column 'zone.
+                Column 'xcoord': float
+                Column 'ycoord': float
+                Column 'zcoord': float
+                Column 'redox_zone': float
+                    'suboxic', 'anoxic', deeply_anoxic'
+                Column 'temperature': float
+                    Of the respective aquifer zone.
+                Column 'thickness_layer': float
+                Column 'porosity_layer': float
+                Column 'dissolved_organic_carbon': float
+                Column 'pH': float
+                Column 'fraction_organic_carbon': float
+                Column 'solid_density_layer': float
+            """
+        # MK:  this is something that I could imagine that you use it as an argument to the
+        # function.
+        #AH_todo, @MartinK, what is the advantage over using the attribute?
+        what_to_export = self.schematisation.what_to_export
+
+        # Make df_particle
+        def fill_df_particle (df,
+                            distance,
+                            travel_time_unsaturated,
+                            travel_time_shallow_aquifer,
+                            travel_time_target_aquifer,
+                            total_travel_time):
+            '''Fill the df_particle by flowline_id
+
+            Parameters
+            ----------
+            df: pandas.dataframe
+                Holder for df_particle, filled by the flowline_id
+            distance: array
+                Array of distance(s) [m] from the well.
+                For diffuse sources 'distance' is the 'radial_distance' array.
+                For point sources 'distance' is 'distance_point_contamination_from_well'.
+            travel_time_unsaturated: array
+                Travel time in the unsaturated zone for each point in the given distance array returned as
+                attrubute of the function, [days].
+            travel_time_shallow_aquifer: array
+                Travel time in the shallow aquifer for each point in the given distance array, [days].
+            travel_time_target_aquifer: array
+                Travel time in the target aquifer for each point in the given distance array, [days].
+            total_travel_time: array
+                Sum of the unsaturated, shallow and target aquifer travel times for each
+                point in the given distance array, [days].
+
+            Returns
+            -------
+            df: pandas.dataframe
+                Holder for df_particle, filled by the flowline_id
+            '''
+
+            df.loc[0] = [flowline_id,
+                        "surface",
+                        0,
+                        0,
+                        distance,
+                        self.schematisation.model_width,
+                         self.schematisation.ground_surface,
+                         None,
+                         self.schematisation.temperature,
+                         None,
+                         None,
+                         None,
+                         None,
+                         None,
+                         None]
+
+            df.loc[1] = [flowline_id,
+                         "vadose_zone",
+                         travel_time_unsaturated,
+                         travel_time_unsaturated,
+                         distance,
+                         self.schematisation.model_width,
+                         self.schematisation.bottom_vadose_zone_at_boundary, # @MartinvdS should this be the thickness_vadose_zone_drawdown??
+                         self.schematisation.redox_vadose_zone,
+                         self.schematisation.temperature,
+                         self.schematisation.thickness_vadose_zone_at_boundary,
+                         self.schematisation.porosity_vadose_zone,
+                         self.schematisation.dissolved_organic_carbon_vadose_zone,
+                         self.schematisation.pH_vadose_zone,
+                         self.schematisation.fraction_organic_carbon_vadose_zone,
+                         self.schematisation.solid_density_vadose_zone,
+                         ]
+
+            df.loc[2] = [flowline_id,
+                        "shallow_aquifer",
+                         travel_time_shallow_aquifer,
+                         travel_time_unsaturated + travel_time_shallow_aquifer,
+                         distance,
+                         self.schematisation.model_width,
+                         self.schematisation.bottom_shallow_aquifer,
+                         self.schematisation.redox_shallow_aquifer,
+                         self.schematisation.temperature,
+                         self.schematisation.thickness_shallow_aquifer, # @MartinvdS does this need to account for the vadose zone drawdown?
+                         self.schematisation.porosity_shallow_aquifer,
+                         self.schematisation.dissolved_organic_carbon_shallow_aquifer,
+                         self.schematisation.pH_shallow_aquifer,
+                         self.schematisation.fraction_organic_carbon_shallow_aquifer,
+                         self.schematisation.solid_density_shallow_aquifer,
+                         ]
+
+            df.loc[3] = [flowline_id,
+                        "target_aquifer",
+                         travel_time_target_aquifer,
+                         total_travel_time,
+                         self.schematisation.diameter_borehole/2, #at the well
+                         self.schematisation.model_width,
+                         self.schematisation.bottom_target_aquifer,
+                         self.schematisation.redox_target_aquifer,
+                         self.schematisation.temperature,
+                         self.schematisation.thickness_target_aquifer,
+                         self.schematisation.porosity_target_aquifer,
+                         self.schematisation.dissolved_organic_carbon_target_aquifer,
+                         self.schematisation.pH_target_aquifer,
+                         self.schematisation.fraction_organic_carbon_target_aquifer,
+                         self.schematisation.solid_density_target_aquifer,
+                         ]
+            return df
+
+        df_particle = pd.DataFrame(columns=['flowline_id',
+                                                'zone',
+                                                'travel_time_zone',
+                                                'total_travel_time',
+                                                 'xcoord', #= radial_distcance,
+                                                 'ycoord', #= the width of the cell .. default = 1 m
+                                                 'zcoord',
+                                                 'redox_zone',
+                                                 'temperature',
+                                                 'thickness_layer',
+                                                 'porosity_layer',
+                                                 'dissolved_organic_carbon',
+                                                 'pH',
+                                                 'fraction_organic_carbon',
+                                                 'solid_density_layer'])
+
+        df = df_particle.copy()
+
+        for i in range(len(df_output)):
+            flowline_id = i+1
+            df = fill_df_particle (df= df,
+                                distance = distance[i],
+                                travel_time_unsaturated = travel_time_unsaturated[i],
+                                travel_time_shallow_aquifer=travel_time_shallow_aquifer[i],
+                                travel_time_target_aquifer = travel_time_target_aquifer[i],
+                                total_travel_time= total_travel_time[i])
+
+            df_particle = df_particle.append(df, ignore_index=True)
+            df_particle['redox_zone'] = df_particle['redox_zone'].fillna('').astype(str)
+            df_particle['flowline_id'] = df_particle['flowline_id'].astype(int)
+
+        # Make df_flowline
+        df_flowline = pd.DataFrame(columns=['flowline_id',
+                                            'flowline_type', #diffuse_source or point_source
+                                            'discharge',
+                                            'particle_release_date',
+                                            # 'input_concentration',
+                                            'endpoint_id', ])
+        df_flowline['discharge'] = df_output['flowline_discharge']
+        df_flowline['flowline_type'] = 'diffuse_source'
+
+
+        df_flowline['flowline_id'] =  df_flowline.index + 1
+        df_flowline['particle_release_date'] = self.schematisation.particle_release_date
+
+
+        # #AH_todo do we want to automatically
+        # make the dictionaries for modpath when running the analytical model?
+        # so far this is the only use for the dicitonaries so they are made here
+        self.schematisation.make_dictionary()
+        endpoint_id = 'well1' #AH_todo, @MartinvdS, what is this needed for? placeholder value here , #list(self.schematisation.well_parameters.items())[0][0]
+        df_flowline['endpoint_id'] = endpoint_id
+
+        # AH which parameters for the 'pathogen' option? @MartinvdS or @steven
+        if what_to_export == 'all' or what_to_export== 'omp':
+
+            df_flowline['well_discharge'] = self.schematisation.well_discharge
+            df_flowline['recharge_rate'] = self.schematisation.recharge_rate
+            df_flowline['vertical_resistance_aquitard'] = self.schematisation.vertical_resistance_aquitard
+            df_flowline['KD'] = self.schematisation.KD
+            df_flowline['thickness_full_capillary_fringe'] = self.schematisation.thickness_full_capillary_fringe
+            df_flowline['substance'] = self.schematisation.substance
+            df_flowline['particle_release_date'] = self.schematisation.particle_release_date
+            df_flowline['moisture_content_vadose_zone'] = self.schematisation.moisture_content_vadose_zone
+            df_flowline['diameter_borehole'] = self.schematisation.diameter_borehole
+            df_flowline['removal_function'] = self.schematisation.removal_function
+            df_flowline['solid_density_vadose_zone'] = self.schematisation.solid_density_vadose_zone
+            df_flowline['solid_density_shallow_aquifer'] = self.schematisation.solid_density_shallow_aquifer
+            df_flowline['solid_density_target_aquifer'] = self.schematisation.solid_density_target_aquifer
+        else:
+            # export everything anyways. 
+            #AH_todo when we have the other options sorted out ('pathogen') then 
+            # adjust this.
+            df_flowline['well_discharge'] = self.schematisation.well_discharge
+            df_flowline['recharge_rate'] = self.schematisation.recharge_rate
+            df_flowline['vertical_resistance_aquitard'] = self.schematisation.vertical_resistance_aquitard
+            df_flowline['KD'] = self.schematisation.KD
+            df_flowline['thickness_full_capillary_fringe'] = self.schematisation.thickness_full_capillary_fringe
+            df_flowline['substance'] = self.schematisation.substance
+            df_flowline['particle_release_date'] = self.schematisation.particle_release_date
+            df_flowline['moisture_content_vadose_zone'] = self.schematisation.moisture_content_vadose_zone
+            df_flowline['diameter_borehole'] = self.schematisation.diameter_borehole
+            df_flowline['removal_function'] = self.schematisation.removal_function
+            df_flowline['solid_density_vadose_zone'] = self.schematisation.solid_density_vadose_zone
+            df_flowline['solid_density_shallow_aquifer'] = self.schematisation.solid_density_shallow_aquifer
+            df_flowline['solid_density_target_aquifer'] = self.schematisation.solid_density_target_aquifer
+
+        # if what_to_export == 'all':
+        # AH_todo come back to this and fill in with the final parameters of interest
+            # df_flowline['borehole_diameter'] = self.schematisation.borehole_diameter
+            # df_flowline['k_hor_aquifer'] = self.schematisation.k_hor_aquifer
+            # df_flowline['vani_aquifer'] = self.schematisation.vani_aquifer
+            # df_flowline['k_hor_confining'] = self.schematisation.k_hor_confining
+            # df_flowline['vani_confining'] = self.schematisation.vani_confining
+            # df_flowline['k_hor_gravelpack'] = self.schematisation.k_hor_gravelpack
+            # df_flowline['vani_gravelpack'] = self.schematisation.vani_gravelpack
+            # df_flowline['k_hor_clayseal'] = self.schematisation.k_hor_clayseal
+            # df_flowline['vani_clayseal'] = self.schematisation.vani_clayseal
+            # df_flowline['dz_well'] = self.schematisation.dz_well
+
+        return df_flowline, df_particle
+
+    def load_mfmodel(self, fname_nam):
+        ''' Load modflow model from namefile. '''
+        self.mf = flopy.modflow.Modflow.load(fname_nam)
 
     def mfmodelrun(self):
         ''' Main model run code. '''
@@ -1037,20 +1704,86 @@ class ModPathWell:
             # Try to delete the previous output files, to prevent accidental use of older files
             try:  
                 os.remove(self.model_hds)
-            except Exception:
+            except FileNotFoundError:
                 pass
             try:  
                 os.remove(self.model_cbc)
-            except Exception:
+            except FileNotFoundError:
                 pass
             
             # Run modflow model
-            self.run_modflowmod()
-            print(self.success, self.buff)
+            try:
+                self.run_modflowmod()
+            except Exception as e:
+                self.success_mf = False
+                print(e, self.success_mf)
+            # print(self.success_mf, self.buff)
 
             # Model run completed succesfully
-            print("Model run", self.workspace, self.modelname, "completed succesfully.")
+            print("Model run", self.workspace, self.modelname, "completed without errors:", self.success_mf)
 
+    def MP7modelrun(self, mf_namfile = None, mp_exe = None):
+        ''' Modpath model run.'''
+        print ("Run modpath:",self.workspace, self.modelname +"\n")
+
+        # Copy mfmodel to modpath section
+        if mf_namfile is None:  
+            if hasattr(self, "mf"):
+                print("Modflow model 'mf' already exists in object.")
+                pass
+            else:
+                # Load mfmodel assuming namfile exists in same folder
+                self.mf_namfile = os.path.join(self.workspace, self.modelname + '.nam')
+                self.load_mfmodel(self.mf_namfile)
+#            self.mf = self.aximodel.mf
+        else:
+            if hasattr(self, "mf"):
+                # modflow model "mf" already exists in object
+                pass
+            else:
+                print("Load mf model using given namfile location:", mf_namfile)
+                # mf_namefile
+                self.mf_namfile = mf_namfile
+                self.load_mfmodel(self.mf_namfile)
+
+        
+        # Load the MP7 module/object
+        if mp_exe is None:
+            self.mp_exe = "mpath7"
+        else:
+            self.mp_exe = mp_exe
+
+        # Load mp7 object into Aximodel class
+        self.load_MP7object(mp_exe = self.mp_exe, mf_model = self.mf)#,
+#                            headfilename = self.modelname + '.hds',
+#                            budgetfilename = self.modelname + '.cbc') #self.model_cbc)
+
+        # Load modpath basic package
+        self.load_mpbas()
+        
+        # Select particle groups as input to the model
+        self.particlegroups = []
+        for iPG in self.pg:
+            self.particlegroups.append(self.pg[iPG])
+        # Only for unstruct grids:
+        #- Load modpath unstructured grid
+        #- Load modpath time discretization
+        
+        # Write modpath simulation File:
+        self.modpath_simulation(mp_model = None,# trackingdirection = None,
+                           simulationtype = 'combined', stoptimeoption = 'extend',
+                           particlegroups = self.particlegroups) 
+
+        # Write files and execute the modpath model
+        self.write_input_mp()
+
+        try:
+            self.run_ModPathmod()
+            # Model run completed succesfully
+            print("ModPath run", self.workspace, self.modelname, "completed succesfully.")
+        except Exception as e:
+            self.success_mp = False
+            print(e, "ModPath run", self.workspace, self.modelname, "failed.")           
 
     def phreatic(self):
         ''' Modflow & modpath calculation using subsurface schematisation type 'phreatic'. '''
@@ -1062,13 +1795,13 @@ class ModPathWell:
         # Use dictionary keys from schematisation
         dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
                       "well_parameters"]
-        self.make_discretisation(schematisation = self.schematisation, dict_keys = dict_keys,
+        self.make_discretisation(schematisation = self.schematisation_dict, dict_keys = dict_keys,
                             model_type = self.model_type)
 
         # Set ibound grid and starting head
         dict_keys = ["ibound_parameters"]
         self.strt = np.zeros((self.nlay,self.nrow,self.ncol), dtype = 'float')
-        self.set_ibound(schematisation = self.schematisation,
+        self.set_ibound(schematisation = self.schematisation_dict,
                             dict_keys = dict_keys,
                             ibound = None,
                             strt = self.strt)
@@ -1096,18 +1829,24 @@ class ModPathWell:
             self.layavg = 0
         # geohydrological parameter names
         geoparm_names = {"moisture_content": ["geo_parameters"],
-                      "hk": ["geo_parameters","well_parameters"],
-                      "vani": ["geo_parameters","well_parameters"],
+                      "hk": ["geo_parameters"],
+                      "vani": ["geo_parameters"],
                       "porosity": ["geo_parameters"]}
 
         for iParm, dict_keys in geoparm_names.items():
-            # Temporary value
-            grid = self.fill_grid(schematisation = self.schematisation,
+            # Temporary value grid
+            unitgrid = np.ones((self.nlay,self.nrow,self.ncol), dtype = 'float')
+            # Fill grid with new values
+            grid = self.fill_grid(schematisation = self.schematisation_dict,
                             dict_keys = dict_keys,
                             parameter = iParm,
-                            grid = None,
+                            grid = unitgrid,
                             dtype = 'float')
             self.update_property(property = iParm, value = grid)
+
+        # Assign material grid
+        self.assign_material(schematisation = self.schematisation_dict,
+                            dict_keys = ["geo_parameters","well_parameters"])
 
         # Create (uncorrected) array for kv ("vka"), using "kh" and "vani" (vertical anisotropy)
         self.vka = self.hk / self.vani
@@ -1129,7 +1868,7 @@ class ModPathWell:
         rech_parmnames = {"recharge": ["recharge_parameters"]}
         for iParm, dict_keys in rech_parmnames.items():
             # Temporary value
-            grid = self.fill_grid(schematisation = self.schematisation,
+            grid = self.fill_grid(schematisation = self.schematisation_dict,
                             dict_keys = dict_keys,
                             parameter = iParm,
                             grid = None,
@@ -1146,14 +1885,14 @@ class ModPathWell:
         # Well input
         # !!! Obtain node numbers of well locations (use indices) !!!
         # leakage discharge from well
-        well_names = [iWell for iWell in self.schematisation["well_parameters"] if \
-                        "Q" in self.schematisation["well_parameters"][iWell].keys()]
+        well_names = [iWell for iWell in self.schematisation_dict["well_parameters"] if \
+                        "Q" in self.schematisation_dict["well_parameters"][iWell].keys()]
        
         self.well_names,\
             self.well_loc,\
                 self.KD_well,\
                     self.spd_wel,\
-                        self.Qwell_day = self.assign_wellloc(schematisation = self.schematisation,
+                        self.Qwell_day = self.assign_wellloc(schematisation = self.schematisation_dict,
                                                         dict_key = "well_parameters",
                                                         well_names = None,
                                                         discharge_parameter = "Q")
@@ -1279,7 +2018,7 @@ class ModPathWell:
 
         return node_indices
 
-    def read_pathlinedata(fpth, nodes):
+    def read_pathlinedata(self,fpth, nodes):
         ''' read pathlinedata from file fpth (extension: '*.mppth'), 
             given the particle release node index 'nodes' obtained from 
             a tuple or list of tuples (iLay,iRow,iCol).
@@ -1346,7 +2085,7 @@ class ModPathWell:
         return xyz_nodes, dist, tdiff, dist_tot, time_tot, pth_data
 
     def run_model(self,
-                    simulation_parameters: dict or None = None,
+                    # simulation_parameters: dict or None = None,
                     xll = 0., yll = 0., perlen:dict or float or int = 365.*50, 
                     nstp:dict or int = 1, nper:int = 1,
                     steady:dict or bool = True,
@@ -1364,11 +2103,12 @@ class ModPathWell:
         self.run_mfmodel = run_mfmodel
         # Run modpath model (T/F)
         self.run_mpmodel = run_mpmodel
-
-        if simulation_parameters is None:
-            self.simulation_parameters = self.schematisation["simulation_parameters"]
-        else:
-            self.simulation_parameters = simulation_parameters
+        # simulation parameters
+        self.simulation_parameters = self.schematisation_dict.get('simulation_parameters')
+        # if simulation_parameters is None:
+        #     self.simulation_parameters = self.schematisation_dict.simulation_parameters
+        # else:
+        #     self.simulation_parameters = simulation_parameters
 
         # Simulation parameters
         # Dict with stress period lengths
@@ -1397,7 +2137,7 @@ class ModPathWell:
 
         # Type of scenario
         try:
-            self.schematisation_type = self.simulation_parameters["schematisation_type"]
+            self.schematisation_type = self.simulation_parameters.get("schematisation_type")
         except KeyError as e:
             print(e)
 
@@ -1407,8 +2147,99 @@ class ModPathWell:
             if self.run_mfmodel:
                 # Run modflow model
                 self.mfmodelrun()
+        # elif self.schematisation_type == "Semi-confined":
 
-        print("modelrun of type", self.schematisation_type, "completed.")
+        # Modpath simulation
+        if self.run_mpmodel:
+
+            # Create radial distance array with particle locations
+            # self._create_radial_distance_array() # Analytische fluxverdeling
+            self._create_radial_distance_particles_recharge(recharge_parameters = None,
+                                                            nparticles_cell = 1,
+                                                            localy=0.5, localz=0.5,
+                                                            timeoffset=0.0, drape=0,
+                                                            trackingdirection = 'forward',
+                                                            releasedata=0.0)  
+
+            # Default flux interfaces
+            defaultiface = {'RECHARGE': 6, 'ET': 6}
+            
+            
+            ## Model mpbas input ##
+            self.mpbas_input(prsity = self.porosity, defaultiface = defaultiface)
+
+            # Run modpath model
+            self.MP7modelrun()
+
+            # self.success_mp = True
+    
+            print("modelrun of type", self.schematisation_type, "completed.")
+
+            ## Post-processing: ##
+            # ##cbc
+            # cbcfile = os.path.join(self.workspace, self.modelname + '.cbc') # r"r:\P402045_014\microbiologisch_risico_lekke_peilbuis\python\MP7_V5_20200429\GHscen_A_onvzone_afwezig_lek_klein_lekdiepte0_5\GHscen_A_onvzone_afwezig_lek_klein_lekdiepte0_5.cbc"
+            # cbb = flopy.utils.binaryfile.CellBudgetFile(filename = cbcfile,
+            #                                             precision='single',
+            #                                             verbose=False)
+            
+            # # Flux per particle group, per path
+            # fluxnode_frf = {}
+            # frf = cbb.get_data(kstpkper=(0,0), text='FLOW RIGHT FACE')
+            # for iPG in self.pg:
+            #     fluxnode_frf[iPG] = {}
+            #     for id_,iNode in enumerate(self.part_locs[iPG]):
+            #         print(id_,iNode, "right face flux:", frf[0][iNode])
+            #         fluxnode_frf[iPG][iNode] = frf[0][iNode]
+            # # close budget object afterwards
+            # cbb.close()
+
+            # Empty output dicts
+            self.xyz_nodes = {}
+            self.time_diff = {}
+
+            # Pathline output file
+            self.mppth = os.path.join(self.workspace, self.modelname + '_mp.mppth')
+
+            for iPG in self.part_locs:
+                # xyz_locs
+                self.xyz_nodes[iPG] = {}
+                # Save flow duration (time_diff) of pathlines
+                self.time_diff[iPG] = {}
+
+                # Nodes to retrieve
+                print("Particle group",iPG, "nr of nodes:", str(len(self.part_locs.get(iPG))))
+                for id_,iNode in enumerate(self.part_locs.get(iPG)):
+                    # print(id_,iNode)
+                    try:
+                        self.nodes = self.get_nodes(iNode)
+                    except Exception:
+                        self.nodes = self.get_nodes([iNode])
+                    print(id_,iNode, self.nodes)
+
+                    # nodes_rel[ = flopy.utils.ra_slice(m.wel.stress_period_data[0], ['k', 'i', 'j'])
+                    #     nodes_well = prf.get_nodes(locs = wel_locs, nrow = nrow, ncol = ncol) # m.dis.get_node(wel_locs.tolist())
+
+                    # Read pathline data
+                    self.xyz_nodes[iPG][iNode], \
+                    self.dist_data,  \
+                    self.time_diff[iPG][iNode],  \
+                    self.dist_tot,   \
+                    self.time_tot,   \
+                    self.pth_data =  \
+                                self.read_pathlinedata(fpth = self.mppth,
+                                                    nodes = self.nodes) #pg_nodes[iGroup])  
+                    '''                             
+                xyz_points, \    # XYZ data 
+                dist_data,  \    # Distance araay between nodes
+                time_diff,  \    # Time difference array
+                dist_tot,   \    # Total distance covered per particle
+                time_tot,   \    # Total time covered per particle
+                pth_data =  \    # Raw pathline data
+                '''        
+
+            print("Post-processing modpathrun of type", self.schematisation_type, "completed.")
+
+
 '''
 #%%  
 class ModPathWell_OLD():
