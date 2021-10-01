@@ -48,6 +48,9 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 
 #%%
 
+#DICTIONARIES START HERE
+#%%
+
 semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfined',
                                     computation_method = 'modpath',
                                     what_to_export='omp',
@@ -92,7 +95,7 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       partition_coefficient_water_organic_carbon= 6.43,
                                       dissociation_constant= 99,
                                       # diameter_filterscreen = 0.2,
-                                      concentration_point_contamination = 100.,
+                                      point_input_concentration = 100.,
                                       discharge_point_contamination = 100.,#made up value
                                       top_clayseal = 17,
                                       compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
@@ -102,10 +105,13 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       # partition_coefficient_water_organic_carbon = 3.3,
                                     )
 
+
 semiconfined_well_dict = semiconfined_scheme.make_dictionary()  
 # Export dicts for steven
 
 semi_dict_1  = { 'simulation_parameters' : semiconfined_scheme.simulation_parameters,
+        'endpoint_id': semiconfined_scheme.endpoint_id,
+        'mesh_refinement': semiconfined_scheme.mesh_refinement,
         'geo_parameters' : semiconfined_scheme.geo_parameters,
         'ibound_parameters' : semiconfined_scheme.ibound_parameters,
         'recharge_parameters' : semiconfined_scheme.recharge_parameters,
@@ -165,7 +171,7 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       partition_coefficient_water_organic_carbon= 6.43,
                                       dissociation_constant= 99,
                                       diameter_filterscreen = 0.2,
-                                      concentration_point_contamination = 100.,
+                                      point_input_concentration = 100.,
                                       discharge_point_contamination = 100.,#made up value
                                       top_clayseal = 17,
                                       compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
@@ -179,6 +185,8 @@ semiconfined_well_dict = semiconfined_scheme.make_dictionary()
 # Export dicts for steven
 
 semi_dict_2 = { 'simulation_parameters' : semiconfined_scheme.simulation_parameters,
+        'endpoint_id': semiconfined_scheme.endpoint_id,
+        'mesh_refinement': semiconfined_scheme.mesh_refinement,
         'geo_parameters' : semiconfined_scheme.geo_parameters,
         'ibound_parameters' : semiconfined_scheme.ibound_parameters,
         'recharge_parameters' : semiconfined_scheme.recharge_parameters,
@@ -203,12 +211,6 @@ semi_dict_2
 # recharge_parameters = dictionary['recharge_parameters']
 #%%
 
-# Test
-test_travel_time_distribution_phreatic()
-test_retardation_temp_koc_correction(substance='benzene', schematisation_type='phreatic')
-test_steady_concentration_temp_koc_correction_phreatic(substance='benzene')
-test_steady_concentration_temp_koc_correction_phreatic(substance='benzo(a)pyrene')
-test_steady_concentration_temp_koc_correction_phreatic(substance='AMPA')
 # %%
 phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                     computation_method = 'modpath',
@@ -253,7 +255,7 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       partition_coefficient_water_organic_carbon= 6.43,
                                       dissociation_constant= 99,
                                       # diameter_filterscreen = 0.2,
-                                      concentration_point_contamination = 100.,
+                                      point_input_concentration = 100.,
                                       discharge_point_contamination = 100.,#made up value
                                       top_clayseal = 17,
                                       compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
@@ -266,6 +268,8 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
 phreatic_scheme.make_dictionary()  
 
 phreatic_dict_1 = { 'simulation_parameters' : phreatic_scheme.simulation_parameters,
+        'endpoint_id': semiconfined_scheme.endpoint_id,
+        'mesh_refinement': semiconfined_scheme.mesh_refinement,
         'geo_parameters' : phreatic_scheme.geo_parameters,
         'ibound_parameters' : phreatic_scheme.ibound_parameters,
         'recharge_parameters' : phreatic_scheme.recharge_parameters,
@@ -324,7 +328,7 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       partition_coefficient_water_organic_carbon= 6.43,
                                       dissociation_constant= 99,
                                       diameter_filterscreen = 0.2,
-                                      concentration_point_contamination = 100.,
+                                      point_input_concentration = 100.,
                                       discharge_point_contamination = 100.,#made up value
                                       top_clayseal = 17,
                                       compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
@@ -336,6 +340,8 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
 phreatic_scheme.make_dictionary()  
 
 phreatic_dict_2 = { 'simulation_parameters' : phreatic_scheme.simulation_parameters,
+        'endpoint_id': semiconfined_scheme.endpoint_id,
+        'mesh_refinement': semiconfined_scheme.mesh_refinement,
         'geo_parameters' : phreatic_scheme.geo_parameters,
         'ibound_parameters' : phreatic_scheme.ibound_parameters,
         'recharge_parameters' : phreatic_scheme.recharge_parameters,
@@ -382,6 +388,8 @@ phreatic_test_scheme = HydroChemicalSchematisation(schematisation_type='phreatic
 phreatic_test_scheme.make_dictionary()  
 
 phreatic_test_scheme_dict= { 'simulation_parameters' : phreatic_scheme.simulation_parameters,
+        'endpoint_id': semiconfined_scheme.endpoint_id,
+        'mesh_refinement': semiconfined_scheme.mesh_refinement,
         'geo_parameters' : phreatic_scheme.geo_parameters,
         'ibound_parameters' : phreatic_scheme.ibound_parameters,
         'recharge_parameters' : phreatic_scheme.recharge_parameters,
@@ -397,7 +405,6 @@ f.close()
 phreatic_test_scheme_dict
 
 phreatic_test_well= AnalyticalWell(phreatic_test_scheme)
-
 phreatic_test_well.phreatic()
 
 df_particle =phreatic_test_well.df_particle
@@ -410,12 +417,12 @@ df_flowline.to_excel('phreatic_df_flowline_Modflow.xlsx')
 
 semiconfined_test_scheme = HydroChemicalSchematisation(schematisation_type='semiconfined',
                                         computation_method= 'analytical',
-                                                what_to_export='omp',
+                                        what_to_export='omp',
                                         well_discharge=319.4*24,
                                         # vertical_resistance_aquitard=500,
-                                      hor_permeability_shallow_aquifer = 0.02,
-                                      vertical_anisotropy_shallow_aquifer = (10/(0.02*500)),
-                                      porosity_vadose_zone=0.38,
+                                        hor_permeability_shallow_aquifer = 0.02,
+                                        vertical_anisotropy_shallow_aquifer = (10/(0.02*500)),
+                                        porosity_vadose_zone=0.38,
                                         porosity_shallow_aquifer=0.35,
                                         porosity_target_aquifer=0.35,
                                         recharge_rate=0.3/365.25,
@@ -428,14 +435,16 @@ semiconfined_test_scheme = HydroChemicalSchematisation(schematisation_type='semi
                                         # KD=1400,
                                         thickness_full_capillary_fringe=0.4,
                                         temperature=11,
-                                         solid_density_vadose_zone= 2.650,
-                                      solid_density_shallow_aquifer= 2.650,
-                                      solid_density_target_aquifer= 2.650,
-                                      diameter_borehole = 0.75,)
+                                        solid_density_vadose_zone= 2.650,
+                                        solid_density_shallow_aquifer= 2.650,
+                                        solid_density_target_aquifer= 2.650,
+                                        diameter_borehole = 0.75,)
 
 semiconfined_test_scheme.make_dictionary()  
 
 semiconfined_test_scheme_dict= { 'simulation_parameters' : phreatic_scheme.simulation_parameters,
+        'endpoint_id': semiconfined_scheme.endpoint_id,
+        'mesh_refinement': semiconfined_scheme.mesh_refinement,
         'geo_parameters' : phreatic_scheme.geo_parameters,
         'ibound_parameters' : phreatic_scheme.ibound_parameters,
         'recharge_parameters' : phreatic_scheme.recharge_parameters,
@@ -459,3 +468,5 @@ df_flowline = semiconfined_test_well.df_flowline
 
 df_particle.to_excel('semiconfined_df_particle_Modflow.xlsx')
 df_flowline.to_excel('semiconfined_df_flowline_Modflow.xlsx')
+
+#%%

@@ -78,7 +78,7 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       #diffuse parameters
                                       diffuse_input_concentration=100, #ug/L
                                       #point paramters
-                                      concentration_point_contamination=100,
+                                      point_input_concentration=100,
                                       distance_point_contamination_from_well=25, #5.45045, #
                                       depth_point_contamination=21, #m ASL
                                       discharge_point_contamination=1000,

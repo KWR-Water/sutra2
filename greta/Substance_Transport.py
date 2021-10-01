@@ -143,22 +143,13 @@ class SubstanceTransport():
     df_flowline: pandas.DataFrame
         Column 'flowline_id': Integer
         Column 'flowline_type': string
-        Column 'discharge': Float
-        Column 'particle_release_date': Float
+        Column 'flowline_discharge': Float
+        Column 'particle_release_day': Float
         Column 'input_concentration': float
         Column 'endpoint_id': Integer
         Column 'well_discharge': float
-        Column 'recharge_rate': float
-        Column 'vertical_resistance_aquitard': float
-        Column 'KD': float
-        Column 'thickness_full_capillary_fringe': float
         Column 'substance': string
-        Column 'moisture_content_vadose_zone': float
-        Column 'diameter_borehole': float
         Column 'removal_function': string
-        Column 'solid_density_vadose_zone': float
-        Column 'solid_density_shallow_aquifer': float
-        Column 'solid_density_target_aquifer': float
         Column 'total_breakthrough_travel_time': float
         Column 'breakthrough_concentration': float
 
@@ -169,14 +160,14 @@ class SubstanceTransport():
         Column 'xcoord': float
         Column 'ycoord': float
         Column 'zcoord': float
-        Column 'redox_zone': float
+        Column 'redox': float
         Column 'temperature': float
-        Column 'thickness_layer': float
-        Column 'porosity_layer': float
+        Column 'travel_distance': float
+        Column 'porosity': float
         Column 'dissolved_organic_carbon': float
         Column 'pH': float
         Column 'fraction_organic_carbon': float
-        Column 'solid_density_layer': float
+        Column 'solid_density': float
         Column 'input_concentration': float
         Column 'steady_state_concentration': float
         Column 'omp_half_life': float
@@ -259,7 +250,7 @@ class SubstanceTransport():
         if self.omp_inialized:
             pass
         else:
-            self.df_particle['omp_half_life'] = self.df_particle['redox_zone'].map(self.substance_dict['omp_half_life'])
+            self.df_particle['omp_half_life'] = self.df_particle['redox'].map(self.substance_dict['omp_half_life'])
             self.df_particle['log_Koc'] = self.substance_dict['log_Koc']
             self.df_particle['pKa'] = self.substance_dict['pKa']
 
@@ -290,10 +281,10 @@ class SubstanceTransport():
         #0.2 -> fraction of binding sites supplied by DOC which bind the OMP
         #and prevent sortion to aquifer
         if self.analytical_well.schematisation.biodegradation_sorbed_phase:
-            self.df_particle['retardation'] = (1 + (1 / (1 + 10 ** (self.df_particle.pH - self.df_particle.pKa)) * self.df_particle.solid_density_layer
-                            * (1 - self.df_particle.porosity_layer)
+            self.df_particle['retardation'] = (1 + (1 / (1 + 10 ** (self.df_particle.pH - self.df_particle.pKa)) * self.df_particle.solid_density
+                            * (1 - self.df_particle.porosity)
                             * self.df_particle.fraction_organic_carbon * self.df_particle.Koc_temperature_correction)
-                    / (self.df_particle.porosity_layer * (1 + (self.df_particle.Koc_temperature_correction * 1 / (1 + 10 ** (self.df_particle.pH - self.df_particle.pKa))
+                    / (self.df_particle.porosity * (1 + (self.df_particle.Koc_temperature_correction * 1 / (1 + 10 ** (self.df_particle.pH - self.df_particle.pKa))
                                                             * 0.2 * self.df_particle.dissolved_organic_carbon * 0.000001))))
         else:
             self.df_particle['retardation'] = 1
@@ -419,22 +410,13 @@ class SubstanceTransport():
         df_flowline: pandas.DataFrame
             Column 'flowline_id': Integer
             Column 'flowline_type': string
-            Column 'discharge': Float
-            Column 'particle_release_date': Float
+            Column 'flowline_discharge': Float
+            Column 'particle_release_day': Float
             Column 'input_concentration': float
             Column 'endpoint_id': Integer
             Column 'well_discharge': float
-            Column 'recharge_rate': float
-            Column 'vertical_resistance_aquitard': float
-            Column 'KD': float
-            Column 'thickness_full_capillary_fringe': float
             Column 'substance': string
-            Column 'moisture_content_vadose_zone': float
-            Column 'diameter_borehole': float
             Column 'removal_function': string
-            Column 'solid_density_vadose_zone': float
-            Column 'solid_density_shallow_aquifer': float
-            Column 'solid_density_target_aquifer': float
             Column 'total_breakthrough_travel_time': float
                 The breakthrough concentration in the well for the OMP taking into account retardation.
             Column 'breakthrough_concentration': float
@@ -448,14 +430,14 @@ class SubstanceTransport():
             Column 'xcoord': float
             Column 'ycoord': float
             Column 'zcoord': float
-            Column 'redox_zone': float
+            Column 'redox': float
             Column 'temperature': float
-            Column 'thickness_layer': float
-            Column 'porosity_layer': float
+            Column 'travel_distance': float
+            Column 'porosity': float
             Column 'dissolved_organic_carbon': float
             Column 'pH': float
             Column 'fraction_organic_carbon': float
-            Column 'solid_density_layer': float
+            Column 'solid_density': float
             Column 'input_concentration': float
             Column 'steady_state_concentration': float
                 The steady state concentration at the well of the OMP for the flowline, [mass/L]
@@ -478,7 +460,7 @@ class SubstanceTransport():
         self.df_particle.loc[self.df_particle.zone=='surface', 'input_concentration'] = self.analytical_well.schematisation.diffuse_input_concentration
         self.df_particle.loc[self.df_particle.zone=='surface', 'steady_state_concentration'] = self.analytical_well.schematisation.diffuse_input_concentration
 
-        if self.analytical_well.schematisation.concentration_point_contamination:
+        if self.analytical_well.schematisation.point_input_concentration:
             ''' point contamination '''
             # need to take into account the depth of the point contamination here....
             # need to change the df_particle and df_flowline to only be the flowlines for the point contamination flowline(s)
@@ -506,15 +488,15 @@ class SubstanceTransport():
 
             df_particle['flowline_id'] = df_particle['flowline_id'] + ind
 
-            df_flowline['input_concentration'] = self.analytical_well.schematisation.concentration_point_contamination
+            df_flowline['input_concentration'] = self.analytical_well.schematisation.point_input_concentration
             df_particle['input_concentration'] = None
             df_particle['steady_state_concentration'] = None
-            df_particle.loc[self.df_particle.zone=='surface', 'input_concentration'] = self.analytical_well.schematisation.concentration_point_contamination
-            df_particle.loc[self.df_particle.zone=='surface', 'steady_state_concentration'] = self.analytical_well.schematisation.concentration_point_contamination
+            df_particle.loc[self.df_particle.zone=='surface', 'input_concentration'] = self.analytical_well.schematisation.point_input_concentration
+            df_particle.loc[self.df_particle.zone=='surface', 'steady_state_concentration'] = self.analytical_well.schematisation.point_input_concentration
 
             df_flowline['flowline_id'] = df_flowline['flowline_id'] + ind
             df_flowline['flowline_type'] = "point_source"
-            df_flowline['discharge'] = self.analytical_well.schematisation.discharge_point_contamination
+            df_flowline['flowline_discharge'] = self.analytical_well.schematisation.discharge_point_contamination
 
             #AH_todo, something here to loop through different point sources if more than one.
 
@@ -540,6 +522,27 @@ class SubstanceTransport():
 
         self._calculcate_total_breakthrough_travel_time()
 
+        # reduce the amount of text per line by extracting the following parameters
+        self.compute_contamination_for_date = self.analytical_well.schematisation.compute_contamination_for_date
+        start_date_well = self.analytical_well.schematisation.start_date_well
+        start_date_contamination = self.analytical_well.schematisation.start_date_contamination
+        self.end_date_contamination = self.analytical_well.schematisation.end_date_contamination
+
+        if start_date_well > start_date_contamination:
+            self.start_date = start_date_well
+            self.back_date_start = start_date_contamination
+
+        elif start_date_well <= start_date_contamination:
+            self.start_date = start_date_contamination
+            self.back_date_start = start_date_well
+
+        self.compute_date = self.compute_contamination_for_date - self.start_date
+        self.back_compute_date = self.start_date - self.back_date_start
+        
+        # add the particle release date
+        self.df_flowline['particle_release_day'] = (self.start_date - start_date_contamination).days
+
+
     def compute_concentration_in_well_at_date(self):
         #@Martink, this function is quite slow. I'm not sure how to make it go faster?
         ''' 
@@ -559,39 +562,22 @@ class SubstanceTransport():
                 Summed concentration of the OMP in the well.
         '''
 
-        # reduce the amount of text per line by extracting the following parameters
-        compute_contamination_for_date = self.analytical_well.schematisation.compute_contamination_for_date
-        start_date_well = self.analytical_well.schematisation.start_date_well
-        start_date_contamination = self.analytical_well.schematisation.start_date_contamination
-        end_date_contamination = self.analytical_well.schematisation.end_date_contamination
-
-        if start_date_well > start_date_contamination:
-            start_date = start_date_well
-            back_date_start = start_date_contamination
-
-        elif start_date_well <= start_date_contamination:
-            start_date = start_date_contamination
-            back_date_start = start_date_well
-
-        compute_date = compute_contamination_for_date - start_date
-        back_compute_date = start_date - back_date_start
-
         # calculate the time after which no more contamination
-        if end_date_contamination is None:
+        if self.end_date_contamination is None:
             pass
         else:
-            end_time = end_date_contamination- start_date
+            end_time = self.end_date_contamination- self.start_date
             self.df_flowline['end_time_contamination_breakthrough'] = self.df_flowline['total_breakthrough_travel_time'] + end_time.days
 
-        # AH_todo, Solution to make this faster is to rduce this down to xx timestpes, e.g. once a month
-        time_array = np.arange(0, compute_date.days+1, 1)
-        back_date_array = np.arange(-back_compute_date.days,0, 1)
+        # AH_todo, Solution to make this faster is to erduce this down to xx timesteps, e.g. once a month
+        time_array = np.arange(0, self.compute_date.days+1, 1)
+        back_date_array = np.arange(-self.back_compute_date.days,0, 1)
         time_array = np.append(back_date_array,time_array)
-        time_array_dates = pd.date_range(start=back_date_start,end=compute_contamination_for_date)
+        time_array_dates = pd.date_range(start=self.back_date_start,end=self.compute_contamination_for_date)
 
         #Calculate the concentration in the well,
         self.df_flowline['concentration_in_well'] = (self.df_flowline['breakthrough_concentration']
-                            * self.df_flowline['discharge']/ self.df_flowline['well_discharge'])
+                            * self.df_flowline['flowline_discharge']/ self.df_flowline['well_discharge'])
         df_flowline = self.df_flowline
 
         # AH_todo, preset the length of list to improve some time
@@ -600,7 +586,7 @@ class SubstanceTransport():
         #sum the concentration in the well for each timestep
         for i in range(len(time_array)):
             t = time_array[i]
-            if end_date_contamination is None:
+            if self.end_date_contamination is None:
                 well_conc = sum(df_flowline['concentration_in_well'].loc[(df_flowline['total_breakthrough_travel_time'] <= t)])
             else:
                 well_conc = sum(df_flowline['concentration_in_well'].loc[(df_flowline['total_breakthrough_travel_time'] <= t) & (df_flowline['end_time_contamination_breakthrough'] >= t)])
@@ -620,7 +606,7 @@ class SubstanceTransport():
         Parameters
         ----------
         x_axis: string
-            Choice of the x-axis as time in years starting at 0, or as the 'Date' since the
+            Choice of the x-axis as 'Time' in years starting at 0, or as the 'Date' since the
             minimum of 'start_date_well' or 'start_date_contamination'
         as_fraction_input: bool
             If 'True' plots concentration on y-axis as a fraction of the sum of the
@@ -634,7 +620,7 @@ class SubstanceTransport():
         '''
 
         # reduce the amount of text per line by extracting the following parameters
-        concentration_point_contamination = self.analytical_well.schematisation.concentration_point_contamination
+        point_input_concentration = self.analytical_well.schematisation.point_input_concentration
         diffuse_input_concentration = self.analytical_well.schematisation.diffuse_input_concentration
         schematisation_type = self.analytical_well.schematisation.schematisation_type
         compute_contamination_for_date = self.analytical_well.schematisation.compute_contamination_for_date
@@ -646,10 +632,10 @@ class SubstanceTransport():
         back_date_start = min(start_date_well,start_date_contamination)
         compute_date = compute_contamination_for_date - start_date
 
-        if concentration_point_contamination is None:
+        if point_input_concentration is None:
             input_concentration = diffuse_input_concentration
         else:
-            input_concentration = diffuse_input_concentration + concentration_point_contamination
+            input_concentration = diffuse_input_concentration + point_input_concentration
 
         df_well_concentration = self.compute_concentration_in_well_at_date()
 
