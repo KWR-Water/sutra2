@@ -418,17 +418,27 @@ class HydroChemicalSchematisation:
         self.top_clayseal = top_clayseal
         self.bottom_clayseal = bottom_clayseal
         self.diameter_clayseal = diameter_clayseal
+
+        # do we need this?
         self.hor_permeability_shallow_aquifer = hor_permeability_shallow_aquifer
         self.hor_permeability_target_aquifer = hor_permeability_target_aquifer
         self.hor_permebility_gravelpack = hor_permebility_gravelpack
         self.hor_permeability_clayseal = hor_permeability_clayseal
+        
+        # @MartinvdS vertical anisotropy not used?
         self.vertical_anisotropy_shallow_aquifer = vertical_anisotropy_shallow_aquifer
         self.vertical_anisotropy_target_aquifer = vertical_anisotropy_target_aquifer
         self.vertical_anisotropy_gravelpack = vertical_anisotropy_gravelpack
         self.vertical_anisotropy_clayseal = vertical_anisotropy_clayseal
-        #@MartinvdS something is wrong here for the vertical_anisotropy_shallow_aquifer
-        self.vertical_resistance_aquitard = thickness_shallow_aquifer / (hor_permeability_shallow_aquifer *vertical_anisotropy_shallow_aquifer)
-        self.KD = hor_permeability_target_aquifer*thickness_target_aquifer
+
+        #Calculated        
+        self.vertical_permeability_target_aquifer = self.hor_permeability_target_aquifer / self.vertical_anisotropy_target_aquifer
+        self.vertical_permeability_shallow_aquifer = self.hor_permeability_shallow_aquifer / self.vertical_anisotropy_shallow_aquifer
+        
+        self.vertical_resistance_shallow_aquifer = thickness_shallow_aquifer / self.vertical_permeability_shallow_aquifer
+        
+        self.KD = hor_permeability_target_aquifer * thickness_target_aquifer
+
         self.groundwater_level =self.ground_surface-self.thickness_vadose_zone_at_boundary
 
         # Substance
@@ -566,16 +576,16 @@ class HydroChemicalSchematisation:
         if hor_permeability_clayseal is None:
             self.hor_permeability_clayseal = 0.001
         if vertical_anisotropy_gravelpack is None:
-            self.vertical_anisotropy_gravelpack = 1
+            self.vertical_anisotropy_gravelpack = 1.0
         if vertical_anisotropy_clayseal is None:
-            self.vertical_anisotropy_clayseal = 1
+            self.vertical_anisotropy_clayseal = 1.0
 
         if model_radius is None:
             if self.schematisation_type == 'phreatic':
                 self.model_radius = (math.sqrt(self.well_discharge
                                                 / (math.pi * self.recharge_rate ))) #AH SA*recharge = well_discharge
             elif self.schematisation_type == 'semiconfined':
-                self.model_radius = math.sqrt(self.vertical_resistance_aquitard * self.KD * 3) # spreading_distance*3
+                self.model_radius = math.sqrt(self.vertical_resistance_shallow_aquifer * self.KD * 3) # spreading_distance*3
 
 
     def make_dictionary(self,):
@@ -991,7 +1001,7 @@ class HydroChemicalSchematisation:
 
         '''
 
-        self.spreading_distance = math.sqrt(self.vertical_resistance_aquitard * self.KD)
+        self.spreading_distance = math.sqrt(self.vertical_resistance_shallow_aquifer * self.KD)
 
         # AH do not change to model_radius, since the radial distance for recharge is based on the phreatic value for BOTH cases
         self.radial_distance_recharge =  (math.sqrt(self.well_discharge
@@ -1253,11 +1263,11 @@ class AnalyticalWell():
             travel_distance_shallow_aquifer  = depth_point_contamination - self.schematisation.bottom_shallow_aquifer
 
         self.travel_time_shallow_aquifer = (self.schematisation.porosity_shallow_aquifer
-                                            * (2 * math.pi * self.schematisation.KD * self.schematisation.vertical_resistance_aquitard
+                                            * (2 * math.pi * self.schematisation.KD * self.schematisation.vertical_resistance_shallow_aquifer
                                             / (self.schematisation.well_discharge)
                                             * (travel_distance_shallow_aquifer
                                             / besselk(0, distance
-                                            / math.sqrt(self.schematisation.KD * self.schematisation.vertical_resistance_aquitard)))
+                                            / math.sqrt(self.schematisation.KD * self.schematisation.vertical_resistance_shallow_aquifer)))
                             ))
         if travel_distance_shallow_aquifer < 0:
             self.travel_time_shallow_aquifer =  np.array([0])

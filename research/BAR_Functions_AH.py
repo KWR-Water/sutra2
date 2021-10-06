@@ -180,7 +180,7 @@ def calculate_travel_time_deeper_aquifer(horizontal_distance_basin_gallery,
                                          temperature,
                                          porosity_recharge_basin,
                                          groundwater_level_above_saturated_zone,
-                                         vertical_resistance_aquitard,
+                                         vertical_resistance_shallow_aquifer,
                                          thickness_second_aquifer,
                                          porosity_second_aquifer,
                                          vertical_hydraulic_head_difference,
@@ -197,7 +197,7 @@ def calculate_travel_time_deeper_aquifer(horizontal_distance_basin_gallery,
     
     parameters
     ---------
-    vertical_resistance_aquitard   # [d], c_V
+    vertical_resistance_shallow_aquifer   # [d], c_V
     thickness_second_aquifer: mean thickness [m]
     porosity_second_aquifer (n), [-]
     vertical_hydraulic_head_difference: mean vertical jump 
@@ -208,7 +208,7 @@ def calculate_travel_time_deeper_aquifer(horizontal_distance_basin_gallery,
     '''
 
     travel_time_second_aquifer = (0.3 *  thickness_second_aquifer
-        * vertical_resistance_aquitard / vertical_hydraulic_head_difference)
+        * vertical_resistance_shallow_aquifer / vertical_hydraulic_head_difference)
     
     percent_flux_deep_aquifer = 2000 / travel_time_second_aquifer
 
@@ -242,7 +242,7 @@ def travel_time_distribution_BAR(length,
                                  temperature,
                                  porosity_recharge_basin,
                                  groundwater_level_above_saturated_zone,
-                                 vertical_resistance_aquitard,
+                                 vertical_resistance_shallow_aquifer,
                                  thickness_second_aquifer,
                                  porosity_second_aquifer,
                                  vertical_hydraulic_head_difference,
@@ -308,7 +308,7 @@ def travel_time_distribution_BAR(length,
         temperature=temperature,
         porosity_recharge_basin=porosity_recharge_basin,
         groundwater_level_above_saturated_zone=groundwater_level_above_saturated_zone,
-        vertical_resistance_aquitard=vertical_resistance_aquitard,
+        vertical_resistance_shallow_aquifer=vertical_resistance_shallow_aquifer,
         thickness_second_aquifer=thickness_second_aquifer,
         porosity_second_aquifer=porosity_second_aquifer,
         vertical_hydraulic_head_difference=vertical_hydraulic_head_difference,

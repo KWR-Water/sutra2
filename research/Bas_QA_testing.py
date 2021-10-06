@@ -134,9 +134,8 @@ phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phrea
                                         computation_method= 'analytical',
                                         what_to_export='omp', # @alex: what_to_export sounds very cryptic and ad-hoc. maybe we can think of something better
                                         well_discharge=319.4*24,
-                                        # vertical_resistance_aquitard=500,
+                                        # vertical_resistance_shallow_aquifer=500,
                                         hor_permeability_shallow_aquifer = 0.02,
-                                        vertical_anisotropy_shallow_aquifer = (10/(0.02*500)),
                                         porosity_vadose_zone=0.38,
                                         porosity_shallow_aquifer=0.35,
                                         porosity_target_aquifer=0.35,

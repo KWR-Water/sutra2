@@ -225,7 +225,6 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       computation_method= 'analytical', 
                                       what_to_export='omp',
                                       well_discharge=319.4*24, #m3/day
-                                      vertical_anisotropy_shallow_aquifer = (10/(35*500)),
                                       porosity_vadose_zone=0.38,
                                       porosity_shallow_aquifer=0.35,
                                       porosity_target_aquifer=0.35,
@@ -287,7 +286,6 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       computation_method= 'analytical', 
                                       what_to_export='omp',
                                       well_discharge=319.4*24, #m3/day
-                                      vertical_anisotropy_shallow_aquifer = (10/(35*500)),
                                       porosity_vadose_zone=0.38,
                                       porosity_shallow_aquifer=0.35,
                                       porosity_target_aquifer=0.35,
@@ -351,7 +349,6 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       computation_method= 'analytical', 
                                       what_to_export='omp',
                                       well_discharge=319.4*24, #m3/day
-                                      vertical_anisotropy_shallow_aquifer = (10/(35*500)),
                                       porosity_vadose_zone=0.38,
                                       porosity_shallow_aquifer=0.35,
                                       porosity_target_aquifer=0.35,

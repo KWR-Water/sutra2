@@ -52,7 +52,7 @@ well_discharge_m3hour = 20 #m3/h
 recharge_rate = .001
 recharge_conc = 1.
 substance = 'chloridazon'
-vertical_resistance_aquitard   # [d], c_V
+vertical_resistance_shallow_aquifer   # [d], c_V
 soil_moisture_content           # [m3/m3], θ
 
 
