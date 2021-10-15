@@ -92,6 +92,12 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
 # phreatic_scheme.make_dictionary()  
 phreatic_well = AnalyticalWell(phreatic_scheme)
 phreatic_well.phreatic() 
+
+
+crosssection_plot = phreatic_well.plot_depth_aquifers()
+crosssection_plot.savefig('phreatic_aquifer_cross-section.png', dpi=300, bbox_inches='tight')  # save_results_to + '/
+
+#%%
 phreatic_conc = SubstanceTransport(phreatic_well, substance = 'OMP-X')
 # phreatic_conc = SubstanceTransport(phreatic_well, substance = 'benzene')
 
