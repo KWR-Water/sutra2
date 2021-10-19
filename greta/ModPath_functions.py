@@ -30,6 +30,8 @@ import numpy.lib.recfunctions as rfn
 import pandas as pd
 import os
 import sys
+import copy
+
 # from pandas import read_excel
 from pandas import read_csv
 from pandas import read_excel
@@ -700,7 +702,7 @@ class ModPathWell:
         if self.model_type in ["axisymmetric","2D"]:
                 # In 2D model or axisymmetric models an 
                 # inactive row is added to be able to run Modpath successfully.
-                self.material[:,1,:] = "inactive"
+                self.material[:,1,:] = self.material[:,0,:]
 
     def assign_wellloc(self,schematisation: dict,
                         dict_key: str = "well_parameters",
@@ -2074,6 +2076,10 @@ class ModPathWell:
             self.xyz_nodes = {}
             self.time_diff = {}
             self.particle_data = {}
+            # dataframes of particle data (dict)
+            df_particle = {}
+            # list the particle_data dataframes
+            df_particle_list = []
             # Pathline output file
             self.mppth = os.path.join(self.workspace, self.modelname + '_mp.mppth')
 
@@ -2084,6 +2090,7 @@ class ModPathWell:
                 self.time_diff[iPG] = {}
                 # group recarray per particle location
                 self.particle_data[iPG] = {}
+
 
                 # Nodes to retrieve
                 print("Particle group",iPG, "nr of nodes:", str(len(self.part_locs.get(iPG))))
@@ -2107,6 +2114,7 @@ class ModPathWell:
                     self.pth_data =  \
                                 self.read_pathlinedata(fpth = self.mppth,
                                                     nodes = self.nodes) #pg_nodes[iGroup])  
+                    
                     '''                             
                     xyz_points, \    # XYZ data 
                     dist_data,  \    # Distance araay between nodes
@@ -2123,35 +2131,52 @@ class ModPathWell:
                     # Test array travel times (days)
                     tot_time_arr = {iPart: self.time_diff[iPG][iNode][iPart].sum() for iPart in part_idx}
                     # Fill recarray
-                    self.particle_data[iPG][iNode] = self.pth_data
+                    self.particle_data[iPG][iNode] = copy.deepcopy(self.pth_data)
                     # Create rec.arrays for porosity, pH, T, etc. to append to particle_data
                     parm_list = ["porosity","solid_density","fraction_organic_carbon",
-                                "redox","dissolved_organic_carbon", "pH","temperature"]
-                    for iParm, dict_keys in self.geoparm_names.items():
+                                "redox","dissolved_organic_carbon", "pH","temperature","material"]
+                    for iPart in part_idx:
+                        # Loop through rec.arrays of pth_data using part_idx 
+                        for iParm in parm_list:
 
-                        if not iParm in parm_list:
-                            # Check if geoparameter key is in parm_list
-                            continue
 
-                        for iPart in part_idx:
+                        
                             # Material property array
                             material_property_arr = getattr(self,iParm)
                             # dtype of array
-                            if dict_keys[1] == 'object':
+                            mat_dtype = material_property_arr.dtype
+                            if mat_dtype == 'object':
                                 dtype_ = '|S20'
                             else:
-                                dtype_ = dict_keys[1]
+                                dtype_ = mat_dtype
                                 
                             # Numpy array values
-                            parm_values = np.array([material_property_arr[iLay,iRow,iCol] for iLay,iRow,iCol in node_indices[iPart]],
-                                                    dtype = [(iParm,dict_keys[1])])
+                            parm_values = np.array([material_property_arr[iLay,iRow,iCol] for iLay,iRow,iCol in node_indices[iPart][:-1]],
+                                                    dtype = [(iParm,mat_dtype)])
                             # Numpy recarray of material property
                             parm_values_rec = parm_values.view(np.recarray)
                             # Append recarray to particle_data (dict of dicts of np.recarray)
-
                             self.particle_data[iPG][iNode][iPart] = rfn.rec_append_fields(self.particle_data[iPG][iNode][iPart], iParm, parm_values_rec, 
                                                                         dtypes=dtype_)
                             # self.particle_data[iPG][iNode][iPart] = np.append(self.particle_data[iPG][iNode][iPart],parm_values_rec)
+            
+                        # Export rec.arrays as pd dataframe
+                        df_particle[f"pg: {iPG} node: {iNode} particle: {iPart}"] = pd.DataFrame.from_records(data = self.particle_data[iPG][iNode][iPart],
+                                                                                    index = "particleid",
+                                                                                    exclude = None)
+
+                        particle_subset_fname = os.path.join(self.dstroot,f"pg{iPG}_node{iNode}_particle{iPart}.csv")
+                        df_particle[f"pg: {iPG} node: {iNode} particle: {iPart}"].to_csv(particle_subset_fname)
+                        # Append dataframes
+                        df_particle_list.append(df_particle[f"pg: {iPG} node: {iNode} particle: {iPart}"])
+
+            # Concatenate df_particle dataframes ('combined')
+            df_particle_comb = pd.concat(df_particle_list, axis = 0, ignore_index = False)
+
+            # df_particle file name
+            particle_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_particle.csv")
+            df_particle_comb.to_csv(particle_fname)
+            
             print("Post-processing modpathrun of type", self.schematisation_type, "completed.")
 
 
