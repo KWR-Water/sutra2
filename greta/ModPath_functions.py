@@ -438,7 +438,7 @@ class ModPathWell:
                     if self.model_type in ["axisymmetric","2D"]:
                         # In 2D model or axisymmetric models an 
                         # inactive row is added to be able to run Modpath successfully.
-                        grid[:,1,:] = 0
+                        grid[:,1,:] = grid[:,0,:]
   
         # Return the filled grid                
         return grid
@@ -1764,10 +1764,11 @@ class ModPathWell:
             # Number of nodes
             nr_nodes = xyz_nodes[iPart].shape[0]
     #                                    print(iPart)
-            node_indices[iPart] = np.array([(np.argmin(abs(self.zmid-xyz_nodes[iPart][iNode][2])), \
+            node_indices[iPart] = [(np.argmin(abs(self.zmid-xyz_nodes[iPart][iNode][2])), \
                                         np.argmin(abs(self.ymid-xyz_nodes[iPart][iNode][1])), \
                                         np.argmin(abs(self.xmid-xyz_nodes[iPart][iNode][0]))) \
-                                                        for iNode in range(nr_nodes)])
+                                                        for iNode in range(nr_nodes)]
+
 
         return node_indices
 
@@ -2123,9 +2124,8 @@ class ModPathWell:
                     time_tot,   \    # Total time covered per particle
                     pth_data =  \    # Raw pathline data
                     '''        
-
-                    # kolom laag rij index
-                    node_indices = self.calc_node_indices(self.xyz_nodes[iPG][iNode])
+                    # col, lay, row index
+                    node_indices = self.calc_node_indices(xyz_nodes = self.xyz_nodes[iPG][iNode])
                     # Particle indices
                     part_idx = [iPart for iPart in self.xyz_nodes[iPG][iNode]] #node_indices]
                     # Test array travel times (days)
@@ -2136,6 +2136,7 @@ class ModPathWell:
                     parm_list = ["porosity","solid_density","fraction_organic_carbon",
                                 "redox","dissolved_organic_carbon", "pH","temperature","material"]
                     for iPart in part_idx:
+
                         # Loop through rec.arrays of pth_data using part_idx 
                         for iParm in parm_list:
 
@@ -2151,7 +2152,7 @@ class ModPathWell:
                                 dtype_ = mat_dtype
                                 
                             # Numpy array values
-                            parm_values = np.array([material_property_arr[iLay,iRow,iCol] for iLay,iRow,iCol in node_indices[iPart][:-1]],
+                            parm_values = np.array([material_property_arr[idx[0],idx[1],idx[2]] for idx in node_indices[iPart]],
                                                     dtype = [(iParm,mat_dtype)])
                             # Numpy recarray of material property
                             parm_values_rec = parm_values.view(np.recarray)
@@ -2163,7 +2164,7 @@ class ModPathWell:
                         # Export rec.arrays as pd dataframe
                         df_particle[f"pg: {iPG} node: {iNode} particle: {iPart}"] = pd.DataFrame.from_records(data = self.particle_data[iPG][iNode][iPart],
                                                                                     index = "particleid",
-                                                                                    exclude = None)
+                                                                                    exclude = None).iloc[:-1,:]
 
                         particle_subset_fname = os.path.join(self.dstroot,f"pg{iPG}_node{iNode}_particle{iPart}.csv")
                         df_particle[f"pg: {iPG} node: {iNode} particle: {iPart}"].to_csv(particle_subset_fname)
