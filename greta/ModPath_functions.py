@@ -245,45 +245,80 @@ class ModPathWell:
             if not hasattr(self.schematisation,req_key):
                 print(f'Error, required variable {req_key} is not defined in schematisation dict.')
 
-    def _check_required_variables(self,required_variables):
+    def _check_parameters(self,required_variables):
         for req_var in required_variables:
             value = getattr(self, req_var)
             print(req_var,value)
             if value is None:
                 raise KeyError(f'Error, required variable {req_var} is not defined.')
 
-
-    def _check_init_phreatic(self):
-        # check the variables that we need for the individual aquifer types are not NONE aka set by the user
-        '''check the variables that we need for the individual aquifer types are not NONE aka set by the user'''
+    ## Tijdelijk overslaan (*codeSteven_20211021.xlsx)
+    # def _check_init_phreatic(self):
+    #     # check the variables that we need for the individual aquifer types are not NONE aka set by the user
+    #     '''check the variables that we need for the individual aquifer types are not NONE aka set by the user'''
         
         
-        # # Required keys in self.schematisation
-        # required_keys = ["simulation_parameters",#repeat for all
-        #                       "geo_parameters",
-        #                       "recharge_parameters",
-        #                       "ibound_parameters",
-        #                       "well_parameters",
-        #                       "point_parameters",
-        #                       "substance_parameters"
-        #                     ]
+    #     # # Required keys in self.schematisation
+    #     # required_keys = ["simulation_parameters",#repeat for all
+    #     #                       "geo_parameters",
+    #     #                       "recharge_parameters",
+    #     #                       "ibound_parameters",
+    #     #                       "well_parameters",
+    #     #                       "point_parameters",
+    #     #                       "substance_parameters"
+    #     #                     ]
 
-        # Required variables (to run model)
-        required_variables = []
+    #     # Required variables (to run model)
+    #     required_variables = []
 
-        # Check schematisation dictionary
-        self._check_schematisation(self.required_keys)
-        # Check required variables
-        self._check_required_variables(required_variables)
-        # # Fill schematisation dictionary
-        # self._create_schematisation_dict(self.required_keys)
+    #     # Check schematisation dictionary
+    #     self._check_schematisation(self.required_keys)
+    #     # Check required variables
+    #     self._check_parameters(required_variables)
+    #     # # Fill schematisation dictionary
+    #     # self._create_schematisation_dict(self.required_keys)
 
-    def _check_init_semi_confined():
-        ''' check the variables that we need for the individual aquifer types are not NONE aka set by the user '''
+    # def _check_init_semi_confined(self):
+    #     ''' check the variables that we need for the individual aquifer types are not NONE aka set by the user '''
 
-    def update_property(self, property, value):
+    #     # Required variables (to run model)
+    #     required_variables = []
+
+    #     # Check schematisation dictionary
+    #     self._check_schematisation(self.required_keys)
+    #     # Check required variables
+    #     self._check_parameters(required_variables)
+    #     # # Fill schematisation dictionary
+    #     # self._create_schematisation_dict(self.required_keys)
+    ##
+
+    def _update_property(self, property, value):
         setattr(self, property, value)
         ''' set attribute value to new object attribute/property'''
+
+    def extract_vadose_zone_parameters(self,schematisation: dict,
+                                        dict_key = "geo_parameters",
+                                        parameter: str = "vadose",
+                                        remove_keys = True):
+        ''' Extract vadose_zone interval from geo_parameters dictionary 'dict_key',
+        if 'parameter' value in the 'dict_key' (e.g. "vadose") is True.
+        remove_keys: --> remove the key from schematisation[dict_key] if
+        it is a vadose_zone (T/F). '''
+        vadose_parameters = {}
+        for iDict_sub in schematisation[dict_key]:
+            if parameter in schematisation[dict_key][iDict_sub]:
+                if schematisation[dict_key][iDict_sub][parameter] == True:  # is geological layer a vadose zone? T/F
+                    vadose_parameters[iDict_sub] = schematisation[dict_key][iDict_sub]
+
+        # Add vadose_parameters as key for schematisation dictionary
+        schematisation["vadose_parameters"] = vadose_parameters
+
+        # Remove the keys added as vadose_parameters (vadose_zone)
+        if remove_keys:
+            for iKey in vadose_parameters:
+                schematisation[dict_key].pop(iKey)
+
+        return schematisation
 
     def axisym_correction(self, grid: np.array,
                           dtype: str or None = None, theta = 2 * np.pi):
@@ -653,13 +688,13 @@ class ModPathWell:
         ''' Load OC package parms to model. '''
         self.spd_oc = spd_oc
 
-    def _validate_input(self):
-        # controleren op alle benodigde keys van de 
-        # schematization class
-        # if 'xmin' is not in dictionary.keys():
-        #     raise ValueError('xmin is not in dictionayr')
-        # dit soort validaties moet eigenlij in de schematization class
-        pass
+    # def _validate_input(self):
+    #     # controleren op alle benodigde keys van de 
+    #     # schematization class
+    #     # if 'xmin' is not in dictionary.keys():
+    #     #     raise ValueError('xmin is not in dictionayr')
+    #     # dit soort validaties moet eigenlij in de schematization class
+    #     pass
 
     def assign_material(self,schematisation: dict,
                         dict_keys: dict or None = None):
@@ -1592,7 +1627,7 @@ class ModPathWell:
                                 parameter = iParm,
                                 grid = unitgrid,
                                 dtype = dict_keys[1])
-            self.update_property(property = iParm, value = grid)
+            self._update_property(property = iParm, value = grid)
 
         # Assign material grid
         self.assign_material(schematisation = self.schematisation_dict,
@@ -1612,7 +1647,7 @@ class ModPathWell:
                 grid_uncorr = getattr(self,iParm)
                 grid_axi = self.axisym_correction(grid = grid_uncorr)
                 # Update attribute
-                self.update_property(property = iParm, value = grid_axi)
+                self._update_property(property = iParm, value = grid_axi)
 
         # Create input oc package
         self.oc_input(spd_oc = {(0, 0): ['save head', 'save budget']})
@@ -1630,10 +1665,10 @@ class ModPathWell:
             if self.model_type == "axisymmetric":
                 grid_axi = self.axisym_correction(grid = grid)[0,:,:]
                 # Update attribute
-                self.update_property(property = iParm, value = grid_axi)
+                self._update_property(property = iParm, value = grid_axi)
             else:
                 # Update attribute
-                self.update_property(property = iParm, value = grid[0,:,:])
+                self._update_property(property = iParm, value = grid[0,:,:])
 
         # Well input
         # !!! Obtain node numbers of well locations (use indices) !!!
@@ -2020,6 +2055,9 @@ class ModPathWell:
             self.schematisation_type = self.simulation_parameters.get("schematisation_type")
         except KeyError as e:
             print(e)
+
+        # Remove vadose_zone from geo_parameters and add to separate dict "vadose_parameters"
+        self.schematisation_dict = self.extract_vadose_zone_parameters(schematisation = self.schematisation_dict)
 
         if self.schematisation_type == "phreatic":
             print("Run phreatic model")
