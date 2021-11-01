@@ -253,30 +253,30 @@ class ModPathWell:
                 raise KeyError(f'Error, required variable {req_var} is not defined.')
 
     ## Tijdelijk overslaan (*codeSteven_20211021.xlsx)
-    # def _check_init_phreatic(self):
-    #     # check the variables that we need for the individual aquifer types are not NONE aka set by the user
-    #     '''check the variables that we need for the individual aquifer types are not NONE aka set by the user'''
+    def _check_init_phreatic(self):
+        # check the variables that we need for the individual aquifer types are not NONE aka set by the user
+        '''check the variables that we need for the individual aquifer types are not NONE aka set by the user'''
         
         
-    #     # # Required keys in self.schematisation
-    #     # required_keys = ["simulation_parameters",#repeat for all
-    #     #                       "geo_parameters",
-    #     #                       "recharge_parameters",
-    #     #                       "ibound_parameters",
-    #     #                       "well_parameters",
-    #     #                       "point_parameters",
-    #     #                       "substance_parameters"
-    #     #                     ]
+        # # Required keys in self.schematisation
+        # required_keys = ["simulation_parameters",#repeat for all
+        #                       "geo_parameters",
+        #                       "recharge_parameters",
+        #                       "ibound_parameters",
+        #                       "well_parameters",
+        #                       "point_parameters",
+        #                       "substance_parameters"
+        #                     ]
 
-    #     # Required variables (to run model)
-    #     required_variables = []
+        # Required variables (to run model)
+        required_variables = []
 
-    #     # Check schematisation dictionary
-    #     self._check_schematisation(self.required_keys)
-    #     # Check required variables
-    #     self._check_parameters(required_variables)
-    #     # # Fill schematisation dictionary
-    #     # self._create_schematisation_dict(self.required_keys)
+        # Check schematisation dictionary
+        self._check_schematisation(self.required_keys)
+        # Check required variables
+        self._check_parameters(required_variables)
+        # # Fill schematisation dictionary
+        # self._create_schematisation_dict(self.required_keys)
 
     # def _check_init_semi_confined(self):
     #     ''' check the variables that we need for the individual aquifer types are not NONE aka set by the user '''
@@ -1564,7 +1564,7 @@ class ModPathWell:
 
     def phreatic(self):
         ''' Modflow & modpath calculation using subsurface schematisation type 'phreatic'. '''
-        self._check_init_phreatic()
+        self._check_init_phreatic()  # Needs to be changed
         # Model_type axisymmetric
         self.model_type = "axisymmetric"
 
@@ -2057,7 +2057,8 @@ class ModPathWell:
             print(e)
 
         # Remove vadose_zone from geo_parameters and add to separate dict "vadose_parameters"
-        self.schematisation_dict = self.extract_vadose_zone_parameters(schematisation = self.schematisation_dict)
+        self.schematisation_dict = self.extract_vadose_zone_parameters(schematisation = self.schematisation_dict,
+                                                                        remove_keys = False)
 
         if self.schematisation_type == "phreatic":
             print("Run phreatic model")
