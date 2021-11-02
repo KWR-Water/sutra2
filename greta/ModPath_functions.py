@@ -2212,7 +2212,15 @@ class ModPathWell:
                         # Export rec.arrays as pd dataframe
                         df_particle[f"pg: {iPG} node: {iNode} particle: {iPart}"] = pd.DataFrame.from_records(data = self.particle_data[iPG][iNode][iPart],
                                                                                     index = "particleid",
-                                                                                    exclude = None).iloc[:-1,:]
+                                                                                    exclude = ["k"]).iloc[:-1,:]
+                        # Change index name of df_particle                                                           
+                        # df_particle[f"pg: {iPG} node: {iNode} particle: {iPart}"].index = "flowline_id"
+                        # Pseudonyms for df_particle column names
+                        col_names_df_particle = {"x": "xcoord","y":"ycoord","z":"zcoord","time":"travel_time","porosity":"porosity",
+                                    "solid_density": "solid_density", "fraction_organic_carbon": "fraction_organic_carbon", "redox": "redox", 
+                                    "dissolved_organic_carbon":	"dissolved_organic_carbon", "pH": "pH",	"temperature": "temperature", "material": "material"}
+                        df_particle[f"pg: {iPG} node: {iNode} particle: {iPart}"].rename(columns = col_names_df_particle, 
+                                                                                        inplace = True, errors = "raise")
 
                         particle_subset_fname = os.path.join(self.dstroot,f"pg{iPG}_node{iNode}_particle{iPart}.csv")
                         df_particle[f"pg: {iPG} node: {iNode} particle: {iPart}"].to_csv(particle_subset_fname)
