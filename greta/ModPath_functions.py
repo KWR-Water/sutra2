@@ -2214,7 +2214,7 @@ class ModPathWell:
                                                                                     index = "particleid",
                                                                                     exclude = ["k"]).iloc[:-1,:]
                         # Change index name of df_particle                                                           
-                        # df_particle[f"pg: {iPG} node: {iNode} particle: {iPart}"].index = "flowline_id"
+                        df_particle[f"pg: {iPG} node: {iNode} particle: {iPart}"].index.name = "flowline_id"
                         # Pseudonyms for df_particle column names
                         col_names_df_particle = {"x": "xcoord","y":"ycoord","z":"zcoord","time":"travel_time","porosity":"porosity",
                                     "solid_density": "solid_density", "fraction_organic_carbon": "fraction_organic_carbon", "redox": "redox", 
