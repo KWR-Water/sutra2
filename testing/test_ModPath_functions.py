@@ -52,32 +52,59 @@ if not os.path.exists(testfiles_dir):
 
 # <<<<<<< HEAD
 #%% 
-def test_modflow_run_phreatic():
+def test_modflow_run_phreatic_withgravelpack():
+    ''' Phreatic scheme with gravelpack: modflow run.'''
     test_phrea = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
-                                        computation_method= 'analytical', 
-                                        what_to_export='omp',
-                                        well_discharge=319.4*24,
-                                        # vertical_resistance_shallow_aquifer=500,
-                                        hor_permeability_shallow_aquifer = 0.02,
-                                        vertical_anisotropy_shallow_aquifer = (10/(0.02*500)),
-                                        porosity_vadose_zone=0.38,
-                                        porosity_shallow_aquifer=0.35,
-                                        porosity_target_aquifer=0.35,
-                                        recharge_rate=0.3/365.25,
-                                        moisture_content_vadose_zone=0.15,
-                                        ground_surface = 22,
-                                        thickness_vadose_zone_at_boundary=5,
-                                        thickness_shallow_aquifer=10,
-                                        thickness_target_aquifer=40,
-                                        hor_permeability_target_aquifer=35,
-                                        # KD=1400,
-                                        thickness_full_capillary_fringe=0.4,
-                                        temperature=11,
-                                         solid_density_vadose_zone= 2.650, 
-                                        solid_density_shallow_aquifer= 2.650, 
-                                        solid_density_target_aquifer= 2.650, 
-                                        diameter_borehole = 0.75,
-                                        )
+                                    computation_method = 'modpath',
+                                    what_to_export='omp',
+                                    # biodegradation_sorbed_phase = False,
+                                      well_discharge=319.4*24,
+                                      # vertical_resistance_shallow_aquifer=500,
+                                      porosity_vadose_zone=0.38,
+                                      porosity_shallow_aquifer=0.35,
+                                      porosity_target_aquifer=0.35,
+                                      recharge_rate=0.3/365.25,
+                                      moisture_content_vadose_zone=0.15,
+                                      ground_surface = 22.0,
+                                      thickness_vadose_zone_at_boundary=5.0,
+                                      thickness_shallow_aquifer=10.0,
+                                      thickness_target_aquifer=40.0,
+                                      hor_permeability_target_aquifer=35.0,
+                                      hor_permeability_shallow_aquifer = 0.02,
+                                      thickness_full_capillary_fringe=0.4,
+                                      redox_vadose_zone='anoxic', #'suboxic',
+                                      redox_shallow_aquifer='anoxic',
+                                      redox_target_aquifer='deeply_anoxic',
+                                      pH_vadose_zone=5.,
+                                      pH_shallow_aquifer=6.,
+                                      pH_target_aquifer=7.,
+                                      dissolved_organic_carbon_vadose_zone=10., 
+                                      dissolved_organic_carbon_shallow_aquifer=4., 
+                                      dissolved_organic_carbon_target_aquifer=2.,
+                                      fraction_organic_carbon_vadose_zone=0.001,
+                                      fraction_organic_carbon_shallow_aquifer=0.0005,
+                                      fraction_organic_carbon_target_aquifer=0.0005, 
+                                      temperature=11.,
+                                      solid_density_vadose_zone= 2.650, 
+                                      solid_density_shallow_aquifer= 2.650, 
+                                      solid_density_target_aquifer= 2.650, 
+                                      diameter_borehole = 0.75,
+                                      substance = 'benzo(a)pyrene',
+                                      halflife_suboxic= 530,
+                                      halflife_anoxic= 2120,
+                                      halflife_deeply_anoxic= 2120,
+                                      partition_coefficient_water_organic_carbon= 6.43,
+                                      dissociation_constant= 99,
+                                      diameter_filterscreen = 0.2,
+                                      point_input_concentration = 100.,
+                                      discharge_point_contamination = 100.,#made up value
+                                      top_clayseal = 17,
+                                      compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
+                                      # substance = 'benzene',
+                                      # halflife_suboxic=600,
+                                      # partition_coefficient_water_organic_carbon = 3.3,
+                                    )
+
     test_phrea.make_dictionary()
     # print(test_phrea.__dict__)
     modpath_phrea = ModPathWell(test_phrea,
@@ -91,32 +118,59 @@ def test_modflow_run_phreatic():
                         run_mpmodel = False)
     assert modpath_phrea.success_mf
 #%%
-def test_modpath_run_phreatic():
+def test_modpath_run_phreatic_withgravelpack():
+    ''' Phreatic scheme with gravelpack: modpath run.'''
     test_phrea = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
-                                        computation_method= 'analytical', 
-                                        what_to_export='omp',
-                                        well_discharge=319.4*24,
-                                        # vertical_resistance_shallow_aquifer=500,
-                                        hor_permeability_shallow_aquifer = 0.02,
-                                        vertical_anisotropy_shallow_aquifer = (10/(0.02*500)),
-                                        porosity_vadose_zone=0.38,
-                                        porosity_shallow_aquifer=0.35,
-                                        porosity_target_aquifer=0.35,
-                                        recharge_rate=0.3/365.25,
-                                        moisture_content_vadose_zone=0.15,
-                                        ground_surface = 22,
-                                        thickness_vadose_zone_at_boundary=5,
-                                        thickness_shallow_aquifer=10,
-                                        thickness_target_aquifer=40,
-                                        hor_permeability_target_aquifer=35,
-                                        # KD=1400,
-                                        thickness_full_capillary_fringe=0.4,
-                                        temperature=11,
-                                         solid_density_vadose_zone= 2.650, 
-                                        solid_density_shallow_aquifer= 2.650, 
-                                        solid_density_target_aquifer= 2.650, 
-                                        diameter_borehole = 0.75,
-                                        )
+                                    computation_method = 'modpath',
+                                    what_to_export='omp',
+                                    # biodegradation_sorbed_phase = False,
+                                      well_discharge=319.4*24,
+                                      # vertical_resistance_shallow_aquifer=500,
+                                      porosity_vadose_zone=0.38,
+                                      porosity_shallow_aquifer=0.35,
+                                      porosity_target_aquifer=0.35,
+                                      recharge_rate=0.3/365.25,
+                                      moisture_content_vadose_zone=0.15,
+                                      ground_surface = 22.0,
+                                      thickness_vadose_zone_at_boundary=5.0,
+                                      thickness_shallow_aquifer=10.0,
+                                      thickness_target_aquifer=40.0,
+                                      hor_permeability_target_aquifer=35.0,
+                                      hor_permeability_shallow_aquifer = 0.02,
+                                      thickness_full_capillary_fringe=0.4,
+                                      redox_vadose_zone='anoxic', #'suboxic',
+                                      redox_shallow_aquifer='anoxic',
+                                      redox_target_aquifer='deeply_anoxic',
+                                      pH_vadose_zone=5.,
+                                      pH_shallow_aquifer=6.,
+                                      pH_target_aquifer=7.,
+                                      dissolved_organic_carbon_vadose_zone=10., 
+                                      dissolved_organic_carbon_shallow_aquifer=4., 
+                                      dissolved_organic_carbon_target_aquifer=2.,
+                                      fraction_organic_carbon_vadose_zone=0.001,
+                                      fraction_organic_carbon_shallow_aquifer=0.0005,
+                                      fraction_organic_carbon_target_aquifer=0.0005, 
+                                      temperature=11.,
+                                      solid_density_vadose_zone= 2.650, 
+                                      solid_density_shallow_aquifer= 2.650, 
+                                      solid_density_target_aquifer= 2.650, 
+                                      diameter_borehole = 0.75,
+                                      substance = 'benzo(a)pyrene',
+                                      halflife_suboxic= 530,
+                                      halflife_anoxic= 2120,
+                                      halflife_deeply_anoxic= 2120,
+                                      partition_coefficient_water_organic_carbon= 6.43,
+                                      dissociation_constant= 99,
+                                      diameter_filterscreen = 0.2,
+                                      point_input_concentration = 100.,
+                                      discharge_point_contamination = 100.,#made up value
+                                      top_clayseal = 17,
+                                      compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
+                                      # substance = 'benzene',
+                                      # halflife_suboxic=600,
+                                      # partition_coefficient_water_organic_carbon = 3.3,
+                                    )
+
     test_phrea.make_dictionary()
     # print(test_phrea.__dict__)
     modpath_phrea = ModPathWell(test_phrea,
@@ -139,7 +193,9 @@ def test_modpath_run_phreatic():
 #=======
 #%%
 
-def test_phreatic_scheme_dictinput():
+def test_phreatic_scheme_withgravelpack_dictinput():
+    ''' Check writing and reading of dictionary files: phreatic scheme.'''
+    
     phreatic_scheme= AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                     computation_method = 'modpath',
                                     what_to_export='omp',
@@ -181,12 +237,11 @@ def test_phreatic_scheme_dictinput():
                                       halflife_deeply_anoxic= 2120,
                                       partition_coefficient_water_organic_carbon= 6.43,
                                       dissociation_constant= 99,
-                                      # diameter_filterscreen = 0.2,
+                                      diameter_filterscreen = 0.2,
                                       point_input_concentration = 100.,
                                       discharge_point_contamination = 100.,#made up value
                                       top_clayseal = 17,
                                       compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
-
                                       # substance = 'benzene',
                                       # halflife_suboxic=600,
                                       # partition_coefficient_water_organic_carbon = 3.3,
@@ -215,9 +270,8 @@ def test_phreatic_scheme_dictinput():
         dict_raw = dict_file.read()
         phreatic_dict_check1 = ast.literal_eval(dict_raw)  # ast --> abstract syntax trees
         # pd.read_csv(fpath_phreatic_dict_check1, delimiter=" ", header = None)
-    
-    assert True
-    # assert phreatic_dict_1 == phreatic_dict_check1
+
+    assert phreatic_dict_1 == phreatic_dict_check1
 
 #%%
 
@@ -268,4 +322,4 @@ def test_travel_time_distribution_phreatic():
 
 # %%
 if __name__ == "__main__":
-    test_modpath_run_phreatic()
+    test_modpath_run_phreatic_withgravelpack()
