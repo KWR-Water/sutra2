@@ -265,8 +265,8 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
 phreatic_scheme.make_dictionary()  
 
 phreatic_dict_1 = { 'simulation_parameters' : phreatic_scheme.simulation_parameters,
-        'endpoint_id': semiconfined_scheme.endpoint_id,
-        'mesh_refinement': semiconfined_scheme.mesh_refinement,
+        'endpoint_id': phreatic_scheme.endpoint_id,
+        'mesh_refinement': phreatic_scheme.mesh_refinement,
         'geo_parameters' : phreatic_scheme.geo_parameters,
         'ibound_parameters' : phreatic_scheme.ibound_parameters,
         'recharge_parameters' : phreatic_scheme.recharge_parameters,
@@ -336,8 +336,8 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
 phreatic_scheme.make_dictionary()  
 
 phreatic_dict_2 = { 'simulation_parameters' : phreatic_scheme.simulation_parameters,
-        'endpoint_id': semiconfined_scheme.endpoint_id,
-        'mesh_refinement': semiconfined_scheme.mesh_refinement,
+        'endpoint_id': phreatic_scheme.endpoint_id,
+        'mesh_refinement': phreatic_scheme.mesh_refinement,
         'geo_parameters' : phreatic_scheme.geo_parameters,
         'ibound_parameters' : phreatic_scheme.ibound_parameters,
         'recharge_parameters' : phreatic_scheme.recharge_parameters,

@@ -658,19 +658,21 @@ class HydroChemicalSchematisation:
             'temp_correction_halflife': self.temp_correction_halflife,
             'biodegradation_sorbed_phase': self.biodegradation_sorbed_phase,
             'compute_thickness_vadose_zone': self.compute_thickness_vadose_zone,
-            'start_date_well': self.start_date_well,
-            'start_date_contamination': self.start_date_contamination,
-            'compute_contamination_for_date': self.compute_contamination_for_date,
+            'start_date_well': str(self.start_date_well),
+            'start_date_contamination': str(self.start_date_contamination),
+            'compute_contamination_for_date': str(self.compute_contamination_for_date),
             }
         
         # endpoint_id for where the flowlines end in the well
         endpoint_id = {
+            'name': {
                 'top': self.top_filterscreen,
                 'bot': self.bottom_filterscreen,
                 'xmin': 0.0,
                 'xmax': self.diameter_filterscreen/2,
                 'name': 'well1'
-                }
+                },
+            }
 
         #mesh refinement for the Modflow grid
         mesh_refinement = {
@@ -797,7 +799,7 @@ class HydroChemicalSchematisation:
                 'point1': {
                     'substance_name': self.substance,
                     'input_concentration': self.point_input_concentration,
-                    'x_start': self.distance_point_contamination_from_well[0],
+                    'x_start': float(self.distance_point_contamination_from_well[0]), #AH Nov. 5 -> I think this might casue problems later in the loops for calculations later but deal with it when it comes
                     'z_start': self.depth_point_contamination,
                     'discharge': self.discharge_point_contamination,
                     },
@@ -1104,7 +1106,7 @@ class AnalyticalWell():
     df_particle: pandas.DataFrame
         Column 'flowline_id': int
         Column 'zone': string
-        Column 'travel_time_zone': float
+        Column 'travel_time': float
         Column 'xcoord': float
         Column 'ycoord': float
         Column 'zcoord': float
@@ -1510,7 +1512,7 @@ class AnalyticalWell():
                 Column 'flowline_id': int
                 Column 'zone': string
                     Zone in the aquifer, ground surface 'surface', 'vadose_zone', 'shallow_aquifer' or 'target_aquifer'
-                Column 'travel_time_zone': float
+                Column 'travel_time': float
                     Travel time in the respective aquifer zone given in column 'zone.
                 Column 'xcoord': float
                 Column 'ycoord': float
@@ -1659,7 +1661,7 @@ class AnalyticalWell():
 
         df_particle = pd.DataFrame(columns=['flowline_id',
                                                 'zone',
-                                                'travel_time_zone',
+                                                'travel_time',
                                                 'total_travel_time',
                                                  'xcoord', #= radial_distcance,
                                                  'ycoord', #= the width of the cell .. default = 1 m
@@ -1710,7 +1712,6 @@ class AnalyticalWell():
         # make the dictionaries for modpath when running the analytical model?
         # so far this is the only use for the dicitonaries so they are made here
         self.schematisation.make_dictionary()
-        # endpoint_id = 'well1' #AH_todo, @MartinvdS, what is this needed for? placeholder value here , #list(self.schematisation.well_parameters.items())[0][0]
         df_flowline['endpoint_id'] =  self.schematisation.endpoint_id['name'] #endpoint_id
 
         # AH which parameters for the 'pathogen' option? @MartinvdS or @steven
@@ -1805,7 +1806,7 @@ class AnalyticalWell():
         df_particle: pandas.DataFrame
             Column 'flowline_id': int
             Column 'zone': string
-            Column 'travel_time_zone': float
+            Column 'travel_time': float
             Column 'xcoord': float
             Column 'ycoord': float
             Column 'zcoord': float
@@ -2014,7 +2015,7 @@ class AnalyticalWell():
         df_particle: pandas.DataFrame
             Column 'flowline_id': int
             Column 'zone': string
-            Column 'travel_time_zone': float
+            Column 'travel_time': float
             Column 'xcoord': float
             Column 'ycoord': float
             Column 'zcoord': float
