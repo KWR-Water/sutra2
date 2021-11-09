@@ -1712,7 +1712,7 @@ class AnalyticalWell():
         # make the dictionaries for modpath when running the analytical model?
         # so far this is the only use for the dicitonaries so they are made here
         self.schematisation.make_dictionary()
-        df_flowline['endpoint_id'] =  self.schematisation.endpoint_id['name'] #endpoint_id
+        df_flowline['endpoint_id'] = list(self.schematisation.endpoint_id.keys())[0] # ['name'] #endpoint_id
 
         # AH which parameters for the 'pathogen' option? @MartinvdS or @steven
         if what_to_export == 'all' or what_to_export== 'omp':
