@@ -156,7 +156,7 @@ class SubstanceTransport():
     df_particle: pandas.DataFrame
         Column 'flowline_id': int
         Column 'zone': string
-        Column 'travel_time_zone': float
+        Column 'travel_time': float
         Column 'xcoord': float
         Column 'ycoord': float
         Column 'zcoord': float
@@ -369,7 +369,7 @@ class SubstanceTransport():
                 # Put back in, otherwise there is an error there are too many numbers in the output
                 # can't reproduce the error, so take out again
                 
-                elif (self.df_particle.travel_time_zone.loc[i+1] * self.df_particle.retardation.loc[i+1]
+                elif (self.df_particle.travel_time.loc[i+1] * self.df_particle.retardation.loc[i+1]
                                                                             / self.df_particle.omp_half_life_temperature_corrected.loc[i+1]) >300:
                     self.df_particle.at[i+1, 'steady_state_concentration'] = 0
 
@@ -377,7 +377,7 @@ class SubstanceTransport():
                 # in the case of the vadose zone, the incoming concentration is the initial concentration
                 else:
                     self.df_particle.at[i+1, 'steady_state_concentration'] = (self.df_particle.steady_state_concentration.loc[i]
-                                                                            / (2 ** (self.df_particle.travel_time_zone.loc[i+1] * self.df_particle.retardation.loc[i+1]
+                                                                            / (2 ** (self.df_particle.travel_time.loc[i+1] * self.df_particle.retardation.loc[i+1]
                                                                             / self.df_particle.omp_half_life_temperature_corrected.loc[i+1])))
 
     def _calculcate_total_breakthrough_travel_time(self):
@@ -426,7 +426,7 @@ class SubstanceTransport():
         df_particle: pandas.DataFrame
             Column 'flowline_id': int
             Column 'zone': string
-            Column 'travel_time_zone': float
+            Column 'travel_time': float
             Column 'xcoord': float
             Column 'ycoord': float
             Column 'zcoord': float
@@ -518,7 +518,7 @@ class SubstanceTransport():
 
         self._calculate_state_concentration_in_zone()
 
-        self.df_particle['breakthrough_travel_time'] = self.df_particle.retardation * self.df_particle.travel_time_zone
+        self.df_particle['breakthrough_travel_time'] = self.df_particle.retardation * self.df_particle.travel_time
 
         self._calculcate_total_breakthrough_travel_time()
 

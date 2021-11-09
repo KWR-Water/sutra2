@@ -663,7 +663,7 @@ class HydroChemicalSchematisation:
             'compute_contamination_for_date': str(self.compute_contamination_for_date),
             }
         
-        # endpoint_id for where the flowlines end in the well
+
         endpoint_id = {
             'name': {
                 'top': self.top_filterscreen,
@@ -1712,7 +1712,7 @@ class AnalyticalWell():
         # make the dictionaries for modpath when running the analytical model?
         # so far this is the only use for the dicitonaries so they are made here
         self.schematisation.make_dictionary()
-        df_flowline['endpoint_id'] = list(self.schematisation.endpoint_id.keys())[0] # ['name'] #endpoint_id
+        df_flowline['endpoint_id'] = list(self.schematisation.endpoint_id.keys())[0] # AH_todo Nov. 9, this works now for a sinlge endpoint_id, if in the future there are multiple this needs to be adapted. Wedecide to leave for now.
 
         # AH which parameters for the 'pathogen' option? @MartinvdS or @steven
         if what_to_export == 'all' or what_to_export== 'omp':
