@@ -23,7 +23,11 @@
 # %reset -f conda install #reset all variables for each run, -f 'forces' reset, !! 
 # only seems to work in Python command window...
 
+# Plotting modules
 import matplotlib.pyplot as plt
+import matplotlib 
+import matplotlib.colors as colors
+
 import numpy as np
 # functions to deal with numpy rec.array data
 import numpy.lib.recfunctions as rfn  
@@ -214,18 +218,18 @@ class ModPathWell:
 
         '''
         self.schematisation = schematisation
+        # Required keys
+        self.required_keys = ["simulation_parameters","geo_parameters",
+        "ibound_parameters","recharge_parameters",
+        "well_parameters","point_parameters", "mesh_refinement",
+        "endpoint_id"]
 
-        if type(self.schematisation) == "dict":
+        if type(self.schematisation) == dict:
             self.schematisation_dict = self.schematisation
         else:
             #Make dictionaries
             # self.schematisation.make_dictionary()
             self.schematisation_dict = {}
-            # Required keys
-            self.required_keys = ["simulation_parameters","geo_parameters",
-            "ibound_parameters","recharge_parameters",
-            "well_parameters","point_parameters", "mesh_refinement",
-            "endpoint_id"]
             self._create_schematisation_dict(self.required_keys)
         
     def _create_schematisation_dict(self,required_keys):
@@ -1078,6 +1082,8 @@ class ModPathWell:
         if not hasattr(self, "pg"):
             print("Create a new particle group dataset dict.")
             self.pg = {}
+        # Particle group nodes
+        self.pg_nodes = {}
 
         # Particle dta objects
         self.pd = {}
@@ -1092,6 +1098,9 @@ class ModPathWell:
             self.localx[iPG] = []
             self.localy[iPG] = []
             self.localz[iPG] = []
+            # Particle group nodes
+            self.pg_nodes[iPG] = []
+
             for iCol in range(colidx_min,colidx_max):
                 # Particle row
                 p_row = 0
@@ -1099,7 +1108,8 @@ class ModPathWell:
                 p_lay = 0
                 # Particle column
                 p_col = iCol
-
+                # locations for reading output in modpath model
+                self.pg_nodes[iPG].append((p_lay,p_row,p_col))
                 for iPart_cell in range(nparticles_cell):
                     # Add particle locations (lay,row,col)
                     self.part_locs[iPG].append((p_lay,p_row,p_col))                    
@@ -1666,10 +1676,11 @@ class ModPathWell:
         rech_parmnames = {"recharge": [["recharge_parameters"],"float"]}
         for iParm, dict_keys in rech_parmnames.items():
             # Temporary value
+            rech_grid = np.zeros((self.nlay,self.nrow,self.ncol), dtype = 'float')
             grid = self.fill_grid(schematisation = self.schematisation_dict,
                             dict_keys = dict_keys[0],
                             parameter = iParm,
-                            grid = None,
+                            grid = rech_grid,
                             dtype = dict_keys[1])
             
             if self.model_type == "axisymmetric":
@@ -2009,6 +2020,97 @@ class ModPathWell:
         return df
         '''
 
+    def plot_pathtimes(self,df_particle, 
+                  vmin = 0.,vmax = 1.,orientation = {'row': 0},
+                  fpathfig = None, figtext = None,x_text = 0,
+                  y_text = 0, lognorm = True, xmin = 0., xmax = None,
+                  line_dist = 1, dpi = 192, cmap = 'viridis_r'):
+        ''' Create pathline plots with residence times 
+            using colours as indicator.
+            with: 
+            - df_particle: dataframe containing xyzt-points of the particle paths.
+            - fpathfig = output location of plots
+            figtext: figure text to show within plot starting at
+            x-location 'x_text' and y-location 'y_text'.
+            lognorm: True/False (if vmin <= 0. --> vmin = 1.e-5)
+            line_dist: min. distance between well pathlines at source (m)
+            cmap: Uses colormap 'viridis_r' (viridis reversed as default)
+            '''
+            
+        if lognorm:
+            if vmin <= 0.:
+                vmin = 1.e-2
+        # Flowline IDs
+        flowline_ID = list(df_particle.index.unique())
+        for fid in flowline_ID:
+
+            x_points = df_particle.loc[df_particle.index == fid, "xcoord"]
+#           y_points = df_particle.loc[df_particle.index == fid, "ycoord"]
+            z_points = df_particle.loc[df_particle.index == fid, "zcoord"]
+            # Cumulative travel times
+            time_points = df_particle.loc[df_particle.index == fid, "total_travel_time"]
+
+
+
+            # Combine to xyz scatter array with x,y,values
+            xyz_scatter = np.stack((x_points,z_points,time_points), axis = 1)
+
+            # Plot function (lines))
+            marker_size=0.05  # 's' in functie scatter
+            if lognorm:
+                # formatting of values (log or linear?)
+                norm_vals = colors.LogNorm()
+                # norm_labels = [str(iLog) for iLog in [8,7,6,5,4,3,2,1,0]]
+            else:
+                # formatting of values (log or linear: None?)
+                norm_vals = None
+                
+            # Mask values outside of vmin & vmax
+            time_vals = np.ma.masked_where((xyz_scatter[:,2] > vmax), xyz_scatter[:,2])
+            plt.scatter(xyz_scatter[:,0],
+                        xyz_scatter[:,1],
+                        s = marker_size,
+                        cmap = cmap,
+                        c=time_vals,
+                        marker = 'o',
+                        norm= norm_vals)
+            plt.plot(xyz_scatter[:,0],
+                        xyz_scatter[:,1], c = 'k', lw = 0.1)  
+                        # 'o', markersize = marker_size,
+                        # markerfacecolor="None", markeredgecolor='black') #, lw = 0.1)
+            plt.xlim(xmin,xmax)
+            plt.clim(vmin,vmax)
+        # Voeg kleurenbalk toe
+        cbar = plt.colorbar()
+        ticklabs_old = [t.get_text() for t in cbar.ax.get_yticklabels()]
+        # print(ticklabs_old)
+        # ticklabs_new = [str(iLab).replace("-0.0","0.0") for iLab in \
+        #                 np.linspace(-np.log10(vmin),0.,num = len(ticklabs_old), endpoint = True)]
+        # cbar.ax.set_yticklabels(ticklabs_new)
+        
+        # cbar.set_yticks([mn,md,mx])
+        # cbar.ax.set_yticklabels(norm_labels)
+        cbar.set_label("Residence time [days]")
+    #    cbar.set_label("Concentratie [N/L]")
+        # Titel
+        # plt.title("Pathogenenverwijdering in grondwater")
+        # Label x-as
+        plt.xlabel("Distance (m)")
+        # Label y-as
+        plt.ylabel("Depth (m)")
+        # Tekst voor in de figuur
+        if figtext is not None:
+            plt.text(x = x_text,y = y_text,s = figtext,
+                    bbox={'facecolor': 'gray', 'alpha': 0.5, 'pad': 10})
+            plt.subplots_adjust(left=0.5)
+        if fpathfig is None:
+            plt.show()
+        else:
+            plt.savefig(fpathfig, dpi = dpi)
+        # Sluit figuren af
+        plt.close('all')
+                                
+
     def run_model(self,
                     # simulation_parameters: dict or None = None,
                     xll = 0., yll = 0., perlen:dict or float or int = 365.*50, 
@@ -2037,12 +2139,12 @@ class ModPathWell:
 
         # Simulation parameters
         # Dict with stress period lengths
-        if type(perlen) != "dict":
+        if type(perlen) != dict:
             self.perlen = {0: perlen}    
         else:
             self.perlen = perlen
         # Nr of time periods per stress period (int)
-        if type(nstp) != "dict":
+        if type(nstp) != dict:
             self.nstp = {0: nstp} 
         else:
             self.nstp = nstp 
@@ -2051,7 +2153,7 @@ class ModPathWell:
         self.nper = nper
 
         # Steady state model run (True/False)
-        if type(steady) != "dict":
+        if type(steady) != dict:
             self.steady = {0: steady} 
         else:    
             self.steady = steady  
@@ -2083,7 +2185,7 @@ class ModPathWell:
             # Create radial distance array with particle locations
             # self._create_radial_distance_array() # Analytische fluxverdeling
             self._create_radial_distance_particles_recharge(recharge_parameters = None,
-                                                            nparticles_cell = 1,
+                                                            nparticles_cell = 2,
                                                             localy=0.5, localz=0.5,
                                                             timeoffset=0.0, drape=0,
                                                             trackingdirection = 'forward',
@@ -2126,13 +2228,13 @@ class ModPathWell:
             self.time_diff = {}
             self.particle_data = {}
             # dataframes of particle data (dict)
-            df_particle = {}
+            df_particle_data = {}
             # list the particle_data dataframes
             df_particle_list = []
             # Pathline output file
             self.mppth = os.path.join(self.workspace, self.modelname + '_mp.mppth')
-
-            for iPG in self.part_locs:  # use endpoint_id dict or list
+            # endpoint_keys = list(self.schematisation_dict["endpoint_id"].keys())
+            for iPG in self.pg:  # use endpoint_id dict or list
                 # xyz_locs
                 self.xyz_nodes[iPG] = {}
                 # Save flow duration (time_diff) of pathlines
@@ -2143,7 +2245,7 @@ class ModPathWell:
 
                 # Nodes to retrieve
                 print("Particle group",iPG, "nr of nodes:", str(len(self.part_locs.get(iPG))))
-                for id_,iNode in enumerate(self.part_locs.get(iPG)):
+                for id_,iNode in enumerate(self.pg_nodes.get(iPG)):
                     # print(id_,iNode)
                     try:
                         self.nodes = self.get_node_ID(iNode)
@@ -2178,13 +2280,14 @@ class ModPathWell:
                     part_idx = [iPart for iPart in self.xyz_nodes[iPG][iNode]] #node_indices]
                     # Test array travel times (days)
                     tot_time_arr = {iPart: self.time_diff[iPG][iNode][iPart].sum() for iPart in part_idx}
-                    # Fill recarray
-                    self.particle_data[iPG][iNode] = copy.deepcopy(self.pth_data)
+                    # Particle data dict per iNode
+                    self.particle_data[iPG][iNode] = {}
                     # Create rec.arrays for porosity, pH, T, etc. to append to particle_data
                     parm_list = ["porosity","solid_density","fraction_organic_carbon",
                                 "redox","dissolved_organic_carbon", "pH","temperature","material"]
                     for iPart in part_idx:
-
+                        # Fill recarray
+                        self.particle_data[iPG][iNode][iPart] = copy.deepcopy(self.pth_data[iPart])
                         # Loop through rec.arrays of pth_data using part_idx 
                         for iParm in parm_list:
 
@@ -2205,35 +2308,52 @@ class ModPathWell:
                             # Numpy recarray of material property
                             parm_values_rec = parm_values.view(np.recarray)
                             # Append recarray to particle_data (dict of dicts of np.recarray)
-                            self.particle_data[iPG][iNode][iPart] = rfn.rec_append_fields(self.particle_data[iPG][iNode][iPart], iParm, parm_values_rec, 
-                                                                        dtypes=dtype_)
+                            self.particle_data[iPG][iNode][iPart] = rfn.rec_append_fields(base = self.particle_data[iPG][iNode][iPart],
+                                                                                          names = iParm, data = parm_values_rec, 
+                                                                                          dtypes=dtype_)
                             # self.particle_data[iPG][iNode][iPart] = np.append(self.particle_data[iPG][iNode][iPart],parm_values_rec)
             
                         # Export rec.arrays as pd dataframe
-                        df_particle[f"pg: {iPG} node: {iNode} particle: {iPart}"] = pd.DataFrame.from_records(data = self.particle_data[iPG][iNode][iPart],
+                        df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"] = pd.DataFrame.from_records(data = self.particle_data[iPG][iNode][iPart],
                                                                                     index = "particleid",
                                                                                     exclude = ["k"]).iloc[:-1,:]
                         # Change index name of df_particle                                                           
-                        df_particle[f"pg: {iPG} node: {iNode} particle: {iPart}"].index.name = "flowline_id"
+                        df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"].index.name = "flowline_id"
                         # Pseudonyms for df_particle column names
-                        col_names_df_particle = {"x": "xcoord","y":"ycoord","z":"zcoord","time":"travel_time","porosity":"porosity",
+                        colnames_df_particle = {"x": "xcoord","y":"ycoord","z":"zcoord","time":"total_travel_time","porosity":"porosity",
                                     "solid_density": "solid_density", "fraction_organic_carbon": "fraction_organic_carbon", "redox": "redox", 
                                     "dissolved_organic_carbon":	"dissolved_organic_carbon", "pH": "pH",	"temperature": "temperature", "material": "material"}
-                        df_particle[f"pg: {iPG} node: {iNode} particle: {iPart}"].rename(columns = col_names_df_particle, 
+                        df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"].rename(columns = colnames_df_particle, 
                                                                                         inplace = True, errors = "raise")
 
                         particle_subset_fname = os.path.join(self.dstroot,f"pg{iPG}_node{iNode}_particle{iPart}.csv")
-                        df_particle[f"pg: {iPG} node: {iNode} particle: {iPart}"].to_csv(particle_subset_fname)
+                        df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"].to_csv(particle_subset_fname)
                         # Append dataframes
-                        df_particle_list.append(df_particle[f"pg: {iPG} node: {iNode} particle: {iPart}"])
+                        df_particle_list.append(df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"])
 
             # Concatenate df_particle dataframes ('combined')
-            df_particle_comb = pd.concat(df_particle_list, axis = 0, ignore_index = False)
+            self.df_particle = pd.concat(df_particle_list, axis = 0, ignore_index = False)
 
             # df_particle file name
             particle_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_particle.csv")
-            df_particle_comb.to_csv(particle_fname)
+            self.df_particle.to_csv(particle_fname)
             
+            # Create df flowline
+            colnames_df_flowline = ["flowline_type","flowline_discharge","particle_release_day","endpoint_id",
+                                     "well_discharge", "substance", "removal_function"]
+
+            # flowline ID as index
+            flowline_id = list(self.df_particle.index.unique())
+
+            df_flowline_comb = pd.DataFrame(index = flowline_id, columns = colnames_df_flowline)
+            
+            ## Obtain flowline discharge ##
+            # flux at starting location (grid cell) divided by total flowlines starting there
+            # HIER GEBLEVEN (df_flowline): 4-11-2021
+
+
+
+
             print("Post-processing modpathrun of type", self.schematisation_type, "completed.")
 
 

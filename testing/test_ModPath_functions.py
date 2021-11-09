@@ -116,6 +116,12 @@ def test_modflow_run_phreatic_withgravelpack():
     # Run phreatic schematisation
     modpath_phrea.run_model(run_mfmodel = True,
                         run_mpmodel = False)
+
+    print(modpath_phrea.material)
+    parms = ["material","hk","vani","porosity","recharge"]
+    for iParm in parms:
+        np.save(os.path.join(testfiles_dir, iParm + "_phrea.npy"), getattr(modpath_phrea,iParm))
+
     assert modpath_phrea.success_mf
 #%%
 def test_modpath_run_phreatic_withgravelpack():
@@ -172,6 +178,17 @@ def test_modpath_run_phreatic_withgravelpack():
                                     )
 
     test_phrea.make_dictionary()
+    phreatic_dict_2 = { 'simulation_parameters' : test_phrea.simulation_parameters,
+                        'endpoint_id': test_phrea.endpoint_id,
+                        'mesh_refinement': test_phrea.mesh_refinement,
+                        'geo_parameters' : test_phrea.geo_parameters,
+                        'ibound_parameters' : test_phrea.ibound_parameters,
+                        'recharge_parameters' : test_phrea.recharge_parameters,
+                        'well_parameters' : test_phrea.well_parameters,
+                        'point_parameters' : test_phrea.point_parameters,
+                        'substance_parameters' : test_phrea.substance_parameters,
+                        'bas_parameters' : test_phrea.bas_parameters,
+                        }
     # print(test_phrea.__dict__)
     modpath_phrea = ModPathWell(test_phrea,
                             workspace = "test_ws",
@@ -182,11 +199,113 @@ def test_modpath_run_phreatic_withgravelpack():
     # Run phreatic schematisation
     modpath_phrea.run_model(run_mfmodel = True,
                         run_mpmodel = True)
-    print(modpath_phrea.material)
-    parms = ["material","hk","vani","porosity","recharge"]
-    for iParm in parms:
-        np.save(os.path.join(testfiles_dir, iParm + "_phrea.npy"), getattr(modpath_phrea,iParm))
-                     
+
+    assert modpath_phrea.success_mp
+
+def test_modpath_run_phreatic_withgravelpack_traveltimes():
+
+
+    ''' Phreatic scheme with gravelpack: modpath run.'''
+    test_phrea = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
+                                computation_method = 'modpath',
+                                what_to_export='omp',
+                                # biodegradation_sorbed_phase = False,
+                                well_discharge=319.4*24,
+                                # vertical_resistance_shallow_aquifer=500,
+                                porosity_vadose_zone=0.38,
+                                porosity_shallow_aquifer=0.35,
+                                porosity_target_aquifer=0.35,
+                                recharge_rate=0.3/365.25,
+                                moisture_content_vadose_zone=0.15,
+                                ground_surface = 22.0,
+                                thickness_vadose_zone_at_boundary=5.0,
+                                thickness_shallow_aquifer=10.0,
+                                thickness_target_aquifer=40.0,
+                                hor_permeability_target_aquifer=35.0,
+                                hor_permeability_shallow_aquifer = 0.02,
+                                thickness_full_capillary_fringe=0.4,
+                                redox_vadose_zone='anoxic', #'suboxic',
+                                redox_shallow_aquifer='anoxic',
+                                redox_target_aquifer='deeply_anoxic',
+                                pH_vadose_zone=5.,
+                                pH_shallow_aquifer=6.,
+                                pH_target_aquifer=7.,
+                                dissolved_organic_carbon_vadose_zone=10., 
+                                dissolved_organic_carbon_shallow_aquifer=4., 
+                                dissolved_organic_carbon_target_aquifer=2.,
+                                fraction_organic_carbon_vadose_zone=0.001,
+                                fraction_organic_carbon_shallow_aquifer=0.0005,
+                                fraction_organic_carbon_target_aquifer=0.0005, 
+                                temperature=11.,
+                                solid_density_vadose_zone= 2.650, 
+                                solid_density_shallow_aquifer= 2.650, 
+                                solid_density_target_aquifer= 2.650, 
+                                diameter_borehole = 0.75,
+                                substance = 'benzo(a)pyrene',
+                                halflife_suboxic= 530,
+                                halflife_anoxic= 2120,
+                                halflife_deeply_anoxic= 2120,
+                                partition_coefficient_water_organic_carbon= 6.43,
+                                dissociation_constant= 99,
+                                diameter_filterscreen = 0.2,
+                                point_input_concentration = 100.,
+                                discharge_point_contamination = 100.,#made up value
+                                top_clayseal = 17,
+                                compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
+                                # substance = 'benzene',
+                                # halflife_suboxic=600,
+                                # partition_coefficient_water_organic_carbon = 3.3,
+                            )
+
+    test_phrea.make_dictionary()
+
+    phreatic_dict_2 = { 'simulation_parameters' : test_phrea.simulation_parameters,
+                        'endpoint_id': test_phrea.endpoint_id,
+                        'mesh_refinement': test_phrea.mesh_refinement,
+                        'geo_parameters' : test_phrea.geo_parameters,
+                        'ibound_parameters' : test_phrea.ibound_parameters,
+                        'recharge_parameters' : test_phrea.recharge_parameters,
+                        'well_parameters' : test_phrea.well_parameters,
+                        'point_parameters' : test_phrea.point_parameters,
+                        'substance_parameters' : test_phrea.substance_parameters,
+                        'bas_parameters' : test_phrea.bas_parameters,
+                        }
+    # print(test_phrea.__dict__)
+    modpath_phrea = ModPathWell(phreatic_dict_2, #test_phrea,
+                            workspace = "test_ws",
+                            modelname = "phreatic",
+                            bound_left = "xmin",
+                            bound_right = "xmax")
+    # print(modpath_phrea.__dict__)
+    # Run phreatic schematisation
+    modpath_phrea.run_model(run_mfmodel = True,
+                        run_mpmodel = True)
+
+    
+    # Create travel time plots
+    fpath_scatter_times_log = os.path.join(modpath_phrea.dstroot,"log_travel_times_test.png")
+    fpath_scatter_times = os.path.join(modpath_phrea.dstroot,"travel_times_test.png")
+    # df particle
+    df_particle = modpath_phrea.df_particle
+    # time limits
+    tmin, tmax = 0.01, 1.
+    # xcoord bounds
+    xmin, xmax = 0., 20.
+
+    # Create travel time plots (lognormal)
+    modpath_phrea.plot_pathtimes(df_particle = df_particle, 
+            vmin = tmin,vmax = tmax,
+            fpathfig = fpath_scatter_times_log, figtext = None,x_text = 0,
+            y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
+            line_dist = 1, dpi = 192, cmap = 'viridis_r')
+
+    # Create travel time plots (linear)
+    modpath_phrea.plot_pathtimes(df_particle = df_particle, 
+            vmin = tmin,vmax = tmax,
+            fpathfig = fpath_scatter_times, figtext = None,x_text = 0,
+            y_text = 0, lognorm = False, xmin = xmin, xmax = xmax,
+            line_dist = 1, dpi = 192, cmap = 'viridis_r')
+
     assert modpath_phrea.success_mp
 
 
@@ -249,29 +368,29 @@ def test_phreatic_scheme_withgravelpack_dictinput():
 
     phreatic_scheme.make_dictionary()  
     
-    phreatic_dict_1 = { #'simulation_parameters' : phreatic_scheme.simulation_parameters,
-            'endpoint_id': {phreatic_scheme.endpoint_id["name"]: phreatic_scheme.endpoint_id},
-            'mesh_refinement': phreatic_scheme.mesh_refinement,
-            'geo_parameters' : phreatic_scheme.geo_parameters,
-            'ibound_parameters' : phreatic_scheme.ibound_parameters,
-            'recharge_parameters' : phreatic_scheme.recharge_parameters,
-            'well_parameters' : phreatic_scheme.well_parameters,
-            # 'point_parameters' : phreatic_scheme.point_parameters,
-            'substance_parameters' : phreatic_scheme.substance_parameters,
-            'bas_parameters' : phreatic_scheme.bas_parameters,
+    phreatic_dict_2 = { 'simulation_parameters' : phreatic_scheme.simulation_parameters,
+        'endpoint_id': phreatic_scheme.endpoint_id,
+        'mesh_refinement': phreatic_scheme.mesh_refinement,
+        'geo_parameters' : phreatic_scheme.geo_parameters,
+        'ibound_parameters' : phreatic_scheme.ibound_parameters,
+        'recharge_parameters' : phreatic_scheme.recharge_parameters,
+        'well_parameters' : phreatic_scheme.well_parameters,
+        'point_parameters' : phreatic_scheme.point_parameters,
+        'substance_parameters' : phreatic_scheme.substance_parameters,
+        'bas_parameters' : phreatic_scheme.bas_parameters,
     }
-    ''' Hier gebleven: 1-11-21 --> uncomment 'simulation_parameters' en 'point_parameters'. '''
+
     fpath_research = os.path.abspath(os.path.join(path,os.pardir,"research"))
-    fpath_phreatic_dict_check1 = os.path.join(fpath_research,"phreatic_dict_nogravel_test.txt")
-    with open (fpath_phreatic_dict_check1, "w") as dict_file:
-        dict_file.write(str(phreatic_dict_1))
+    fpath_phreatic_dict_check2 = os.path.join(fpath_research,"phreatic_dict_withgravel_test.txt")
+    with open (fpath_phreatic_dict_check2, "w") as dict_file:
+        dict_file.write(str(phreatic_dict_2))
 
-    with open(fpath_phreatic_dict_check1,"r") as dict_file:
+    with open(fpath_phreatic_dict_check2,"r") as dict_file:
         dict_raw = dict_file.read()
-        phreatic_dict_check1 = ast.literal_eval(dict_raw)  # ast --> abstract syntax trees
-        # pd.read_csv(fpath_phreatic_dict_check1, delimiter=" ", header = None)
+        phreatic_dict_check2 = ast.literal_eval(dict_raw)  # ast --> abstract syntax trees
+        # pd.read_csv(fpath_phreatic_dict_check2, delimiter=" ", header = None)
 
-    assert phreatic_dict_1 == phreatic_dict_check1
+    assert phreatic_dict_2 == phreatic_dict_check2
 
 #%%
 
