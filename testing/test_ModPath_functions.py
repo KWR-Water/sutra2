@@ -288,9 +288,9 @@ def test_modpath_run_phreatic_withgravelpack_traveltimes():
     # df particle
     df_particle = modpath_phrea.df_particle
     # time limits
-    tmin, tmax = 0.01, 1.
+    tmin, tmax = 0.1, 200.
     # xcoord bounds
-    xmin, xmax = 0., 20.
+    xmin, xmax = 0., 50.
 
     # Create travel time plots (lognormal)
     modpath_phrea.plot_pathtimes(df_particle = df_particle, 
@@ -301,7 +301,7 @@ def test_modpath_run_phreatic_withgravelpack_traveltimes():
 
     # Create travel time plots (linear)
     modpath_phrea.plot_pathtimes(df_particle = df_particle, 
-            vmin = tmin,vmax = tmax,
+            vmin = 0.,vmax = tmax,
             fpathfig = fpath_scatter_times, figtext = None,x_text = 0,
             y_text = 0, lognorm = False, xmin = xmin, xmax = xmax,
             line_dist = 1, dpi = 192, cmap = 'viridis_r')

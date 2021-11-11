@@ -535,12 +535,12 @@ class ModPathWell:
             top = schematisation[iDict][iDict_sub][self.bound_top]
         except KeyError:
             print("set top of", iDict, iDict_sub, "to 0.")
-            top = 0.
+            top = self.top
         try: 
             bot = schematisation[iDict][iDict_sub][self.bound_bot]
         except KeyError:
             print("set bottom of", iDict, iDict_sub, "to model bottom.")
-            bot = min(self.zmid)
+            bot = min(self.bot)
 
         if not self.model_type == "axisymmetric":
             try:
@@ -1676,20 +1676,20 @@ class ModPathWell:
         rech_parmnames = {"recharge": [["recharge_parameters"],"float"]}
         for iParm, dict_keys in rech_parmnames.items():
             # Temporary value
-            rech_grid = np.zeros((self.nlay,self.nrow,self.ncol), dtype = 'float')
+            grid_temp = np.zeros((self.nlay,self.nrow,self.ncol), dtype = 'float')
             grid = self.fill_grid(schematisation = self.schematisation_dict,
                             dict_keys = dict_keys[0],
                             parameter = iParm,
-                            grid = rech_grid,
+                            grid = grid_temp,
                             dtype = dict_keys[1])
             
             if self.model_type == "axisymmetric":
-                grid_axi = self.axisym_correction(grid = grid)[0,:,:]
-                # Update attribute
-                self._update_property(property = iParm, value = grid_axi)
+                rech_grid = self.axisym_correction(grid = grid)[0,:,:]
             else:
-                # Update attribute
-                self._update_property(property = iParm, value = grid[0,:,:])
+                rech_grid = grid[0,:,:]
+
+            # Update attribute (recharge)
+            self._update_property(property = iParm, value = rech_grid)
 
         # Well input
         # !!! Obtain node numbers of well locations (use indices) !!!
@@ -2350,6 +2350,7 @@ class ModPathWell:
             ## Obtain flowline discharge ##
             # flux at starting location (grid cell) divided by total flowlines starting there
             # HIER GEBLEVEN (df_flowline): 4-11-2021
+            
 
 
 
