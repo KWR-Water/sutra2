@@ -68,6 +68,8 @@ class HydroChemicalSchematisation:
         Include biodegradation in the sorbed phase or not. Default is True
     compute_thickness_vadose_zone: Bool
         Calculate the thickness of the vadose zone or not, Default is True
+    well_name: string
+        Name of the well in the simulaiton. Default is 'well1'        
     ground_surface: float
         Meters above sea level (ASL)
     thickness_vadose_zone_at_boundary, thickness_shallow_aquifer, thickness_target_aquife: float
@@ -196,6 +198,7 @@ class HydroChemicalSchematisation:
                 temp_correction_halflife=True,
                 biodegradation_sorbed_phase=True,
                 compute_thickness_vadose_zone=True,
+                well_name='well1',
 
                 ground_surface=0.0,
                 thickness_vadose_zone_at_boundary=1,
@@ -317,6 +320,7 @@ class HydroChemicalSchematisation:
         self.computation_method = computation_method
         self.removal_function = removal_function
         self.what_to_export = what_to_export
+        self.well_name = well_name
 
         def check_parameter_choice(parameters_choice, options ):
             '''Check if parameter_choice is one of thelisted options,
@@ -615,7 +619,7 @@ class HydroChemicalSchematisation:
                     'ibound':0,
                     },
 
-                'inner_boundary_target_aquifer': {
+                self.well_name: { #AH nov. 11 changed to from 'inner_boundary_target_aquifer' to well_name (default 'well1')
                     'head': self.bottom_vadose_zone_at_boundary,
                     'top': self.bottom_shallow_aquifer,
                     'bot': self.bottom_target_aquifer,
@@ -665,12 +669,11 @@ class HydroChemicalSchematisation:
         
 
         endpoint_id = {
-            'name': {
+            self.well_name: { #AH nov. 11 changed to 'well_name'
                 'top': self.top_filterscreen,
                 'bot': self.bottom_filterscreen,
                 'xmin': 0.0,
                 'xmax': self.diameter_filterscreen/2,
-                'name': 'well1'
                 },
             }
 
@@ -761,7 +764,7 @@ class HydroChemicalSchematisation:
 
         if self.schematisation_type == 'semiconfined':
             well_parameters = {
-                'well1': {
+                self.well_name: {
                     'well_discharge': self.well_discharge, #MK: here I see the nameing is different. I like your explicit approach much more. So apparently, the 
                                                 #AH @MartinK, yes the naming changes for Modflow, if we want changes, need to discuss 
                                                 # w/ @MartinvdS, but I think this is needed to work w/ FloPy...
