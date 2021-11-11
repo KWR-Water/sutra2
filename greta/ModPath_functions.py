@@ -195,15 +195,7 @@ class ModPathWell:
 
         # Create output directories
         # Destination root
-        self.dstroot = self.workspace + '\\results'  # + '\\results_' + 'yr' + str(yr) + '_sp' + str(per)
-        self.dstdircbc = os.path.join(self.dstroot, 'cbc')
-        self.dstdirhds = os.path.join(self.dstroot, 'hds')
-
-        # create all directories
-        if not os.path.exists(self.dstdirhds):
-            os.makedirs(self.dstdirhds)
-        if not os.path.exists(self.dstdircbc):
-            os.makedirs(self.dstdircbc)
+        self.dstroot = self.workspace + '\\results'
 
         # Source files
         self.model_hds = os.path.join(self.workspace, self.modelname + '.hds')
@@ -1775,15 +1767,16 @@ class ModPathWell:
 
         return times, head_dat
 
-    def read_binarycbc(fname):
+    def read_binarycbc(self, fname = None):
         ''' Read binary cell budget file (fname). 
             This is modflow output.'''
         cbcobj = bf.CellBudgetFile(fname)
         print(cbcobj.list_records())
-        
-        frf = cbcobj.get_data(text='FLOW RIGHT FACE')[0]
-        flf = cbcobj.get_data(text='FLOW LOWER FACE')[0]
-        cbcobj.close()
+        try:
+            frf = cbcobj.get_data(text='FLOW RIGHT FACE')[0]
+            flf = cbcobj.get_data(text='FLOW LOWER FACE')[0]
+        finally:
+            cbcobj.close()
         
         return frf, flf 
 
@@ -1795,6 +1788,19 @@ class ModPathWell:
         for iLay,iRow,iCol in locs:
             nodes.append(iLay * self.nrow * self.ncol + iRow * self.ncol + iCol)
         return nodes
+
+    def xyz_to_layrowcol(self,xyz_point):
+
+        ''' obtain lay, row, col index of an xyz_point list [x,y,z]. '''
+        node_lay = np.argwhere((xyz_point[2] > self.zmid-0.5*self.delv) & \
+                    (xyz_point[2] <= self.zmid+0.5*self.delv))[0][0]
+        node_row = np.argwhere((xyz_point[1] > self.ymid-0.5*self.delc) & \
+                    (xyz_point[1] <= self.ymid+0.5*self.delc))[0][0]
+        node_col = np.argwhere((xyz_point[0] > self.xmid-0.5*self.delr) & \
+                    (xyz_point[0] <= self.xmid+0.5*self.delr))[0][0]
+        node_idx = (node_lay,node_row,node_col)
+
+        return node_idx
 
     def get_node_indices(self,xyz_nodes, particle_list: list or None = None):
         ''' Obtain/return layer,row,column idx ("node_indices") as dict of np.arrays
@@ -1820,10 +1826,12 @@ class ModPathWell:
             # Number of nodes
             nr_nodes = xyz_nodes[iPart].shape[0]
     #                                    print(iPart)
-            node_indices[iPart] = [(np.argmin(abs(self.zmid-xyz_nodes[iPart][iNode][2])), \
-                                        np.argmin(abs(self.ymid-xyz_nodes[iPart][iNode][1])), \
-                                        np.argmin(abs(self.xmid-xyz_nodes[iPart][iNode][0]))) \
-                                                        for iNode in range(nr_nodes)]
+            node_indices[iPart] = []
+            for iNode in range(nr_nodes):
+                # list lay, row, col of nodes and store them in 'node_indices' dict
+                node_idx = self.xyz_to_layrowcol(xyz_point = xyz_nodes[iPart][iNode].tolist())
+                node_indices[iPart].append(node_idx)
+
 
 
         return node_indices
@@ -2350,6 +2358,30 @@ class ModPathWell:
             ## Obtain flowline discharge ##
             # flux at starting location (grid cell) divided by total flowlines starting there
             # HIER GEBLEVEN (df_flowline): 4-11-2021
+
+            # flow right face (frf) and flow lower face (flf)
+            self.frf, self.flf = self.read_binarycbc(self.model_cbc)
+            pathline_flux = {}
+            for fid in flowline_id:
+                # X,Y,Z,time data per particle flowline 
+                xyzt_data = self.df_particle.loc[self.df_particle.index == fid, 
+                                                ["xcoord","ycoord","zcoord","total_travel_time"]].sort_values(
+                                                by = "total_travel_time")
+                # Startpoint and endpoint (XYZ-data) of particle flowlines
+                startpoint = xyzt_data.loc[xyzt_data.total_travel_time == xyzt_data.total_travel_time.min(),
+                                            ["xcoord","ycoord","zcoord"]].values.tolist()[0]
+                endpoint = xyzt_data.loc[xyzt_data.total_travel_time == xyzt_data.total_travel_time.max(),
+                                            ["xcoord","ycoord","zcoord"]].values.tolist()[0]
+                # Nodes of start and endpoints
+                nodeidx_start = self.xyz_to_layrowcol(xyz_point = startpoint)
+                nodeidx_end = self.xyz_to_layrowcol(xyz_point = endpoint)
+                if self.trackingdirection == "forward":
+                    # starting point is used to calculate flux of pathline
+                    flux_pathline = None
+                elif self.trackingdirection == "backward":
+                    # endpoint is used to calculate flux of pathline
+                    flux_pathline = None
+
             
 
 
