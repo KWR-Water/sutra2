@@ -1729,3 +1729,5 @@ test_ws/results/pgsource1_node(0, 0, 47)_particle1.csv
 test_ws/results/pgsource1_node(0, 0, 48)_particle1.csv
 test_ws/results/pgsource1_node(0, 0, 49)_particle1.csv
 test_ws/results/pgsource1_node(0, 0, 50)_particle1.csv
+test_ws/results/phreatic_df_flowline.csv
+research/phreatic_dict_withgravel_test.txt
