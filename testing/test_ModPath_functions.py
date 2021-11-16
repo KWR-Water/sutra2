@@ -288,7 +288,7 @@ def test_modpath_run_phreatic_withgravelpack_traveltimes():
     # df particle
     df_particle = modpath_phrea.df_particle
     # time limits
-    tmin, tmax = 0.1, 200.
+    tmin, tmax = 0.1, 10000.
     # xcoord bounds
     xmin, xmax = 0., 50.
 

@@ -539,16 +539,16 @@ class ModPathWell:
                 north = schematisation[iDict][iDict_sub][self.bound_north]
                 south = schematisation[iDict][iDict_sub][self.bound_south]
                 # Determine row indices
-                rowidx_min = int(np.argwhere((self.ymid <= north) & (self.ymid >= south))[0])
-                rowidx_max = int(np.argwhere((self.ymid <= north) & (self.ymid >= south))[-1]) + 1
+                rowidx_min = int(np.argwhere((self.ymid < north) & (self.ymid >= south))[0])
+                rowidx_max = int(np.argwhere((self.ymid < north) & (self.ymid >= south))[-1]) + 1
             except KeyError as e:
                 print(e,f"missing {iDict} {iDict_sub}. Continue")
         else:
             north,south,rowidx_min,rowidx_max = None, None,0,1
         try:
             # Determine layer indices
-            layidx_min = int(np.argwhere((self.zmid <= top) & (self.zmid >= bot))[0])
-            layidx_max = int(np.argwhere((self.zmid <= top) & (self.zmid >= bot))[-1]) + 1
+            layidx_min = int(np.argwhere((top >= self.zmid) & (bot < self.zmid))[0])
+            layidx_max = int(np.argwhere((top >= self.zmid) & (bot < self.zmid))[-1]) + 1
         
         except IndexError as e:
             print(e, iDict,iDict_sub,top,bot, "(top,bot)")
@@ -557,8 +557,8 @@ class ModPathWell:
 
         try:
             # Determine column indices
-            colidx_min = int(np.argwhere((self.xmid >= left) & (self.xmid <= right))[0])
-            colidx_max = int(np.argwhere((self.xmid >= left) & (self.xmid <= right))[-1]) + 1
+            colidx_min = int(np.argwhere((left <= self.xmid) & (right > self.xmid))[0])
+            colidx_max = int(np.argwhere((left <= self.xmid) & (right > self.xmid))[-1]) + 1
             # np.where((self.xmid < right) & (self.xmid > left))    
         except IndexError as e:
             print(e, iDict,iDict_sub,left,right, "(left,right)")
@@ -585,25 +585,27 @@ class ModPathWell:
             # Loop through subkeys of schematisation dictionary
             for iDict_sub in schematisation[iDict]:   
 
-                if 'mesh_refinement' not in iDict_sub:
+                # if 'mesh_refinement' not in iDict_sub:
 
-                    # Grid indices
-                    try:
-                        layidx_min,layidx_max,\
-                            rowidx_min,rowidx_max,\
-                            colidx_min,colidx_max = self.cell_bounds(schematisation,
-                                                    dict_key = iDict,
-                                                    dict_subkey = iDict_sub,
-                                                    model_type = self.model_type)
-                    except Exception as e:
-                        print(e,"Continue.")
-                        continue
-                    # Fill grid with parameter value 'parm_val'
-                    if not None in [layidx_min,layidx_max,colidx_min,colidx_max]:
+                # Grid indices
+                try:
+                    layidx_min,layidx_max,\
+                        rowidx_min,rowidx_max,\
+                        colidx_min,colidx_max = self.cell_bounds(schematisation,
+                                                dict_key = iDict,
+                                                dict_subkey = iDict_sub,
+                                                model_type = self.model_type)
+                except Exception as e:
+                    print(e,"Continue.")
+                    continue
+                # Fill grid with parameter value 'parm_val'
+                if not None in [layidx_min,layidx_max,colidx_min,colidx_max]:
 
-                        self.material[layidx_min: layidx_max,\
-                            rowidx_min: rowidx_max,\
-                            colidx_min: colidx_max] = iDict_sub
+                    self.material[layidx_min: layidx_max,\
+                        rowidx_min: rowidx_max,\
+                        colidx_min: colidx_max][self.material[layidx_min: layidx_max,\
+                        rowidx_min: rowidx_max,\
+                        colidx_min: colidx_max] == None] = iDict_sub
                     
         if self.model_type in ["axisymmetric","2D"]:
                 # In 2D model or axisymmetric models an 
@@ -1620,22 +1622,22 @@ class ModPathWell:
         else:  
             self.layavg = 0
         # geohydrological parameter names # list of schematisation_dict terms & dtype
-        self.geoparm_names = {"moisture_content": [["geo_parameters"],"float"],
-                        "hk": [["geo_parameters"],"float"],
-                        "vani": [["geo_parameters"],"float"],
-                        "porosity": [["geo_parameters"],"float"],
-                        "solid_density": [["geo_parameters"],"float"],
-                        "fraction_organic_carbon": [["geo_parameters"],"float"],
-                        "redox": [["geo_parameters"],"object"],
-                        "dissolved_organic_carbon": [["geo_parameters"],"float"],
-                        "pH": [["geo_parameters"],"float"],
-                        "temperature": [["geo_parameters"],"float"]
+        self.geoparm_names = {"moisture_content": [["geo_parameters"],"float",0.35],
+                        "hk": [["geo_parameters"],"float",999.],
+                        "vani": [["geo_parameters"],"float",999.],
+                        "porosity": [["geo_parameters"],"float",1.],
+                        "solid_density": [["geo_parameters"],"float",2.5],
+                        "fraction_organic_carbon": [["geo_parameters"],"float",0.0],
+                        "redox": [["geo_parameters"],"object",0],
+                        "dissolved_organic_carbon": [["geo_parameters"],"float",0],
+                        "pH": [["geo_parameters"],"float",7],
+                        "temperature": [["geo_parameters"],"float",11]
                         }
                       
 
         for iParm, dict_keys in self.geoparm_names.items():
             # Temporary value grid
-            unitgrid = np.ones((self.nlay,self.nrow,self.ncol), dtype = dict_keys[1])
+            unitgrid = np.zeros((self.nlay,self.nrow,self.ncol), dtype = dict_keys[1]) + dict_keys[2]
             # Fill grid with new values
             grid = self.fill_grid(schematisation = self.schematisation_dict,
                                 dict_keys = dict_keys[0],
@@ -1646,17 +1648,26 @@ class ModPathWell:
 
         # Assign material grid
         self.assign_material(schematisation = self.schematisation_dict,
-                            dict_keys = ["geo_parameters"])
+                            dict_keys = ["geo_parameters","ibound_parameters","well_parameters"])
 
         # Create (uncorrected) array for kv ("vka"), using "kh" and "vani" (vertical anisotropy)
-        self.hk[self.material == None] = 999.
-        self.vani[self.material == None] = 999.
+        for iLay in range(self.nlay):
+            for iRow in range(self.nrow):
+                for iCol in range(self.ncol):
+                    # Check if material occurs in "geo_parameters"
+                    if self.material[iLay,iRow,iCol] not in self.schematisation_dict["geo_parameters"].keys():
+                        self.hk[iLay,iRow,iCol] = 999.
+                        self.vani[iLay,iRow,iCol] = 999.
+       
         # Vertical conductivity [m/d]
         self.vka = self.hk / self.vani
         # and for 'storativity' ("ss": specific storage)
         self.ss = np.ones((self.nlay,self.nrow,self.ncol), dtype = 'float') * 1.E-6
+        # Uncorrected porosity parameter (for removal calculation)
+        self.prsity_uncorr = copy.deepcopy(self.porosity)
+
         # Axisymmetric flow properties
-        axisym_parms = ["hk","vka","ss"]
+        axisym_parms = ["hk","vka","ss","porosity"]
         if self.model_type == "axisymmetric":
             for iParm in axisym_parms:
                 grid_uncorr = getattr(self,iParm)
@@ -1664,6 +1675,7 @@ class ModPathWell:
                 # Update attribute
                 self._update_property(property = iParm, value = grid_axi)
 
+        ### Outstanding issue: how to deal with multiple recharge sources 
         # Create recharge package
         rech_parmnames = {"recharge": [["recharge_parameters"],"float"]}
         for iParm, dict_keys in rech_parmnames.items():
@@ -1767,18 +1779,22 @@ class ModPathWell:
 
         return times, head_dat
 
-    def read_binarycbc(self, fname = None):
+    def read_binarycbc_flow(self, fname = None):
         ''' Read binary cell budget file (fname). 
-            This is modflow output.'''
+            This is modflow output.
+
+            return frf, flf, fff.'''
+            
         cbcobj = bf.CellBudgetFile(fname)
         print(cbcobj.list_records())
         try:
             frf = cbcobj.get_data(text='FLOW RIGHT FACE')[0]
             flf = cbcobj.get_data(text='FLOW LOWER FACE')[0]
+            fff = cbcobj.get_data(text='FLOW FRONT FACE')[0]
         finally:
             cbcobj.close()
         
-        return frf, flf 
+        return frf, flf, fff 
 
     def get_node_ID(self,locs):
         ''' Obtain/return model node index (int) belonging to
@@ -1789,15 +1805,31 @@ class ModPathWell:
             nodes.append(iLay * self.nrow * self.ncol + iRow * self.ncol + iCol)
         return nodes
 
-    def xyz_to_layrowcol(self,xyz_point):
-
+    def xyz_to_layrowcol(self,xyz_point, round_digits = 4):
         ''' obtain lay, row, col index of an xyz_point list [x,y,z]. '''
-        node_lay = np.argwhere((xyz_point[2] > self.zmid-0.5*self.delv) & \
-                    (xyz_point[2] <= self.zmid+0.5*self.delv))[0][0]
-        node_row = np.argwhere((xyz_point[1] > self.ymid-0.5*self.delc) & \
-                    (xyz_point[1] <= self.ymid+0.5*self.delc))[0][0]
-        node_col = np.argwhere((xyz_point[0] > self.xmid-0.5*self.delr) & \
-                    (xyz_point[0] <= self.xmid+0.5*self.delr))[0][0]
+
+        # Round XYZ to 4 digits
+        xyz_point = [round(iVal,round_digits) for iVal in xyz_point]
+
+        # min and max arrays in X-direction
+        xmin_arr = np.round(self.xmid-0.5*self.delr,round_digits)
+        xmax_arr = np.round(self.xmid+0.5*self.delr,round_digits)
+        # min and max arrays in Y-direction
+        ymin_arr = np.round(self.ymid-0.5*self.delc,round_digits)
+        ymax_arr = np.round(self.ymid+0.5*self.delc,round_digits)
+        # min and max arrays in Z-direction
+        zmin_arr = np.round(self.zmid-0.5*self.delv,round_digits)
+        zmax_arr = np.round(self.zmid+0.5*self.delv,round_digits)
+
+        # node layer, row, column
+        node_lay = np.argwhere((xyz_point[2] > zmin_arr) & \
+                    (xyz_point[2] <= zmax_arr))[0][0]
+        node_row = np.argwhere((xyz_point[1] > ymin_arr) & \
+                    (xyz_point[1] <= ymax_arr))[0][0]
+        node_col = np.argwhere((xyz_point[0] > xmin_arr) & \
+                    (xyz_point[0] <= xmax_arr))[0][0]
+
+        # Node index (lay,row,col)
         node_idx = (node_lay,node_row,node_col)
 
         return node_idx
@@ -2201,8 +2233,7 @@ class ModPathWell:
 
             # Default flux interfaces
             defaultiface = {'RECHARGE': 6, 'ET': 6}
-            
-            
+        
             ## Model mpbas input ##
             self.mpbas_input(prsity = self.porosity, defaultiface = defaultiface)
 
@@ -2291,7 +2322,7 @@ class ModPathWell:
                     # Particle data dict per iNode
                     self.particle_data[iPG][iNode] = {}
                     # Create rec.arrays for porosity, pH, T, etc. to append to particle_data
-                    parm_list = ["porosity","solid_density","fraction_organic_carbon",
+                    parm_list = ["prsity_uncorr","solid_density","fraction_organic_carbon",
                                 "redox","dissolved_organic_carbon", "pH","temperature","material"]
                     for iPart in part_idx:
                         # Fill recarray
@@ -2324,15 +2355,22 @@ class ModPathWell:
                         # Export rec.arrays as pd dataframe
                         df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"] = pd.DataFrame.from_records(data = self.particle_data[iPG][iNode][iPart],
                                                                                     index = "particleid",
-                                                                                    exclude = ["k"]).iloc[:-1,:]
+                                                                                    exclude = ["k"]) #.iloc[:-1,:]
+                        # Decode object series
+                        for iCol in df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"].columns:
+                            if df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"][iCol].dtype == "object":
+                                df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"].loc[:,iCol] = df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"].loc[:,iCol].str.decode(encoding = 'UTF-8')
+
                         # Change index name of df_particle                                                           
                         df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"].index.name = "flowline_id"
                         # Pseudonyms for df_particle column names
-                        colnames_df_particle = {"x": "xcoord","y":"ycoord","z":"zcoord","time":"total_travel_time","porosity":"porosity",
+                        colnames_df_particle = {"x": "xcoord","y":"ycoord","z":"zcoord","time":"total_travel_time","prsity_uncorr":"porosity",
                                     "solid_density": "solid_density", "fraction_organic_carbon": "fraction_organic_carbon", "redox": "redox", 
                                     "dissolved_organic_carbon":	"dissolved_organic_carbon", "pH": "pH",	"temperature": "temperature", "material": "material"}
                         df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"].rename(columns = colnames_df_particle, 
                                                                                         inplace = True, errors = "raise")
+
+
 
                         particle_subset_fname = os.path.join(self.dstroot,f"pg{iPG}_node{iNode}_particle{iPart}.csv")
                         df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"].to_csv(particle_subset_fname)
@@ -2353,15 +2391,25 @@ class ModPathWell:
             # flowline ID as index
             flowline_id = list(self.df_particle.index.unique())
 
-            df_flowline_comb = pd.DataFrame(index = flowline_id, columns = colnames_df_flowline)
-            
+            self.df_flowline = pd.DataFrame(index = flowline_id, columns = colnames_df_flowline)
+            # Change df_flowline index name
+            self.df_flowline.index.name = "flowline_id"
+
             ## Obtain flowline discharge ##
             # flux at starting location (grid cell) divided by total flowlines starting there
             # HIER GEBLEVEN (df_flowline): 4-11-2021
 
-            # flow right face (frf) and flow lower face (flf)
-            self.frf, self.flf = self.read_binarycbc(self.model_cbc)
-            pathline_flux = {}
+            # flow right face (frf) and flow lower face (flf) (third option: flow front face)
+            self.frf, self.flf, self.fff = self.read_binarycbc_flow(self.model_cbc)
+            # flux of pathlines
+            flux_pathline = {}
+            # startpoints and endpoints of flowlines
+            node_start, node_end = {}, {}
+            # startpoint and endpoint counter
+            count_startpoints, count_endpoints = {}, {}
+            # endpoint ids
+            endpoint_id = {}
+
             for fid in flowline_id:
                 # X,Y,Z,time data per particle flowline 
                 xyzt_data = self.df_particle.loc[self.df_particle.index == fid, 
@@ -2373,17 +2421,43 @@ class ModPathWell:
                 endpoint = xyzt_data.loc[xyzt_data.total_travel_time == xyzt_data.total_travel_time.max(),
                                             ["xcoord","ycoord","zcoord"]].values.tolist()[0]
                 # Nodes of start and endpoints
-                nodeidx_start = self.xyz_to_layrowcol(xyz_point = startpoint)
-                nodeidx_end = self.xyz_to_layrowcol(xyz_point = endpoint)
+                node_start[fid] = self.xyz_to_layrowcol(xyz_point = startpoint)
+                node_end[fid] = self.xyz_to_layrowcol(xyz_point = endpoint)
+                # Count start points in cell
+                count_startpoints[node_start[fid]] = count_startpoints.get(node_start[fid],0) + 1
+                count_endpoints[node_end[fid]] = count_endpoints.get(node_end[fid],0) + 1
+
+            for fid in flowline_id:
                 if self.trackingdirection == "forward":
-                    # starting point is used to calculate flux of pathline
-                    flux_pathline = None
+                    # starting point is used to calculate flux of pathline (flux_pathline)
+                    flux_pathline[fid] = round((abs(self.frf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) + \
+                                    abs(self.flf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) + \
+                                    abs(self.fff[node_start[fid][0],node_start[fid][1],node_start[fid][2]])) / \
+                                    count_startpoints[node_start[fid]],4)
                 elif self.trackingdirection == "backward":
                     # endpoint is used to calculate flux of pathline
-                    flux_pathline = None
+                    flux_pathline[fid] = round((abs(self.frf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) + \
+                                    abs(self.flf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) + \
+                                    abs(self.fff[node_end[fid][0],node_end[fid][1],node_end[fid][2]])) / \
+                                    count_startpoints[node_end[fid]],4)
 
+                # endpoint id
+                endpoint_id[fid] = self.material[node_end[fid][0],node_end[fid][1],node_end[fid][2]]
+
+            # fill flowline_df
+            for fid in flowline_id:
+                self.df_flowline.loc[fid,["flowline_discharge","endpoint_id"]] = np.array([flux_pathline[fid],\
+                                                                                           endpoint_id[fid]])
             
+            for end_id in self.df_flowline["endpoint_id"].unique():
+                # well discharge
+                well_discharge = self.df_flowline.loc[self.df_flowline.endpoint_id == end_id,"flowline_discharge"].astype('float').values.sum()
+                self.df_flowline.loc[self.df_flowline.endpoint_id == end_id,"well_discharge"] = well_discharge
 
+            # df_flowline file name
+            flowline_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_flowline.csv")
+            self.df_flowline.to_csv(flowline_fname)
+            
 
 
 
