@@ -2060,6 +2060,81 @@ class ModPathWell:
         return df
         '''
 
+    ''' # Fill df_flowline
+    # def fill_df_flowline(self, df_particle):
+            
+        # flowline ID as index
+        flowline_id = list(df_particle.index.unique())
+
+        self.df_flowline = pd.DataFrame(index = flowline_id, columns = colnames_df_flowline)
+        # Change df_flowline index name
+        self.df_flowline.index.name = "flowline_id"
+
+        ## Obtain flowline discharge ##
+        # flux at starting location (grid cell) divided by total flowlines starting there
+        # HIER GEBLEVEN (df_flowline): 4-11-2021
+
+        # flow right face (frf) and flow lower face (flf) (third option: flow front face)
+        self.frf, self.flf, self.fff = self.read_binarycbc_flow(self.model_cbc)
+        # flux of pathlines
+        flux_pathline = {}
+        # startpoints and endpoints of flowlines
+        node_start, node_end = {}, {}
+        # startpoint and endpoint counter
+        count_startpoints, count_endpoints = {}, {}
+        # endpoint ids
+        endpoint_id = {}
+
+        for fid in flowline_id:
+            # X,Y,Z,time data per particle flowline 
+            xyzt_data = self.df_particle.loc[self.df_particle.index == fid, 
+                                            ["xcoord","ycoord","zcoord","total_travel_time"]].sort_values(
+                                            by = "total_travel_time")
+            # Startpoint and endpoint (XYZ-data) of particle flowlines
+            startpoint = xyzt_data.loc[xyzt_data.total_travel_time == xyzt_data.total_travel_time.min(),
+                                        ["xcoord","ycoord","zcoord"]].values.tolist()[0]
+            endpoint = xyzt_data.loc[xyzt_data.total_travel_time == xyzt_data.total_travel_time.max(),
+                                        ["xcoord","ycoord","zcoord"]].values.tolist()[0]
+            # Nodes of start and endpoints
+            node_start[fid] = self.xyz_to_layrowcol(xyz_point = startpoint)
+            node_end[fid] = self.xyz_to_layrowcol(xyz_point = endpoint)
+            # Count start points in cell
+            count_startpoints[node_start[fid]] = count_startpoints.get(node_start[fid],0) + 1
+            count_endpoints[node_end[fid]] = count_endpoints.get(node_end[fid],0) + 1
+
+        for fid in flowline_id:
+            if self.trackingdirection == "forward":
+                # starting point is used to calculate flux of pathline (flux_pathline)
+                flux_pathline[fid] = round((abs(self.frf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) + \
+                                abs(self.flf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) + \
+                                abs(self.fff[node_start[fid][0],node_start[fid][1],node_start[fid][2]])) / \
+                                count_startpoints[node_start[fid]],4)
+            elif self.trackingdirection == "backward":
+                # endpoint is used to calculate flux of pathline
+                flux_pathline[fid] = round((abs(self.frf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) + \
+                                abs(self.flf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) + \
+                                abs(self.fff[node_end[fid][0],node_end[fid][1],node_end[fid][2]])) / \
+                                count_startpoints[node_end[fid]],4)
+
+            # endpoint id
+            endpoint_id[fid] = self.material[node_end[fid][0],node_end[fid][1],node_end[fid][2]]
+
+        # fill flowline_df
+        for fid in flowline_id:
+            self.df_flowline.loc[fid,["flowline_discharge","endpoint_id"]] = np.array([flux_pathline[fid],\
+                                                                                        endpoint_id[fid]])
+        
+        for end_id in self.df_flowline["endpoint_id"].unique():
+            # well discharge
+            well_discharge = self.df_flowline.loc[self.df_flowline.endpoint_id == end_id,"flowline_discharge"].astype('float').values.sum()
+            self.df_flowline.loc[self.df_flowline.endpoint_id == end_id,"well_discharge"] = well_discharge
+
+        # df_flowline file name
+        flowline_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_flowline.csv")
+        self.df_flowline.to_csv(flowline_fname)
+    '''    
+
+
     def plot_pathtimes(self,df_particle, 
                   vmin = 0.,vmax = 1.,orientation = {'row': 0},
                   fpathfig = None, figtext = None,x_text = 0,
@@ -2244,27 +2319,15 @@ class ModPathWell:
     
             print("modelrun of type", self.schematisation_type, "completed.")
 
-            ## Post-processing: ##
-            # ##cbc
-            # cbcfile = os.path.join(self.workspace, self.modelname + '.cbc') # r"r:\P402045_014\microbiologisch_risico_lekke_peilbuis\python\MP7_V5_20200429\GHscen_A_onvzone_afwezig_lek_klein_lekdiepte0_5\GHscen_A_onvzone_afwezig_lek_klein_lekdiepte0_5.cbc"
-            # cbb = flopy.utils.binaryfile.CellBudgetFile(filename = cbcfile,
-            #                                             precision='single',
-            #                                             verbose=False)
-            
-            # # Flux per particle group, per path
-            # fluxnode_frf = {}
-            # frf = cbb.get_data(kstpkper=(0,0), text='FLOW RIGHT FACE')
-            # for iPG in self.pg:
-            #     fluxnode_frf[iPG] = {}
-            #     for id_,iNode in enumerate(self.part_locs[iPG]):
-            #         print(id_,iNode, "right face flux:", frf[0][iNode])
-            #         fluxnode_frf[iPG][iNode] = frf[0][iNode]
-            # # close budget object afterwards
-            # cbb.close()
 
             # Empty output dicts
             self.xyz_nodes = {}
+            self.dist_data = {}
             self.time_diff = {}
+            self.dist_tot = {}
+            self.time_tot = {}
+            self.pth_data = {}
+
             self.particle_data = {}
             # dataframes of particle data (dict)
             df_particle_data = {}
@@ -2276,6 +2339,15 @@ class ModPathWell:
             for iPG in self.pg:  # use endpoint_id dict or list
                 # xyz_locs
                 self.xyz_nodes[iPG] = {}
+                # Distance arrays
+                self.dist_data[iPG] = {}
+                # Total distance [L]
+                self.dist_tot[iPG] = {}
+                # Total time [T]
+                self.time_tot[iPG] = {}
+                # Pathline data
+                self.pth_data[iPG] = {}
+
                 # Save flow duration (time_diff) of pathlines
                 self.time_diff[iPG] = {}
                 # group recarray per particle location
@@ -2297,11 +2369,11 @@ class ModPathWell:
 
                     # Read pathline data
                     self.xyz_nodes[iPG][iNode], \
-                    self.dist_data,  \
+                    self.dist_data[iPG][iNode],  \
                     self.time_diff[iPG][iNode],  \
-                    self.dist_tot,   \
-                    self.time_tot,   \
-                    self.pth_data =  \
+                    self.dist_tot[iPG][iNode],   \
+                    self.time_tot[iPG][iNode],   \
+                    self.pth_data[iPG][iNode] =  \
                                 self.read_pathlinedata(fpth = self.mppth,
                                                     nodes = self.nodes) #pg_nodes[iGroup])  
                     
@@ -2326,7 +2398,7 @@ class ModPathWell:
                                 "redox","dissolved_organic_carbon", "pH","temperature","material"]
                     for iPart in part_idx:
                         # Fill recarray
-                        self.particle_data[iPG][iNode][iPart] = copy.deepcopy(self.pth_data[iPart])
+                        self.particle_data[iPG][iNode][iPart] = copy.deepcopy(self.pth_data[iPG][iNode][iPart])
                         # Loop through rec.arrays of pth_data using part_idx 
                         for iParm in parm_list:
 
@@ -2355,7 +2427,7 @@ class ModPathWell:
                         # Export rec.arrays as pd dataframe
                         df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"] = pd.DataFrame.from_records(data = self.particle_data[iPG][iNode][iPart],
                                                                                     index = "particleid",
-                                                                                    exclude = ["k"]) #.iloc[:-1,:]
+                                                                                    exclude = ["k"]).iloc[:-1,:]
                         # Decode object series
                         for iCol in df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"].columns:
                             if df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"][iCol].dtype == "object":
@@ -2387,6 +2459,8 @@ class ModPathWell:
             # Create df flowline
             colnames_df_flowline = ["flowline_type","flowline_discharge","particle_release_day","endpoint_id",
                                      "well_discharge", "substance", "removal_function"]
+
+
 
             # flowline ID as index
             flowline_id = list(self.df_particle.index.unique())
