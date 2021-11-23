@@ -1771,3 +1771,4 @@ test_ws_semiconf/semi_conf.rch
 test_ws_semiconf/source1.sloc
 test_ws_semiconf/results/semiconfined_df_flowline.csv
 test_ws_semiconf/results/semiconfined_df_particle.csv
+test_ws_semiconf/semi_conf.wel

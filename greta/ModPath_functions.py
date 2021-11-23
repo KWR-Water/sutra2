@@ -742,7 +742,7 @@ class ModPathWell:
     def assign_wellloc(self,schematisation: dict,
                         dict_key: str = "well_parameters",
                         well_names: list or str or None = "None",
-                        discharge_parameter = "Q"):
+                        discharge_parameter = "well_discharge"):
 
         ''' Determine the location of the pumping wells and the relative discharge per cell.
             
@@ -789,8 +789,8 @@ class ModPathWell:
         spd_wel = {}
         spd_wel[0] = []
         for iWell in well_names:
-            # Daily flux [m3/d]     
-            Qwell_day[iWell] = schematisation[dict_key][iWell][discharge_parameter]
+            # Daily flux [m3/d]   (negative value)  
+            Qwell_day[iWell] = -abs(schematisation[dict_key][iWell][discharge_parameter])
             # Calculate boundary indices
             layidx_min,layidx_max,\
                 rowidx_min,rowidx_max,\
@@ -799,12 +799,6 @@ class ModPathWell:
                                         dict_subkey = iWell,
                                         model_type = self.model_type)
 
-
-            print("Laymin_max:", (layidx_min,layidx_max),\
-                  "Rowmin_max:", rowidx_min,rowidx_max,\
-                  "Colmin_max:",colidx_min,colidx_max)
-            print("(nlay,nrow,ncol)",(self.nlay,self.nrow,self.ncol))
-            
             # Add well locations and stress_period_data
             well_loc[iWell] = []
             KD_well[iWell] = 0.
@@ -816,8 +810,6 @@ class ModPathWell:
                         # Correct discharge for K_hor near wells and for the possible difference in delv (K * D)
                         KD_well[iWell] += self.hk[iLay,iRow,iCol] * self.delv[iLay]
 
-            print("Well discharge:", Qwell_day[iWell])
-            print("KD_well:", iWell, KD_well[iWell])
             # stress period data for well package
             for iLay in range(layidx_min,layidx_max):
                 for iRow in range(rowidx_min,rowidx_max):
@@ -1703,7 +1695,7 @@ class ModPathWell:
         # !!! Obtain node numbers of well locations (use indices) !!!
         # leakage discharge from well
         well_names = [iWell for iWell in self.schematisation_dict["well_parameters"] if \
-                        "Q" in self.schematisation_dict["well_parameters"][iWell].keys()]
+                        "well_discharge" in self.schematisation_dict["well_parameters"][iWell].keys()]
        
         self.well_names,\
             self.well_loc,\
@@ -1712,7 +1704,7 @@ class ModPathWell:
                         self.Qwell_day = self.assign_wellloc(schematisation = self.schematisation_dict,
                                                         dict_key = "well_parameters",
                                                         well_names = None,
-                                                        discharge_parameter = "Q")
+                                                        discharge_parameter = "well_discharge")
 
         # Load wel parms to model
         # self.wel_input(spd_wel = self.spd_wel)
