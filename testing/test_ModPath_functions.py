@@ -272,7 +272,7 @@ def test_modpath_run_phreatic_withgravelpack_traveltimes():
                         }
     # print(test_phrea.__dict__)
     modpath_phrea = ModPathWell(phreatic_dict_2, #test_phrea,
-                            workspace = "test_ws",
+                            workspace = "test_ws_phrea",
                             modelname = "phreatic",
                             bound_left = "xmin",
                             bound_right = "xmax")
@@ -308,8 +308,115 @@ def test_modpath_run_phreatic_withgravelpack_traveltimes():
 
     assert modpath_phrea.success_mp
 
-
 #=======
+#%%
+
+def test_modpath_run_semiconfined_withgravelpack_traveltimes():
+
+
+    ''' Phreatic scheme with gravelpack: modpath run.'''
+    test_semiconf = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
+                            computation_method = 'modpath',
+                            what_to_export='omp',
+                            # biodegradation_sorbed_phase = False,
+                            well_discharge=319.4*24,
+                            # vertical_resistance_shallow_aquifer=500,
+                            porosity_vadose_zone=0.38,
+                            porosity_shallow_aquifer=0.35,
+                            porosity_target_aquifer=0.35,
+                            recharge_rate=0.3/365.25,
+                            moisture_content_vadose_zone=0.15,
+                            ground_surface = 22.0,
+                            thickness_vadose_zone_at_boundary=5.0,
+                            thickness_shallow_aquifer=10.0,
+                            thickness_target_aquifer=40.0,
+                            hor_permeability_target_aquifer=35.0,
+                            hor_permeability_shallow_aquifer = 0.02,
+                            thickness_full_capillary_fringe=0.4,
+                            redox_vadose_zone='anoxic', #'suboxic',
+                            redox_shallow_aquifer='anoxic',
+                            redox_target_aquifer='deeply_anoxic',
+                            pH_vadose_zone=5.,
+                            pH_shallow_aquifer=6.,
+                            pH_target_aquifer=7.,
+                            dissolved_organic_carbon_vadose_zone=10., 
+                            dissolved_organic_carbon_shallow_aquifer=4., 
+                            dissolved_organic_carbon_target_aquifer=2.,
+                            fraction_organic_carbon_vadose_zone=0.001,
+                            fraction_organic_carbon_shallow_aquifer=0.0005,
+                            fraction_organic_carbon_target_aquifer=0.0005, 
+                            temperature=11.,
+                            solid_density_vadose_zone= 2.650, 
+                            solid_density_shallow_aquifer= 2.650, 
+                            solid_density_target_aquifer= 2.650, 
+                            diameter_borehole = 0.75,
+                            substance = 'benzo(a)pyrene',
+                            halflife_suboxic= 530,
+                            halflife_anoxic= 2120,
+                            halflife_deeply_anoxic= 2120,
+                            partition_coefficient_water_organic_carbon= 6.43,
+                            dissociation_constant= 99,
+                            diameter_filterscreen = 0.2,
+                            point_input_concentration = 100.,
+                            discharge_point_contamination = 100.,#made up value
+                            top_clayseal = 17,
+                            compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
+                            # substance = 'benzene',
+                            # halflife_suboxic=600,
+                            # partition_coefficient_water_organic_carbon = 3.3,
+                            )
+
+    test_semiconf.make_dictionary()
+
+    semiconf_dict_2 = { 'simulation_parameters' : test_semiconf.simulation_parameters,
+                        'endpoint_id': test_semiconf.endpoint_id,
+                        'mesh_refinement': test_semiconf.mesh_refinement,
+                        'geo_parameters' : test_semiconf.geo_parameters,
+                        'ibound_parameters' : test_semiconf.ibound_parameters,
+                        'recharge_parameters' : test_semiconf.recharge_parameters,
+                        'well_parameters' : test_semiconf.well_parameters,
+                        'point_parameters' : test_semiconf.point_parameters,
+                        'substance_parameters' : test_semiconf.substance_parameters,
+                        'bas_parameters' : test_semiconf.bas_parameters,
+                        }
+
+    modpath_semiconf = ModPathWell(semiconf_dict_2, #test_phrea,
+                            workspace = "test_ws_semiconf",
+                            modelname = "semi_conf",
+                            bound_left = "xmin",
+                            bound_right = "xmax")
+    # print(modpath_phrea.__dict__)
+    # Run phreatic schematisation
+    modpath_semiconf.run_model(run_mfmodel = True,
+                        run_mpmodel = True)
+
+    
+    # Create travel time plots
+    fpath_scatter_times_log = os.path.join(modpath_semiconf.dstroot,"log_travel_times_test.png")
+    fpath_scatter_times = os.path.join(modpath_semiconf.dstroot,"travel_times_test.png")
+    # df particle
+    df_particle = modpath_semiconf.df_particle
+    # time limits
+    tmin, tmax = 0.1, 10000.
+    # xcoord bounds
+    xmin, xmax = 0., 50.
+
+    # Create travel time plots (lognormal)
+    modpath_semiconf.plot_pathtimes(df_particle = df_particle, 
+            vmin = tmin,vmax = tmax,
+            fpathfig = fpath_scatter_times_log, figtext = None,x_text = 0,
+            y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
+            line_dist = 1, dpi = 192, cmap = 'viridis_r')
+
+    # Create travel time plots (linear)
+    modpath_semiconf.plot_pathtimes(df_particle = df_particle, 
+            vmin = 0.,vmax = tmax,
+            fpathfig = fpath_scatter_times, figtext = None,x_text = 0,
+            y_text = 0, lognorm = False, xmin = xmin, xmax = xmax,
+            line_dist = 1, dpi = 192, cmap = 'viridis_r')
+
+    assert modpath_semiconf.success_mp
+
 #%%
 
 def test_phreatic_scheme_withgravelpack_dictinput():
