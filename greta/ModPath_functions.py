@@ -1935,17 +1935,10 @@ class ModPathWell:
         return xyz_nodes, dist, tdiff, dist_tot, time_tot, pth_data
 
     # Make df_particle
-    def fill_df_particle (df,
-                        xyz_nodes,
-                        dist,
-                        tdiff,
-                        dist_tot,
-                        time_tot
-                        # distance,
-                        # travel_time_unsaturated,
-                        # travel_time_shallow_aquifer,
-                        # travel_time_target_aquifer,
-                        # total_travel_time
+    def fill_df_particle(self, particle_group,
+                        pg_nodes,
+                        parm_list: list = list(),
+                        mppth = None
                         ):
         '''Fill the df_particle by flowline_id
 
@@ -1968,6 +1961,7 @@ class ModPathWell:
             Sum of the unsaturated, shallow and target aquifer travel times for each
             point in the given distance array, [days].
 
+
         Returns
         -------
         df: pandas.dataframe
@@ -1989,76 +1983,111 @@ class ModPathWell:
         fraction_organic_carbon
         solid_density
 
+        '''
+
+        if mppth is None:
+            # Use default
+            mppth = os.path.join(self.workspace, self.modelname + '_mp.mppth')
+
+        # if particle_data is None:
+        # Temporary storage (dict) of particle_data
+        particle_data = {}
+        # dataframes of particle data (dict)
+        df_particle_data = {}
+        # list the particle_data dataframes
+        df_particle_list = []
+
+        for iPG in particle_group:  # use endpoint_id dict or list
+
+            # Nodes to retrieve
+            for id_,iNode in enumerate(pg_nodes.get(iPG)):
+                # print(id_,iNode)
+                try:
+                    nodes = self.get_node_ID(iNode)
+                except Exception:
+                    nodes = self.get_node_ID([iNode])
+
+                # nodes_rel[ = flopy.utils.ra_slice(m.wel.stress_period_data[0], ['k', 'i', 'j'])
+                #     nodes_well = prf.get_nodes(locs = wel_locs, nrow = nrow, ncol = ncol) # m.dis.get_node(wel_locs.tolist())
+
+                # Read pathline data
+                xyz_nodes, dist_data,  \
+                time_diff, dist_tot,   \
+                time_tot, pth_data =  \
+                            self.read_pathlinedata(fpth = mppth,
+                                                nodes = nodes)
+                
+                '''                             
+                xyz_points, \    # XYZ data 
+                dist_data,  \    # Distance array between nodes
+                time_diff,  \    # Save flow duration (time_diff) of pathlines: array
+                dist_tot,   \    # Total distance covered per particle
+                time_tot,   \    # Total time covered per particle
+                pth_data =  \    # Raw pathline data
+                '''
+
+                # col, lay, row index
+                node_indices = self.get_node_indices(xyz_nodes = xyz_nodes)
+                # Particle indices
+                part_idx = [iPart for iPart in xyz_nodes]
+                # Test array travel times (days)
+                tot_time_arr = {iPart: time_diff[iPart].sum() for iPart in part_idx}
+
+                for iPart in part_idx:
+
+                    # Fill recarray using pathline_data
+                    particle_data[f"{iPG}-{iNode}-{iPart}"] = copy.deepcopy(pth_data[iPart])
+                    
+                    # Loop through rec.arrays of pth_data using part_idx 
+                    for iParm in parm_list:
+
+                        # Material property array
+                        material_property_arr = getattr(self,iParm)
+                        # dtype of array
+                        mat_dtype = material_property_arr.dtype
+                        if mat_dtype == 'object':
+                            dtype_ = '|S20'
+                        else:
+                            dtype_ = mat_dtype
+                            
+                        # Numpy array values
+                        parm_values = np.array([material_property_arr[idx[0],idx[1],idx[2]] for idx in node_indices[iPart]],
+                                                dtype = [(iParm,mat_dtype)])
+                        # Numpy recarray of material property
+                        parm_values_rec = parm_values.view(np.recarray)
+                        # Append recarray to particle_data (dict of dicts of np.recarray)
+                        particle_data[f"{iPG}-{iNode}-{iPart}"] = rfn.rec_append_fields(base = particle_data[f"{iPG}-{iNode}-{iPart}"],
+                                                                                        names = iParm, data = parm_values_rec, 
+                                                                                        dtypes=dtype_)
+        
+                    # Export rec.arrays as pd dataframe
+                    df_particle_data[f"{iPG}-{iNode}-{iPart}"] = pd.DataFrame.from_records(data = particle_data[f"{iPG}-{iNode}-{iPart}"],
+                                                                                index = "particleid",
+                                                                                exclude = ["k"]).iloc[:-1,:]
+                    # Decode object series
+                    for iCol in df_particle_data[f"{iPG}-{iNode}-{iPart}"].columns:
+                        if df_particle_data[f"{iPG}-{iNode}-{iPart}"][iCol].dtype == "object":
+                            df_particle_data[f"{iPG}-{iNode}-{iPart}"].loc[:,iCol] = df_particle_data[f"{iPG}-{iNode}-{iPart}"].loc[:,iCol].str.decode(encoding = 'UTF-8')
+
+                    # Change index name of df_particle                                                           
+                    df_particle_data[f"{iPG}-{iNode}-{iPart}"].index.name = "flowline_id"
+                    # Pseudonyms for df_particle column names
+                    colnames_df_particle = {"x": "xcoord","y":"ycoord","z":"zcoord","time":"total_travel_time","prsity_uncorr":"porosity",
+                                "solid_density": "solid_density", "fraction_organic_carbon": "fraction_organic_carbon", "redox": "redox", 
+                                "dissolved_organic_carbon":	"dissolved_organic_carbon", "pH": "pH",	"temperature": "temperature", "material": "material"}
+                    df_particle_data[f"{iPG}-{iNode}-{iPart}"].rename(columns = colnames_df_particle, 
+                                                                                    inplace = True, errors = "raise")
+
+                    # Append dataframes
+                    df_particle_list.append(df_particle_data[f"{iPG}-{iNode}-{iPart}"])
+
+        # Concatenate df_particle dataframes ('combined')
+        df_particle = pd.concat(df_particle_list, axis = 0, ignore_index = False)
+
+        return df_particle, df_particle_data
         
 
-        df.loc[0] = [flowline_id,
-                    "surface",
-                    0,
-                    0,
-                    distance,
-                    self.schematisation.model_width,
-                        self.schematisation.ground_surface,
-                        None,
-                        self.schematisation.temperature,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None,
-                        None]
 
-        df.loc[1] = [flowline_id,
-                        "vadose_zone",
-                        travel_time_unsaturated,
-                        travel_time_unsaturated,
-                        distance,
-                        self.schematisation.model_width,
-                        self.schematisation.bottom_vadose_zone_at_boundary, # @MartinvdS should this be the thickness_vadose_zone_drawdown??
-                        self.schematisation.redox_vadose_zone,
-                        self.schematisation.temperature,
-                        self.schematisation.thickness_vadose_zone_at_boundary,
-                        self.schematisation.porosity_vadose_zone,
-                        self.schematisation.dissolved_organic_carbon_vadose_zone,
-                        self.schematisation.pH_vadose_zone,
-                        self.schematisation.fraction_organic_carbon_vadose_zone,
-                        self.schematisation.solid_density_vadose_zone,
-                        ]
-
-        df.loc[2] = [flowline_id,
-                    "shallow_aquifer",
-                        travel_time_shallow_aquifer,
-                        travel_time_unsaturated + travel_time_shallow_aquifer,
-                        distance,
-                        self.schematisation.model_width,
-                        self.schematisation.bottom_shallow_aquifer,
-                        self.schematisation.redox_shallow_aquifer,
-                        self.schematisation.temperature,
-                        self.schematisation.thickness_shallow_aquifer, # @MartinvdS does this need to account for the vadose zone drawdown?
-                        self.schematisation.porosity_shallow_aquifer,
-                        self.schematisation.dissolved_organic_carbon_shallow_aquifer,
-                        self.schematisation.pH_shallow_aquifer,
-                        self.schematisation.fraction_organic_carbon_shallow_aquifer,
-                        self.schematisation.solid_density_shallow_aquifer,
-                        ]
-
-        df.loc[3] = [flowline_id,
-                    "target_aquifer",
-                        travel_time_target_aquifer,
-                        total_travel_time,
-                        self.schematisation.diameter_borehole/2, #at the well
-                        self.schematisation.model_width,
-                        self.schematisation.bottom_target_aquifer,
-                        self.schematisation.redox_target_aquifer,
-                        self.schematisation.temperature,
-                        self.schematisation.thickness_target_aquifer,
-                        self.schematisation.porosity_target_aquifer,
-                        self.schematisation.dissolved_organic_carbon_target_aquifer,
-                        self.schematisation.pH_target_aquifer,
-                        self.schematisation.fraction_organic_carbon_target_aquifer,
-                        self.schematisation.solid_density_target_aquifer,
-                        ]
-        return df
-        '''
 
     ''' # Fill df_flowline
     # def fill_df_flowline(self, df_particle):
@@ -2320,142 +2349,35 @@ class ModPathWell:
             print("modelrun of type", self.schematisation_type, "completed.")
 
 
-            # Empty output dicts
-            self.xyz_nodes = {}
-            self.dist_data = {}
-            self.time_diff = {}
-            self.dist_tot = {}
-            self.time_tot = {}
-            self.pth_data = {}
 
+
+            # pthline_data converted to rec.arrays (with fields appended)
             self.particle_data = {}
             # dataframes of particle data (dict)
-            df_particle_data = {}
+            self.df_particle_data = {}
             # list the particle_data dataframes
             df_particle_list = []
             # Pathline output file
             self.mppth = os.path.join(self.workspace, self.modelname + '_mp.mppth')
-            # endpoint_keys = list(self.schematisation_dict["endpoint_id"].keys())
-            for iPG in self.pg:  # use endpoint_id dict or list
-                # xyz_locs
-                self.xyz_nodes[iPG] = {}
-                # Distance arrays
-                self.dist_data[iPG] = {}
-                # Total distance [L]
-                self.dist_tot[iPG] = {}
-                # Total time [T]
-                self.time_tot[iPG] = {}
-                # Pathline data
-                self.pth_data[iPG] = {}
 
-                # Save flow duration (time_diff) of pathlines
-                self.time_diff[iPG] = {}
-                # group recarray per particle location
-                self.particle_data[iPG] = {}
+            # Create rec.arrays for porosity, pH, T, etc. to append to particle_data
+            parm_list = ["prsity_uncorr","solid_density","fraction_organic_carbon",
+                        "redox","dissolved_organic_carbon", "pH","temperature","material"]
 
+            # Create df_particle
+            self.df_particle, self.df_particle_data = self.fill_df_particle(
+                                particle_group = self.pg,
+                                pg_nodes = self.pg_nodes,
+                                parm_list = parm_list,
+                                mppth = self.mppth)
 
-                # Nodes to retrieve
-                print("Particle group",iPG, "nr of nodes:", str(len(self.part_locs.get(iPG))))
-                for id_,iNode in enumerate(self.pg_nodes.get(iPG)):
-                    # print(id_,iNode)
-                    try:
-                        self.nodes = self.get_node_ID(iNode)
-                    except Exception:
-                        self.nodes = self.get_node_ID([iNode])
-                    print(id_,iNode, self.nodes)
-
-                    # nodes_rel[ = flopy.utils.ra_slice(m.wel.stress_period_data[0], ['k', 'i', 'j'])
-                    #     nodes_well = prf.get_nodes(locs = wel_locs, nrow = nrow, ncol = ncol) # m.dis.get_node(wel_locs.tolist())
-
-                    # Read pathline data
-                    self.xyz_nodes[iPG][iNode], \
-                    self.dist_data[iPG][iNode],  \
-                    self.time_diff[iPG][iNode],  \
-                    self.dist_tot[iPG][iNode],   \
-                    self.time_tot[iPG][iNode],   \
-                    self.pth_data[iPG][iNode] =  \
-                                self.read_pathlinedata(fpth = self.mppth,
-                                                    nodes = self.nodes) #pg_nodes[iGroup])  
-                    
-                    '''                             
-                    xyz_points, \    # XYZ data 
-                    dist_data,  \    # Distance araay between nodes
-                    time_diff,  \    # Time difference array
-                    dist_tot,   \    # Total distance covered per particle
-                    time_tot,   \    # Total time covered per particle
-                    pth_data =  \    # Raw pathline data
-                    '''        
-                    # col, lay, row index
-                    node_indices = self.get_node_indices(xyz_nodes = self.xyz_nodes[iPG][iNode])
-                    # Particle indices
-                    part_idx = [iPart for iPart in self.xyz_nodes[iPG][iNode]] #node_indices]
-                    # Test array travel times (days)
-                    tot_time_arr = {iPart: self.time_diff[iPG][iNode][iPart].sum() for iPart in part_idx}
-                    # Particle data dict per iNode
-                    self.particle_data[iPG][iNode] = {}
-                    # Create rec.arrays for porosity, pH, T, etc. to append to particle_data
-                    parm_list = ["prsity_uncorr","solid_density","fraction_organic_carbon",
-                                "redox","dissolved_organic_carbon", "pH","temperature","material"]
-                    for iPart in part_idx:
-                        # Fill recarray
-                        self.particle_data[iPG][iNode][iPart] = copy.deepcopy(self.pth_data[iPG][iNode][iPart])
-                        # Loop through rec.arrays of pth_data using part_idx 
-                        for iParm in parm_list:
-
-
-                        
-                            # Material property array
-                            material_property_arr = getattr(self,iParm)
-                            # dtype of array
-                            mat_dtype = material_property_arr.dtype
-                            if mat_dtype == 'object':
-                                dtype_ = '|S20'
-                            else:
-                                dtype_ = mat_dtype
-                                
-                            # Numpy array values
-                            parm_values = np.array([material_property_arr[idx[0],idx[1],idx[2]] for idx in node_indices[iPart]],
-                                                    dtype = [(iParm,mat_dtype)])
-                            # Numpy recarray of material property
-                            parm_values_rec = parm_values.view(np.recarray)
-                            # Append recarray to particle_data (dict of dicts of np.recarray)
-                            self.particle_data[iPG][iNode][iPart] = rfn.rec_append_fields(base = self.particle_data[iPG][iNode][iPart],
-                                                                                          names = iParm, data = parm_values_rec, 
-                                                                                          dtypes=dtype_)
-                            # self.particle_data[iPG][iNode][iPart] = np.append(self.particle_data[iPG][iNode][iPart],parm_values_rec)
-            
-                        # Export rec.arrays as pd dataframe
-                        df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"] = pd.DataFrame.from_records(data = self.particle_data[iPG][iNode][iPart],
-                                                                                    index = "particleid",
-                                                                                    exclude = ["k"]).iloc[:-1,:]
-                        # Decode object series
-                        for iCol in df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"].columns:
-                            if df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"][iCol].dtype == "object":
-                                df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"].loc[:,iCol] = df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"].loc[:,iCol].str.decode(encoding = 'UTF-8')
-
-                        # Change index name of df_particle                                                           
-                        df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"].index.name = "flowline_id"
-                        # Pseudonyms for df_particle column names
-                        colnames_df_particle = {"x": "xcoord","y":"ycoord","z":"zcoord","time":"total_travel_time","prsity_uncorr":"porosity",
-                                    "solid_density": "solid_density", "fraction_organic_carbon": "fraction_organic_carbon", "redox": "redox", 
-                                    "dissolved_organic_carbon":	"dissolved_organic_carbon", "pH": "pH",	"temperature": "temperature", "material": "material"}
-                        df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"].rename(columns = colnames_df_particle, 
-                                                                                        inplace = True, errors = "raise")
-
-
-
-                        particle_subset_fname = os.path.join(self.dstroot,f"pg{iPG}_node{iNode}_particle{iPart}.csv")
-                        df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"].to_csv(particle_subset_fname)
-                        # Append dataframes
-                        df_particle_list.append(df_particle_data[f"pg: {iPG} node: {iNode} particle: {iPart}"])
-
-            # Concatenate df_particle dataframes ('combined')
-            self.df_particle = pd.concat(df_particle_list, axis = 0, ignore_index = False)
+            ''' TODO 211123: append phreatic pathline data '''
 
             # df_particle file name
             particle_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_particle.csv")
             self.df_particle.to_csv(particle_fname)
             
+
             # Create df flowline
             colnames_df_flowline = ["flowline_type","flowline_discharge","particle_release_day","endpoint_id",
                                      "well_discharge", "substance", "removal_function"]
