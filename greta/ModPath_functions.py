@@ -197,6 +197,10 @@ class ModPathWell:
         # Destination root
         self.dstroot = self.workspace + '\\results'
 
+        # Create workspace(s)
+        if not os.path.exists(self.dstroot):
+            os.makedirs(self.dstroot)
+
         # Source files
         self.model_hds = os.path.join(self.workspace, self.modelname + '.hds')
         self.model_cbc = os.path.join(self.workspace, self.modelname + '.cbc')
@@ -204,7 +208,7 @@ class ModPathWell:
         Initialize the AnalyticalWell object by making the dictionaries and adding the schematisation (and therefore attributes 
         of the schematisation) to the object.
 
-        Returs
+        Returns
         ------
         Dictionaries (Modflow) with all parameters as an attribute of the function.
 
@@ -2087,24 +2091,29 @@ class ModPathWell:
         return df_particle, df_particle_data
         
 
+    # Fill df_flowline
+    def fill_df_flowline(self, df_particle, model_cbc):
+        
+        # Default value for model_cbc
+        if model_cbc is None:
+            model_cbc = self.model_cbc
 
-
-    ''' # Fill df_flowline
-    # def fill_df_flowline(self, df_particle):
-            
         # flowline ID as index
         flowline_id = list(df_particle.index.unique())
 
-        self.df_flowline = pd.DataFrame(index = flowline_id, columns = colnames_df_flowline)
+        # Column names in df_flowline
+        colnames_df_flowline = ["flowline_type","flowline_discharge","particle_release_day","endpoint_id",
+                        "well_discharge", "substance", "removal_function"]
+
+        df_flowline = pd.DataFrame(index = flowline_id, columns = colnames_df_flowline)
         # Change df_flowline index name
-        self.df_flowline.index.name = "flowline_id"
+        df_flowline.index.name = "flowline_id"
 
         ## Obtain flowline discharge ##
         # flux at starting location (grid cell) divided by total flowlines starting there
-        # HIER GEBLEVEN (df_flowline): 4-11-2021
 
         # flow right face (frf) and flow lower face (flf) (third option: flow front face)
-        self.frf, self.flf, self.fff = self.read_binarycbc_flow(self.model_cbc)
+        frf, flf, fff = self.read_binarycbc_flow(model_cbc)
         # flux of pathlines
         flux_pathline = {}
         # startpoints and endpoints of flowlines
@@ -2116,7 +2125,7 @@ class ModPathWell:
 
         for fid in flowline_id:
             # X,Y,Z,time data per particle flowline 
-            xyzt_data = self.df_particle.loc[self.df_particle.index == fid, 
+            xyzt_data = df_particle.loc[df_particle.index == fid, 
                                             ["xcoord","ycoord","zcoord","total_travel_time"]].sort_values(
                                             by = "total_travel_time")
             # Startpoint and endpoint (XYZ-data) of particle flowlines
@@ -2134,15 +2143,15 @@ class ModPathWell:
         for fid in flowline_id:
             if self.trackingdirection == "forward":
                 # starting point is used to calculate flux of pathline (flux_pathline)
-                flux_pathline[fid] = round((abs(self.frf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) + \
-                                abs(self.flf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) + \
-                                abs(self.fff[node_start[fid][0],node_start[fid][1],node_start[fid][2]])) / \
+                flux_pathline[fid] = round((abs(frf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) + \
+                                abs(flf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) + \
+                                abs(fff[node_start[fid][0],node_start[fid][1],node_start[fid][2]])) / \
                                 count_startpoints[node_start[fid]],4)
             elif self.trackingdirection == "backward":
                 # endpoint is used to calculate flux of pathline
-                flux_pathline[fid] = round((abs(self.frf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) + \
-                                abs(self.flf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) + \
-                                abs(self.fff[node_end[fid][0],node_end[fid][1],node_end[fid][2]])) / \
+                flux_pathline[fid] = round((abs(frf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) + \
+                                abs(flf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) + \
+                                abs(fff[node_end[fid][0],node_end[fid][1],node_end[fid][2]])) / \
                                 count_startpoints[node_end[fid]],4)
 
             # endpoint id
@@ -2150,18 +2159,16 @@ class ModPathWell:
 
         # fill flowline_df
         for fid in flowline_id:
-            self.df_flowline.loc[fid,["flowline_discharge","endpoint_id"]] = np.array([flux_pathline[fid],\
+            df_flowline.loc[fid,["flowline_discharge","endpoint_id"]] = np.array([flux_pathline[fid],\
                                                                                         endpoint_id[fid]])
         
-        for end_id in self.df_flowline["endpoint_id"].unique():
+        for end_id in df_flowline["endpoint_id"].unique():
             # well discharge
-            well_discharge = self.df_flowline.loc[self.df_flowline.endpoint_id == end_id,"flowline_discharge"].astype('float').values.sum()
-            self.df_flowline.loc[self.df_flowline.endpoint_id == end_id,"well_discharge"] = well_discharge
+            well_discharge = df_flowline.loc[df_flowline.endpoint_id == end_id,"flowline_discharge"].astype('float').values.sum()
+            df_flowline.loc[df_flowline.endpoint_id == end_id,"well_discharge"] = well_discharge
 
-        # df_flowline file name
-        flowline_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_flowline.csv")
-        self.df_flowline.to_csv(flowline_fname)
-    '''    
+        return df_flowline
+     
 
 
     def plot_pathtimes(self,df_particle, 
@@ -2321,7 +2328,12 @@ class ModPathWell:
             if self.run_mfmodel:
                 # Run modflow model
                 self.mfmodelrun()
-        # elif self.schematisation_type == "Semi-confined":
+        elif self.schematisation_type == "semiconfined":
+            print("Run semi-confined model")
+            self.phreatic()
+            if self.run_mfmodel:
+                # Run modflow model
+                self.mfmodelrun()
 
         # Modpath simulation
         if self.run_mpmodel:
@@ -2347,8 +2359,6 @@ class ModPathWell:
             # self.success_mp = True
     
             print("modelrun of type", self.schematisation_type, "completed.")
-
-
 
 
             # pthline_data converted to rec.arrays (with fields appended)
@@ -2377,85 +2387,14 @@ class ModPathWell:
             particle_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_particle.csv")
             self.df_particle.to_csv(particle_fname)
             
-
-            # Create df flowline
-            colnames_df_flowline = ["flowline_type","flowline_discharge","particle_release_day","endpoint_id",
-                                     "well_discharge", "substance", "removal_function"]
-
-
-
-            # flowline ID as index
-            flowline_id = list(self.df_particle.index.unique())
-
-            self.df_flowline = pd.DataFrame(index = flowline_id, columns = colnames_df_flowline)
-            # Change df_flowline index name
-            self.df_flowline.index.name = "flowline_id"
-
-            ## Obtain flowline discharge ##
-            # flux at starting location (grid cell) divided by total flowlines starting there
-            # HIER GEBLEVEN (df_flowline): 4-11-2021
-
-            # flow right face (frf) and flow lower face (flf) (third option: flow front face)
-            self.frf, self.flf, self.fff = self.read_binarycbc_flow(self.model_cbc)
-            # flux of pathlines
-            flux_pathline = {}
-            # startpoints and endpoints of flowlines
-            node_start, node_end = {}, {}
-            # startpoint and endpoint counter
-            count_startpoints, count_endpoints = {}, {}
-            # endpoint ids
-            endpoint_id = {}
-
-            for fid in flowline_id:
-                # X,Y,Z,time data per particle flowline 
-                xyzt_data = self.df_particle.loc[self.df_particle.index == fid, 
-                                                ["xcoord","ycoord","zcoord","total_travel_time"]].sort_values(
-                                                by = "total_travel_time")
-                # Startpoint and endpoint (XYZ-data) of particle flowlines
-                startpoint = xyzt_data.loc[xyzt_data.total_travel_time == xyzt_data.total_travel_time.min(),
-                                            ["xcoord","ycoord","zcoord"]].values.tolist()[0]
-                endpoint = xyzt_data.loc[xyzt_data.total_travel_time == xyzt_data.total_travel_time.max(),
-                                            ["xcoord","ycoord","zcoord"]].values.tolist()[0]
-                # Nodes of start and endpoints
-                node_start[fid] = self.xyz_to_layrowcol(xyz_point = startpoint)
-                node_end[fid] = self.xyz_to_layrowcol(xyz_point = endpoint)
-                # Count start points in cell
-                count_startpoints[node_start[fid]] = count_startpoints.get(node_start[fid],0) + 1
-                count_endpoints[node_end[fid]] = count_endpoints.get(node_end[fid],0) + 1
-
-            for fid in flowline_id:
-                if self.trackingdirection == "forward":
-                    # starting point is used to calculate flux of pathline (flux_pathline)
-                    flux_pathline[fid] = round((abs(self.frf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) + \
-                                    abs(self.flf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) + \
-                                    abs(self.fff[node_start[fid][0],node_start[fid][1],node_start[fid][2]])) / \
-                                    count_startpoints[node_start[fid]],4)
-                elif self.trackingdirection == "backward":
-                    # endpoint is used to calculate flux of pathline
-                    flux_pathline[fid] = round((abs(self.frf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) + \
-                                    abs(self.flf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) + \
-                                    abs(self.fff[node_end[fid][0],node_end[fid][1],node_end[fid][2]])) / \
-                                    count_startpoints[node_end[fid]],4)
-
-                # endpoint id
-                endpoint_id[fid] = self.material[node_end[fid][0],node_end[fid][1],node_end[fid][2]]
-
-            # fill flowline_df
-            for fid in flowline_id:
-                self.df_flowline.loc[fid,["flowline_discharge","endpoint_id"]] = np.array([flux_pathline[fid],\
-                                                                                           endpoint_id[fid]])
-            
-            for end_id in self.df_flowline["endpoint_id"].unique():
-                # well discharge
-                well_discharge = self.df_flowline.loc[self.df_flowline.endpoint_id == end_id,"flowline_discharge"].astype('float').values.sum()
-                self.df_flowline.loc[self.df_flowline.endpoint_id == end_id,"well_discharge"] = well_discharge
+            # Create dataframe df_flowline
+            self.df_flowline = self.fill_df_flowline(df_particle = self.df_particle,
+                                                    model_cbc = self.model_cbc)
 
             # df_flowline file name
             flowline_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_flowline.csv")
+            # Save df_flowline
             self.df_flowline.to_csv(flowline_fname)
-            
-
-
 
             print("Post-processing modpathrun of type", self.schematisation_type, "completed.")
 
