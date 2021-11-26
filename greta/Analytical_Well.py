@@ -640,7 +640,7 @@ class HydroChemicalSchematisation:
                 'top_boundary1': {
                     'head': self.bottom_vadose_zone_at_boundary,
                     'top': self.bottom_vadose_zone_at_boundary + 0.1,# 10 cm ficticous thickness to allow head boundary
-                    'bottom': self.bottom_vadose_zone_at_boundary,
+                    'bot': self.bottom_vadose_zone_at_boundary,
                     'xmin': self.diameter_gravelpack/2,
                     'xmax': self.model_radius_computed,
                     'ibound': -1,
