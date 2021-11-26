@@ -103,6 +103,8 @@ def test_modflow_run_phreatic_withgravelpack():
                                       # substance = 'benzene',
                                       # halflife_suboxic=600,
                                       # partition_coefficient_water_organic_carbon = 3.3,
+                                      ncols_near_well = 20,
+                                      ncols_far_well = 80,
                                     )
 
     test_phrea.make_dictionary()
@@ -175,6 +177,8 @@ def test_modpath_run_phreatic_withgravelpack():
                                       # substance = 'benzene',
                                       # halflife_suboxic=600,
                                       # partition_coefficient_water_organic_carbon = 3.3,
+                                      ncols_near_well = 20,
+                                      ncols_far_well = 80,
                                     )
 
     test_phrea.make_dictionary()
@@ -255,6 +259,8 @@ def test_modpath_run_phreatic_withgravelpack_traveltimes():
                                 # substance = 'benzene',
                                 # halflife_suboxic=600,
                                 # partition_coefficient_water_organic_carbon = 3.3,
+                                ncols_near_well = 20,
+                                ncols_far_well = 80,
                             )
 
     test_phrea.make_dictionary()
@@ -311,64 +317,69 @@ def test_modpath_run_phreatic_withgravelpack_traveltimes():
 #=======
 #%%
 
-def test_modpath_run_semiconfined_withgravelpack_traveltimes():
+def test_modpath_run_semiconfined_nogravelpack_traveltimes():
 
 
     ''' Phreatic scheme with gravelpack: modpath run.'''
     test_semiconf = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
-                            computation_method = 'modpath',
-                            what_to_export='omp',
-                            # biodegradation_sorbed_phase = False,
-                            well_discharge=319.4*24,
-                            # vertical_resistance_shallow_aquifer=500,
-                            porosity_vadose_zone=0.38,
-                            porosity_shallow_aquifer=0.35,
-                            porosity_target_aquifer=0.35,
-                            recharge_rate=0.3/365.25,
-                            moisture_content_vadose_zone=0.15,
-                            ground_surface = 22.0,
-                            thickness_vadose_zone_at_boundary=5.0,
-                            thickness_shallow_aquifer=10.0,
-                            thickness_target_aquifer=40.0,
-                            hor_permeability_target_aquifer=35.0,
-                            hor_permeability_shallow_aquifer = 0.02,
-                            thickness_full_capillary_fringe=0.4,
-                            redox_vadose_zone='anoxic', #'suboxic',
-                            redox_shallow_aquifer='anoxic',
-                            redox_target_aquifer='deeply_anoxic',
-                            pH_vadose_zone=5.,
-                            pH_shallow_aquifer=6.,
-                            pH_target_aquifer=7.,
-                            dissolved_organic_carbon_vadose_zone=10., 
-                            dissolved_organic_carbon_shallow_aquifer=4., 
-                            dissolved_organic_carbon_target_aquifer=2.,
-                            fraction_organic_carbon_vadose_zone=0.001,
-                            fraction_organic_carbon_shallow_aquifer=0.0005,
-                            fraction_organic_carbon_target_aquifer=0.0005, 
-                            temperature=11.,
-                            solid_density_vadose_zone= 2.650, 
-                            solid_density_shallow_aquifer= 2.650, 
-                            solid_density_target_aquifer= 2.650, 
-                            diameter_borehole = 0.75,
-                            substance = 'benzo(a)pyrene',
-                            halflife_suboxic= 530,
-                            halflife_anoxic= 2120,
-                            halflife_deeply_anoxic= 2120,
-                            partition_coefficient_water_organic_carbon= 6.43,
-                            dissociation_constant= 99,
-                            diameter_filterscreen = 0.2,
-                            point_input_concentration = 100.,
-                            discharge_point_contamination = 100.,#made up value
-                            top_clayseal = 17,
-                            compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
-                            # substance = 'benzene',
-                            # halflife_suboxic=600,
-                            # partition_coefficient_water_organic_carbon = 3.3,
-                            )
+                                    computation_method = 'modpath',
+                                    what_to_export='omp',
+                                    # biodegradation_sorbed_phase = False,
+                                      well_discharge=319.4*24,
+                                      # vertical_resistance_shallow_aquifer=500,
+                                      porosity_vadose_zone=0.38,
+                                      porosity_shallow_aquifer=0.35,
+                                      porosity_target_aquifer=0.35,
+                                      recharge_rate=0.3/365.25,
+                                      moisture_content_vadose_zone=0.15,
+                                      ground_surface = 22.0,
+                                      thickness_vadose_zone_at_boundary=5.0,
+                                      thickness_shallow_aquifer=10.0,
+                                      thickness_target_aquifer=40.0,
+                                      hor_permeability_target_aquifer=35.0,
+                                      hor_permeability_shallow_aquifer = 0.02,
+                                      thickness_full_capillary_fringe=0.4,
+                                      redox_vadose_zone='anoxic', #'suboxic',
+                                      redox_shallow_aquifer='anoxic',
+                                      redox_target_aquifer='deeply_anoxic',
+                                      pH_vadose_zone=5.,
+                                      pH_shallow_aquifer=6.,
+                                      pH_target_aquifer=7.,
+                                      dissolved_organic_carbon_vadose_zone=10., 
+                                      dissolved_organic_carbon_shallow_aquifer=4., 
+                                      dissolved_organic_carbon_target_aquifer=2.,
+                                      fraction_organic_carbon_vadose_zone=0.001,
+                                      fraction_organic_carbon_shallow_aquifer=0.0005,
+                                      fraction_organic_carbon_target_aquifer=0.0005, 
+                                      diffuse_input_concentration = 100, #ug/L
+                                      temperature=11.,
+                                      solid_density_vadose_zone= 2.650, 
+                                      solid_density_shallow_aquifer= 2.650, 
+                                      solid_density_target_aquifer= 2.650, 
+                                      diameter_borehole = 0.75,
+                                      substance = 'benzo(a)pyrene',
+                                      halflife_suboxic= 530,
+                                      halflife_anoxic= 2120,
+                                      halflife_deeply_anoxic= 2120,
+                                      partition_coefficient_water_organic_carbon= 6.43,
+                                      dissociation_constant= 99,
+                                      # diameter_filterscreen = 0.2,
+                                      point_input_concentration = 100.,
+                                      discharge_point_contamination = 100.,#made up value
+                                      top_clayseal = 17,
+                                      compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
+                                      
+                                      # substance = 'benzene',
+                                      # halflife_suboxic=600,
+                                      # partition_coefficient_water_organic_carbon = 3.3,
+                                      ncols_near_well = 20,
+                                      ncols_far_well = 200,
+                                      nlayers_target_aquifer = 20,
+                                    )
 
     test_semiconf.make_dictionary()
 
-    semiconf_dict_2 = { 'simulation_parameters' : test_semiconf.simulation_parameters,
+    semiconf_dict_1 = { 'simulation_parameters' : test_semiconf.simulation_parameters,
                         'endpoint_id': test_semiconf.endpoint_id,
                         'mesh_refinement': test_semiconf.mesh_refinement,
                         'geo_parameters' : test_semiconf.geo_parameters,
@@ -380,9 +391,9 @@ def test_modpath_run_semiconfined_withgravelpack_traveltimes():
                         'bas_parameters' : test_semiconf.bas_parameters,
                         }
 
-    modpath_semiconf = ModPathWell(semiconf_dict_2, #test_phrea,
-                            workspace = "test_ws_semiconf",
-                            modelname = "semi_conf",
+    modpath_semiconf = ModPathWell(semiconf_dict_1, #test_phrea,
+                            workspace = "test1_ws_semiconf",
+                            modelname = "semi_conf_no_gp",
                             bound_left = "xmin",
                             bound_right = "xmax")
     # print(modpath_phrea.__dict__)
@@ -399,7 +410,7 @@ def test_modpath_run_semiconfined_withgravelpack_traveltimes():
     # time limits
     tmin, tmax = 0.1, 10000.
     # xcoord bounds
-    xmin, xmax = 0., 50.
+    xmin, xmax = 0., 500.
 
     # Create travel time plots (lognormal)
     modpath_semiconf.plot_pathtimes(df_particle = df_particle, 

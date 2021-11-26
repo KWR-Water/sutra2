@@ -532,6 +532,7 @@ class ModPathWell:
         except KeyError:
             print("set top of", iDict, iDict_sub, "to 0.")
             top = self.top
+        # CHECK FOR ERRORS IF KEYWORD "bot" is not given
         try: 
             bot = schematisation[iDict][iDict_sub][self.bound_bot]
         except KeyError:
@@ -2333,7 +2334,7 @@ class ModPathWell:
             # Create radial distance array with particle locations
             # self._create_radial_distance_array() # Analytische fluxverdeling
             self._create_radial_distance_particles_recharge(recharge_parameters = None,
-                                                            nparticles_cell = 2,
+                                                            nparticles_cell = 1,
                                                             localy=0.5, localz=0.5,
                                                             timeoffset=0.0, drape=0,
                                                             trackingdirection = 'forward',
