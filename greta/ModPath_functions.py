@@ -822,6 +822,15 @@ class ModPathWell:
 
     ####################
     ### Fill modules ###
+    def create_modflow_packages(self, **kwargs):
+        """ Generate flopy files."""
+        if self.schematisation_type == "phreatic":
+            print("Run phreatic model")
+            self.phreatic()
+            if self.run_mfmodel:
+                # Run modflow model
+                self.mfmodelrun()
+
     def create_mfobject(self, mf_exe = 'mf2005.exe'):
         self.mf_exe = mf_exe
         
@@ -1273,7 +1282,7 @@ class ModPathWell:
   		self.recharge  #2 D grid
   
   
-    def create_modflow_packages(... , *kwargs):
+    def create_modflow_packages(... , **kwargs):
 		""" Generate flopy files."""
 		self.dry_cells  #
   		self.other_general_parameters  #
@@ -1573,6 +1582,11 @@ class ModPathWell:
         # Model_type axisymmetric
         self.model_type = "axisymmetric"
 
+        # list active packages
+        active_packages = ["BAS"]
+        # Parameter requirement
+        package_parms = {"BAS": "ibound"}
+
         # Make radial discretisation
         # Use dictionary keys from schematisation
         dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
@@ -1598,10 +1612,7 @@ class ModPathWell:
                                     grid = self.strt,
                                     dtype = 'int')      
 
-        # list active packages
-        active_packages = []
-        # Parameter requirement
-        package_parms = {"BAS": "ibound"}
+
 
         ''' ### lpf package input parms ###
             
@@ -2178,23 +2189,41 @@ class ModPathWell:
             x-location 'x_text' and y-location 'y_text'.
             lognorm: True/False (if vmin <= 0. --> vmin = 1.e-5)
             line_dist: min. distance between well pathlines at source (m)
+            line_freq: show every 'X' pathlines
+            dpi: pixel density
             cmap: Uses colormap 'viridis_r' (viridis reversed as default)
             '''
             
         if lognorm:
             if vmin <= 0.:
                 vmin = 1.e-2
+
+        # Keep track of minimum line distance between pathlines ('line_dist')
+        xmin_plot = 0.
         # Flowline IDs
         flowline_ID = list(df_particle.index.unique())
         for fid in flowline_ID:
 
-            x_points = df_particle.loc[df_particle.index == fid, "xcoord"]
-#           y_points = df_particle.loc[df_particle.index == fid, "ycoord"]
-            z_points = df_particle.loc[df_particle.index == fid, "zcoord"]
+            x_points = df_particle.loc[df_particle.index == fid, "xcoord"].values
+#           y_points = df_particle.loc[df_particle.index == fid, "ycoord"].values
+            z_points = df_particle.loc[df_particle.index == fid, "zcoord"].values
             # Cumulative travel times
-            time_points = df_particle.loc[df_particle.index == fid, "total_travel_time"]
+            time_points = df_particle.loc[df_particle.index == fid, "total_travel_time"].values
 
+            # Plot every 'line_dist' number of meters one line
+            if self.trackingdirection == "forward":
+                # x_origin: starting position of pathline
+                x_origin = x_points[0]  
+            else:
+                # x_origin: starting position of pathline
+                x_origin = x_points[-1]
 
+            # Check if line should be plotted
+            if x_origin > xmin_plot:
+                xmin_plot += line_dist
+                pass
+            else:
+                continue
 
             # Combine to xyz scatter array with x,y,values
             xyz_scatter = np.stack((x_points,z_points,time_points), axis = 1)
@@ -2315,6 +2344,10 @@ class ModPathWell:
         # Remove vadose_zone from geo_parameters and add to separate dict "vadose_parameters"
         self.schematisation_dict = self.extract_vadose_zone_parameters(schematisation = self.schematisation_dict,
                                                                         remove_keys = True)
+        
+        #### 29-11-'21: generalize the code based on required modflow_packages
+        self.create_modflow_packages()
+        
         if self.schematisation_type == "phreatic":
             print("Run phreatic model")
             self.phreatic()

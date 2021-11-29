@@ -373,7 +373,7 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes():
                                       # halflife_suboxic=600,
                                       # partition_coefficient_water_organic_carbon = 3.3,
                                       ncols_near_well = 20,
-                                      ncols_far_well = 200,
+                                      ncols_far_well = 100,
                                       nlayers_target_aquifer = 20,
                                     )
 
@@ -410,7 +410,7 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes():
     # time limits
     tmin, tmax = 0.1, 10000.
     # xcoord bounds
-    xmin, xmax = 0., 500.
+    xmin, xmax = 0., 100.
 
     # Create travel time plots (lognormal)
     modpath_semiconf.plot_pathtimes(df_particle = df_particle, 
