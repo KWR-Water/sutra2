@@ -263,43 +263,34 @@ class ModPathWell:
           
 
     ## Tijdelijk overslaan (*codeSteven_20211021.xlsx)
-    def _check_init_phreatic(self):
+    def _check_init_schematisation(self, required_keys,required_parameters):
         '''check the parameters that we need for the individual aquifer types are not NONE aka set by the user'''
         
+        # Check schematisation dictionary
+        self._check_schematisation(required_keys)
+        # Check required parameters
+        self._check_parameters(required_parameters)
+
+    def _check_schematisation_input(self):
+        ''' Modflow & modpath calculation using subsurface schematisation type 'phreatic'. '''
         
-        # # Required keys in self.schematisation
-        # required_keys = ["simulation_parameters",#repeat for all
-        #                       "geo_parameters",
-        #                       "recharge_parameters",
-        #                       "ibound_parameters",
-        #                       "well_parameters",
-        #                       "point_parameters",
-        #                       "substance_parameters"
-        #                     ]
+        # list active packages
+        active_packages = ["DIS","BAS","LPF","OC","PCG"]
+        # Parameter requirement
+        package_parms = {"BAS": "ibound"}
+
+        # Required keys in self.schematisation
+        required_keys = ["simulation_parameters","geo_parameters",
+        "ibound_parameters","recharge_parameters","well_parameters",
+        "point_parameters", "mesh_refinement",
+        "endpoint_id"]
 
         # Required parameters (to run model)
         required_parameters = []
 
-        # Check schematisation dictionary
-        self._check_schematisation(self.required_keys)
-        # Check required parameters
-        self._check_parameters(required_parameters)
-        # # Fill schematisation dictionary
-        # self._create_schematisation_dict(self.required_keys)
+        # Check input for schematisation type
+        self._check_init_schematisation(required_keys = required_keys, required_parameters = required_parameters)  
 
-    # def _check_init_semi_confined(self):
-    #     ''' check the parameters that we need for the individual aquifer types are not NONE aka set by the user '''
-
-    #     # Required parameters (to run model)
-    #     required_parameters = []
-
-    #     # Check schematisation dictionary
-    #     self._check_schematisation(self.required_keys)
-    #     # Check required parameters
-    #     self._check_parameters(required_parameters)
-    #     # # Fill schematisation dictionary
-    #     # self._create_schematisation_dict(self.required_keys)
-    ##
 
     def _update_property(self, property, value):
         setattr(self, property, value)
@@ -710,35 +701,7 @@ class ModPathWell:
         # Return the filled grid                
         return grid
 
-    # def set_ibound(self,schematisation: dict,
-    #                     dict_keys: dict or None = None,
-    #                     ibound: np.array or None = None,
-    #                     strt: np.array or None = None):
-
-    #     ''' This function is used to assign the constant head cells (ibound --> "-1". 
-    #     '''
-    #     if ibound is None:
-    #         print("attribute ibound does not yet exist. Create empty ibound grid")
-    #         ibound = np.ones((self.nlay,self.nrow,self.ncol), dtype = 'int')
-                
-    #     if strt is None:
-    #         print("attribute strt does not yet exist. Create empty ibound grid")
-    #         strt = np.zeros((self.nlay,self.nrow,self.ncol), dtype = 'float')
-                
-        
-        
-        
-    #     # Relevant dictionary keys
-    #     self.ibound = self.fill_grid(schematisation = self.schematisation_dict,
-    #                                 dict_keys = dict_keys,
-    #                                 parameter = "ibound",
-    #                                 grid = ibound,
-    #                                 dtype = 'int')
-    #     self.strt = self.fill_grid(schematisation = self.schematisation_dict,
-    #                                 dict_keys = dict_keys,
-    #                                 parameter = "head",
-    #                                 grid = strt,
-    #                                 dtype = 'int')          
+      
 
     def assign_wellloc(self,schematisation: dict,
                         dict_key: str = "well_parameters",
@@ -822,20 +785,153 @@ class ModPathWell:
 
     ####################
     ### Fill modules ###
-    def create_modflow_packages(self, **kwargs):
+    def create_modflow_input(self, **kwargs):
         """ Generate flopy files."""
-        if self.schematisation_type == "phreatic":
-            print("Run phreatic model")
-            self.phreatic()
-            if self.run_mfmodel:
-                # Run modflow model
-                self.mfmodelrun()
+            
+        # Use dictionary keys from schematisation
+        dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
+                      "well_parameters","mesh_refinement"]
+        self.make_discretisation(schematisation = self.schematisation_dict, dict_keys = dict_keys,
+                            model_type = self.model_type)
 
-    def create_mfobject(self, mf_exe = 'mf2005.exe'):
+        # Set ibound grid and starting head
+        dict_keys_ibound = ["ibound_parameters"]
+
+        self.ibound = np.ones((self.nlay,self.nrow,self.ncol), dtype = 'int')
+        self.strt = np.zeros((self.nlay,self.nrow,self.ncol), dtype = 'float')
+
+        # Relevant dictionary keys
+        self.ibound = self.fill_grid(schematisation = self.schematisation_dict,
+                                    dict_keys = dict_keys_ibound,
+                                    parameter = "ibound",
+                                    grid = self.ibound,
+                                    dtype = 'int')
+        self.strt = self.fill_grid(schematisation = self.schematisation_dict,
+                                    dict_keys = dict_keys_ibound,
+                                    parameter = "head",
+                                    grid = self.strt,
+                                    dtype = 'int')      
+
+        # Set ibound of additional rows equal to zero
+        self.ibound[:,1:,:] = 0
+
+        ''' ### lpf package input parms ###
+            
+            hk: Horizontal conductivity
+            vka: Vertical conductivity (-> if layvka = 0 (default))
+            ss: Specific storage (1/m)
+            storativity: # If True (default): Ss stands for storativity [-] instead of specific storage [1/m]
+            layavg: Layer average of hydraulic conductivity
+                layavg: 0 --> harmonic mean 
+                layavg: 1 --> logarithmic mean (is used in axisymmetric models).
+        '''
+
+        if self.model_type == "axisymmetric":
+            self.layavg = 1
+        else:  
+            self.layavg = 0
+        # geohydrological parameter names # list of schematisation_dict terms & dtype
+        self.geoparm_names = {"moisture_content": [["geo_parameters"],"float",0.35],
+                        "hk": [["geo_parameters"],"float",999.],
+                        "vani": [["geo_parameters"],"float",999.],
+                        "porosity": [["geo_parameters"],"float",1.],
+                        "solid_density": [["geo_parameters"],"float",2.5],
+                        "fraction_organic_carbon": [["geo_parameters"],"float",0.0],
+                        "redox": [["geo_parameters"],"object",0],
+                        "dissolved_organic_carbon": [["geo_parameters"],"float",0],
+                        "pH": [["geo_parameters"],"float",7],
+                        "temperature": [["geo_parameters"],"float",11]
+                        }
+                      
+
+        for iParm, dict_keys in self.geoparm_names.items():
+            # Temporary value grid
+            unitgrid = np.zeros((self.nlay,self.nrow,self.ncol), dtype = dict_keys[1]) + dict_keys[2]
+            # Fill grid with new values
+            grid = self.fill_grid(schematisation = self.schematisation_dict,
+                                dict_keys = dict_keys[0],
+                                parameter = iParm,
+                                grid = unitgrid,
+                                dtype = dict_keys[1])
+            self._update_property(property = iParm, value = grid)
+
+        # Assign material grid
+        self.assign_material(schematisation = self.schematisation_dict,
+                            dict_keys = ["geo_parameters","ibound_parameters","well_parameters"])
+
+        # Create (uncorrected) array for kv ("vka"), using "kh" and "vani" (vertical anisotropy)
+        for iLay in range(self.nlay):
+            for iRow in range(self.nrow):
+                for iCol in range(self.ncol):
+                    # Check if material occurs in "geo_parameters"
+                    if self.material[iLay,iRow,iCol] not in self.schematisation_dict["geo_parameters"].keys():
+                        self.hk[iLay,iRow,iCol] = 999.
+                        self.vani[iLay,iRow,iCol] = 999.
+       
+        # Vertical conductivity [m/d]
+        self.vka = self.hk / self.vani
+        # and for 'storativity' ("ss": specific storage)
+        self.ss = np.ones((self.nlay,self.nrow,self.ncol), dtype = 'float') * 1.E-6
+        # Uncorrected porosity parameter (for removal calculation)
+        self.prsity_uncorr = copy.deepcopy(self.porosity)
+
+        # Axisymmetric flow properties
+        axisym_parms = ["hk","vka","ss","porosity"]
+        if self.model_type == "axisymmetric":
+            for iParm in axisym_parms:
+                grid_uncorr = getattr(self,iParm)
+                grid_axi = self.axisym_correction(grid = grid_uncorr)
+                # Update attribute
+                self._update_property(property = iParm, value = grid_axi)
+
+        ### Outstanding issue: how to deal with multiple recharge sources 
+        # Create recharge package
+        rech_parmnames = {"recharge": [["recharge_parameters"],"float"]}
+        for iParm, dict_keys in rech_parmnames.items():
+            # Temporary value
+            grid_temp = np.zeros((self.nlay,self.nrow,self.ncol), dtype = 'float')
+            grid = self.fill_grid(schematisation = self.schematisation_dict,
+                            dict_keys = dict_keys[0],
+                            parameter = iParm,
+                            grid = grid_temp,
+                            dtype = dict_keys[1])
+            
+            if self.model_type == "axisymmetric":
+                rech_grid = self.axisym_correction(grid = grid)[0,:,:]
+            else:
+                rech_grid = grid[0,:,:]
+
+            # Update attribute (recharge)
+            self._update_property(property = iParm, value = rech_grid)
+
+        # Well input
+        # !!! Obtain node numbers of well locations (use indices) !!!
+        # leakage discharge from well
+        well_names = [iWell for iWell in self.schematisation_dict["well_parameters"] if \
+                        "well_discharge" in self.schematisation_dict["well_parameters"][iWell].keys()]
+       
+        self.well_names,\
+            self.well_loc,\
+                self.KD_well,\
+                    self.spd_wel,\
+                        self.Qwell_day = self.assign_wellloc(schematisation = self.schematisation_dict,
+                                                        dict_key = "well_parameters",
+                                                        well_names = None,
+                                                        discharge_parameter = "well_discharge")
+
+
+
+    def create_mfobject(self, mf_exe = 'mf2005.exe', fname_nam = None):
+        ''' create mf-object (if fname_nam equals None).
+            Otherwise: load mf-model using nam-file 'fname_nam'.
+            '''
         self.mf_exe = mf_exe
-        
-        # Modflow object
-        self.mf = flopy.modflow.Modflow(modelname = self.modelname, exe_name= self.mf_exe, model_ws=self.workspace)
+        if fname_nam is None:
+            # Create new Modflow object
+            self.mf = flopy.modflow.Modflow(modelname = self.modelname, exe_name= self.mf_exe, model_ws=self.workspace)
+        else:
+            # Load Modflow model
+            self.mf = flopy.modflow.Modflow.load(fname_nam)
 
     def create_dis(self, per_nr = 0):
         ''' Add dis Package to the MODFLOW model '''
@@ -912,13 +1008,85 @@ class ModPathWell:
                                      stress_period_data= self.spd_wel)
          # If ipakcb != 0: cell budget data is being saved.
 
-    def write_input_mf(self):
+    def create_modflow_packages(self, **kwargs):
+        ''' Create modflow packages used in the model run.'''
+
+        # Start model run
+        # Load modflow packages
+        for iper in range(self.nper):
+            # If the starting heads have been changed during the first model run:
+            if iper != 0:
+
+                try:
+                    # Load head data
+                    _, self.strt = self.read_hdsobj(fname = self.model_hds,time = -1)
+                except Exception as e:
+                    print (e,"Error loading strt_fw data\nstrt_fw set to '0'.")
+                    self.strt = 0.
+            
+            # Open modflow object
+            self.create_mfobject(mf_exe = 'mf2005.exe')
+            # Load packages
+            self.create_dis(per_nr = iper)   
+            self.create_bas()   
+            self.create_lpf()   
+            self.create_pcg()   
+            # Output control stress period data
+            self.spd_oc = {(0, 0): ['save head', 'save budget']}
+            self.create_oc(spd_oc = self.spd_oc)
+            if len(self.well_names) > 0:
+                try:                        
+                    self.create_wel(spd_wel = self.spd_wel)
+                except Exception as e:
+                    print(e, "error loading well package.")
+            try:
+                self.create_rch(rech = self.recharge)
+            except Exception as e:
+                print(e, "no recharge assigned.")
+
+            # Assign spatial reference:
+            # this is a fix until the grid object is available                    
+            self.spat_ref(xll = self.xll, yll = self.yll, delr = self.delr,
+                     delc = self.delc, units = "meters",
+                     lenuni = 1, length_multiplier=1)
+
+
+    def generate_modflow_files(self):
         ''' Write package data MODFLOW model. '''
         self.mf.write_input()
+
+        # Try to delete the previous output files, to prevent accidental use of older files
+        try:  
+            os.remove(self.model_hds)
+        except FileNotFoundError:
+            pass
+        try:  
+            os.remove(self.model_cbc)
+        except FileNotFoundError:
+            pass
 
     def run_modflowmod(self):         
         ''' Run modflow model '''
         self.success_mf, _ = self.mf.run_model(silent=False)
+
+    def mfmodelrun(self):
+        ''' Main model run code. '''
+        print ("Run model:",self.workspace, self.modelname +"\n")
+        # Create modflow packages
+        self.create_modflow_packages()
+        # Generate modflow files
+        self.generate_modflow_files()
+
+        # Run modflow model
+        try:
+            self.run_modflowmod()
+        except Exception as e:
+            self.success_mf = False
+            print(e, self.success_mf)
+        # print(self.success_mf, self.buff)
+
+        # Model run completed succesfully
+        print("Model run", self.workspace, self.modelname, "completed without errors:", self.success_mf)
 
     # Here are functions to calculate the travel time through vadose zone, shared functions for
     # Analytical and Modflow models
@@ -1348,44 +1516,13 @@ class ModPathWell:
   		#delete the unwanted columns depending on what the user asks for here
   		# return df_flowline, df_particle
     '''
-    def _export_to_df(self,
-        df_output,
-        distance,
-        total_travel_time,
-        travel_time_unsaturated,
-        travel_time_shallow_aquifer,
-        travel_time_target_aquifer,
-        discharge_point_contamination=None, #AH_todo do we need this?
-        ):
-        """ Makes 'df_flowline' and 'df_particle'
-        # MK: attributes, dont make thema rguments
-        #AH_todo review the logic of how the diffusion/point sources are calculated with @martinK
-
+    def _export_to_df(self, mppth):
+        """ Makes 'df_flowline' and 'df_particle' for ModPath model simulation
+  
             Parameters
-            ----------
-            df_output: pandas.DataFrame
-                Column 'total_travel_time': float
-                Column 'travel_time_unsaturated': float
-                Column 'travel_time_shallow_aquifer': float
-                Column 'travel_time_target_aquifer': float
-                Column 'radial_distance': float
-                Column 'head': float
-                Column 'cumulative_fraction_abstracted_water': float
-                Column 'flowline_discharge': float
-            distance: array
-                Array of distance(s) [m] from the well.
-                For diffuse sources 'distance' is the 'radial_distance' array.
-                For point sources 'distance' is 'distance_point_contamination_from_well'.
-            total_travel_time: array
-                Sum of the unsaturated, shallow and target aquifer travel times for each
-                point in the given distance array, [days].
-            travel_time_unsaturated: array
-                Travel time in the unsaturated zone for each point in the given distance array returned as
-                attrubute of the function, [days].
-            travel_time_shallow_aquifer: array
-                Travel time in the shallow aquifer for each point in the given distance array, [days].
-            travel_time_target_aquifer: array
-                Travel time in the target aquifer for each point in the given distance array, [days].
+            -------
+            mppth: str
+                File location to ModPath pathline output (*.mppth)
 
             Returns
             -------
@@ -1394,127 +1531,74 @@ class ModPathWell:
                 Column 'flowline_type': string
                     Described the type of contamination associated with the flowline,
                     either 'diffuse_source' or 'point_source'.
-                Column 'discharge': Float
+                Column 'flowline_discharge': Float
                     Discharge associated with the flowline, [m3/d].
-                Column 'particle_release_date': Float
+                Column 'particle_release_day': Float
                 Column 'input_concentration'
                 Column 'endpoint_id': Integer
                     ID of Well (or drain) where the flowline ends.
                 Column 'well_discharge': float
-                Column 'recharge_rate': float
-                Column 'vertical_resistance_aquitard': float
-                Column 'KD': float
-                Column 'thickness_full_capillary_fringe': float
                 Column 'substance': string
-                Column 'moisture_content_vadose_zone': float
-                Column 'diameter_borehole': float
                 Column 'removal_function': string
-                Column 'solid_density_vadose_zone': float
-                Column 'solid_density_shallow_aquifer': float
-                Column 'solid_density_target_aquifer': float
 
             df_particle: pandas.DataFrame
                 Column 'flowline_id': int
                 Column 'zone': string
                     Zone in the aquifer, ground surface 'surface', 'vadose_zone', 'shallow_aquifer' or 'target_aquifer'
-                Column 'travel_time_zone': float
+                Column 'travel_time': float
                     Travel time in the respective aquifer zone given in column 'zone.
                 Column 'xcoord': float
                 Column 'ycoord': float
                 Column 'zcoord': float
-                Column 'redox_zone': float
+                Column 'redox': float
                     'suboxic', 'anoxic', deeply_anoxic'
                 Column 'temperature': float
                     Of the respective aquifer zone.
-                Column 'thickness_layer': float
-                Column 'porosity_layer': float
+                Column 'travel_distance': float
+                Column 'porosity': float
                 Column 'dissolved_organic_carbon': float
                 Column 'pH': float
                 Column 'fraction_organic_carbon': float
-                Column 'solid_density_layer': float
-            """
+                Column 'solid_density': float
+        """
+
         # MK:  this is something that I could imagine that you use it as an argument to the
         # function.
         #AH_todo, @MartinK, what is the advantage over using the attribute?
-        what_to_export = self.schematisation.what_to_export
+        # what_to_export = self.schematisation.what_to_export
 
+        # pthline_data converted to rec.arrays (with fields appended)
+        self.particle_data = {}
+        # dataframes of particle data (dict)
+        self.df_particle_data = {}
+        # list the particle_data dataframes
+        df_particle_list = []
 
-    def create_mfmodel(self, fname_nam):
-        ''' Load modflow model from namefile. '''
-        self.mf = flopy.modflow.Modflow.load(fname_nam)
+        # Create rec.arrays for porosity, pH, T, etc. to append to particle_data
+        parm_list = ["prsity_uncorr","solid_density","fraction_organic_carbon",
+                    "redox","dissolved_organic_carbon", "pH","temperature","material"]
 
-    def mfmodelrun(self):
-        ''' Main model run code. '''
-        print ("Run model:",self.workspace, self.modelname +"\n")
+        # Create df_particle
+        self.df_particle, self.df_particle_data = self.fill_df_particle(
+                            particle_group = self.pg,
+                            pg_nodes = self.pg_nodes,
+                            parm_list = parm_list,
+                            mppth = mppth)
 
-        # Start model run
-        # Load modflow packages
-        for iper in range(self.nper):
-            # If the starting heads have been changed during the first model run:
-            if iper != 0:
+        ''' TODO 211123: append phreatic pathline data '''
 
-                try:
-                    # Load head data
-                    _, self.strt = self.read_hdsobj(fname = self.model_hds,time = -1)
-                except Exception as e:
-                    print (e,"Error loading strt_fw data\nstrt_fw set to '0'.")
-                    self.strt = 0.
-            
-            # Open modflow object
-            self.create_mfobject(mf_exe = 'mf2005.exe')
-            # Load packages
-            self.create_dis(per_nr = iper)   
-            self.create_bas()   
-            self.create_lpf()   
-            self.create_pcg()   
-            # Output control stress period data
-            self.spd_oc = {(0, 0): ['save head', 'save budget']}
-            self.create_oc(spd_oc = self.spd_oc)
-            if len(self.well_names) > 0:
-                try:                        
-                    self.create_wel(spd_wel = self.spd_wel)
-                except Exception as e:
-                    print(e, "error loading well package.")
-            try:
-                self.create_rch(rech = self.recharge)
-            except Exception as e:
-                print(e, "no recharge assigned.")
-
-            # Assign spatial reference:
-            # this is a fix until the grid object is available                    
-            self.spat_ref(xll = self.xll, yll = self.yll, delr = self.delr,
-                     delc = self.delc, units = "meters",
-                     lenuni = 1, length_multiplier=1)
-
-            # Write modflow, mt3dms and seawat input
-            try: 
-
-                self.write_input_mf()
-            finally:
-                pass
-            
-            # Finally removes the given exceptions from memory
+        # df_particle file name
+        particle_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_particle.csv")
+        self.df_particle.to_csv(particle_fname)
         
-            # Try to delete the previous output files, to prevent accidental use of older files
-            try:  
-                os.remove(self.model_hds)
-            except FileNotFoundError:
-                pass
-            try:  
-                os.remove(self.model_cbc)
-            except FileNotFoundError:
-                pass
-            
-            # Run modflow model
-            try:
-                self.run_modflowmod()
-            except Exception as e:
-                self.success_mf = False
-                print(e, self.success_mf)
-            # print(self.success_mf, self.buff)
+        # Create dataframe df_flowline
+        self.df_flowline = self.fill_df_flowline(df_particle = self.df_particle,
+                                                model_cbc = self.model_cbc)
 
-            # Model run completed succesfully
-            print("Model run", self.workspace, self.modelname, "completed without errors:", self.success_mf)
+        # df_flowline file name
+        flowline_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_flowline.csv")
+        # Save df_flowline
+        self.df_flowline.to_csv(flowline_fname)
 
     def MP7modelrun(self, mf_namfile = None, mp_exe = None):
         ''' Modpath model run.'''
@@ -1575,184 +1659,6 @@ class ModPathWell:
         except Exception as e:
             self.success_mp = False
             print(e, "ModPath run", self.workspace, self.modelname, "failed.")           
-
-    def phreatic(self):
-        ''' Modflow & modpath calculation using subsurface schematisation type 'phreatic'. '''
-        self._check_init_phreatic()  # Needs to be changed
-        # Model_type axisymmetric
-        self.model_type = "axisymmetric"
-
-        # list active packages
-        active_packages = ["BAS"]
-        # Parameter requirement
-        package_parms = {"BAS": "ibound"}
-
-        # Make radial discretisation
-        # Use dictionary keys from schematisation
-        dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
-                      "well_parameters","mesh_refinement"]
-        self.make_discretisation(schematisation = self.schematisation_dict, dict_keys = dict_keys,
-                            model_type = self.model_type)
-
-        # Set ibound grid and starting head
-        dict_keys_ibound = ["ibound_parameters"]
-
-        self.ibound = np.ones((self.nlay,self.nrow,self.ncol), dtype = 'int')
-        self.strt = np.zeros((self.nlay,self.nrow,self.ncol), dtype = 'float')
-
-        # Relevant dictionary keys
-        self.ibound = self.fill_grid(schematisation = self.schematisation_dict,
-                                    dict_keys = dict_keys_ibound,
-                                    parameter = "ibound",
-                                    grid = self.ibound,
-                                    dtype = 'int')
-        self.strt = self.fill_grid(schematisation = self.schematisation_dict,
-                                    dict_keys = dict_keys_ibound,
-                                    parameter = "head",
-                                    grid = self.strt,
-                                    dtype = 'int')      
-
-
-
-        ''' ### lpf package input parms ###
-            
-            hk: Horizontal conductivity
-            vka: Vertical conductivity (-> if layvka = 0 (default))
-            ss: Specific storage (1/m)
-            storativity: # If True (default): Ss stands for storativity [-] instead of specific storage [1/m]
-            layavg: Layer average of hydraulic conductivity
-                layavg: 0 --> harmonic mean 
-                layavg: 1 --> logarithmic mean (is used in axisymmetric models).
-        '''
-
-        if self.model_type == "axisymmetric":
-            self.layavg = 1
-        else:  
-            self.layavg = 0
-        # geohydrological parameter names # list of schematisation_dict terms & dtype
-        self.geoparm_names = {"moisture_content": [["geo_parameters"],"float",0.35],
-                        "hk": [["geo_parameters"],"float",999.],
-                        "vani": [["geo_parameters"],"float",999.],
-                        "porosity": [["geo_parameters"],"float",1.],
-                        "solid_density": [["geo_parameters"],"float",2.5],
-                        "fraction_organic_carbon": [["geo_parameters"],"float",0.0],
-                        "redox": [["geo_parameters"],"object",0],
-                        "dissolved_organic_carbon": [["geo_parameters"],"float",0],
-                        "pH": [["geo_parameters"],"float",7],
-                        "temperature": [["geo_parameters"],"float",11]
-                        }
-                      
-
-        for iParm, dict_keys in self.geoparm_names.items():
-            # Temporary value grid
-            unitgrid = np.zeros((self.nlay,self.nrow,self.ncol), dtype = dict_keys[1]) + dict_keys[2]
-            # Fill grid with new values
-            grid = self.fill_grid(schematisation = self.schematisation_dict,
-                                dict_keys = dict_keys[0],
-                                parameter = iParm,
-                                grid = unitgrid,
-                                dtype = dict_keys[1])
-            self._update_property(property = iParm, value = grid)
-
-        # Assign material grid
-        self.assign_material(schematisation = self.schematisation_dict,
-                            dict_keys = ["geo_parameters","ibound_parameters","well_parameters"])
-
-        # Create (uncorrected) array for kv ("vka"), using "kh" and "vani" (vertical anisotropy)
-        for iLay in range(self.nlay):
-            for iRow in range(self.nrow):
-                for iCol in range(self.ncol):
-                    # Check if material occurs in "geo_parameters"
-                    if self.material[iLay,iRow,iCol] not in self.schematisation_dict["geo_parameters"].keys():
-                        self.hk[iLay,iRow,iCol] = 999.
-                        self.vani[iLay,iRow,iCol] = 999.
-       
-        # Vertical conductivity [m/d]
-        self.vka = self.hk / self.vani
-        # and for 'storativity' ("ss": specific storage)
-        self.ss = np.ones((self.nlay,self.nrow,self.ncol), dtype = 'float') * 1.E-6
-        # Uncorrected porosity parameter (for removal calculation)
-        self.prsity_uncorr = copy.deepcopy(self.porosity)
-
-        # Axisymmetric flow properties
-        axisym_parms = ["hk","vka","ss","porosity"]
-        if self.model_type == "axisymmetric":
-            for iParm in axisym_parms:
-                grid_uncorr = getattr(self,iParm)
-                grid_axi = self.axisym_correction(grid = grid_uncorr)
-                # Update attribute
-                self._update_property(property = iParm, value = grid_axi)
-
-        ### Outstanding issue: how to deal with multiple recharge sources 
-        # Create recharge package
-        rech_parmnames = {"recharge": [["recharge_parameters"],"float"]}
-        for iParm, dict_keys in rech_parmnames.items():
-            # Temporary value
-            grid_temp = np.zeros((self.nlay,self.nrow,self.ncol), dtype = 'float')
-            grid = self.fill_grid(schematisation = self.schematisation_dict,
-                            dict_keys = dict_keys[0],
-                            parameter = iParm,
-                            grid = grid_temp,
-                            dtype = dict_keys[1])
-            
-            if self.model_type == "axisymmetric":
-                rech_grid = self.axisym_correction(grid = grid)[0,:,:]
-            else:
-                rech_grid = grid[0,:,:]
-
-            # Update attribute (recharge)
-            self._update_property(property = iParm, value = rech_grid)
-
-        # Well input
-        # !!! Obtain node numbers of well locations (use indices) !!!
-        # leakage discharge from well
-        well_names = [iWell for iWell in self.schematisation_dict["well_parameters"] if \
-                        "well_discharge" in self.schematisation_dict["well_parameters"][iWell].keys()]
-       
-        self.well_names,\
-            self.well_loc,\
-                self.KD_well,\
-                    self.spd_wel,\
-                        self.Qwell_day = self.assign_wellloc(schematisation = self.schematisation_dict,
-                                                        dict_key = "well_parameters",
-                                                        well_names = None,
-                                                        discharge_parameter = "well_discharge")
-
-        # Load wel parms to model
-        # self.wel_input(spd_wel = self.spd_wel)
-
-        '''
-        Function to create array of travel time distributionss
-        for distances from well for phreatic aquifer scenario
-
-        Parameter - Input
-        ---------
-        well_discharge                           # [m3/day]
-        spreading_distance               # [m]?, sqtr(K*D*c)
-        vertical_resistance_aquitard   # [d], c_V
-        porosity_vadose_zone           # [-]
-        porosity_shallow_aquifer       # [-]
-        porosity_target_aquifer        # [-]
-        KD                             # [m2/d], permeability * tickness of vertical layer
-        permeability                   # [m2]
-
-        thickness_vadose_zone           # [m], thickness of unsaturated zone/layer
-        thickness_shallow_aquifer       # [m], thickness of zone 1, if semiconfined aquitard,
-                                        if phreatic aquifer, aquifer zone above top of well screens.
-        thickness_target_aquifer        # [m], thickness of zone 2
-
-        thickness_full_capillary_fringe #[m], cF
-
-        recharge_rate                        # [m/d], recharge of well area
-        moisture_content_vadose_zone           # [m3/m3], θ
-        travel_time_H2O                 # [d],  travel time of water along flowline, in zone
-
-        Output
-        ------
-        radial_distance_recharge        # [m], radial distance to well in order to recharge the well
-        radial_distance                 # [m], radial distance to well (field),
-                                        from site X within and any site on the groundwater divide
-        '''
 
     def read_hdsobj(self, fname = None, time = None):
         
@@ -1871,8 +1777,6 @@ class ModPathWell:
                 # list lay, row, col of nodes and store them in 'node_indices' dict
                 node_idx = self.xyz_to_layrowcol(xyz_point = xyz_nodes[iPart][iNode].tolist())
                 node_indices[iPart].append(node_idx)
-
-
 
         return node_indices
 
@@ -2059,8 +1963,14 @@ class ModPathWell:
                             dtype_ = mat_dtype
                             
                         # Numpy array values
-                        parm_values = np.array([material_property_arr[idx[0],idx[1],idx[2]] for idx in node_indices[iPart]],
+                        # Use parm values for the first row in both 2D and axisymmetric models
+                        if self.model_type in ["axisymmetric","2D"]:
+                            parm_values = np.array([material_property_arr[idx[0],0,idx[2]] for idx in node_indices[iPart]],
+                                                    dtype = [(iParm,mat_dtype)])
+                        else: # else: Use pathline data columns
+                            parm_values = np.array([material_property_arr[idx[0],idx[1],idx[2]] for idx in node_indices[iPart]],
                                                 dtype = [(iParm,mat_dtype)])
+                        
                         # Numpy recarray of material property
                         parm_values_rec = parm_values.view(np.recarray)
                         # Append recarray to particle_data (dict of dicts of np.recarray)
@@ -2091,6 +2001,10 @@ class ModPathWell:
 
         # Concatenate df_particle dataframes ('combined')
         df_particle = pd.concat(df_particle_list, axis = 0, ignore_index = False)
+
+        # y-coordinate equals 0.5 * self.delc[0] in axisymmetric or 2D model
+        if self.model_type in ["axisymmetric","2D"]:
+            df_particle.loc[:,"ycoord"] = 0.5 * self.delc[0]
 
         return df_particle, df_particle_data
         
@@ -2147,16 +2061,16 @@ class ModPathWell:
         for fid in flowline_id:
             if self.trackingdirection == "forward":
                 # starting point is used to calculate flux of pathline (flux_pathline)
-                flux_pathline[fid] = round((abs(frf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) + \
-                                abs(flf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) + \
-                                abs(fff[node_start[fid][0],node_start[fid][1],node_start[fid][2]])) / \
-                                count_startpoints[node_start[fid]],4)
+                flux_pathline[fid] = round(np.sqrt((frf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]**2 + \
+                                            flf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]**2 + \
+                                            fff[node_start[fid][0],node_start[fid][1],node_start[fid][2]]**2)) / \
+                                    count_startpoints[node_start[fid]],4)
             elif self.trackingdirection == "backward":
                 # endpoint is used to calculate flux of pathline
-                flux_pathline[fid] = round((abs(frf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) + \
-                                abs(flf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) + \
-                                abs(fff[node_end[fid][0],node_end[fid][1],node_end[fid][2]])) / \
-                                count_startpoints[node_end[fid]],4)
+                flux_pathline[fid] = round(np.sqrt((frf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]**2 + \
+                                            flf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]**2 + \
+                                            fff[node_end[fid][0],node_end[fid][1],node_end[fid][2]]**2)) / \
+                                    count_startpoints[node_end[fid]],4)
 
             # endpoint id
             endpoint_id[fid] = self.material[node_end[fid][0],node_end[fid][1],node_end[fid][2]]
@@ -2344,23 +2258,26 @@ class ModPathWell:
         # Remove vadose_zone from geo_parameters and add to separate dict "vadose_parameters"
         self.schematisation_dict = self.extract_vadose_zone_parameters(schematisation = self.schematisation_dict,
                                                                         remove_keys = True)
-        
-        #### 29-11-'21: generalize the code based on required modflow_packages
-        self.create_modflow_packages()
-        
-        if self.schematisation_type == "phreatic":
+        ## Following code only relevant if there are different input requirements for each schematisation type
+        if self.schematisation_type in ["phreatic","semiconfined"]:
+            self.model_type = "axisymmetric"
             print("Run phreatic model")
-            self.phreatic()
-            if self.run_mfmodel:
-                # Run modflow model
-                self.mfmodelrun()
-        elif self.schematisation_type == "semiconfined":
-            print("Run semi-confined model")
-            self.phreatic()
-            if self.run_mfmodel:
-                # Run modflow model
-                self.mfmodelrun()
+            self._check_schematisation_input()
 
+        ## NOTE to programmer: for additional schematisation_types add to functionality here (elif)...
+
+        elif self.schematisation_type in ["BAR"]:
+            self.model_type = "2D"
+            print("Run 2D model")
+            self._check_schematisation_input()
+
+        #### 29-11-'21: generalize the code based on required modflow_packages
+        self.create_modflow_input()
+        if self.run_mfmodel:
+
+            # Run modflow model
+            self.mfmodelrun()
+            
         # Modpath simulation
         if self.run_mpmodel:
 
@@ -2370,7 +2287,7 @@ class ModPathWell:
                                                             nparticles_cell = 1,
                                                             localy=0.5, localz=0.5,
                                                             timeoffset=0.0, drape=0,
-                                                            trackingdirection = 'forward',
+                                                            trackingdirection = "forward",
                                                             releasedata=0.0)  
 
             # Default flux interfaces
@@ -2383,45 +2300,13 @@ class ModPathWell:
             self.MP7modelrun()
 
             # self.success_mp = True
-    
             print("modelrun of type", self.schematisation_type, "completed.")
 
-
-            # pthline_data converted to rec.arrays (with fields appended)
-            self.particle_data = {}
-            # dataframes of particle data (dict)
-            self.df_particle_data = {}
-            # list the particle_data dataframes
-            df_particle_list = []
             # Pathline output file
             self.mppth = os.path.join(self.workspace, self.modelname + '_mp.mppth')
 
-            # Create rec.arrays for porosity, pH, T, etc. to append to particle_data
-            parm_list = ["prsity_uncorr","solid_density","fraction_organic_carbon",
-                        "redox","dissolved_organic_carbon", "pH","temperature","material"]
-
-            # Create df_particle
-            self.df_particle, self.df_particle_data = self.fill_df_particle(
-                                particle_group = self.pg,
-                                pg_nodes = self.pg_nodes,
-                                parm_list = parm_list,
-                                mppth = self.mppth)
-
-            ''' TODO 211123: append phreatic pathline data '''
-
-            # df_particle file name
-            particle_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_particle.csv")
-            self.df_particle.to_csv(particle_fname)
-            
-            # Create dataframe df_flowline
-            self.df_flowline = self.fill_df_flowline(df_particle = self.df_particle,
-                                                    model_cbc = self.model_cbc)
-
-            # df_flowline file name
-            flowline_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_flowline.csv")
-            # Save df_flowline
-            self.df_flowline.to_csv(flowline_fname)
-
+            # Export output data to particle_df and flowline_df
+            self._export_to_df(mppth = self.mppth)
             print("Post-processing modpathrun of type", self.schematisation_type, "completed.")
 
 

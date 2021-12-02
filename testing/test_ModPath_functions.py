@@ -373,7 +373,7 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes():
                                       # halflife_suboxic=600,
                                       # partition_coefficient_water_organic_carbon = 3.3,
                                       ncols_near_well = 20,
-                                      ncols_far_well = 100,
+                                      ncols_far_well = 80,
                                       nlayers_target_aquifer = 20,
                                     )
 
