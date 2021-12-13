@@ -303,14 +303,16 @@ def test_modpath_run_phreatic_withgravelpack_traveltimes():
             vmin = tmin,vmax = tmax,
             fpathfig = fpath_scatter_times_log, figtext = None,x_text = 0,
             y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
-            line_dist = 1, dpi = 192, cmap = 'viridis_r')
+            line_dist = 1, dpi = 192, trackingdirection = "forward",
+            cmap = 'viridis_r')
 
     # Create travel time plots (linear)
     modpath_phrea.plot_pathtimes(df_particle = df_particle, 
             vmin = 0.,vmax = tmax,
             fpathfig = fpath_scatter_times, figtext = None,x_text = 0,
             y_text = 0, lognorm = False, xmin = xmin, xmax = xmax,
-            line_dist = 1, dpi = 192, cmap = 'viridis_r')
+            line_dist = 1, dpi = 192, trackingdirection = "forward",
+            cmap = 'viridis_r')
 
     assert modpath_phrea.success_mp
 
@@ -417,14 +419,16 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes():
             vmin = tmin,vmax = tmax,
             fpathfig = fpath_scatter_times_log, figtext = None,x_text = 0,
             y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
-            line_dist = 1, dpi = 192, cmap = 'viridis_r')
+            line_dist = 1, dpi = 192, trackingdirection = "forward",
+            cmap = 'viridis_r')
 
     # Create travel time plots (linear)
     modpath_semiconf.plot_pathtimes(df_particle = df_particle, 
             vmin = 0.,vmax = tmax,
             fpathfig = fpath_scatter_times, figtext = None,x_text = 0,
             y_text = 0, lognorm = False, xmin = xmin, xmax = xmax,
-            line_dist = 1, dpi = 192, cmap = 'viridis_r')
+            line_dist = 1, dpi = 192, trackingdirection = "forward",
+            cmap = 'viridis_r')
 
     assert modpath_semiconf.success_mp
 

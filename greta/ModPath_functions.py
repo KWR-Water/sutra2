@@ -153,7 +153,8 @@ class ModPathWell:
                        workspace: str or None = None, modelname: str or None = None,
                        bound_left: str = "xmin", bound_right: str = "xmax",
                        bound_top: str = "top", bound_bot: str = "bot",
-                       bound_north: str = "ymin", bound_south: str = "ymax"): 
+                       bound_north: str = "ymin", bound_south: str = "ymax",
+                       trackingdirection = "forward"): 
         ''''unpack/parse' all the variables from the hydrogeochemical schematizization """
        
         Parameters
@@ -192,6 +193,8 @@ class ModPathWell:
         self.bound_bot = bound_bot
         self.bound_north = bound_north
         self.bound_south = bound_south
+        # Direction of calculating flow along pathlines (in modpath)
+        self.trackingdirection = trackingdirection
 
         # Create output directories
         # Destination root
@@ -1589,6 +1592,7 @@ class ModPathWell:
 
         # df_particle file name
         particle_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_particle.csv")
+        # Save df_particle
         self.df_particle.to_csv(particle_fname)
         
         # Create dataframe df_flowline
@@ -1987,6 +1991,7 @@ class ModPathWell:
                         if df_particle_data[f"{iPG}-{iNode}-{iPart}"][iCol].dtype == "object":
                             df_particle_data[f"{iPG}-{iNode}-{iPart}"].loc[:,iCol] = df_particle_data[f"{iPG}-{iNode}-{iPart}"].loc[:,iCol].str.decode(encoding = 'UTF-8')
 
+
                     # Change index name of df_particle                                                           
                     df_particle_data[f"{iPG}-{iNode}-{iPart}"].index.name = "flowline_id"
                     # Pseudonyms for df_particle column names
@@ -2093,7 +2098,8 @@ class ModPathWell:
                   vmin = 0.,vmax = 1.,orientation = {'row': 0},
                   fpathfig = None, figtext = None,x_text = 0,
                   y_text = 0, lognorm = True, xmin = 0., xmax = None,
-                  line_dist = 1, dpi = 192, cmap = 'viridis_r'):
+                  line_dist = 1, dpi = 192, trackingdirection = "forward",
+                  cmap = 'viridis_r'):
         ''' Create pathline plots with residence times 
             using colours as indicator.
             with: 
@@ -2105,6 +2111,7 @@ class ModPathWell:
             line_dist: min. distance between well pathlines at source (m)
             line_freq: show every 'X' pathlines
             dpi: pixel density
+            trackingdirection: direction of calculating flow along pathlines"
             cmap: Uses colormap 'viridis_r' (viridis reversed as default)
             '''
             
@@ -2125,7 +2132,7 @@ class ModPathWell:
             time_points = df_particle.loc[df_particle.index == fid, "total_travel_time"].values
 
             # Plot every 'line_dist' number of meters one line
-            if self.trackingdirection == "forward":
+            if trackingdirection == "forward":
                 # x_origin: starting position of pathline
                 x_origin = x_points[0]  
             else:
@@ -2196,7 +2203,490 @@ class ModPathWell:
             plt.savefig(fpathfig, dpi = dpi)
         # Sluit figuren af
         plt.close('all')
+
+    
+    # Check for parameters in df_flowline #
+    def _df_fillna(self, df,df_column: str, value = 0.):
+        ''' Check dataframe for missing values for
+            calculation of removal.
+            df: the pandas.DataFrame to check
+            df_column: the required dataframe column
+            value: the default value in case other alues are missing
+            
+            Return adjusted dataframe 'df'
+        '''
+
+        if not df_column in df.columns:
+            # Add dataframe column with default value
+            df[df_column] = value
+        else:
+            # Fill dataframe series (if needed with default value)
+            if df[df_column].dropna().empty:
+                df[df_column] = df[df_column].fillna(value)
+            else: 
+                # fill empty rows (with mean value of other records)
+                value_mean = df[df_column].values.mean()
+                df[df_column] = df[df_column].fillna(value_mean)
+
+        return df
                                 
+    def calc_lambda(self, df_particle, df_flowline, mu1 = 0.149, mu1_std = 0.0932,
+                por_eff = 0.33, 
+                grainsize = 0.00025,
+                coll_eff = 0.001, const_BM = 1.38e-23,
+                temp_water = 10., rho_water = 999.703,
+                pathogen_diam = 2.33e-8, v_por = 0.01):
+
+        ''' For more information about the advective microbial removal calculation: 
+                BTO2012.015: Ch 6.7 (page 71-74)
+
+        Calculate removal coefficient 'lambda_' [/day].
+
+            lambda_ = k_att + mu_1
+            with 'hechtingssnelheidscoëfficiën't k_att [/day] and
+            inactivation constant 'mu1' [/day] - sub(oxic): 0.149 [/day]
+            lognormal standarddev. 'mu1_std' - sub(oxic): 0.0932 [/day]
+
+        First, calculate "hechtingssnelheidscoëfficiënt" 'k_att' [/day]
+            for Particle Paths with id_vals 'part_idx'
+        # Effective porosity ('por_eff') [-]
+        # grain size 'grainsize' [m]
+        # collision efficiency ('botsingsefficiëntie') 'bots_eff' [-]
+        # Boltzmann constant (const_BM) [1,38 × 10-23 J K-1] 
+        # Water temperature 'temp_water' [degrees celcius]
+        # Water density 'rho_water' [kg m-3]
+        # Pathogen diameter 'pathogen_diam' [m]
+        # porewater velocity 'v_por' [m/d]
+        
+        # Check - (example 'E_coli'):
+        >> k_att = calc_katt(part_idx = [0], por_eff = [0.33], korrelgrootte = [0.00025],
+                bots_eff = 0.001, const_BM = 1.38e-23,
+                temp_water = [10.], rho_water = [999.703],
+                pathogen_diam = 2.33e-8, v_por = [0.01])
+        >> print(k_att)
+        >> {0: 0.7993188853572424} # [/day]
+        
+        Return
+        ---------
+        df_flowline: pandas.DataFrame
+            Column "collision_eff" for each node
+            Column "pathogen_diam" for each node
+
+        df_particle: pandas.DataFrame
+            Column "relative_distance" for each node
+            Column "porewater_velocity" for each node
+            Column "k_att" for each node
+            Column "lambda" for each node
+        '''
+
+
+
+        # Collision efficiency [-]
+        df_flowline = self._df_fillna(df_flowline,
+                                      df_column = 'collision_eff',
+                                      value = coll_eff)
+        # Pathogen diameter [m]
+        df_flowline = self._df_fillna(df_flowline,
+                                df_column = 'pathogen_diam',
+                                value = pathogen_diam)
+
+        # Water temperature [degrees Celsius]
+        df_particle = self._df_fillna(df_particle,
+                                df_column = 'temperature',
+                                value = temp_water)
+
+        # Water density [kg m-3]
+        df_particle = self._df_fillna(df_particle,
+                                df_column = 'rho_water',
+                                value = rho_water) 
+        
+        # Effective porosity [-]
+        df_particle = self._df_fillna(df_particle,
+                                df_column = 'porosity',
+                                value = por_eff)   
+
+        # grain size [m]
+        df_particle = self._df_fillna(df_particle,
+                                df_column = 'grainsize',
+                                value = grainsize)   
+
+        # Create empty column 'relative_distance' in df_particle
+        df_particle['relative_distance'] = None  
+
+        # Create empty column 'porewater_velocity' in df_particle
+        df_particle['porewater_velocity'] = None        
+
+        # Create empty column 'k_att' in df_particle
+        df_particle['k_att'] = None
+        # Create empty column 'lambda' in df_particle
+        df_particle['lambda'] = None        
+        
+        # if not 'collision_eff' in df_flowline.columns:
+        #     df_flowline['collision_eff'] = coll_eff
+        # else:
+        #     # fill series (if needed with default value)
+        #     if df_flowline['collision_eff'].dropna().empty:
+        #         df_flowline['collision_eff'] = df_flowline['collision_eff'].fillna(coll_eff)
+        #     else: # fill empty rows (with mean value of other records)
+        #         coll_eff_mean = df_flowline['collision_eff'].values.mean()
+        #         df_flowline['collision_eff'] = df_flowline['collision_eff'].fillna(coll_eff_mean)
+   
+        # # Pathogen diameter [m]
+        # if not 'pathogen_diam' in df_flowline.columns:
+        #     df_flowline['pathogen_diam'] = pathogen_diam
+        # else:
+        #     # fill series (if needed with default value)
+        #     if df_flowline['pathogen_diam'].dropna().empty:
+        #         df_flowline['pathogen_diam'] = df_flowline['pathogen_diam'].fillna(pathogen_diam)
+        #     else: # fill empty rows (with mean value of other records)
+        #         pathogen_diam_mean = df_flowline['pathogen_diam'].values.mean()
+        #         df_flowline['pathogen_diam'] = df_flowline['pathogen_diam'].fillna(pathogen_diam_mean)
+
+        # # Water temperature
+        # if not 'temperature' in df_particle.columns:
+        #     df_particle['temperature'] = temp_water
+        # else:
+        #     # fill series (if needed with default value)
+        #     if df_particle['temperature'].dropna().empty:
+        #         df_particle['temperature'] = df_particle['temperature'].fillna(temp_water)
+        #     else: # fill empty rows (with mean value of other records)
+        #         temp_water_mean = df_particle['temperature'].values.mean()
+        #         df_particle['temperature'] = df_particle['temperature'].fillna(temp_water_mean)
+
+        # Calculate porewater velocity
+        v_por, dist, tdiff = {}, {}, {}   
+        for pid in df_flowline.index:
+
+
+            #Distance array between nodes
+            dist[pid] = np.sqrt((df_particle.loc[pid,"xcoord"].diff().values)**2 + \
+                                (df_particle.loc[pid,"ycoord"].diff().values)**2 + \
+                                (df_particle.loc[pid,"zcoord"].diff().values)**2)
+            # Time difference array
+            tdiff[pid] = df_particle.loc[pid,"total_travel_time"].diff().values
+            # Calculate porewater velocity [m/day] (include effective porosity)
+            v_por[pid] = (dist[pid]/tdiff[pid]) / df_particle.loc[pid,"porosity"].values
+
+            # Fill column relative_distance in 'df_particle' 
+            df_particle.loc[pid,'relative_distance'][:-1] = dist[pid][1:]
+            df_particle.loc[pid,'relative_distance'].iloc[-1] = 0
+
+            # Fill porewater velocity in 'df_particle'
+            df_particle.loc[pid,"porewater_velocity"][:-1] = v_por[pid][1:]
+            # In the last pathline row the porewater_velocity is equal to previous velocity
+            df_particle.loc[pid,"porewater_velocity"].iloc[-1] = v_por[pid][-2]
+
+            # number of nodes
+            n_nodes = len(df_particle.loc[pid,:])
+            # #Distance array between nodes
+            # dist[pid] = np.zeros((n_nodes-1), dtype = 'float')
+            # # Time difference array
+            # tdiff[pid] = np.zeros((n_nodes-1), dtype = 'float')
+            # for iNode in range(1,n_nodes):
+            #     # Calculate internodal distance (m)
+            #     dist[pid][iNode-1] = np.sqrt((df_particle.loc[pid,"xcoord"][iNode] - df_particle.loc[pid,"xcoord"][iNode-1])**2 + \
+            #         (df_particle.loc[pid,"ycoord"][iNode] - df_particle.loc[pid,"ycoord"][iNode-1])**2 + \
+            #         (df_particle.loc[pid,"zcoord"][iNode] - df_particle.loc[pid,"zcoord"][iNode-1])**2)
+            #     # Calculate time difference between nodes
+            #     tdiff[pid][iNode-1] = (df_particle.loc[pid,"total_travel_time"][iNode] - df_particle.loc[pid,"total_travel_time"][iNode-1])
+                
+
+        # Create empty dicts and keys to keep track of arrays per particle id
+        k_bots, gamma, As_happ, mu = {}, {}, {}, {}
+        D_BM, k_diff, k_att, lambda_ = {}, {}, {}, {}
+        # particle ids
+        for pid in df_flowline.index:
+
+            # Botsingterm 'k_bots'
+            k_bots[pid] = (3/2.)*((1-df_particle.loc[pid,"porosity"].values) / \
+                        df_particle.loc[pid,"grainsize"].values) * df_flowline.loc[pid,"collision_eff"]
+
+            # Porosity dependent variable 'gamma'
+            gamma[pid] = (1-df_particle.loc[pid,"porosity"].values)**(1/3)
+
+            # Calculate Happel’s porosity dependent parameter 'A_s' (Eq. 5: BTO2012.015)
+            ''' !!! Use correct formula:-> As =  2 * (1-gamma**5) /  (2 - 3 * gamma + 3 * gamma**5 - 2 * gamma**6)
+                instead of... 2 * (1-gamma)**5 / (.......) 
+            '''
+            As_happ[pid] = 2 * (1-gamma[pid]**5) / \
+                    (2 - 3 * gamma[pid] + 3 * gamma[pid]**5 - 2 * gamma[pid]**6)
+
+            # Dynamic viscosity (mu) [kg m-1 s-1]
+            mu[pid] = (df_particle.loc[pid,"rho_water"].values * 497.e-6) / \
+                        (df_particle.loc[pid,"temperature"].values + 42.5)**(3/2)
+ 
+            # Diffusion constant 'D_BM' (Eq.6: BTO2012.015) --> eenheid: m2 s-1
+            D_BM[pid] = (const_BM * (df_particle.loc[pid,"temperature"].values + 273.)) / \
+                        (3 * np.pi * df_flowline.loc[pid,"pathogen_diam"] * mu[pid])
+            # Diffusieconstante 'D_BM' (Eq.6: BTO2012.015) --> eenheid: m2 d-1
+            D_BM[pid] *= 86400.
+
+            # Diffusion related attachment term 'k_diff'
+            k_diff[pid] = (D_BM[pid] /
+                        (df_particle.loc[pid,"grainsize"].values * df_particle.loc[pid,"porosity"].values * df_particle.loc[pid,"porewater_velocity"].values))**(2/3) * \
+                            df_particle.loc[pid,"porewater_velocity"].values
+
+            # hechtingssnelheidscoëfficiënt k_att [/dag]
+            k_att[pid] = k_bots[pid] * 4 * As_happ[pid]**(1/3) * k_diff[pid]
+            # removal coefficient 'lambda_' [/day], using the 'mu1' mean.
+            lambda_[pid] = k_att[pid] + mu1
+
+            # Fill df_particle 'k_att'
+            df_particle.loc[pid,"k_att"] = k_att[pid]
+            # Fill df_particle 'lambda'
+            df_particle.loc[pid,"lambda"] = lambda_[pid]
+
+        # return (adjusted) df_particle and df_flowline
+        return df_particle, df_flowline
+
+    def calc_advective_microbial_removal(self,df_particle,df_flowline, 
+                                        endpoint_id, trackingdirection = "forward",
+                                        conc_start = 1., conc_gw = 0.):
+                                        
+        ''' Calculate the advective microbial removal along pathlines
+            from source to end_point.
+
+            For more information about the advective microbial removal calculation: 
+                BTO2012.015: Ch 6.7 (page 71-74)
+
+            Relevant input:
+            df_particle: pandas.DataFrame
+                Column 'flowline_id'
+                Column 'xcoord'
+                Column 'ycoord'
+                Column 'zcoord'
+                Column 'relative_distance'
+                Column 'total_travel_time'
+                Column 'porosity'
+                Column 'lambda'
+                Column 'porewater_velocity'
+
+            df_flowline: pandas.DataFrame
+                Column 'flowline_id'
+                Column 'endpoint_id'
+                Column 'flowline_discharge'
+                Column 'well_discharge'
+
+            Return 
+            df_flowline: pandas.DataFrame
+                Column 'input_concentration': float   # (added)
+
+            df_particle: pandas.DataFrame
+                Column 'steady_state_concentration': float      # (added)
+                Column 'starting_concentration_gw': float                         # (added)
+        
+
+            Calculate the steady state concentration along traveled distance per 
+            node for each pathline from startpoint to endpoint_id'.
+            
+            With verwijderingscoëfficiënt 'lambda_' [/d]
+            effective porositty 'porosity' [-]
+            Starting concentration 'input_concentration' per pathline
+            Initial groundwater concentration 'starting_concentration_gw'
+
+            # Algemeen geldt voor de afbraak vanaf maaiveld tot eindpunt (zoals 'lek')
+            # C_ = (C_mv-C_gw) * e^-(lambda_/v)*dr + C_gw
+            # C_mv = C_maaiveld [aantal/l]; C_gw = C_grondwater [aantal/l]?
+            # v = (dr/dt) / por_eff --> poriewatersnelheid [m/d]
+            # Bij achtergrondconcentratie C_gw = 0., zoals nu:
+            # C_ = C_mv * e^-(lambda_/v)*r
+
+            # Check eindconcentratie van deze tijdstap
+            >> _,C_final = calc_pathlineconc(part_idx = [0], C0 = 1., C_gw = 0., por_vals = 0.33,
+                        lambda_ = {0: 0.1317345756973715}, xyz_start = [0,0,0], 
+                        xyz_eind = [0,0,1], t_start = 0., t_eind = 100.,
+                        dist_data = None, time_diff = None,
+                        direction = "backward")
+            >> print (C_final) [aantal/l]
+            >> 1.900378331566034e-06
+            
+            # Voor berekening per particle path "part_idx"
+            # Afgelegde afstanden tussen "xyz_node t" en "xyz_nodel t+1"
+            # voor iedere tijdstap (--> path_data)
+            dist_data: {0: np.array([1,1.2,1.3]),n+1: np.array([...])}
+            # Tijdsduur tussen iedere tijdstap "t" en "t+1"
+            # Zie parameter --> time_data
+            time_data: {0: np.array([2.2,2.4,1.6]),n+1: np.array([...])}
+            # direction: particle tracking direction (forward/backward)
+
+        '''
+
+        # Starting concentration [-]
+        df_flowline = self._df_fillna(df_flowline,
+                                df_column = 'starting_concentration',
+                                value = conc_start)
+
+        # Original concentration in groundwater [-]
+        df_flowline = self._df_fillna(df_flowline,
+                                df_column = 'starting_concentration_gw',
+                                value = conc_gw)
+
+        if 'steady_state_concentration' not in df_particle.columns:
+            # Steady state concentration [-]
+            df_particle['steady_state_concentration'] = None
+        
+        for pid in df_flowline.index:
+            df_particle.loc[pid,"steady_state_concentration"].iloc[0] = df_flowline.loc[pid,"starting_concentration"]
+
+        # Start dictionaries for relative and steady-state concentrations
+        conc_rel = {}
+        conc_steady = {}  # concentration corrected for initial concentration
+        for pid in df_flowline.index:
+            
+            # Calculate the relative removal along pathlines
+            conc_rel[pid] = df_flowline.loc[pid,"starting_concentration_gw"] + \
+                (df_flowline.loc[pid,"starting_concentration"] - df_flowline.loc[pid,"starting_concentration_gw"]) * \
+                    np.exp(-(df_particle.loc[pid,"lambda"].values/df_particle.loc[pid,"porewater_velocity"].values) * \
+                        df_particle.loc[pid,'relative_distance'].values)
+
+            if trackingdirection == 'forward':
+                conc_steady[pid] = (conc_rel[pid]/df_flowline.loc[pid,"starting_concentration"]).cumprod() * \
+                                    df_flowline.loc[pid,"starting_concentration"]
+                # Index of average final concentration "C_"  idx=-1[C0,...,..,...,Ct-1,C_final]
+                idx_final = -1
+                                
+            elif trackingdirection == 'backward':
+                conc_steady[pid] = (conc_rel[pid][::-1]/df_flowline.loc[pid,"starting_concentration"]).cumprod() * \
+                                    df_flowline.loc[pid,"starting_concentration"]
+                # Replace 'nan'-values by 0.
+                conc_steady[pid]  = np.nan_to_num(conc_steady[pid],0.)
+                # First value represents concentration of endpoint and v.v.
+                # Reverse array--> [C_final,Ct-1,..,...,C0]
+                conc_steady[pid] = conc_steady[pid][::-1]
+                # Index of average final concentration "C_" idx=0 [C_final,Ct-1,..,...,C0]
+                idx_final = 0
+
+            # Add steady_state_concentration to df_particle
+            df_particle.loc[pid,'relative_distance'][1:] = conc_steady[pid]
+
+        # Bereken gemiddelde eindconcentratie
+        C_final = 0.
+        for pid in df_flowline.index:
+            if df_flowline.loc[pid,"endpoint_id"] == endpoint_id:
+                C_final += (conc_steady[pid][idx_final] * df_flowline.loc[pid,"flowline_discharge"]) / \
+                            df_flowline.loc[pid,"well_discharge"]
+
+
+        # return (adjusted) df_particle and df_flowline
+        return df_particle, df_flowline, C_final                        
+
+
+    # def calc_advective_microbial_removal(self, part_idx = [0], C0 = 1., C_gw = 0., por_vals = 0.33,
+    #                     lambda_ = 0.14905, xyz_start = [0,0,0], 
+    #                     xyz_eind = [0,0,1], t_start = 0., t_eind = 3.,
+    #                     dist_data = None, time_diff = None,
+    #                     direction = "backward"):
+    #     ''' For more information about the advective microbial removal calculation: 
+    #             BTO2012.015: Ch 6.7 (page 71-74)
+
+    #         Return
+    #         df_flowline: pandas.DataFrame
+    #             Column 'input_concentration': float
+
+    #         df_particle: pandas.DataFrame
+    #             Column 'steady_state_concentration'
+        
+    #         Bereken overgebleven pathogeenconcentratie na afgelegde weg 'dr' [m]
+    #         en tijd sinds vorige puntmeting 'dt' in [dagen];
+    #         voor Particle Paths met id_vals 'part_idx'.
+            
+    #         xyz_start: [X0, Y0, Z0]; xyz_eind = [X1,Y1,Z1]
+    #         t_start: starttijd [dagen]; t_eind: eindtijd [dagen]
+    #         Met verwijderingscoëfficiënt 'lambda_' [/d]
+    #         effectieve porositeit 'por_eff' [-]
+    #         Beginconcentratie C0 (= gelijk aan C_mv aan maaiveld)
+    #         # Algemeen geldt voor de afbraak vanaf maaiveld tot eindpunt (zoals 'lek')
+    #         # C_ = (C_mv-C_gw) * e^-(lambda_/v)*dr + C_gw
+    #         # C_mv = C_maaiveld [aantal/l]; C_gw = C_grondwater [aantal/l]?
+    #         # v = (dr/dt) / por_eff --> poriewatersnelheid [m/d]
+    #         # Bij achtergrondconcentratie C_gw = 0., zoals nu:
+    #         # C_ = C_mv * e^-(lambda_/v)*r
+
+    #         # Check eindconcentratie van deze tijdstap
+    #         >> _,C_final = calc_pathlineconc(part_idx = [0], C0 = 1., C_gw = 0., por_vals = 0.33,
+    #                     lambda_ = {0: 0.1317345756973715}, xyz_start = [0,0,0], 
+    #                     xyz_eind = [0,0,1], t_start = 0., t_eind = 100.,
+    #                     dist_data = None, time_diff = None,
+    #                     direction = "backward")
+    #         >> print (C_final) [aantal/l]
+    #         >> 1.900378331566034e-06
+            
+    #         # Voor berekening per particle path "part_idx"
+    #         # Afgelegde afstanden tussen "xyz_node t" en "xyz_nodel t+1"
+    #         # voor iedere tijdstap (--> path_data)
+    #         dist_data: {0: np.array([1,1.2,1.3]),n+1: np.array([...])}
+    #         # Tijdsduur tussen iedere tijdstap "t" en "t+1"
+    #         # Zie parameter --> time_data
+    #         time_data: {0: np.array([2.2,2.4,1.6]),n+1: np.array([...])}
+    #         # direction: particle tracking direction (forward/backward)
+            
+    #     '''
+    #     # Afgelegde weg [m]
+    #     if (dist_data is None) & (time_diff is None): 
+    #         # A simple path calculation between start and end points
+    #         dr = np.sqrt((xyz_eind[0] - xyz_start[0])**2 + \
+    #                     (xyz_eind[1] - xyz_start[1])**2 + \
+    #                     (xyz_eind[2] - xyz_start[2])**2)
+    #         # Tijdsduur [d]
+    #         dt = t_eind - t_start
+    #         # poriewatersnelheid
+    #         v = (dr/dt)
+    #         # Bereken concentratie na verwijdering in grondwater
+    #         C_ = (C0 - C_gw) * np.exp(-(lambda_/v)*dr) + C_gw
+    #         C_particles = None
+    #     else:
+    #         # Berekening concentratie per Particle Path (voor indices part_idx)
+            
+    #         # Aantal deeltjes
+    #         n_particles = len(part_idx)
+    #         # Maak dictionaries aan voor deze parameters
+    #         v_por, relC_, C_particles = {}, {}, {}
+    #         for iPart in part_idx:
+    #             # Poriewatersnelheid (dictionary)
+    #             try:
+    #                 v_por[iPart] = (dist_data[iPart]/time_diff[iPart]) #/ por_vals[iPart] # geen corr nodig met modpathinput
+    #             except Exception as e:
+    #                 try:
+    #                     v_por[iPart] = (dist_data[iPart].mean()/time_diff[iPart].mean()) #/ por_vals
+    #                     print(e, "por_eff is:", por_vals)
+    #                 except Exception as e:
+    #                     print(e)
+                    
+    #             # Bereken per Particle Path de relatieve afbraak per iteratiestap als
+    #             # zijnde overgebleven fractie relC_
+    #             try:
+    #                 relC_[iPart] = C_gw + (C0[iPart] - C_gw) * \
+    #                             np.exp(-(lambda_[iPart]/v_por[iPart]) * dist_data[iPart])
+    #             except Exception as e:
+    #                 relC_[iPart] = C_gw + (C0[iPart] - C_gw) * \
+    #                             np.exp(-(lambda_[iPart]/v_por[iPart].mean()) * dist_data[iPart].mean())                
+    #                 print(e, "Replace relC by a constant analytical value.")    
+    #             # De concentratie per pathline node t.o.v. "C0" wordt berekend via: 
+    #             if direction == 'forward':
+    #                 C_particles[iPart] = (relC_[iPart]/C0[iPart]).cumprod() * C0[iPart]
+    #                 # Voeg startconcentratie toe (insert)
+    #                 C_particles[iPart] = np.insert(C_particles[iPart],0,C0[iPart])
+    #                 # Index van gemiddelde eindconcentratie "C_"  idx=-1[C0,...,..,...,Ct-1,C_final]
+    #                 idx_final = -1
+    #             elif direction == 'backward':
+    #                 C_particles[iPart] = (relC_[iPart][::-1]/C0[iPart]).cumprod() * C0[iPart] 
+    #                 # Vervang 'nan'-waarden door 0.
+    #                 C_particles[iPart] = np.nan_to_num(C_particles[iPart],0.)
+    #                 # Voeg startconcentratie toe (insert)
+    #                 C_particles[iPart] = np.insert(C_particles[iPart],0,C0[iPart])
+    #                 # Eerste waarde geeft concentratie weer van eindpunt en v.v.
+    #                 # Draai array om --> [C_final,Ct-1,..,...,C0]
+    #                 C_particles[iPart] = C_particles[iPart][::-1]
+    #                 # Index van gemiddelde eindconcentratie "C_" idx=0 [C_final,Ct-1,..,...,C0]
+    #                 idx_final = 0
+                                
+    #     # Bereken gemiddelde eindconcentratie
+    #     C_ = 0
+    #     for iPart in part_idx:
+    #         C_ += C_particles[iPart][idx_final] / n_particles
+
+    # # return eindconcentraties 'C_' en gemiddelde eindconcentratie C_final
+    # return C_particles, C_
 
     def run_model(self,
                     # simulation_parameters: dict or None = None,
@@ -2287,7 +2777,7 @@ class ModPathWell:
                                                             nparticles_cell = 1,
                                                             localy=0.5, localz=0.5,
                                                             timeoffset=0.0, drape=0,
-                                                            trackingdirection = "forward",
+                                                            trackingdirection = self.trackingdirection,
                                                             releasedata=0.0)  
 
             # Default flux interfaces
@@ -2307,8 +2797,35 @@ class ModPathWell:
 
             # Export output data to particle_df and flowline_df
             self._export_to_df(mppth = self.mppth)
+
+            # Calculate removal coefficient 'lambda' [/day].
+            self.df_particle, self.df_flowline = self.calc_lambda(self.df_particle, self.df_flowline,
+                mu1 = 0.149, grainsize = 0.00025, coll_eff = 0.001, const_BM = 1.38e-23,
+                temp_water = 11., rho_water = 999.703, pathogen_diam = 2.33e-8)
+
+            # Calculate advective microbial removal
+            # Final concentratio per endpoint_id
+            C_final = {}
+            for endpoint_id in self.schematisation_dict.get("endpoint_id"):
+                self.df_particle, self.df_flowline, C_final[endpoint_id] = self.calc_advective_microbial_removal(
+                                                    self.df_particle,self.df_flowline, 
+                                                    endpoint_id = endpoint_id,
+                                                    trackingdirection = self.trackingdirection,
+                                                    conc_start = 1., conc_gw = 0.)
+
+            # df_particle file name 
+            particle_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_particle_microbial_removal.csv")
+            # Save df_particle 
+            self.df_particle.to_csv(particle_fname)
+            
+            # df_flowline file name
+            flowline_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_flowline_microbial_removal.csv")
+            # Save df_flowline
+            self.df_flowline.to_csv(flowline_fname)
+                    
             print("Post-processing modpathrun of type", self.schematisation_type, "completed.")
 
+                
 
 '''
 #%%  
