@@ -639,8 +639,8 @@ class HydroChemicalSchematisation:
             ibound_parameters = {
                 'top_boundary1': {
                     'head': self.bottom_vadose_zone_at_boundary,
-                    'top': self.bottom_vadose_zone_at_boundary + 0.1,# 10 cm ficticous thickness to allow head boundary
-                    'bot': self.bottom_vadose_zone_at_boundary,
+                    'top': self.bottom_vadose_zone_at_boundary, # OLD: 10 cm ficticous thickness to allow head boundary
+                    'bot': self.bottom_vadose_zone_at_boundary -0.1,  # NEW: ibound =-1 up to 10 cm below layer 1 top
                     'xmin': self.diameter_gravelpack/2,
                     'xmax': self.model_radius_computed,
                     'ibound': -1,
