@@ -1793,3 +1793,11 @@ test1_ws_semiconf/semi_conf_no_gp.wel
 test1_ws_semiconf/source1.sloc
 test1_ws_semiconf/results/semiconfined_df_flowline.csv
 test1_ws_semiconf/results/semiconfined_df_particle.csv
+test_ws/results/phreatic_df_flowline_microbial_removal.csv
+test_ws/results/phreatic_df_particle_microbial_removal.csv
+.gitignore
+test1_ws_semiconf/results/semiconfined_df_flowline_microbial_removal.csv
+test1_ws_semiconf/results/semiconfined_df_particle_microbial_removal.csv
+test_ws_phrea/results/phreatic_df_particle_microbial_removal.csv
+.gitignore
+test_ws_phrea/results/phreatic_df_flowline_microbial_removal.csv
