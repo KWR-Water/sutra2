@@ -2082,9 +2082,9 @@ class ModPathWell:
 
         # fill flowline_df
         for fid in flowline_id:
-            df_flowline.loc[fid,["flowline_discharge","endpoint_id"]] = np.array([flux_pathline[fid],\
-                                                                                        endpoint_id[fid]])
-        
+            df_flowline.loc[fid,"flowline_discharge"] = flux_pathline[fid]
+            df_flowline.loc[fid,"endpoint_id"] = endpoint_id[fid]
+
         for end_id in df_flowline["endpoint_id"].unique():
             # well discharge
             well_discharge = df_flowline.loc[df_flowline.endpoint_id == end_id,"flowline_discharge"].astype('float').values.sum()
@@ -2206,13 +2206,13 @@ class ModPathWell:
 
     
     # Check for parameters in df_flowline #
-    def _df_fillna(self, df,df_column: str, value = 0.):
+    def _df_fillna(self, df,df_column: str, value = 0., dtype_ = 'float'):
         ''' Check dataframe for missing values for
             calculation of removal.
             df: the pandas.DataFrame to check
             df_column: the required dataframe column
             value: the default value in case other alues are missing
-            
+            dtype_: dtype of df column
             Return adjusted dataframe 'df'
         '''
 
@@ -2227,6 +2227,8 @@ class ModPathWell:
                 # fill empty rows (with mean value of other records)
                 value_mean = df[df_column].values.mean()
                 df[df_column] = df[df_column].fillna(value_mean)
+        # Adjust dtype
+        df = df.astype({df_column: dtype_})
 
         return df
                                 
@@ -2514,12 +2516,14 @@ class ModPathWell:
         # Starting concentration [-]
         df_flowline = self._df_fillna(df_flowline,
                                 df_column = 'starting_concentration',
-                                value = conc_start)
+                                value = conc_start,
+                                dtype_ = 'float')
 
         # Original concentration in groundwater [-]
         df_flowline = self._df_fillna(df_flowline,
                                 df_column = 'starting_concentration_gw',
-                                value = conc_gw)
+                                value = conc_gw,
+                                dtype_ = 'float')
 
         if 'steady_state_concentration' not in df_particle.columns:
             # Steady state concentration [-]
@@ -2534,14 +2538,19 @@ class ModPathWell:
         for pid in df_flowline.index:
             
             # Calculate the relative removal along pathlines
+            exp_arg = -((df_particle.loc[pid,"lambda"].values/df_particle.loc[pid,"porewater_velocity"].values) *
+                                df_particle.loc[pid,'relative_distance'].values).astype('float')
+
             conc_rel[pid] = df_flowline.loc[pid,"starting_concentration_gw"] + \
-                (df_flowline.loc[pid,"starting_concentration"] - df_flowline.loc[pid,"starting_concentration_gw"]) * \
-                    np.exp(-(df_particle.loc[pid,"lambda"].values/df_particle.loc[pid,"porewater_velocity"].values) * \
-                        df_particle.loc[pid,'relative_distance'].values)
+                            (df_flowline.loc[pid,"starting_concentration"] - df_flowline.loc[pid,"starting_concentration_gw"]) * \
+                                np.exp(exp_arg)
 
             if trackingdirection == 'forward':
                 conc_steady[pid] = (conc_rel[pid]/df_flowline.loc[pid,"starting_concentration"]).cumprod() * \
                                     df_flowline.loc[pid,"starting_concentration"]
+                # Replace 'nan'-values by 0.
+                conc_steady[pid]  = np.nan_to_num(conc_steady[pid],0.)
+                
                 # Index of average final concentration "C_"  idx=-1[C0,...,..,...,Ct-1,C_final]
                 idx_final = -1
                                 
@@ -2557,7 +2566,7 @@ class ModPathWell:
                 idx_final = 0
 
             # Add steady_state_concentration to df_particle
-            df_particle.loc[pid,'relative_distance'][1:] = conc_steady[pid]
+            df_particle.loc[pid,'steady_state_concentration'] = conc_steady[pid]
 
         # Bereken gemiddelde eindconcentratie
         C_final = 0.
