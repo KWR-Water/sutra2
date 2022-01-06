@@ -586,10 +586,10 @@ class HydroChemicalSchematisation:
 
         if model_radius is None:
             if self.schematisation_type == 'phreatic':
-                self.model_radius = (math.sqrt(self.well_discharge
-                                                / (math.pi * self.recharge_rate ))) #AH SA*recharge = well_discharge
+                self.model_radius = math.sqrt(abs(self.well_discharge /
+                    (math.pi * self.recharge_rate))) #AH SA*recharge = well_discharge
             elif self.schematisation_type == 'semiconfined':
-                self.model_radius = math.sqrt(self.vertical_resistance_shallow_aquifer * self.KD * 3) # spreading_distance*3
+                self.model_radius = math.sqrt(self.vertical_resistance_shallow_aquifer * self.KD) * 3 # spreading_distance*3
 
 
     def make_dictionary(self,):
