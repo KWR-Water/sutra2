@@ -886,9 +886,9 @@ class HydroChemicalSchematisation:
         head: array
             Hydraulic head for each point in the given distance array, [mASL].
         '''
-
-        head = (self.groundwater_level - self.well_discharge
-                    / (2 * math.pi * self.KD)
+        ##@Alex: check if this function works properly if a negative well_discharge is given)
+        head = (self.groundwater_level + (self.well_discharge
+                    / (2 * math.pi * self.KD))
                     * np.log(self.radial_distance_recharge / distance))
         return head
 
@@ -1009,7 +1009,7 @@ class HydroChemicalSchematisation:
         self.spreading_distance = math.sqrt(self.vertical_resistance_shallow_aquifer * self.KD)
 
         # AH do not change to model_radius, since the radial distance for recharge is based on the phreatic value for BOTH cases
-        self.radial_distance_recharge =  (math.sqrt(self.well_discharge
+        self.radial_distance_recharge =  math.sqrt(abs(self.well_discharge
                                                     / (math.pi * self.recharge_rate )))
 
         # Diffuse source or regular travel time calculation use radial distance array
