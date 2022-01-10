@@ -45,7 +45,7 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       computation_method= 'analytical', 
                                       what_to_export='omp',
-                                      well_discharge=319.4*24, #m3/day
+                                      well_discharge=-319.4*24, #m3/day
                                       porosity_vadose_zone=0.38,
                                       porosity_shallow_aquifer=0.35,
                                       porosity_target_aquifer=0.35,
@@ -80,7 +80,7 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       point_input_concentration=100,
                                       distance_point_contamination_from_well=25, #5.45045, #
                                       depth_point_contamination=21, #m ASL
-                                      discharge_point_contamination=1000,
+                                      discharge_point_contamination=-1000,
                                       #dates
                                     #   dt.datetime.strptime(,"%Y-%m-%d"),
                                       start_date_well=dt.datetime.strptime('1968-01-01', '%Y-%m-%d'),

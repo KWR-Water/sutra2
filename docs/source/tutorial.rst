@@ -98,7 +98,7 @@ Lets start with a simple example defining a HydroChemicalSchematisation object f
 .. ipython:: python
 
     phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                                        well_discharge=7500, #m3/day
+                                                        well_discharge=-7500, #m3/day
                                                         recharge_rate=0.0008, #m/day
                                                         thickness_vadose_zone_at_boundary=5, #m
                                                         thickness_shallow_aquifer=10,  #m
@@ -193,7 +193,7 @@ phreatic() functions must be rerun:
 .. ipython:: python
 
     phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                                            well_discharge=7500, #m3/day
+                                                            well_discharge=-7500, #m3/day
                                                             recharge_rate=0.0008, #m/day
                                                             thickness_vadose_zone_at_boundary=5,
                                                             thickness_shallow_aquifer=10,

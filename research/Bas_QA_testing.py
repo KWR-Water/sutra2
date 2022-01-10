@@ -67,7 +67,7 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 #Lets start with a simple example defining a HydroChemicalSchematisation object for a phreatic aquifer:
 #%% SCHEME 1
 phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                      well_discharge= 319.4*24, #7500, #m3/day
+                                      well_discharge=- 319.4*24, #7500, #m3/day
                                       recharge_rate=0.0008, #m/day
                                       thickness_vadose_zone_at_boundary=5,
                                       thickness_shallow_aquifer=10,
@@ -99,7 +99,7 @@ phreatic_well.df_particle.head(10)
 #%% SCHEME 2
 
 phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                      well_discharge=7500, #m3/day
+                                      well_discharge=-7500, #m3/day
                                       recharge_rate=0.0008, #m/day
                                       thickness_vadose_zone_at_boundary=1,
                                       thickness_shallow_aquifer=10,
@@ -133,7 +133,7 @@ phreatic_well.df_flowline.head(10)
 phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
                                         computation_method= 'analytical',
                                         what_to_export='omp', # @alex: what_to_export sounds very cryptic and ad-hoc. maybe we can think of something better
-                                        well_discharge=319.4*24,
+                                        well_discharge=-319.4*24,
                                         # vertical_resistance_shallow_aquifer=500,
                                         hor_permeability_shallow_aquifer = 0.02,
                                         porosity_vadose_zone=0.38,

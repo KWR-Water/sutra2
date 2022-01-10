@@ -471,7 +471,7 @@ class SubstanceTransport():
             distance = self.analytical_well.schematisation.distance_point_contamination_from_well
             depth = self.analytical_well.schematisation.depth_point_contamination
             cumulative_fraction_abstracted_water = (math.pi * self.analytical_well.schematisation.recharge_rate
-                                                        * distance ** 2)/self.analytical_well.schematisation.well_discharge
+                                                        * distance ** 2)/abs(self.analytical_well.schematisation.well_discharge)
             ind = self.df_particle.flowline_id.iloc[-1]
 
             if self.analytical_well.schematisation.schematisation_type == 'phreatic':
@@ -496,7 +496,7 @@ class SubstanceTransport():
 
             df_flowline['flowline_id'] = df_flowline['flowline_id'] + ind
             df_flowline['flowline_type'] = "point_source"
-            df_flowline['flowline_discharge'] = self.analytical_well.schematisation.discharge_point_contamination
+            df_flowline['flowline_discharge'] = abs(self.analytical_well.schematisation.discharge_point_contamination)
 
             #AH_todo, something here to loop through different point sources if more than one.
 

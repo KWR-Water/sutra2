@@ -63,7 +63,7 @@ path = os.getcwd() #path of working directory
 semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfined',
                                       computation_method= 'analytical', 
                                       what_to_export='omp',
-                                      well_discharge=319.4*24,
+                                      well_discharge=-319.4*24,
                                       porosity_vadose_zone=0.38,
                                       porosity_shallow_aquifer=0.35,
                                       porosity_target_aquifer=0.35,
@@ -94,7 +94,7 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       point_input_concentration = 100,
                                       distance_point_contamination_from_well = 25, #5.45045, #
                                       depth_point_contamination =21, #m ASL
-                                      discharge_point_contamination=1000,
+                                      discharge_point_contamination=-1000,
 
                                       temperature=11,
                                       solid_density_vadose_zone= 2.650, 

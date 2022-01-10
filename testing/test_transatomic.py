@@ -30,7 +30,7 @@ def test_travel_time_distribution_phreatic():
     test_ = HydroChemicalSchematisation(schematisation_type='phreatic',
                                         computation_method= 'analytical',
                                         what_to_export='omp', # @alex: what_to_export sounds very cryptic and ad-hoc. maybe we can think of something better
-                                        well_discharge=319.4*24,
+                                        well_discharge=-319.4*24,
                                         # vertical_resistance_shallow_aquifer=500,
                                         hor_permeability_shallow_aquifer = 0.02,
                                         porosity_vadose_zone=0.38,
@@ -68,7 +68,7 @@ def test_retardation_temp_koc_correction(substance = 'benzene', schematisation_t
     test_ = HydroChemicalSchematisation(schematisation_type=schematisation_type,
                                         computation_method= 'analytical',
                                         what_to_export='omp',
-                                      well_discharge=319.4*24,
+                                      well_discharge=-319.4*24,
                                       hor_permeability_shallow_aquifer = 0.02,
                                       porosity_vadose_zone=0.38,
                                       porosity_shallow_aquifer=0.35,
@@ -149,7 +149,7 @@ def test_steady_concentration_temp_koc_correction_phreatic(substance='benzene'):
     test_ = HydroChemicalSchematisation(schematisation_type='phreatic',
                                         computation_method= 'analytical',
                                         what_to_export='omp',
-                                      well_discharge=319.4*24,
+                                      well_discharge=-319.4*24,
                                     #   vertical_resistance_shallow_aquifer=500,
                                       hor_permeability_shallow_aquifer = 0.02,
                                       porosity_vadose_zone=0.38,
@@ -236,7 +236,7 @@ def test_travel_time_distribution_semiconfined():
     test_ = HydroChemicalSchematisation(schematisation_type='semiconfined',
                                         computation_method= 'analytical',
                                                 what_to_export='omp',
-                                        well_discharge=319.4*24,
+                                        well_discharge=-319.4*24,
                                         # vertical_resistance_shallow_aquifer=500,
                                       hor_permeability_shallow_aquifer = 0.02,
                                       porosity_vadose_zone=0.38,
@@ -281,7 +281,7 @@ def test_steady_concentration_temp_koc_correction_semiconfined(substance='benzen
     test_ = HydroChemicalSchematisation(schematisation_type='semiconfined',
                                         computation_method= 'analytical',
                                         what_to_export='omp',
-                                      well_discharge=319.4*24,
+                                      well_discharge=-319.4*24,
                                       hor_permeability_shallow_aquifer = 0.02,
                                       porosity_vadose_zone=0.38,
                                       porosity_shallow_aquifer=0.35,
@@ -363,7 +363,7 @@ def test_start_end_dates_contamination():
         phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                                     computation_method= 'analytical',
                                                     what_to_export='omp',
-                                                    well_discharge=319.4*24, #m3/day
+                                                    well_discharge=-319.4*24, #m3/day
                                                     recharge_rate=0.3/365.25, #m/day
                                                     start_date_contamination= dt.datetime.strptime('1990-01-01', "%Y-%m-%d") ,
                                                     end_date_contamination= dt.datetime.strptime('1950-01-01', "%Y-%m-%d"), #'1950-01-01'
@@ -378,7 +378,7 @@ def test_compute_for_date_start_dates_contamination():
         phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                                     computation_method= 'analytical',
                                       what_to_export='omp',
-                                      well_discharge=319.4*24, #m3/day
+                                      well_discharge=-319.4*24, #m3/day
                                       recharge_rate=0.3/365.25, #m/day
                                       start_date_contamination=dt.datetime.strptime('1960-01-01', "%Y-%m-%d") ,
                                       end_date_contamination= dt.datetime.strptime('1990-01-01', "%Y-%m-%d"),
@@ -395,7 +395,7 @@ def test_compute_for_date_start_date_well():
         phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                                     computation_method= 'analytical',
                                       what_to_export='omp',
-                                      well_discharge=319.4*24, #m3/day
+                                      well_discharge=-319.4*24, #m3/day
                                       recharge_rate=0.3/365.25, #m/day
                                       start_date_contamination=dt.datetime.strptime('1950-01-01', "%Y-%m-%d") ,
                                       end_date_contamination= dt.datetime.strptime('1990-01-01', "%Y-%m-%d"),
@@ -413,7 +413,7 @@ def test_incorrect_date_input_format():
         phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                                     computation_method= 'analytical',
                                       what_to_export='omp',
-                                      well_discharge=319.4*24, #m3/day
+                                      well_discharge=-319.4*24, #m3/day
                                       recharge_rate=0.3/365.25, #m/day
                                       start_date_well='1950-01-01',
                                       )
@@ -427,7 +427,7 @@ def test_redox_options():
         phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                                     computation_method= 'analytical',
                                 what_to_export='omp',
-                                well_discharge=319.4*24, #m3/day
+                                well_discharge=-319.4*24, #m3/day
                                 recharge_rate=0.3/365.25, #m/day
                                 redox_vadose_zone='oxic',
                                 redox_shallow_aquifer='anoxic',
@@ -444,7 +444,7 @@ def test_phreatic_diffuse_point_source():
     phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       computation_method= 'analytical',
                                       what_to_export='omp',
-                                      well_discharge=319.4*24, #m3/day
+                                      well_discharge=-319.4*24, #m3/day
                                       porosity_vadose_zone=0.38,
                                       porosity_shallow_aquifer=0.35,
                                       porosity_target_aquifer=0.35,
@@ -479,7 +479,7 @@ def test_phreatic_diffuse_point_source():
                                       point_input_concentration=100,
                                       distance_point_contamination_from_well=25,
                                       depth_point_contamination=21, #m ASL
-                                      discharge_point_contamination=1000,
+                                      discharge_point_contamination=-1000,
                                       #dates
                                       start_date_well=dt.datetime.strptime('1968-01-01',"%Y-%m-%d"),
                                       start_date_contamination= dt.datetime.strptime('1966-01-01',"%Y-%m-%d"),
@@ -508,7 +508,7 @@ def test_phreatic_diffuse_only_source():
     phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                     computation_method= 'analytical',
                                     what_to_export='omp',
-                                    well_discharge=319.4*24, #m3/day
+                                    well_discharge=-319.4*24, #m3/day
                                     porosity_vadose_zone=0.38,
                                     porosity_shallow_aquifer=0.35,
                                     porosity_target_aquifer=0.35,
@@ -565,7 +565,7 @@ def test_phreatic_point_only_source():
     phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                     computation_method= 'analytical',
                                     what_to_export='omp',
-                                    well_discharge=319.4*24, #m3/day
+                                    well_discharge=-319.4*24, #m3/day
                                     porosity_vadose_zone=0.38,
                                     porosity_shallow_aquifer=0.35,
                                     porosity_target_aquifer=0.35,
@@ -600,7 +600,7 @@ def test_phreatic_point_only_source():
                                     point_input_concentration=100,
                                     distance_point_contamination_from_well=25,
                                     depth_point_contamination=21, #m ASL
-                                    discharge_point_contamination=1000,
+                                    discharge_point_contamination=-1000,
                                     #dates
                                     start_date_well=dt.datetime.strptime('1968-01-01', "%Y-%m-%d"),
                                     start_date_contamination= dt.datetime.strptime('1966-01-01', "%Y-%m-%d"),
@@ -628,7 +628,7 @@ def test_drawdown_lower_than_target_aquifer():
         phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                         computation_method= 'analytical',
                                         what_to_export='omp', # @alex: what_to_export sounds very cryptic and ad-hoc. maybe we can think of something better
-                                        well_discharge=319.4*24,
+                                        well_discharge=-319.4*24,
                                         # vertical_resistance_shallow_aquifer=500,
                                         hor_permeability_shallow_aquifer = 0.02,
                                         porosity_vadose_zone=0.38,
@@ -652,7 +652,7 @@ def test_drawdown_lower_than_target_aquifer():
 #         phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
 #                                         computation_method= 'analytical',
 #                                         what_to_export='omp', # @alex: what_to_export sounds very cryptic and ad-hoc. maybe we can think of something better
-#                                         well_discharge=319.4*24,
+#                                         well_discharge=-319.4*24,
 #                                         # vertical_resistance_shallow_aquifer=500,
 #                                         hor_permeability_shallow_aquifer = 0.02,
 #                                         porosity_vadose_zone=0.38,

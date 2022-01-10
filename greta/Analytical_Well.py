@@ -237,7 +237,7 @@ class HydroChemicalSchematisation:
                 temperature_target_aquifer=None,
 
                 recharge_rate=0.001,
-                well_discharge=1000.0,
+                well_discharge=-1000.0,
 
                 basin_length=None, # BAR parameters \/
                 basin_width=None,
@@ -1218,8 +1218,8 @@ class AnalyticalWell():
             '''point source calculation'''
             travel_time_target_aquifer = (self.schematisation.porosity_target_aquifer * self.schematisation.thickness_target_aquifer
                                         / self.schematisation.recharge_rate
-                                        * math.log(self.schematisation.well_discharge
-                                        / (self.schematisation.well_discharge - math.pi * self.schematisation.recharge_rate
+                                        * math.log(abs(self.schematisation.well_discharge)
+                                        / (abs(self.schematisation.well_discharge) - math.pi * self.schematisation.recharge_rate
                                          * distance ** 2 ) ))
             travel_time_target_aquifer = np.array([travel_time_target_aquifer])
 
@@ -1269,7 +1269,7 @@ class AnalyticalWell():
 
         self.travel_time_shallow_aquifer = (self.schematisation.porosity_shallow_aquifer
                                             * (2 * math.pi * self.schematisation.KD * self.schematisation.vertical_resistance_shallow_aquifer
-                                            / (self.schematisation.well_discharge)
+                                            / (abs(self.schematisation.well_discharge))
                                             * (travel_distance_shallow_aquifer
                                             / besselk(0, distance
                                             / math.sqrt(self.schematisation.KD * self.schematisation.vertical_resistance_shallow_aquifer)))
@@ -1303,7 +1303,7 @@ class AnalyticalWell():
         porosity_target_aquifer=self.schematisation.porosity_target_aquifer #0.32 #
         thickness_target_aquifer=self.schematisation.thickness_target_aquifer #95 #
 
-        self.travel_time_target_aquifer = (2 * math.pi * self.spreading_distance ** 2 / (self.schematisation.well_discharge)
+        self.travel_time_target_aquifer = (2 * math.pi * self.spreading_distance ** 2 / (abs(self.schematisation.well_discharge))
                             * porosity_target_aquifer * thickness_target_aquifer
                             * (1.0872 * (distance / self.spreading_distance) ** 3
                                 - 1.7689 * (distance /
@@ -1334,7 +1334,7 @@ class AnalyticalWell():
 
         '''
 
-        self.head = (-self.schematisation.well_discharge / (2 * math.pi * self.schematisation.KD)
+        self.head = (self.schematisation.well_discharge / (2 * math.pi * self.schematisation.KD)
                 * besselk(0, distance / self.schematisation.spreading_distance)
                 + self.schematisation.groundwater_level)
 
@@ -1435,11 +1435,11 @@ class AnalyticalWell():
         is_point_source = is_point_source(distance = distance)
         if is_point_source:
             #point source
-            flowline_discharge = cumulative_fraction_abstracted_water * self.schematisation.well_discharge
+            flowline_discharge = cumulative_fraction_abstracted_water * abs(self.schematisation.well_discharge)
 
         else:
             #diffuse source
-            flowline_discharge = (np.diff(np.insert(cumulative_fraction_abstracted_water,0,0., axis=0)))*self.schematisation.well_discharge
+            flowline_discharge = (np.diff(np.insert(cumulative_fraction_abstracted_water,0,0., axis=0)))* abs(self.schematisation.well_discharge)
 
         data = [total_travel_time,
                 travel_time_unsaturated,
@@ -1720,7 +1720,7 @@ class AnalyticalWell():
         # AH which parameters for the 'pathogen' option? @MartinvdS or @steven
         if what_to_export == 'all' or what_to_export== 'omp':
 
-            df_flowline['well_discharge'] = self.schematisation.well_discharge
+            df_flowline['well_discharge'] = abs(self.schematisation.well_discharge)
             df_flowline['substance'] = self.schematisation.substance
             df_flowline['particle_release_day'] = self.schematisation.particle_release_day
             df_flowline['removal_function'] = self.schematisation.removal_function
@@ -1729,7 +1729,7 @@ class AnalyticalWell():
             # export everything anyways. 
             #AH_todo when we have the other options sorted out ('pathogen') then 
             # adjust this.
-            df_flowline['well_discharge'] = self.schematisation.well_discharge
+            df_flowline['well_discharge'] = abs(self.schematisation.well_discharge)
             df_flowline['substance'] = self.schematisation.substance
             df_flowline['particle_release_day'] = self.schematisation.particle_release_day
             df_flowline['removal_function'] = self.schematisation.removal_function

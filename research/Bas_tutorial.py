@@ -67,7 +67,7 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 #Lets start with a simple example defining a HydroChemicalSchematisation object for a phreatic aquifer:
 
 phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                      well_discharge=7500, #m3/day
+                                      well_discharge=-7500, #m3/day
                                       recharge_rate=0.0008, #m/day
                                       thickness_vadose_zone_at_boundary=5,
                                       thickness_shallow_aquifer=10,
@@ -144,7 +144,7 @@ phreatic_concentration.substance_dict
 # phreatic() functions must be rerun:
 
 phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                      well_discharge=7500, #m3/day
+                                      well_discharge=-7500, #m3/day
                                       recharge_rate=0.0008, #m/day
                                       thickness_vadose_zone_at_boundary=5,
                                       thickness_shallow_aquifer=10,
@@ -224,7 +224,7 @@ ampa_plot.savefig('ampa_plot.png', dpi=300, bbox_inches='tight')
 phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       computation_method= 'analytical', 
                                       what_to_export='omp',
-                                      well_discharge=319.4*24, #m3/day
+                                      well_discharge=-319.4*24, #m3/day
                                       porosity_vadose_zone=0.38,
                                       porosity_shallow_aquifer=0.35,
                                       porosity_target_aquifer=0.35,
@@ -259,7 +259,7 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       point_input_concentration=100,
                                       distance_point_contamination_from_well=25, #5.45045, #
                                       depth_point_contamination=21, #m ASL
-                                      discharge_point_contamination=1000,
+                                      discharge_point_contamination=-1000,
                                       #dates
                                       start_date_well=dt.datetime.strptime('1968-01-01', '%Y-%m-%d'),
                                       start_date_contamination= dt.datetime.strptime('1966-01-01',"%Y-%m-%d"),
@@ -285,7 +285,7 @@ conc_plot = phreatic_conc.plot_concentration(x_axis='Time')
 phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       computation_method= 'analytical', 
                                       what_to_export='omp',
-                                      well_discharge=319.4*24, #m3/day
+                                      well_discharge=-319.4*24, #m3/day
                                       porosity_vadose_zone=0.38,
                                       porosity_shallow_aquifer=0.35,
                                       porosity_target_aquifer=0.35,
@@ -320,7 +320,7 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       point_input_concentration=100,
                                       distance_point_contamination_from_well=25, #5.45045, #
                                       depth_point_contamination=21, #m ASL
-                                      discharge_point_contamination=1000,
+                                      discharge_point_contamination=-1000,
                                       #dates
                                       start_date_well=dt.datetime.strptime('1968-01-01', '%Y-%m-%d'),
                                       start_date_contamination= dt.datetime.strptime('1966-01-01',"%Y-%m-%d"),
@@ -348,7 +348,7 @@ conc_plot = phreatic_conc.plot_concentration(x_axis='Time')
 semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfined',
                                       computation_method= 'analytical', 
                                       what_to_export='omp',
-                                      well_discharge=319.4*24, #m3/day
+                                      well_discharge=-319.4*24, #m3/day
                                       porosity_vadose_zone=0.38,
                                       porosity_shallow_aquifer=0.35,
                                       porosity_target_aquifer=0.35,
@@ -383,7 +383,7 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       point_input_concentration=100,
                                       distance_point_contamination_from_well=25, #5.45045, #
                                       depth_point_contamination=21, #m ASL
-                                      discharge_point_contamination=1000,
+                                      discharge_point_contamination=-1000,
                                       #dates
                                       start_date_well=dt.datetime.strptime('1968-01-01', '%Y-%m-%d'),
                                       start_date_contamination= dt.datetime.strptime('1966-01-01',"%Y-%m-%d"),

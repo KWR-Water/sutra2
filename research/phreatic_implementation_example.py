@@ -44,8 +44,64 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 # path = os.getcwd()  # path of working directory
 
 # %%
+phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+                                    computation_method= 'analytical',
+                                    what_to_export='omp',
+                                    well_discharge=-319.4*24, #m3/day
+                                    porosity_vadose_zone=0.38,
+                                    porosity_shallow_aquifer=0.35,
+                                    porosity_target_aquifer=0.35,
+                                    recharge_rate=0.3/365.25, #m/day
+                                    moisture_content_vadose_zone=0.15,
+                                    ground_surface=22,
+                                    thickness_vadose_zone_at_boundary=5,
+                                    thickness_shallow_aquifer=10,
+                                    thickness_target_aquifer=40,
+                                    hor_permeability_target_aquifer=35,
+                                    thickness_full_capillary_fringe=0.4,
+                                    redox_vadose_zone='suboxic',
+                                    redox_shallow_aquifer='anoxic',
+                                    redox_target_aquifer='deeply_anoxic',
+                                    pH_vadose_zone=5,
+                                    pH_shallow_aquifer=6,
+                                    pH_target_aquifer=7,
+                                    dissolved_organic_carbon_vadose_zone=10,
+                                    dissolved_organic_carbon_shallow_aquifer=4,
+                                    dissolved_organic_carbon_target_aquifer=2,
+                                    fraction_organic_carbon_vadose_zone=0.001,
+                                    fraction_organic_carbon_shallow_aquifer=0.0005,
+                                    fraction_organic_carbon_target_aquifer=0.0005,
+                                    temperature=11,
+                                    solid_density_vadose_zone=2.650,
+                                    solid_density_shallow_aquifer=2.650,
+                                    solid_density_target_aquifer=2.650,
+                                    diameter_borehole=0.75,
+                                    #diffuse parameters
+                                    diffuse_input_concentration=100, #ug/L
+                                    #point paramters
+                                    point_input_concentration=100,
+                                    distance_point_contamination_from_well=25,
+                                    depth_point_contamination=21, #m ASL
+                                    discharge_point_contamination=-1000,
+                                    #dates
+                                    start_date_well=dt.datetime.strptime('1968-01-01',"%Y-%m-%d"),
+                                    start_date_contamination= dt.datetime.strptime('1966-01-01',"%Y-%m-%d"),
+                                    compute_contamination_for_date=dt.datetime.strptime('2050-01-01',"%Y-%m-%d"),
+                                    end_date_contamination=dt.datetime.strptime('1990-01-01',"%Y-%m-%d"),
+
+                                    )
+phreatic_well = AnalyticalWell(phreatic_scheme)
+phreatic_well.phreatic()
+phreatic_conc = SubstanceTransport(phreatic_well, substance = 'OMP-X')
+phreatic_conc.compute_omp_removal()
+df_well_concentration = phreatic_conc.compute_concentration_in_well_at_date()
+
+df_well_concentration.to_excel("output.xlsx")
+
+#%%
+
 phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                      well_discharge=7500, #m3/day
+                                      well_discharge=-7500, #m3/day
                                       ground_surface = 22.,
                                       redox_vadose_zone='anoxic',
                                       redox_shallow_aquifer='anoxic',
