@@ -58,7 +58,7 @@ def test_modflow_run_phreatic_withgravelpack():
                                     computation_method = 'modpath',
                                     what_to_export='omp',
                                     # biodegradation_sorbed_phase = False,
-                                      well_discharge=319.4*24,
+                                      well_discharge=-319.4*24,
                                       # vertical_resistance_shallow_aquifer=500,
                                       porosity_vadose_zone=0.38,
                                       porosity_shallow_aquifer=0.35,
@@ -126,13 +126,13 @@ def test_modflow_run_phreatic_withgravelpack():
 
     assert modpath_phrea.success_mf
 #%%
-def test_modpath_run_phreatic_withgravelpack():
-    ''' Phreatic scheme with gravelpack: modpath run.'''
+def test_modpath_run_phreatic_nogravelpack():
+    ''' Phreatic scheme without gravelpack: modpath run.'''
     test_phrea = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                     computation_method = 'modpath',
                                     what_to_export='omp',
                                     # biodegradation_sorbed_phase = False,
-                                      well_discharge=319.4*24,
+                                      well_discharge=-319.4*24,
                                       # vertical_resistance_shallow_aquifer=500,
                                       porosity_vadose_zone=0.38,
                                       porosity_shallow_aquifer=0.35,
@@ -169,20 +169,22 @@ def test_modpath_run_phreatic_withgravelpack():
                                       halflife_deeply_anoxic= 2120,
                                       partition_coefficient_water_organic_carbon= 6.43,
                                       dissociation_constant= 99,
-                                      diameter_filterscreen = 0.2,
+                                      # diameter_filterscreen = 0.2,
                                       point_input_concentration = 100.,
                                       discharge_point_contamination = 100.,#made up value
                                       top_clayseal = 17,
                                       compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
+
                                       # substance = 'benzene',
                                       # halflife_suboxic=600,
                                       # partition_coefficient_water_organic_carbon = 3.3,
+                                    
                                       ncols_near_well = 20,
                                       ncols_far_well = 80,
                                     )
 
     test_phrea.make_dictionary()
-    phreatic_dict_2 = { 'simulation_parameters' : test_phrea.simulation_parameters,
+    phreatic_dict_1 = { 'simulation_parameters' : test_phrea.simulation_parameters,
                         'endpoint_id': test_phrea.endpoint_id,
                         'mesh_refinement': test_phrea.mesh_refinement,
                         'geo_parameters' : test_phrea.geo_parameters,
@@ -194,7 +196,7 @@ def test_modpath_run_phreatic_withgravelpack():
                         'bas_parameters' : test_phrea.bas_parameters,
                         }
     # print(test_phrea.__dict__)
-    modpath_phrea = ModPathWell(test_phrea,
+    modpath_phrea = ModPathWell(phreatic_dict_1,
                             workspace = "test_ws",
                             modelname = "phreatic",
                             bound_left = "xmin",
@@ -206,6 +208,111 @@ def test_modpath_run_phreatic_withgravelpack():
 
     assert modpath_phrea.success_mp
 
+def test_modpath_run_horizontal_flow():
+    ''' Horizontal flow test in target_aquifer: modpath run.'''
+    # well discharge
+    well_discharge = -1000.
+    # distance to boundary
+    distance_boundary = 550.
+    # Phreatic scheme with gravelpack: modpath run.
+    test_phrea = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
+                                computation_method = 'modpath',
+                                what_to_export='omp',
+                                # biodegradation_sorbed_phase = False,
+                                well_discharge= well_discharge,
+                                # vertical_resistance_shallow_aquifer=500,
+                                porosity_vadose_zone=0.33,
+                                porosity_shallow_aquifer=0.33,
+                                porosity_target_aquifer=0.33,
+                                recharge_rate=0.,
+                                moisture_content_vadose_zone=0.15,
+                                ground_surface = 0.0,
+                                thickness_vadose_zone_at_boundary=0.0,
+                                thickness_shallow_aquifer=30.0,
+                                thickness_target_aquifer=20.0,
+                                hor_permeability_target_aquifer=10.0,
+                                hor_permeability_shallow_aquifer = 1.,
+                                vertical_anisotropy_shallow_aquifer = 1000.,
+                                thickness_full_capillary_fringe=0.4,
+                                redox_vadose_zone='anoxic', #'suboxic',
+                                redox_shallow_aquifer='anoxic',
+                                redox_target_aquifer='deeply_anoxic',
+                                pH_vadose_zone=7.5,
+                                pH_shallow_aquifer=7.5,
+                                pH_target_aquifer=7.5,
+                                dissolved_organic_carbon_vadose_zone=1., 
+                                dissolved_organic_carbon_shallow_aquifer=1., 
+                                dissolved_organic_carbon_target_aquifer=1.,
+                                fraction_organic_carbon_vadose_zone=0.001,
+                                fraction_organic_carbon_shallow_aquifer=0.001,
+                                fraction_organic_carbon_target_aquifer=0.001, 
+                                temperature=12.,
+                                solid_density_vadose_zone= 2.650, 
+                                solid_density_shallow_aquifer= 2.650, 
+                                solid_density_target_aquifer= 2.650, 
+                                diameter_borehole = 0.2,
+                                substance = 'benzo(a)pyrene',
+                                halflife_suboxic= 530,
+                                halflife_anoxic= 2120,
+                                halflife_deeply_anoxic= 2120,
+                                partition_coefficient_water_organic_carbon= 6.43,
+                                dissociation_constant= 99,
+                                diameter_filterscreen = 0.2,
+                                point_input_concentration = 1.,
+                                discharge_point_contamination = 0.,#made up value
+                                top_clayseal = 0,
+                                compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
+                                # substance = 'benzene',
+                                # halflife_suboxic=600,
+                                # partition_coefficient_water_organic_carbon = 3.3,
+                                model_radius = distance_boundary,
+                                ncols_near_well = 20,
+                                ncols_far_well = 80,
+                            )
+
+    test_phrea.make_dictionary()
+    ### Adjust ibound_parameters to add horizontal flow ###
+    
+    # Confined top boundary ; no recharge_parameters
+    test_phrea.ibound_parameters.pop("top_boundary1")
+    test_phrea.recharge_parameters.pop("source1")
+    # Add outer boundary for horizontal flow test
+    test_phrea.ibound_parameters["outer_boundary_target_aquifer"] = {
+                            'top': test_phrea.bottom_shallow_aquifer,
+                            'bot': test_phrea.bottom_target_aquifer,
+                            'xmin': test_phrea.model_radius - 1.,
+                            'xmax': test_phrea.model_radius,
+                            'ibound': -1
+                            }
+
+    phreatic_dict_2 = { 'simulation_parameters' : test_phrea.simulation_parameters,
+                        'endpoint_id': test_phrea.endpoint_id,
+                        'mesh_refinement': test_phrea.mesh_refinement,
+                        'geo_parameters' : test_phrea.geo_parameters,
+                        'ibound_parameters' : test_phrea.ibound_parameters,
+                        'recharge_parameters' : test_phrea.recharge_parameters,
+                        'well_parameters' : test_phrea.well_parameters,
+                        'point_parameters' : test_phrea.point_parameters,
+                        'substance_parameters' : test_phrea.substance_parameters,
+                        'bas_parameters' : test_phrea.bas_parameters,
+                        }
+    
+    print(phreatic_dict_2) 
+    modpath_phrea = ModPathWell(phreatic_dict_2, #test_phrea,
+                            workspace = "test_ws_phrea",
+                            modelname = "phreatic",
+                            bound_left = "xmin",
+                            bound_right = "xmax")
+    # print(modpath_phrea.__dict__)
+    # Run phreatic schematisation
+    modpath_phrea.run_model(run_mfmodel = True,
+                        run_mpmodel = True)
+
+
+
+    assert modpath_phrea.success_mp
+
+
 def test_modpath_run_phreatic_withgravelpack_traveltimes():
 
 
@@ -214,7 +321,7 @@ def test_modpath_run_phreatic_withgravelpack_traveltimes():
                                 computation_method = 'modpath',
                                 what_to_export='omp',
                                 # biodegradation_sorbed_phase = False,
-                                well_discharge=319.4*24,
+                                well_discharge=-319.4*24,
                                 # vertical_resistance_shallow_aquifer=500,
                                 porosity_vadose_zone=0.38,
                                 porosity_shallow_aquifer=0.35,
@@ -327,7 +434,7 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes():
                                     computation_method = 'modpath',
                                     what_to_export='omp',
                                     # biodegradation_sorbed_phase = False,
-                                      well_discharge=319.4*24,
+                                      well_discharge=-319.4*24,
                                       # vertical_resistance_shallow_aquifer=500,
                                       porosity_vadose_zone=0.38,
                                       porosity_shallow_aquifer=0.35,
@@ -441,7 +548,7 @@ def test_phreatic_scheme_withgravelpack_dictinput():
                                     computation_method = 'modpath',
                                     what_to_export='omp',
                                     # biodegradation_sorbed_phase = False,
-                                      well_discharge=319.4*24,
+                                      well_discharge=-319.4*24,
                                       # vertical_resistance_shallow_aquifer=500,
                                       porosity_vadose_zone=0.38,
                                       porosity_shallow_aquifer=0.35,
@@ -523,7 +630,7 @@ def test_travel_time_distribution_phreatic():
     test_ = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                         computation_method= 'analytical',
                                         what_to_export='omp',
-                                        well_discharge=319.4*24,
+                                        well_discharge=-319.4*24,
                                         # vertical_resistance_shallow_aquifer=500,
                                         hor_permeability_shallow_aquifer = 0.02,
                                         porosity_vadose_zone=0.38,

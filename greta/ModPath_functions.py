@@ -757,7 +757,7 @@ class ModPathWell:
         spd_wel[0] = []
         for iWell in well_names:
             # Daily flux [m3/d]   (negative value)  
-            Qwell_day[iWell] = -abs(schematisation[dict_key][iWell][discharge_parameter])
+            Qwell_day[iWell] = schematisation[dict_key][iWell][discharge_parameter]
             # Calculate boundary indices
             layidx_min,layidx_max,\
                 rowidx_min,rowidx_max,\
@@ -950,12 +950,6 @@ class ModPathWell:
                                             nstp= nstp, steady = steady)
                                             # Laycbd --> 0, then no confining lay below
 
-    def spat_ref(self,xll = 0, yll = 0, delr = None, delc = None,
-                 units = "meters",lenuni = 1, length_multiplier=1):
-        # Define spatial reference of modflow run
-        self.mf.sr = flopy.utils.SpatialReference(xll=0, yll=0, delr=self.mf.dis.delr.array, delc=self.mf.dis.delc.array, 
-                                    units='meters', lenuni=1, length_multiplier=1)
-
     def create_bas(self):
         ''' Add basic Package to the MODFLOW model '''
         self.bas = flopy.modflow.ModflowBas(self.mf, ibound = self.ibound, strt = self.strt)
@@ -1046,13 +1040,6 @@ class ModPathWell:
                 self.create_rch(rech = self.recharge)
             except Exception as e:
                 print(e, "no recharge assigned.")
-
-            # Assign spatial reference:
-            # this is a fix until the grid object is available                    
-            self.spat_ref(xll = self.xll, yll = self.yll, delr = self.delr,
-                     delc = self.delc, units = "meters",
-                     lenuni = 1, length_multiplier=1)
-
 
     def generate_modflow_files(self):
         ''' Write package data MODFLOW model. '''
@@ -1221,31 +1208,28 @@ class ModPathWell:
         ## Particle group data ##
         pgroups = list(recharge_parameters.keys())
         # xmin and xmax per pg
-        self.pg_xmin, self.pg_xmax = {}, {}
-        for iPG in pgroups:
-            # xmin
-            self.pg_xmin[iPG] = recharge_parameters.get(iPG).get("xmin")
-            # xmax
-            self.pg_xmax[iPG] = recharge_parameters.get(iPG).get("xmax")
+        if not hasattr(self, "pg_xmin"):
+            self.pg_xmin = {}
+        if not hasattr(self, "pg_xmax"):
+            self.pg_xmax = {}
 
-        try:
-            # Determine column indices
-            colidx_min = int(np.argwhere((self.xmid >= self.pg_xmin[iPG]) & (self.xmid <= self.pg_xmax[iPG]))[0])
-            colidx_max = int(np.argwhere((self.xmid >= self.pg_xmin[iPG]) & (self.xmid <= self.pg_xmax[iPG]))[-1])
-            # np.where((self.xmid < right) & (self.xmid > left))    
-        except IndexError as e:
-            print(e,"Set colidx_min and colidx_max to None.")
-            colidx_min, colidx_max = None, None            
-
-                
         # particle group filenames
-        self.pg_filenames = {iPG: iPG + ".sloc" for iPG in pgroups}
+        if not hasattr(self, "pg_filenames"):
+            self.pg_filenames = {}
+        for iPG in pgroups:
+            self.pg_filenames[iPG] = iPG + ".sloc"
+
         # particle starting locations [(lay,row,col),(k,i,j),...]
-        self.part_locs = {}  
+        if not hasattr(self, "part_locs"):
+            self.part_locs = {}  
         # Relative location within grid cells (per particle group)
-        self.localx = {}
-        self.localy = {}
-        self.localz = {}
+        if not hasattr(self, "localx"):
+            self.localx = {}  
+        if not hasattr(self, "localy"):
+            self.localy = {}  
+        if not hasattr(self, "localz"):
+            self.localz = {}  
+
         # Particle id [part group, particle id] - zero based integers
         if not hasattr(self, "pids"):
             print("Create a new particle id dataset dict.")
@@ -1254,13 +1238,39 @@ class ModPathWell:
             print("Create a new particle group dataset dict.")
             self.pg = {}
         # Particle group nodes
-        self.pg_nodes = {}
+        if not hasattr(self, "pg_nodes"):
+            print("Create a new particle group nodes dataset dict.")
+            self.pg_nodes = {}
 
-        # Particle dta objects
-        self.pd = {}
+        # Particle data objects
+        if not hasattr(self, "pd"):
+            print("Create a new particle dataset dict.")
+            self.pd = {}
+
+
         # Particle counter
-        pcount = -1
+        pcount = -1 
+               
         for iPG in pgroups:
+
+            if len(iPG) == 0:
+                # Particle group not entering via recharge
+                continue
+
+            # xmin
+            self.pg_xmin[iPG] = recharge_parameters.get(iPG).get("xmin")
+            # xmax
+            self.pg_xmax[iPG] = recharge_parameters.get(iPG).get("xmax")
+
+            try:
+                # Determine column indices
+                colidx_min = int(np.argwhere((self.xmid >= self.pg_xmin[iPG]) & (self.xmid <= self.pg_xmax[iPG]))[0])
+                colidx_max = int(np.argwhere((self.xmid >= self.pg_xmin[iPG]) & (self.xmid <= self.pg_xmax[iPG]))[-1])
+                # np.where((self.xmid < right) & (self.xmid > left))    
+            except IndexError as e:
+                print(e,"Set colidx_min and colidx_max to None.")
+                colidx_min, colidx_max = None, None            
+
             # Particles ids (use counter)
             self.pids[iPG] = []
             # Particle location list per particle group
@@ -2005,7 +2015,13 @@ class ModPathWell:
                     df_particle_list.append(df_particle_data[f"{iPG}-{iNode}-{iPart}"])
 
         # Concatenate df_particle dataframes ('combined')
-        df_particle = pd.concat(df_particle_list, axis = 0, ignore_index = False)
+        if len(df_particle_list) > 0:
+            df_particle = pd.concat(df_particle_list, axis = 0, ignore_index = False)
+        else:
+            colnames_df_particle = {"x": "xcoord","y":"ycoord","z":"zcoord","time":"total_travel_time","prsity_uncorr":"porosity",
+                                "solid_density": "solid_density", "fraction_organic_carbon": "fraction_organic_carbon", "redox": "redox", 
+                                "dissolved_organic_carbon":	"dissolved_organic_carbon", "pH": "pH",	"temperature": "temperature", "material": "material"}
+            df_particle = pd.DataFrame(columns = colnames_df_particle)
 
         # y-coordinate equals 0.5 * self.delc[0] in axisymmetric or 2D model
         if self.model_type in ["axisymmetric","2D"]:
@@ -2235,7 +2251,9 @@ class ModPathWell:
     def calc_lambda(self, df_particle, df_flowline, mu1 = 0.149, mu1_std = 0.0932,
                 por_eff = 0.33, 
                 grainsize = 0.00025,
-                coll_eff = 0.001, const_BM = 1.38e-23,
+                alpha0 = 0.001,
+                pH0 = 7., 
+                const_BM = 1.38e-23,
                 temp_water = 10., rho_water = 999.703,
                 pathogen_diam = 2.33e-8, v_por = 0.01):
 
@@ -2281,12 +2299,25 @@ class ModPathWell:
             Column "lambda" for each node
         '''
 
+        # Create empty column 'relative_distance' in df_particle
+        df_particle['relative_distance'] = None  
+        # Create empty column 'porewater_velocity' in df_particle
+        df_particle['porewater_velocity'] = None     
 
+        # Create empty column 'collision_eff' in df_particle
+        df_particle['collision_eff'] = None  
+        # Collission efficiency [np.array]
+        coll_eff = {}
+        for pid in df_flowline.index:
+            coll_eff[pid] = alpha0 * 0.9**((df_particle.loc[pid,"pH"].values - pH0)/0.1)
 
+            # Fill df_particle 'collision_eff'
+            df_particle.loc[pid,"collision_eff"] = coll_eff[pid]
+        
         # Collision efficiency [-]
         df_flowline = self._df_fillna(df_flowline,
                                       df_column = 'collision_eff',
-                                      value = coll_eff)
+                                      value = alpha0)
         # Pathogen diameter [m]
         df_flowline = self._df_fillna(df_flowline,
                                 df_column = 'pathogen_diam',
@@ -2310,13 +2341,7 @@ class ModPathWell:
         # grain size [m]
         df_particle = self._df_fillna(df_particle,
                                 df_column = 'grainsize',
-                                value = grainsize)   
-
-        # Create empty column 'relative_distance' in df_particle
-        df_particle['relative_distance'] = None  
-
-        # Create empty column 'porewater_velocity' in df_particle
-        df_particle['porewater_velocity'] = None        
+                                value = grainsize)      
 
         # Create empty column 'k_att' in df_particle
         df_particle['k_att'] = None
@@ -2366,8 +2391,8 @@ class ModPathWell:
                                 (df_particle.loc[pid,"zcoord"].diff().values)**2)
             # Time difference array
             tdiff[pid] = df_particle.loc[pid,"total_travel_time"].diff().values
-            # Calculate porewater velocity [m/day] (include effective porosity)
-            v_por[pid] = (dist[pid]/tdiff[pid]) / df_particle.loc[pid,"porosity"].values
+            # Calculate porewater velocity [m/day] (do not include effective porosity)
+            v_por[pid] = (dist[pid]/tdiff[pid])
 
             # Fill column relative_distance in 'df_particle' 
             df_particle.loc[pid,'relative_distance'][:-1] = dist[pid][1:]
@@ -2376,7 +2401,7 @@ class ModPathWell:
             # Fill porewater velocity in 'df_particle'
             df_particle.loc[pid,"porewater_velocity"][:-1] = v_por[pid][1:]
             # In the last pathline row the porewater_velocity is equal to previous velocity
-            df_particle.loc[pid,"porewater_velocity"].iloc[-1] = v_por[pid][-2]
+            df_particle.loc[pid,"porewater_velocity"].iloc[-1] = v_por[pid][-1]
 
             # number of nodes
             n_nodes = len(df_particle.loc[pid,:])
@@ -2443,6 +2468,8 @@ class ModPathWell:
 
     def calc_advective_microbial_removal(self,df_particle,df_flowline, 
                                         endpoint_id, trackingdirection = "forward",
+                                        mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, pH0 = 6.8, const_BM = 1.38e-23,
+                                        temp_water = 11., rho_water = 999.703, pathogen_diam = 2.33e-8,
                                         conc_start = 1., conc_gw = 0.):
                                         
         ''' Calculate the advective microbial removal along pathlines
@@ -2512,6 +2539,13 @@ class ModPathWell:
             # direction: particle tracking direction (forward/backward)
 
         '''
+
+        # Calculate removal coefficient 'lambda' [/day].
+        df_particle, df_flowline = self.calc_lambda(df_particle, df_flowline,
+                                                    mu1 = mu1, grainsize = grainsize, alpha0 = alpha0, 
+                                                    pH0 = pH0, const_BM = const_BM,
+                                                    temp_water = temp_water, 
+                                                    rho_water = rho_water, pathogen_diam = pathogen_diam)
 
         # Starting concentration [-]
         df_flowline = self._df_fillna(df_flowline,
@@ -2807,19 +2841,16 @@ class ModPathWell:
             # Export output data to particle_df and flowline_df
             self._export_to_df(mppth = self.mppth)
 
-            # Calculate removal coefficient 'lambda' [/day].
-            self.df_particle, self.df_flowline = self.calc_lambda(self.df_particle, self.df_flowline,
-                mu1 = 0.149, grainsize = 0.00025, coll_eff = 0.001, const_BM = 1.38e-23,
-                temp_water = 11., rho_water = 999.703, pathogen_diam = 2.33e-8)
-
             # Calculate advective microbial removal
-            # Final concentratio per endpoint_id
+            # Final concentration per endpoint_id
             C_final = {}
             for endpoint_id in self.schematisation_dict.get("endpoint_id"):
                 self.df_particle, self.df_flowline, C_final[endpoint_id] = self.calc_advective_microbial_removal(
                                                     self.df_particle,self.df_flowline, 
                                                     endpoint_id = endpoint_id,
                                                     trackingdirection = self.trackingdirection,
+                                                    mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, pH0 = 6.8, const_BM = 1.38e-23,
+                                                    temp_water = 11., rho_water = 999.703, pathogen_diam = 2.33e-8,
                                                     conc_start = 1., conc_gw = 0.)
 
             # df_particle file name 
