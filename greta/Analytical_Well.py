@@ -302,7 +302,7 @@ class HydroChemicalSchematisation:
                 relative_position_starting_points_in_basin=None,
                 relative_position_starting_points_outside_basin=None,
 
-                 particle_release_day=None,
+                particle_release_day=None,
 
                 #modpath params
                  ncols_near_well = 20,
