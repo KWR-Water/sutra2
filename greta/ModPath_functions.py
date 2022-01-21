@@ -1322,7 +1322,139 @@ class ModPathWell:
                 location input style 1.  '''
             self.trackingdirection = trackingdirection
 
-            
+
+    def _create_particles_ibound(self, ibound_parameters = None,
+                                                   nparticles_cell: int = 1,
+                                                   localy=0.5, localz=0.5,
+                                                   timeoffset=0.0, drape=0,
+                                                   trackingdirection = 'forward',
+                                                   releasedata=0.0):
+        ''' Class to create the most basic particle data type (starting location
+        input style 1). Input style 1 is the most general input style and provides
+        the highest flexibility in customizing starting locations, see flopy docs.
+        '''
+        # SUGGESTION SR: --> add term to dictionary 'recharge_parameters' as 'nparticles_cell'
+        
+        if ibound_parameters is None:
+            ibound_parameters = self.schematisation_dict.get('ibound_parameters')
+
+        ## Particle group data ##
+        pgroups = list(ibound_parameters.keys())
+        # xmin and xmax per pg
+        if not hasattr(self, "pg_xmin"):
+            self.pg_xmin = {}
+        if not hasattr(self, "pg_xmax"):
+            self.pg_xmax = {}
+
+        # particle group filenames
+        if not hasattr(self, "pg_filenames"):
+            self.pg_filenames = {}
+        for iPG in pgroups:
+            self.pg_filenames[iPG] = iPG + ".sloc"
+
+        # particle starting locations [(lay,row,col),(k,i,j),...]
+        if not hasattr(self, "part_locs"):
+            self.part_locs = {}  
+        # Relative location within grid cells (per particle group)
+        if not hasattr(self, "localx"):
+            self.localx = {}  
+        if not hasattr(self, "localy"):
+            self.localy = {}  
+        if not hasattr(self, "localz"):
+            self.localz = {}  
+
+        # Particle id [part group, particle id] - zero based integers
+        if not hasattr(self, "pids"):
+            print("Create a new particle id dataset dict.")
+            self.pids = {}
+        if not hasattr(self, "pg"):
+            print("Create a new particle group dataset dict.")
+            self.pg = {}
+        # Particle group nodes
+        if not hasattr(self, "pg_nodes"):
+            print("Create a new particle group nodes dataset dict.")
+            self.pg_nodes = {}
+
+        # Particle data objects
+        if not hasattr(self, "pd"):
+            print("Create a new particle dataset dict.")
+            self.pd = {}
+
+
+        # Particle counter
+        pcount = -1 
+               
+        for iPG in pgroups:
+
+            if len(iPG) == 0:
+                # Particle group not entering via recharge
+                continue
+
+            # xmin
+            self.pg_xmin[iPG] = ibound_parameters.get(iPG).get("xmin")
+            # xmax
+            self.pg_xmax[iPG] = ibound_parameters.get(iPG).get("xmax")
+
+            try:
+                # Determine column indices
+                colidx_min = int(np.argwhere((self.xmid >= self.pg_xmin[iPG]) & (self.xmid <= self.pg_xmax[iPG]))[0])
+                colidx_max = int(np.argwhere((self.xmid >= self.pg_xmin[iPG]) & (self.xmid <= self.pg_xmax[iPG]))[-1])
+                # np.where((self.xmid < right) & (self.xmid > left))    
+            except IndexError as e:
+                print(e,"Set colidx_min and colidx_max to None.")
+                colidx_min, colidx_max = None, None            
+
+            # Particles ids (use counter)
+            self.pids[iPG] = []
+            # Particle location list per particle group
+            self.part_locs[iPG] = []
+            # Relative location within grid cells (per particle group)
+            self.localx[iPG] = []
+            self.localy[iPG] = []
+            self.localz[iPG] = []
+            # Particle group nodes
+            self.pg_nodes[iPG] = []
+
+            for iCol in range(colidx_min,colidx_max):
+                # Particle row
+                p_row = 0
+                # Particle layer
+                p_lay = 0
+                # Particle column
+                p_col = iCol
+                # locations for reading output in modpath model
+                self.pg_nodes[iPG].append((p_lay,p_row,p_col))
+                for iPart_cell in range(nparticles_cell):
+                    # Add particle locations (lay,row,col)
+                    self.part_locs[iPG].append((p_lay,p_row,p_col))                    
+                    # Relative location of the particles in the cells
+                    self.localx[iPG].append((iPart_cell + 0.5)/(float(nparticles_cell)))
+                    self.localy[iPG].append(localy)
+                    self.localz[iPG].append(localz)
+                    # particle count
+                    pcount += 1 
+                    self.pids[iPG].append(pcount)
+
+            # Particle distribution package - particle allocation
+            #modpath.mp7particledata.Part...
+            self.pd[iPG] = flopy.modpath.ParticleData(partlocs = self.part_locs[iPG], structured=True,
+                                                drape=drape, localx= self.localx[iPG], 
+                                                localy= self.localy[iPG], localz= self.localz[iPG],
+                                                timeoffset = timeoffset, 
+                                                particleids = self.pids[iPG])
+
+            # particle group filename
+            self.pg_filename = self.pg_filenames[iPG]
+            # particle group object
+            # modpath.mp7particlegroup.Part.......
+            self.pg[iPG] = flopy.modpath.ParticleGroup(particlegroupname=iPG,
+                                                                filename=self.pg_filenames[iPG],
+                                                                releasedata=releasedata,
+                                                                particledata=self.pd[iPG])
+            ''' ParticleGroup class to create MODPATH 7 particle group data for
+                location input style 1.  '''
+            self.trackingdirection = trackingdirection
+
         
 
         ## OLD analytical code ##
@@ -2392,16 +2524,16 @@ class ModPathWell:
             # Time difference array
             tdiff[pid] = df_particle.loc[pid,"total_travel_time"].diff().values
             # Calculate porewater velocity [m/day] (do not include effective porosity)
-            v_por[pid] = (dist[pid]/tdiff[pid])
+            v_por[pid] = abs(dist[pid][1:]/tdiff[pid][1:])
 
             # Fill column relative_distance in 'df_particle' 
-            df_particle.loc[pid,'relative_distance'][:-1] = dist[pid][1:]
-            df_particle.loc[pid,'relative_distance'].iloc[-1] = 0
+            df_particle.loc[pid,'relative_distance'] = np.array(list(dist[pid][1:]) + [0])
+            # df_particle.loc[pid,'relative_distance'][-1] = 0
 
             # Fill porewater velocity in 'df_particle'
-            df_particle.loc[pid,"porewater_velocity"][:-1] = v_por[pid][1:]
+            df_particle.loc[pid,"porewater_velocity"] = np.array(list(v_por[pid]) + [v_por[pid][-1]])
             # In the last pathline row the porewater_velocity is equal to previous velocity
-            df_particle.loc[pid,"porewater_velocity"].iloc[-1] = v_por[pid][-1]
+            # df_particle.loc[pid,"porewater_velocity"][-1] = v_por[pid][-1]
 
             # number of nodes
             n_nodes = len(df_particle.loc[pid,:])
@@ -2449,9 +2581,9 @@ class ModPathWell:
             D_BM[pid] *= 86400.
 
             # Diffusion related attachment term 'k_diff'
-            k_diff[pid] = (D_BM[pid] /
-                        (df_particle.loc[pid,"grainsize"].values * df_particle.loc[pid,"porosity"].values * df_particle.loc[pid,"porewater_velocity"].values))**(2/3) * \
-                            df_particle.loc[pid,"porewater_velocity"].values
+            k_diff[pid] = ((D_BM[pid] /
+                        (df_particle.loc[pid,"grainsize"].values * df_particle.loc[pid,"porosity"].values * df_particle.loc[pid,"porewater_velocity"].values))**(2/3) * 
+                            df_particle.loc[pid,"porewater_velocity"].values)
 
             # hechtingssnelheidscoëfficiënt k_att [/dag]
             k_att[pid] = k_bots[pid] * 4 * As_happ[pid]**(1/3) * k_diff[pid]
@@ -2823,6 +2955,13 @@ class ModPathWell:
                                                             trackingdirection = self.trackingdirection,
                                                             releasedata=0.0)  
 
+            self._create_particles_ibound(ibound_parameters = None,
+                                                            nparticles_cell = 1,
+                                                            localy=0.5,
+                                                            timeoffset=0.0, drape=0,
+                                                            trackingdirection = self.trackingdirection,
+                                                            releasedata=0.0)  
+
             # Default flux interfaces
             defaultiface = {'RECHARGE': 6, 'ET': 6}
         
@@ -2841,28 +2980,6 @@ class ModPathWell:
             # Export output data to particle_df and flowline_df
             self._export_to_df(mppth = self.mppth)
 
-            # Calculate advective microbial removal
-            # Final concentration per endpoint_id
-            C_final = {}
-            for endpoint_id in self.schematisation_dict.get("endpoint_id"):
-                self.df_particle, self.df_flowline, C_final[endpoint_id] = self.calc_advective_microbial_removal(
-                                                    self.df_particle,self.df_flowline, 
-                                                    endpoint_id = endpoint_id,
-                                                    trackingdirection = self.trackingdirection,
-                                                    mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, pH0 = 6.8, const_BM = 1.38e-23,
-                                                    temp_water = 11., rho_water = 999.703, pathogen_diam = 2.33e-8,
-                                                    conc_start = 1., conc_gw = 0.)
-
-            # df_particle file name 
-            particle_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_particle_microbial_removal.csv")
-            # Save df_particle 
-            self.df_particle.to_csv(particle_fname)
-            
-            # df_flowline file name
-            flowline_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_flowline_microbial_removal.csv")
-            # Save df_flowline
-            self.df_flowline.to_csv(flowline_fname)
-                    
             print("Post-processing modpathrun of type", self.schematisation_type, "completed.")
 
                 
