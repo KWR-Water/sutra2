@@ -12,37 +12,7 @@ import sys
 from pathlib import Path
 
 from zmq import zmq_version_info
-# try:
-#     from project_path import module_path #the dot says looik in the current folder, this project_path.py file must be in the folder here
-# except ModuleNotFoundError:
-#     from project_path import module_path
 
-# <<<<<<< HEAD
-# Import schematisation functions
-# try:
-#     from greta.ModPath_functions import ModPathWell   
-#     import greta.Analytical_Well as AW
-#     from greta.Substance_Transport import *
-# except ModuleNotFoundError as e:
-#     print(e, ": second try.")
-#     module_path = os.path.join("..","greta")
-#     if module_path not in sys.path:
-#         sys.path.insert(0,module_path)
-
-#     from ModPath_functions import ModPathWell   
-#     import Analytical_Well as AW
-#     from Substance_Transport import *
-
-#     print("Second try to import modules succeeded.")
-
-# try:
-#     from project_path import module_path #the dot says looik in the current folder, this project_path.py file must be in the folder here
-# except ModuleNotFoundError:
-#     from project_path import module_path
-
-module_path = os.path.abspath(os.path.join("..","..","greta"))
-if module_path not in sys.path:
-    sys.path.insert(0,module_path)
     
 import greta.Analytical_Well as AW
 import greta.ModPath_functions as MP

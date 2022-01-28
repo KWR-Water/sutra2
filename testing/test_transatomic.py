@@ -14,9 +14,6 @@ from pathlib import Path
 # except ModuleNotFoundError:
 #     from project_path import module_path
 
-module_path = os.path.abspath(os.path.join("..","..","greta"))
-if module_path not in sys.path:
-    sys.path.insert(0,module_path)
 
 from greta.Analytical_Well import *
 from greta.Substance_Transport import *
