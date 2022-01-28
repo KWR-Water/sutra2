@@ -45,18 +45,20 @@ import math
 import re # regular expressions
 from scipy.special import kn as besselk
 
-try:
-    from greta.Analytical_Well import * 
-    from greta.Substance_Transport import *
-except ModuleNotFoundError as e:
-    print(e, ": second try.")
-    module_path = os.path.join("..","greta")
-    if module_path not in sys.path:
-        sys.path.insert(0,module_path)
-    from Analytical_Well import * 
-    from Substance_Transport import *
+# from Analytical_Well import AnalyticalWell
 
-    print("Second try to import modules succeeded.")
+# try:
+#     from greta.Analytical_Well import * 
+#     from greta.Substance_Transport import *
+# except ModuleNotFoundError as e:
+#     print(e, ": second try.")
+#     module_path = os.path.join("..","greta")
+#     if module_path not in sys.path:
+#         sys.path.insert(0,module_path)
+#     from Analytical_Well import * 
+#     from Substance_Transport import *
+
+#     print("Second try to import modules succeeded.")
 
 # path of working directory
 path = os.getcwd()  
@@ -149,7 +151,7 @@ rmax -> diameter_filterscreen
 class ModPathWell:
 
     """ Compute travel time distribution using MODFLOW and MODPATH.""" 
-    def __init__(self, schematisation: object or dict,
+    def __init__(self, schematisation: object,
                        workspace: str or None = None, modelname: str or None = None,
                        bound_left: str = "xmin", bound_right: str = "xmax",
                        bound_top: str = "top", bound_bot: str = "bot",
@@ -220,7 +222,7 @@ class ModPathWell:
         # Required keys
         self.required_keys = ["simulation_parameters","geo_parameters",
         "ibound_parameters","recharge_parameters",
-        "well_parameters","point_parameters", "mesh_refinement",
+        "well_parameters","diffuse_parameters","point_parameters", "mesh_refinement",
         "endpoint_id"]
 
         if type(self.schematisation) == dict:
@@ -1861,7 +1863,8 @@ class ModPathWell:
             layer 'iLay', row 'iRow' and column 'iCol'.
             for point locations 'locs'. '''
         nodes = []
-        for iLay,iRow,iCol in locs:
+        for iLoc in locs:
+            iLay,iRow,iCol = iLoc[0], iLoc[1], iLoc[2]
             nodes.append(iLay * self.nrow * self.ncol + iRow * self.ncol + iCol)
         return nodes
 
@@ -2057,13 +2060,14 @@ class ModPathWell:
 
         for iPG in particle_group:  # use endpoint_id dict or list
 
+            # Node indices to retrieve particle data
+            nodes = self.get_node_ID(pg_nodes.get(iPG))
+
             # Nodes to retrieve
-            for id_,iNode in enumerate(pg_nodes.get(iPG)):
+            for id_,iNode in enumerate(nodes):
                 # print(id_,iNode)
-                try:
-                    nodes = self.get_node_ID(iNode)
-                except Exception:
-                    nodes = self.get_node_ID([iNode])
+                # try:
+
 
                 # nodes_rel[ = flopy.utils.ra_slice(m.wel.stress_period_data[0], ['k', 'i', 'j'])
                 #     nodes_well = prf.get_nodes(locs = wel_locs, nrow = nrow, ncol = ncol) # m.dis.get_node(wel_locs.tolist())
@@ -2073,7 +2077,7 @@ class ModPathWell:
                 time_diff, dist_tot,   \
                 time_tot, pth_data =  \
                             self.read_pathlinedata(fpth = mppth,
-                                                nodes = nodes)
+                                                nodes = iNode)
                 
                 '''                             
                 xyz_points, \    # XYZ data 
@@ -2948,19 +2952,19 @@ class ModPathWell:
 
             # Create radial distance array with particle locations
             # self._create_radial_distance_array() # Analytische fluxverdeling
-            self._create_radial_distance_particles_recharge(recharge_parameters = None,
+            self._create_radial_distance_particles_recharge(recharge_parameters = self.schematisation_dict.get('diffuse_parameters'),
                                                             nparticles_cell = 1,
                                                             localy=0.5, localz=0.5,
                                                             timeoffset=0.0, drape=0,
                                                             trackingdirection = self.trackingdirection,
                                                             releasedata=0.0)  
 
-            self._create_particles_ibound(ibound_parameters = None,
-                                                            nparticles_cell = 1,
-                                                            localy=0.5,
-                                                            timeoffset=0.0, drape=0,
-                                                            trackingdirection = self.trackingdirection,
-                                                            releasedata=0.0)  
+            # self._create_particles_ibound(ibound_parameters = None,
+            #                                                 nparticles_cell = 1,
+            #                                                 localy=0.5,
+            #                                                 timeoffset=0.0, drape=0,
+            #                                                 trackingdirection = self.trackingdirection,
+            #                                                 releasedata=0.0)  
 
             # Default flux interfaces
             defaultiface = {'RECHARGE': 6, 'ET': 6}

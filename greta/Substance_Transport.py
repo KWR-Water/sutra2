@@ -26,12 +26,25 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import os
+import sys
 from pandas import read_csv
 from pandas import read_excel
 import math
 from scipy.special import kn as besselk
 import datetime
 from datetime import timedelta
+
+module_path = os.path.abspath(os.path.join("..","..","greta"))
+if module_path not in sys.path:
+    sys.path.insert(0,module_path)
+
+from greta.Analytical_Well import AnalyticalWell 
+from greta.ModPath_functions import ModPathWell
+
+# from Analytical_Well import AnalyticalWell
+# from ModPath_functions import ModPathWell
+# # from greta.ModPath_functions import ModPathWell
+# # from Analytical_Well import AnalyticalWell
 
 path = os.getcwd()  # path of working directory
 
@@ -74,6 +87,8 @@ class Substance:
                 disassociation constant for acic H-OMP [-]
             omp_half_life: float
                 per redox zone, [days])
+
+        @SR (21-1-2022): ADD documentation microbial species       
         """
         self.substance_name = substance_name
 
@@ -123,12 +138,29 @@ class Substance:
                     'deeply_anoxic': 1e99,
                     },
                 },
+            "norovirus": 
+                {"substance_name": "norovirus",
+                    "alpha0": 1.e-5,
+                    "pH0": 6.8,
+                    "pathogen_diam": 2.33e-8,
+                    "mu1": {
+                        "suboxic": 0.149, 
+                        "anoxic": 0.023, 
+                        "deeply_anoxic": 0.023
+                        }
+                }
             }
-
         self.substance_dict = substances_dict[substance_name]
+
+        # Dict    # Acties Steven 25-1-22
+        micro_organism_dict = {}
+
+        #@ Steven voeg toe: micro_organism_dict
+        self.micro_organism_dict = micro_organism_dict[substance_name]
 
 #ah_todo @MartinK, MartinvdS -> let the user specify the chemical in the Substance transport file instead of schematisation?
 # also let them feed it a dictionary with their own substance?
+
 
 class SubstanceTransport():
     """ 
@@ -136,7 +168,7 @@ class SubstanceTransport():
 
     Attributes
     ----------
-    analytical_well: object
+    well: object
         The AnalyticalWell object for the schematisation of the aquifer type.
     omp_inialized: bool
         Boolian indicating whether the Substance object has been initialized
@@ -178,6 +210,7 @@ class SubstanceTransport():
         Column 'retardation': float
         Column 'breakthrough_travel_time': float
 
+
     substance: object
         The Substance object with the OMP of interest.
 
@@ -195,8 +228,10 @@ class SubstanceTransport():
             per redox zone ('suboxic', 'anoxic', deeply_anoxic'), [days]
 
     """
+
+
     def __init__(self,
-                analytical_well,
+                well: AnalyticalWell or ModPathWell,
                 substance: Substance):
 
         '''
@@ -204,28 +239,33 @@ class SubstanceTransport():
 
         Parameters
         ----------
-        analytical_well: object
+        well: object
             The AnalyticalWell object for the schematisation of the aquifer type.
         substance: object
             The Substance object with the OMP of interest.
 
 
         '''
-        self.analytical_well = analytical_well
+        self.well = well
         self.omp_inialized = False
-        self.df_particle = analytical_well.df_particle
-        self.df_flowline = analytical_well.df_flowline
+        self.df_particle = well.df_particle
+        self.df_flowline = well.df_flowline
         self.substance = Substance(substance)
 
+        # PATHOGEN init
+        # @SR : init of microbial species (pathogen)
+        # Check if ModPathWell (Class) can be used instead of 'AnalyticalWell'
+        
+        self.micro_organism_inialized = False
 
         # AH need to make sure here that the substance passed is the same, e.g. comapre the dictionaries BUT ALSO
         # make sure that user doesn't call one substance in the hydrochemicalschematisation class and another in the concentration class
         # probably only a problem for ourselves, this should be written into a larger "run" class for the model which could avoid this
-        if self.substance.substance_name == self.analytical_well.schematisation.substance:
+        if self.substance.substance_name == self.well.schematisation.substance:
             # Compare the dictionaries and override the default values if the user inputs a value
             # assumes that default dict contains the substance input by the user (we only have three right now though!)
             default_substance_dict = self.substance.substance_dict
-            user_substance_dict = self.analytical_well.schematisation.substance_parameters #user input dictionary of values
+            user_substance_dict = self.well.schematisation.substance_parameters #user input dictionary of values
 
             # iterate through the dicitonary keys
             for key, value in user_substance_dict .items():
@@ -257,10 +297,19 @@ class SubstanceTransport():
         self.omp_inialized = True
 
 
-    def _init_pathogen():
+    def _init_micro_organism(self):
         ''' Initialisation if the Substance is a pathogen'''
+        
+        if self.micro_organism_inialized:
+            pass
+        else:
+            self.df_particle['mu1'] = self.df_particle['redox'].map(self.substance_dict['mu1'])
+            self.df_particle['alpha0'] = self.substance_dict['alpha0']
+            self.df_particle['pH0'] = self.substance_dict['pH0']
+            self.df_particle['pathogen_diam'] = self.substance_dict['pathogen_diam']
 
-        pass
+        self.pathogen_inialized = True
+
 
     def _calculate_retardation(self):
         ''' Calculates the retardation of the OMP due to sorption and biodegradation.
@@ -280,7 +329,7 @@ class SubstanceTransport():
         '''
         #0.2 -> fraction of binding sites supplied by DOC which bind the OMP
         #and prevent sortion to aquifer
-        if self.analytical_well.schematisation.biodegradation_sorbed_phase:
+        if self.well.schematisation.biodegradation_sorbed_phase:
             self.df_particle['retardation'] = (1 + (1 / (1 + 10 ** (self.df_particle.pH - self.df_particle.pKa)) * self.df_particle.solid_density
                             * (1 - self.df_particle.porosity)
                             * self.df_particle.fraction_organic_carbon * self.df_particle.Koc_temperature_correction)
@@ -303,7 +352,7 @@ class SubstanceTransport():
         df_particle: pandas.dataframe
             Column 'omp_half_life_temperature_corrected': float'''
 
-        if self.analytical_well.schematisation.temp_correction_halflife:
+        if self.well.schematisation.temp_correction_halflife:
             self.df_particle['omp_half_life_temperature_corrected'] = self.df_particle['omp_half_life'] * 10 ** (-63000 / (2.303 * 8.314) * (1 / (20 + 273.15) - 1 / (self.df_particle.temperature + 273.15)))
         else:
             self.df_particle['omp_half_life_temperature_corrected'] = self.df_particle['omp_half_life']
@@ -328,7 +377,7 @@ class SubstanceTransport():
         # if log_Koc is zero, assign value of zero
         if self.df_particle.log_Koc[0] == 0:
             self.df_particle['Koc_temperature_correction'] = 0
-        elif self.analytical_well.schematisation.temp_correction_Koc:
+        elif self.well.schematisation.temp_correction_Koc:
             self.df_particle['Koc_temperature_correction'] = 10 ** self.df_particle.log_Koc * 10 ** (1913 * (1 / (self.df_particle.temperature + 273.15) - 1 / (20 + 273.15)))
         else:
             self.df_particle['Koc_temperature_correction'] = self.df_particle.log_Koc
@@ -348,8 +397,8 @@ class SubstanceTransport():
         '''
 
         #check if there is degradation prior to infiltration
-        DOC_inf = self.analytical_well.schematisation.dissolved_organic_carbon_infiltration_water
-        TOC_inf = self.analytical_well.schematisation.total_organic_carbon_infiltration_water
+        DOC_inf = self.well.schematisation.dissolved_organic_carbon_infiltration_water
+        TOC_inf = self.well.schematisation.total_organic_carbon_infiltration_water
 
         if DOC_inf and TOC_inf > 0:
             DOC_TOC_ratio = DOC_inf / TOC_inf
@@ -453,14 +502,14 @@ class SubstanceTransport():
 
             """
 
-        self.df_flowline['input_concentration'] = self.analytical_well.schematisation.diffuse_input_concentration
+        self.df_flowline['input_concentration'] = self.well.schematisation.diffuse_input_concentration
         self.df_particle['input_concentration'] = None
         self.df_particle['steady_state_concentration'] = None
 
-        self.df_particle.loc[self.df_particle.zone=='surface', 'input_concentration'] = self.analytical_well.schematisation.diffuse_input_concentration
-        self.df_particle.loc[self.df_particle.zone=='surface', 'steady_state_concentration'] = self.analytical_well.schematisation.diffuse_input_concentration
+        self.df_particle.loc[self.df_particle.zone=='surface', 'input_concentration'] = self.well.schematisation.diffuse_input_concentration
+        self.df_particle.loc[self.df_particle.zone=='surface', 'steady_state_concentration'] = self.well.schematisation.diffuse_input_concentration
 
-        if self.analytical_well.schematisation.point_input_concentration:
+        if self.well.schematisation.point_input_concentration:
             ''' point contamination '''
             # need to take into account the depth of the point contamination here....
             # need to change the df_particle and df_flowline to only be the flowlines for the point contamination flowline(s)
@@ -468,35 +517,35 @@ class SubstanceTransport():
             # FIRST recalculate the travel times for the contamination, then initialize the class
 
             #only for a SINGLE point contamination
-            distance = self.analytical_well.schematisation.distance_point_contamination_from_well
-            depth = self.analytical_well.schematisation.depth_point_contamination
-            cumulative_fraction_abstracted_water = (math.pi * self.analytical_well.schematisation.recharge_rate
-                                                        * distance ** 2)/abs(self.analytical_well.schematisation.well_discharge)
+            distance = self.well.schematisation.distance_point_contamination_from_well
+            depth = self.well.schematisation.depth_point_contamination
+            cumulative_fraction_abstracted_water = (math.pi * self.well.schematisation.recharge_rate
+                                                        * distance ** 2)/abs(self.well.schematisation.well_discharge)
             ind = self.df_particle.flowline_id.iloc[-1]
 
-            if self.analytical_well.schematisation.schematisation_type == 'phreatic':
-                head = self.analytical_well.schematisation._calculate_hydraulic_head_phreatic(distance=distance)
-                df_flowline, df_particle = self.analytical_well._add_phreatic_point_sources(distance=distance,
+            if self.well.schematisation.schematisation_type == 'phreatic':
+                head = self.well.schematisation._calculate_hydraulic_head_phreatic(distance=distance)
+                df_flowline, df_particle = self.well._add_phreatic_point_sources(distance=distance,
                                             depth_point_contamination=depth,
                                             cumulative_fraction_abstracted_water=cumulative_fraction_abstracted_water)
 
-            elif self.analytical_well.schematisation.schematisation_type == 'semiconfined':
-                bottom_vadose_zone = self.analytical_well.schematisation.bottom_vadose_zone_at_boundary
+            elif self.well.schematisation.schematisation_type == 'semiconfined':
+                bottom_vadose_zone = self.well.schematisation.bottom_vadose_zone_at_boundary
 
-                df_flowline, df_particle = self.analytical_well._add_semiconfined_point_sources(distance=distance,
+                df_flowline, df_particle = self.well._add_semiconfined_point_sources(distance=distance,
                                         depth_point_contamination=depth,  )
 
             df_particle['flowline_id'] = df_particle['flowline_id'] + ind
 
-            df_flowline['input_concentration'] = self.analytical_well.schematisation.point_input_concentration
+            df_flowline['input_concentration'] = self.well.schematisation.point_input_concentration
             df_particle['input_concentration'] = None
             df_particle['steady_state_concentration'] = None
-            df_particle.loc[self.df_particle.zone=='surface', 'input_concentration'] = self.analytical_well.schematisation.point_input_concentration
-            df_particle.loc[self.df_particle.zone=='surface', 'steady_state_concentration'] = self.analytical_well.schematisation.point_input_concentration
+            df_particle.loc[self.df_particle.zone=='surface', 'input_concentration'] = self.well.schematisation.point_input_concentration
+            df_particle.loc[self.df_particle.zone=='surface', 'steady_state_concentration'] = self.well.schematisation.point_input_concentration
 
             df_flowline['flowline_id'] = df_flowline['flowline_id'] + ind
             df_flowline['flowline_type'] = "point_source"
-            df_flowline['flowline_discharge'] = abs(self.analytical_well.schematisation.discharge_point_contamination)
+            df_flowline['flowline_discharge'] = abs(self.well.schematisation.discharge_point_contamination)
 
             #AH_todo, something here to loop through different point sources if more than one.
 
@@ -523,10 +572,10 @@ class SubstanceTransport():
         self._calculcate_total_breakthrough_travel_time()
 
         # reduce the amount of text per line by extracting the following parameters
-        self.compute_contamination_for_date = self.analytical_well.schematisation.compute_contamination_for_date
-        start_date_well = self.analytical_well.schematisation.start_date_well
-        start_date_contamination = self.analytical_well.schematisation.start_date_contamination
-        self.end_date_contamination = self.analytical_well.schematisation.end_date_contamination
+        self.compute_contamination_for_date = self.well.schematisation.compute_contamination_for_date
+        start_date_well = self.well.schematisation.start_date_well
+        start_date_contamination = self.well.schematisation.start_date_contamination
+        self.end_date_contamination = self.well.schematisation.end_date_contamination
 
         if start_date_well > start_date_contamination:
             self.start_date = start_date_well
@@ -620,13 +669,13 @@ class SubstanceTransport():
         '''
 
         # reduce the amount of text per line by extracting the following parameters
-        point_input_concentration = self.analytical_well.schematisation.point_input_concentration
-        diffuse_input_concentration = self.analytical_well.schematisation.diffuse_input_concentration
-        schematisation_type = self.analytical_well.schematisation.schematisation_type
-        compute_contamination_for_date = self.analytical_well.schematisation.compute_contamination_for_date
-        start_date_well = self.analytical_well.schematisation.start_date_well
-        start_date_contamination = self.analytical_well.schematisation.start_date_contamination
-        end_date_contamination = self.analytical_well.schematisation.end_date_contamination
+        point_input_concentration = self.well.schematisation.point_input_concentration
+        diffuse_input_concentration = self.well.schematisation.diffuse_input_concentration
+        schematisation_type = self.well.schematisation.schematisation_type
+        compute_contamination_for_date = self.well.schematisation.compute_contamination_for_date
+        start_date_well = self.well.schematisation.start_date_well
+        start_date_contamination = self.well.schematisation.start_date_contamination
+        end_date_contamination = self.well.schematisation.end_date_contamination
 
         start_date = max(start_date_well,start_date_contamination)
         back_date_start = min(start_date_well,start_date_contamination)
@@ -686,6 +735,397 @@ class SubstanceTransport():
         # plt.savefig('well_concentration_over_time_'+str(self.substance.substance_name)+'_'+schematisation_type+'.png', dpi=300, bbox_inches='tight')
         return fig
 
+    # Check for parameters in df_flowline #
+    def _df_fillna(self, df,df_column: str, value = 0., dtype_ = 'float'):
+        ''' Check dataframe for missing values for
+            calculation of removal.
+            df: the pandas.DataFrame to check
+            df_column: the required dataframe column
+            value: the default value in case other alues are missing
+            dtype_: dtype of df column
+            Return adjusted dataframe 'df'
+        '''
+
+        if not df_column in df.columns:
+            # Add dataframe column with default value
+            df[df_column] = value
+        else:
+            # Fill dataframe series (if needed with default value)
+            if df[df_column].dropna().empty:
+                df[df_column] = df[df_column].fillna(value)
+            else: 
+                # fill empty rows (with mean value of other records)
+                value_mean = df[df_column].values.mean()
+                df[df_column] = df[df_column].fillna(value_mean)
+        # Adjust dtype
+        df = df.astype({df_column: dtype_})
+
+        return df
+
+    def calc_lambda(self, df_particle, df_flowline, mu1 = 0.149, mu1_std = 0.0932,
+                por_eff = 0.33, 
+                grainsize = 0.00025,
+                alpha0 = 0.001,
+                pH0 = 7., 
+                const_BM = 1.38e-23,
+                temp_water = 10., rho_water = 999.703,
+                pathogen_diam = 2.33e-8, v_por = 0.01):
+
+        ''' For more information about the advective microbial removal calculation: 
+                BTO2012.015: Ch 6.7 (page 71-74)
+
+        Calculate removal coefficient 'lambda_' [/day].
+
+            lambda_ = k_att + mu_1
+            with 'hechtingssnelheidscoëfficiën't k_att [/day] and
+            inactivation constant 'mu1' [/day] - sub(oxic): 0.149 [/day]
+            lognormal standarddev. 'mu1_std' - sub(oxic): 0.0932 [/day]
+
+        First, calculate "hechtingssnelheidscoëfficiënt" 'k_att' [/day]
+            for Particle Paths with id_vals 'part_idx'
+        # Effective porosity ('por_eff') [-]
+        # grain size 'grainsize' [m]
+        # collision efficiency ('botsingsefficiëntie') 'bots_eff' [-]
+        # Boltzmann constant (const_BM) [1,38 × 10-23 J K-1] 
+        # Water temperature 'temp_water' [degrees celcius]
+        # Water density 'rho_water' [kg m-3]
+        # Pathogen diameter 'pathogen_diam' [m]
+        # porewater velocity 'v_por' [m/d]
+        
+        # Check - (example 'E_coli'):
+        >> k_att = calc_katt(part_idx = [0], por_eff = [0.33], korrelgrootte = [0.00025],
+                bots_eff = 0.001, const_BM = 1.38e-23,
+                temp_water = [10.], rho_water = [999.703],
+                pathogen_diam = 2.33e-8, v_por = [0.01])
+        >> print(k_att)
+        >> {0: 0.7993188853572424} # [/day]
+        
+        Return
+        ---------
+        df_flowline: pandas.DataFrame
+            Column "collision_eff" for each node
+            Column "pathogen_diam" for each node
+
+        df_particle: pandas.DataFrame
+            Column "relative_distance" for each node
+            Column "porewater_velocity" for each node
+            Column "k_att" for each node
+            Column "lambda" for each node
+        '''
+
+        # Create empty column 'relative_distance' in df_particle
+        df_particle['relative_distance'] = None  
+        # Create empty column 'porewater_velocity' in df_particle
+        df_particle['porewater_velocity'] = None     
+
+        # Create empty column 'collision_eff' in df_particle
+        df_particle['collision_eff'] = None  
+        # Collission efficiency [np.array]
+        coll_eff = {}
+        for pid in df_flowline.index:
+            coll_eff[pid] = alpha0 * 0.9**((df_particle.loc[pid,"pH"].values - pH0)/0.1)
+
+            # Fill df_particle 'collision_eff'
+            df_particle.loc[pid,"collision_eff"] = coll_eff[pid]
+        
+        # Collision efficiency [-]
+        df_flowline = self._df_fillna(df_flowline,
+                                      df_column = 'collision_eff',
+                                      value = alpha0)
+        # Pathogen diameter [m]
+        df_flowline = self._df_fillna(df_flowline,
+                                df_column = 'pathogen_diam',
+                                value = pathogen_diam)
+
+        # Water temperature [degrees Celsius]
+        df_particle = self._df_fillna(df_particle,
+                                df_column = 'temperature',
+                                value = temp_water)
+
+        # Water density [kg m-3]
+        df_particle = self._df_fillna(df_particle,
+                                df_column = 'rho_water',
+                                value = rho_water) 
+        
+        # Effective porosity [-]
+        df_particle = self._df_fillna(df_particle,
+                                df_column = 'porosity',
+                                value = por_eff)   
+
+        # grain size [m]
+        df_particle = self._df_fillna(df_particle,
+                                df_column = 'grainsize',
+                                value = grainsize)      
+
+        # Create empty column 'k_att' in df_particle
+        df_particle['k_att'] = None
+        # Create empty column 'lambda' in df_particle
+        df_particle['lambda'] = None        
+        
+        # if not 'collision_eff' in df_flowline.columns:
+        #     df_flowline['collision_eff'] = coll_eff
+        # else:
+        #     # fill series (if needed with default value)
+        #     if df_flowline['collision_eff'].dropna().empty:
+        #         df_flowline['collision_eff'] = df_flowline['collision_eff'].fillna(coll_eff)
+        #     else: # fill empty rows (with mean value of other records)
+        #         coll_eff_mean = df_flowline['collision_eff'].values.mean()
+        #         df_flowline['collision_eff'] = df_flowline['collision_eff'].fillna(coll_eff_mean)
+   
+        # # Pathogen diameter [m]
+        # if not 'pathogen_diam' in df_flowline.columns:
+        #     df_flowline['pathogen_diam'] = pathogen_diam
+        # else:
+        #     # fill series (if needed with default value)
+        #     if df_flowline['pathogen_diam'].dropna().empty:
+        #         df_flowline['pathogen_diam'] = df_flowline['pathogen_diam'].fillna(pathogen_diam)
+        #     else: # fill empty rows (with mean value of other records)
+        #         pathogen_diam_mean = df_flowline['pathogen_diam'].values.mean()
+        #         df_flowline['pathogen_diam'] = df_flowline['pathogen_diam'].fillna(pathogen_diam_mean)
+
+        # # Water temperature
+        # if not 'temperature' in df_particle.columns:
+        #     df_particle['temperature'] = temp_water
+        # else:
+        #     # fill series (if needed with default value)
+        #     if df_particle['temperature'].dropna().empty:
+        #         df_particle['temperature'] = df_particle['temperature'].fillna(temp_water)
+        #     else: # fill empty rows (with mean value of other records)
+        #         temp_water_mean = df_particle['temperature'].values.mean()
+        #         df_particle['temperature'] = df_particle['temperature'].fillna(temp_water_mean)
+
+        # Calculate porewater velocity
+        v_por, dist, tdiff = {}, {}, {}   
+        for pid in df_flowline.index:
+
+
+            #Distance array between nodes
+            dist[pid] = np.sqrt((df_particle.loc[pid,"xcoord"].diff().values)**2 + \
+                                (df_particle.loc[pid,"ycoord"].diff().values)**2 + \
+                                (df_particle.loc[pid,"zcoord"].diff().values)**2)
+            # Time difference array
+            tdiff[pid] = df_particle.loc[pid,"total_travel_time"].diff().values
+            # Calculate porewater velocity [m/day] (do not include effective porosity)
+            v_por[pid] = abs(dist[pid][1:]/tdiff[pid][1:])
+
+            # Fill column relative_distance in 'df_particle' 
+            df_particle.loc[pid,'relative_distance'] = np.array(list(dist[pid][1:]) + [0])
+            # df_particle.loc[pid,'relative_distance'][-1] = 0
+
+            # Fill porewater velocity in 'df_particle'
+            df_particle.loc[pid,"porewater_velocity"] = np.array(list(v_por[pid]) + [v_por[pid][-1]])
+            # In the last pathline row the porewater_velocity is equal to previous velocity
+            # df_particle.loc[pid,"porewater_velocity"][-1] = v_por[pid][-1]
+
+            # number of nodes
+            n_nodes = len(df_particle.loc[pid,:])
+            # #Distance array between nodes
+            # dist[pid] = np.zeros((n_nodes-1), dtype = 'float')
+            # # Time difference array
+            # tdiff[pid] = np.zeros((n_nodes-1), dtype = 'float')
+            # for iNode in range(1,n_nodes):
+            #     # Calculate internodal distance (m)
+            #     dist[pid][iNode-1] = np.sqrt((df_particle.loc[pid,"xcoord"][iNode] - df_particle.loc[pid,"xcoord"][iNode-1])**2 + \
+            #         (df_particle.loc[pid,"ycoord"][iNode] - df_particle.loc[pid,"ycoord"][iNode-1])**2 + \
+            #         (df_particle.loc[pid,"zcoord"][iNode] - df_particle.loc[pid,"zcoord"][iNode-1])**2)
+            #     # Calculate time difference between nodes
+            #     tdiff[pid][iNode-1] = (df_particle.loc[pid,"total_travel_time"][iNode] - df_particle.loc[pid,"total_travel_time"][iNode-1])
+                
+
+        # Create empty dicts and keys to keep track of arrays per particle id
+        k_bots, gamma, As_happ, mu = {}, {}, {}, {}
+        D_BM, k_diff, k_att, lambda_ = {}, {}, {}, {}
+        # particle ids
+        for pid in df_flowline.index:
+
+            # Botsingterm 'k_bots'
+            k_bots[pid] = (3/2.)*((1-df_particle.loc[pid,"porosity"].values) / \
+                        df_particle.loc[pid,"grainsize"].values) * df_flowline.loc[pid,"collision_eff"]
+
+            # Porosity dependent variable 'gamma'
+            gamma[pid] = (1-df_particle.loc[pid,"porosity"].values)**(1/3)
+
+            # Calculate Happel’s porosity dependent parameter 'A_s' (Eq. 5: BTO2012.015)
+            ''' !!! Use correct formula:-> As =  2 * (1-gamma**5) /  (2 - 3 * gamma + 3 * gamma**5 - 2 * gamma**6)
+                instead of... 2 * (1-gamma)**5 / (.......) 
+            '''
+            As_happ[pid] = 2 * (1-gamma[pid]**5) / \
+                    (2 - 3 * gamma[pid] + 3 * gamma[pid]**5 - 2 * gamma[pid]**6)
+
+            # Dynamic viscosity (mu) [kg m-1 s-1]
+            mu[pid] = (df_particle.loc[pid,"rho_water"].values * 497.e-6) / \
+                        (df_particle.loc[pid,"temperature"].values + 42.5)**(3/2)
+ 
+            # Diffusion constant 'D_BM' (Eq.6: BTO2012.015) --> eenheid: m2 s-1
+            D_BM[pid] = (const_BM * (df_particle.loc[pid,"temperature"].values + 273.)) / \
+                        (3 * np.pi * df_flowline.loc[pid,"pathogen_diam"] * mu[pid])
+            # Diffusieconstante 'D_BM' (Eq.6: BTO2012.015) --> eenheid: m2 d-1
+            D_BM[pid] *= 86400.
+
+            # Diffusion related attachment term 'k_diff'
+            k_diff[pid] = ((D_BM[pid] /
+                        (df_particle.loc[pid,"grainsize"].values * df_particle.loc[pid,"porosity"].values * df_particle.loc[pid,"porewater_velocity"].values))**(2/3) * 
+                            df_particle.loc[pid,"porewater_velocity"].values)
+
+            # hechtingssnelheidscoëfficiënt k_att [/dag]
+            k_att[pid] = k_bots[pid] * 4 * As_happ[pid]**(1/3) * k_diff[pid]
+            # removal coefficient 'lambda_' [/day], using the 'mu1' mean.
+            lambda_[pid] = k_att[pid] + mu1
+
+            # Fill df_particle 'k_att'
+            df_particle.loc[pid,"k_att"] = k_att[pid]
+            # Fill df_particle 'lambda'
+            df_particle.loc[pid,"lambda"] = lambda_[pid]
+
+        # return (adjusted) df_particle and df_flowline
+        return df_particle, df_flowline
+        
+    def calc_advective_microbial_removal(self,df_particle,df_flowline, 
+                                        endpoint_id, trackingdirection = "forward",
+                                        mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, pH0 = 6.8, const_BM = 1.38e-23,
+                                        temp_water = 11., rho_water = 999.703, pathogen_diam = 2.33e-8,
+                                        conc_start = 1., conc_gw = 0.):
+                                        
+        ''' Calculate the advective microbial removal along pathlines
+            from source to end_point.
+
+            For more information about the advective microbial removal calculation: 
+                BTO2012.015: Ch 6.7 (page 71-74)
+
+            Relevant input:
+            df_particle: pandas.DataFrame
+                Column 'flowline_id'
+                Column 'xcoord'
+                Column 'ycoord'
+                Column 'zcoord'
+                Column 'relative_distance'
+                Column 'total_travel_time'
+                Column 'porosity'
+                Column 'lambda'
+                Column 'porewater_velocity'
+
+            df_flowline: pandas.DataFrame
+                Column 'flowline_id'
+                Column 'endpoint_id'
+                Column 'flowline_discharge'
+                Column 'well_discharge'
+
+            Return 
+            df_flowline: pandas.DataFrame
+                Column 'input_concentration': float   # (added)
+
+            df_particle: pandas.DataFrame
+                Column 'steady_state_concentration': float      # (added)
+                Column 'starting_concentration_gw': float                         # (added)
+        
+
+            Calculate the steady state concentration along traveled distance per 
+            node for each pathline from startpoint to endpoint_id'.
+            
+            With verwijderingscoëfficiënt 'lambda_' [/d]
+            effective porositty 'porosity' [-]
+            Starting concentration 'input_concentration' per pathline
+            Initial groundwater concentration 'starting_concentration_gw'
+
+            # Algemeen geldt voor de afbraak vanaf maaiveld tot eindpunt (zoals 'lek')
+            # C_ = (C_mv-C_gw) * e^-(lambda_/v)*dr + C_gw
+            # C_mv = C_maaiveld [aantal/l]; C_gw = C_grondwater [aantal/l]?
+            # v = (dr/dt) / por_eff --> poriewatersnelheid [m/d]
+            # Bij achtergrondconcentratie C_gw = 0., zoals nu:
+            # C_ = C_mv * e^-(lambda_/v)*r
+
+            # Check eindconcentratie van deze tijdstap
+            >> _,C_final = calc_pathlineconc(part_idx = [0], C0 = 1., C_gw = 0., por_vals = 0.33,
+                        lambda_ = {0: 0.1317345756973715}, xyz_start = [0,0,0], 
+                        xyz_eind = [0,0,1], t_start = 0., t_eind = 100.,
+                        dist_data = None, time_diff = None,
+                        direction = "backward")
+            >> print (C_final) [aantal/l]
+            >> 1.900378331566034e-06
+            
+            # Voor berekening per particle path "part_idx"
+            # Afgelegde afstanden tussen "xyz_node t" en "xyz_nodel t+1"
+            # voor iedere tijdstap (--> path_data)
+            dist_data: {0: np.array([1,1.2,1.3]),n+1: np.array([...])}
+            # Tijdsduur tussen iedere tijdstap "t" en "t+1"
+            # Zie parameter --> time_data
+            time_data: {0: np.array([2.2,2.4,1.6]),n+1: np.array([...])}
+            # direction: particle tracking direction (forward/backward)
+
+        '''
+
+        # Calculate removal coefficient 'lambda' [/day].
+        df_particle, df_flowline = self.calc_lambda(df_particle, df_flowline,
+                                                    mu1 = mu1, grainsize = grainsize, alpha0 = alpha0, 
+                                                    pH0 = pH0, const_BM = const_BM,
+                                                    temp_water = temp_water, 
+                                                    rho_water = rho_water, pathogen_diam = pathogen_diam)
+
+        # Starting concentration [-]
+        df_flowline = self._df_fillna(df_flowline,
+                                df_column = 'starting_concentration',
+                                value = conc_start,
+                                dtype_ = 'float')
+
+        # Original concentration in groundwater [-]
+        df_flowline = self._df_fillna(df_flowline,
+                                df_column = 'starting_concentration_gw',
+                                value = conc_gw,
+                                dtype_ = 'float')
+
+        if 'steady_state_concentration' not in df_particle.columns:
+            # Steady state concentration [-]
+            df_particle['steady_state_concentration'] = None
+        
+        for pid in df_flowline.index:
+            df_particle.loc[pid,"steady_state_concentration"].iloc[0] = df_flowline.loc[pid,"starting_concentration"]
+
+        # Start dictionaries for relative and steady-state concentrations
+        conc_rel = {}
+        conc_steady = {}  # concentration corrected for initial concentration
+        for pid in df_flowline.index:
+            
+            # Calculate the relative removal along pathlines
+            exp_arg = -((df_particle.loc[pid,"lambda"].values/df_particle.loc[pid,"porewater_velocity"].values) *
+                                df_particle.loc[pid,'relative_distance'].values).astype('float')
+
+            conc_rel[pid] = df_flowline.loc[pid,"starting_concentration_gw"] + \
+                            (df_flowline.loc[pid,"starting_concentration"] - df_flowline.loc[pid,"starting_concentration_gw"]) * \
+                                np.exp(exp_arg)
+
+            if trackingdirection == 'forward':
+                conc_steady[pid] = (conc_rel[pid]/df_flowline.loc[pid,"starting_concentration"]).cumprod() * \
+                                    df_flowline.loc[pid,"starting_concentration"]
+                # Replace 'nan'-values by 0.
+                conc_steady[pid]  = np.nan_to_num(conc_steady[pid],0.)
+                
+                # Index of average final concentration "C_"  idx=-1[C0,...,..,...,Ct-1,C_final]
+                idx_final = -1
+                                
+            elif trackingdirection == 'backward':
+                conc_steady[pid] = (conc_rel[pid][::-1]/df_flowline.loc[pid,"starting_concentration"]).cumprod() * \
+                                    df_flowline.loc[pid,"starting_concentration"]
+                # Replace 'nan'-values by 0.
+                conc_steady[pid]  = np.nan_to_num(conc_steady[pid],0.)
+                # First value represents concentration of endpoint and v.v.
+                # Reverse array--> [C_final,Ct-1,..,...,C0]
+                conc_steady[pid] = conc_steady[pid][::-1]
+                # Index of average final concentration "C_" idx=0 [C_final,Ct-1,..,...,C0]
+                idx_final = 0
+
+            # Add steady_state_concentration to df_particle
+            df_particle.loc[pid,'steady_state_concentration'] = conc_steady[pid]
+
+        # Bereken gemiddelde eindconcentratie
+        C_final = 0.
+        for pid in df_flowline.index:
+            if df_flowline.loc[pid,"endpoint_id"] == endpoint_id:
+                C_final += (conc_steady[pid][idx_final] * df_flowline.loc[pid,"flowline_discharge"]) / \
+                            df_flowline.loc[pid,"well_discharge"]
+
+
+        # return (adjusted) df_particle and df_flowline
+        return df_particle, df_flowline, C_final    
 
     def compute_pathogen_removal(self):
         #AH_todo

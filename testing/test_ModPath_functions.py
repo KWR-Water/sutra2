@@ -19,24 +19,38 @@ from zmq import zmq_version_info
 
 # <<<<<<< HEAD
 # Import schematisation functions
-try:
-    from greta.ModPath_functions import ModPathWell   
-    import greta.Analytical_Well as AW
-    from greta.Substance_Transport import *
-except ModuleNotFoundError as e:
-    print(e, ": second try.")
-    module_path = os.path.join("..","greta")
-    if module_path not in sys.path:
-        sys.path.insert(0,module_path)
+# try:
+#     from greta.ModPath_functions import ModPathWell   
+#     import greta.Analytical_Well as AW
+#     from greta.Substance_Transport import *
+# except ModuleNotFoundError as e:
+#     print(e, ": second try.")
+#     module_path = os.path.join("..","greta")
+#     if module_path not in sys.path:
+#         sys.path.insert(0,module_path)
 
-    from ModPath_functions import ModPathWell   
-    import Analytical_Well as AW
-    from Substance_Transport import *
+#     from ModPath_functions import ModPathWell   
+#     import Analytical_Well as AW
+#     from Substance_Transport import *
 
-    print("Second try to import modules succeeded.")
+#     print("Second try to import modules succeeded.")
 
-# from greta.Analytical_Well import *
-# from greta.Substance_Transport import *
+# try:
+#     from project_path import module_path #the dot says looik in the current folder, this project_path.py file must be in the folder here
+# except ModuleNotFoundError:
+#     from project_path import module_path
+
+module_path = os.path.abspath(os.path.join("..","..","greta"))
+if module_path not in sys.path:
+    sys.path.insert(0,module_path)
+    
+import greta.Analytical_Well as AW
+import greta.ModPath_functions as MP
+import greta.Substance_Transport as ST
+
+# from Substance_Transport import *
+# from ModPath_functions import ModPathWell
+
 from pandas._testing import assert_frame_equal
 # from greta.ModPath_functions import ModPathWell  
 # =======
@@ -51,6 +65,7 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 testfiles_dir = os.path.join(path,"test_files")
 if not os.path.exists(testfiles_dir):
     os.makedirs(testfiles_dir)
+
 
 # <<<<<<< HEAD
 #%% 
@@ -111,7 +126,7 @@ def test_modflow_run_phreatic_withgravelpack():
 
     test_phrea.make_dictionary()
     # print(test_phrea.__dict__)
-    modpath_phrea = ModPathWell(test_phrea,
+    modpath_phrea = MP.ModPathWell(test_phrea,
                             workspace = "test_ws",
                             modelname = "phreatic",
                             bound_left = "xmin",
@@ -198,7 +213,7 @@ def test_modpath_run_phreatic_nogravelpack():
                         'bas_parameters' : test_phrea.bas_parameters,
                         }
     # print(test_phrea.__dict__)
-    modpath_phrea = ModPathWell(phreatic_dict_1,
+    modpath_phrea = MP.ModPathWell(phreatic_dict_1,
                             workspace = "test_phrea_nogp",
                             modelname = "phreatic",
                             bound_left = "xmin",
@@ -313,17 +328,17 @@ def test_modpath_run_horizontal_flow():
 
     # Add point parameters                       
     startpoint_id = ["outer_boundary_target_aquifer"]
-    substance_name = 'Norovirus'
+    substance_name = 'norovirus'
 
-    substance_parameters = {"Norovirus": 
-                                {"substance": "pathogen",
+    substance_parameters = {"norovirus": 
+                                {"substance_name": "norovirus",
                                  "alpha0": 1.e-5,
                                  "pH0": 6.8,
                                  "pathogen_diam": 2.33e-8,
                                  "mu1": {"suboxic": 0.149, "anoxic": 0.023, "deeply_anoxic": 0.023}
                                 }
                             }
-    test_phrea.substance_parameters["Norovirus"] = substance_parameters["Norovirus"]
+    test_phrea.substance_parameters["norovirus"] = substance_parameters["Norovirus"]
 
 
     phreatic_dict_2 = { 'simulation_parameters' : test_phrea.simulation_parameters,
@@ -368,7 +383,7 @@ def test_modpath_run_horizontal_flow():
 
                 
 
-    modpath_phrea = ModPathWell(phreatic_dict_2, #test_phrea,
+    modpath_phrea = MP.ModPathWell(phreatic_dict_2, #test_phrea,
                             workspace = "test_ws_phrea",
                             modelname = "phreatic",
                             bound_left = "xmin",
@@ -454,7 +469,7 @@ def test_modpath_run_phreatic_withgravelpack_traveltimes():
                         'bas_parameters' : test_phrea.bas_parameters,
                         }
     # print(test_phrea.__dict__)
-    modpath_phrea = ModPathWell(phreatic_dict_2, #test_phrea,
+    modpath_phrea = MP.ModPathWell(phreatic_dict_2, #test_phrea,
                             workspace = "test_ws_phrea",
                             modelname = "phreatic",
                             bound_left = "xmin",
@@ -536,7 +551,7 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes():
                                       solid_density_shallow_aquifer= 2.650, 
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 0.75,
-                                      substance = 'benzo(a)pyrene',
+                                      substance = 'norovirus',
                                       halflife_suboxic= 530,
                                       halflife_anoxic= 2120,
                                       halflife_deeply_anoxic= 2120,
@@ -554,10 +569,18 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes():
                                       ncols_near_well = 20,
                                       ncols_far_well = 20,
                                       nlayers_target_aquifer = 20,
+                                    #   # Pathogen removal parameters
+                                    #   mu1 = 0.023,  # nog uitschrijven
+                                    #   alpha0 = 
+
                                     )
 
     test_semiconf.make_dictionary()
 
+    # Test diffuse_parameters (check line 796 in ModPath_functions)
+    diffuse_parameters = test_semiconf.recharge_parameters
+    # diffuse_parameters['xmin'] = 15.
+    # diffuse_parameters['xmax'] = 16.
     semiconf_dict_1 = { 'simulation_parameters' : test_semiconf.simulation_parameters,
                         'endpoint_id': test_semiconf.endpoint_id,
                         'mesh_refinement': test_semiconf.mesh_refinement,
@@ -565,12 +588,13 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes():
                         'ibound_parameters' : test_semiconf.ibound_parameters,
                         'recharge_parameters' : test_semiconf.recharge_parameters,
                         'well_parameters' : test_semiconf.well_parameters,
+                        'diffuse_parameters': test_semiconf.recharge_parameters,
                         'point_parameters' : test_semiconf.point_parameters,
                         'substance_parameters' : test_semiconf.substance_parameters,
                         'bas_parameters' : test_semiconf.bas_parameters,
                         }
 
-    modpath_semiconf = ModPathWell(semiconf_dict_1, #test_phrea,
+    modpath_semiconf = MP.ModPathWell(test_semiconf, # semiconf_dict_1, #test_phrea,
                             workspace = "test1_ws_semiconf",
                             modelname = "semi_conf_no_gp",
                             bound_left = "xmin",
@@ -581,10 +605,12 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes():
                         run_mpmodel = True)
 
     # Calculate advective microbial removal
+    modpath_removal = ST.SubstanceTransport(modpath_semiconf, substance = 'norovirus') #, df_particle, df_flowline)
+    # modpath_removal.compute_omp_removal()
     # Final concentration per endpoint_id
     C_final = {}
     for endpoint_id in modpath_semiconf.schematisation_dict.get("endpoint_id"):
-        df_particle, df_flowline, C_final[endpoint_id] = modpath_semiconf.calc_advective_microbial_removal(
+        df_particle, df_flowline, C_final[endpoint_id] = modpath_removal.calc_advective_microbial_removal(
                                             modpath_semiconf.df_particle, modpath_semiconf.df_flowline, 
                                             endpoint_id = endpoint_id,
                                             trackingdirection = modpath_semiconf.trackingdirection,
@@ -706,12 +732,12 @@ def test_diffuse_modpath_run_semiconfined_nogravelpack_traveltimes():
                         'bas_parameters' : test_semiconf.bas_parameters,
                         }
 
-    modpath_semiconf = ModPathWell(semiconf_dict_1, #test_phrea,
+    modpath_semiconf = MP.ModPathWell(semiconf_dict_1, #test_phrea,
                             workspace = "test1_ws_semiconf",
                             modelname = "semi_conf_no_gp",
                             bound_left = "xmin",
                             bound_right = "xmax")
-                            
+
     # Run phreatic schematisation
     modpath_semiconf.run_model(run_mfmodel = True,
                         run_mpmodel = True)
@@ -873,6 +899,6 @@ def test_travel_time_distribution_phreatic():
     else:
         print("Success, no error in TTD!")
 
-# %%
-if __name__ == "__main__":
-    test_modpath_run_phreatic_withgravelpack()
+# # %%
+# if __name__ == "__main__":
+#     test_modpath_run_phreatic_withgravelpack()

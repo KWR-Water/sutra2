@@ -4,12 +4,19 @@ import pytest
 from pandas import read_csv
 import pandas as pd
 import os
+import sys
+
 # path = os.getcwd()  # path of working directory
 from pathlib import Path
+
 # try:
 #     from project_path import module_path #the dot says looik in the current folder, this project_path.py file must be in the folder here
 # except ModuleNotFoundError:
 #     from project_path import module_path
+
+module_path = os.path.abspath(os.path.join("..","..","greta"))
+if module_path not in sys.path:
+    sys.path.insert(0,module_path)
 
 from greta.Analytical_Well import *
 from greta.Substance_Transport import *
@@ -18,7 +25,7 @@ import warnings
 
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
-
+path
 
 #%%
 def test_travel_time_distribution_phreatic():
