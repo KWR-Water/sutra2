@@ -332,7 +332,7 @@ class HydroChemicalSchematisation:
 
         check_parameter_choice(parameters_choice = ['schematisation_type'], options =['phreatic', 'semiconfined',])
         check_parameter_choice(parameters_choice = ['computation_method'], options =['analytical', 'modpath',])
-        check_parameter_choice(parameters_choice = ['removal_function'], options =['omp',])
+        check_parameter_choice(parameters_choice = ['removal_function'], options =['omp','pathogen'])
         check_parameter_choice(parameters_choice = ['what_to_export'], options =['all','omp', 'pathogen'])
 
         self.temp_correction_Koc = temp_correction_Koc
@@ -780,18 +780,50 @@ class HydroChemicalSchematisation:
             well_parameters = {
             }
 
-        recharge_parameters = {
+        if self.schematisation_type == 'semiconfined':
+            recharge_parameters = {
+                # 'source1': {
+                #     # source1 -> recharge & diffuse sources
+                #     'substance_name': self.substance,
+                #     'recharge': self.recharge_rate,
+                #     'xmin': self.diameter_gravelpack/2,
+                #     'xmax': self.model_radius,
+                #     'dissolved_organic_carbon': self.dissolved_organic_carbon_infiltration_water,
+                #     'TOC': self.total_organic_carbon_infiltration_water,
+                #     'input_concentration': self.diffuse_input_concentration,
+                #     },
+                # 'source2' :{}> surface water (BAR & RBF) #@MartinvdS come back to this when we start this module
+            }
+        else:
+            recharge_parameters = {
+                'source1': {
+                    # source1 -> recharge & diffuse sources
+                    'substance_name': self.substance,
+                    'recharge': self.recharge_rate,
+                    'xmin': self.diameter_gravelpack/2,
+                    'xmax': self.model_radius,
+                    'dissolved_organic_carbon': self.dissolved_organic_carbon_infiltration_water,
+                    'TOC': self.total_organic_carbon_infiltration_water,
+                    'input_concentration': self.diffuse_input_concentration,
+                    },
+                # 'source2' :{}> surface water (BAR & RBF) #@MartinvdS come back to this when we start this module
+            }
+
+        # Diffuse+_parameters assigns location (and substance) of diffuse contamination
+        diffuse_parameters = {
             'source1': { # source1 -> recharge & diffuse sources
                 'substance_name': self.substance,
                 'recharge': self.recharge_rate,
-                'xmin': self.diameter_gravelpack/2,
+                'xmin': self.diameter_gravelpack/2 + 0.1,
                 'xmax': self.model_radius,
+                'zmin': self.bottom_vadose_zone_at_boundary,
+                'zmax': self.bottom_vadose_zone_at_boundary,
                 'dissolved_organic_carbon': self.dissolved_organic_carbon_infiltration_water,
                 'TOC': self.total_organic_carbon_infiltration_water,
                 'input_concentration': self.diffuse_input_concentration,
                 },
             # 'source2' :{}> surface water (BAR & RBF) #@MartinvdS come back to this when we start this module
-        }
+            }
 
         # Create point diciontary if point source concentration specified,
         # otherwise pass empty dictionary
@@ -840,6 +872,7 @@ class HydroChemicalSchematisation:
         self.geo_parameters = geo_parameters
         self.ibound_parameters = ibound_parameters
         self.recharge_parameters = recharge_parameters
+        self.diffuse_parameters = diffuse_parameters
         self.well_parameters = well_parameters
         self.point_parameters = point_parameters
         self.substance_parameters = substance_parameters

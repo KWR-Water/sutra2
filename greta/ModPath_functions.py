@@ -45,7 +45,7 @@ import math
 import re # regular expressions
 from scipy.special import kn as besselk
 
-# from Analytical_Well import AnalyticalWell
+from greta.Analytical_Well import AnalyticalWell
 
 # try:
 #     from greta.Analytical_Well import * 
@@ -151,7 +151,7 @@ rmax -> diameter_filterscreen
 class ModPathWell:
 
     """ Compute travel time distribution using MODFLOW and MODPATH.""" 
-    def __init__(self, schematisation: object,
+    def __init__(self, schematisation: AnalyticalWell,
                        workspace: str or None = None, modelname: str or None = None,
                        bound_left: str = "xmin", bound_right: str = "xmax",
                        bound_top: str = "top", bound_bot: str = "bot",
@@ -197,6 +197,7 @@ class ModPathWell:
         self.bound_south = bound_south
         # Direction of calculating flow along pathlines (in modpath)
         self.trackingdirection = trackingdirection
+
 
         # Create output directories
         # Destination root
@@ -366,7 +367,7 @@ class ModPathWell:
 
                 try:
                     # number of refinements
-                    n_ref = schematisation[iDict][iDict_sub][n_refinement]
+                    n_ref = max(1,schematisation[iDict][iDict_sub][n_refinement])
                 except KeyError:
                     if res_max is None:
                         n_ref = 1
@@ -1206,14 +1207,29 @@ class ModPathWell:
         
         if recharge_parameters is None:
             recharge_parameters = self.schematisation_dict.get('recharge_parameters')
-
+        else:
+            recharge_parameters = self.schematisation_dict.get(recharge_parameters)
         ## Particle group data ##
-        pgroups = list(recharge_parameters.keys())
+        if recharge_parameters is None:
+            pgroups = []
+        else:
+            pgroups = list(recharge_parameters.keys())
+
         # xmin and xmax per pg
         if not hasattr(self, "pg_xmin"):
             self.pg_xmin = {}
         if not hasattr(self, "pg_xmax"):
             self.pg_xmax = {}
+        # ymin and ymax per pg
+        if not hasattr(self, "pg_ymin"):
+            self.pg_ymin = {}
+        if not hasattr(self, "pg_ymax"):
+            self.pg_ymax = {}
+        # zmin and zmax per pg
+        if not hasattr(self, "pg_zmin"):
+            self.pg_zmin = {}
+        if not hasattr(self, "pg_zmax"):
+            self.pg_zmax = {}
 
         # particle group filenames
         if not hasattr(self, "pg_filenames"):
@@ -1252,7 +1268,7 @@ class ModPathWell:
 
         # Particle counter
         pcount = -1 
-               
+            
         for iPG in pgroups:
 
             if len(iPG) == 0:
@@ -1264,14 +1280,71 @@ class ModPathWell:
             # xmax
             self.pg_xmax[iPG] = recharge_parameters.get(iPG).get("xmax")
 
+            # Only if both ymin and ymax are given
+            if ("ymin" in recharge_parameters.get(iPG)) & \
+                ("ymax" in recharge_parameters.get(iPG)):
+
+                # ymin
+                self.pg_ymin[iPG] = recharge_parameters.get(iPG).get("ymin")
+                # ymax
+                self.pg_ymax[iPG] = recharge_parameters.get(iPG).get("ymax")
+            else:
+                # ymin
+                self.pg_ymin[iPG] = self.ymid[0]
+                # ymax
+                self.pg_ymax[iPG] = self.ymid[0]
+
+
+
+            # zmin
+            if "zmin" in recharge_parameters.get(iPG):
+                self.pg_zmin[iPG] = recharge_parameters.get(iPG).get("zmin")
+            else:
+                if "zmax" in recharge_parameters.get(iPG):
+                    self.pg_zmin[iPG] = recharge_parameters.get(iPG).get("zmax")
+                else:
+                    self.pg_zmin[iPG] = self.top
+            # zmax
+            if "zmax" in recharge_parameters.get(iPG):
+                self.pg_zmax[iPG] = recharge_parameters.get(iPG).get("zmax")
+            else:
+                if "zmin" in recharge_parameters.get(iPG):
+                    self.pg_zmax[iPG] = recharge_parameters.get(iPG).get("zmin")
+                else:
+                    self.pg_zmax[iPG] = self.pg_zmin[iPG]
+
             try:
                 # Determine column indices
-                colidx_min = int(np.argwhere((self.xmid >= self.pg_xmin[iPG]) & (self.xmid <= self.pg_xmax[iPG]))[0])
-                colidx_max = int(np.argwhere((self.xmid >= self.pg_xmin[iPG]) & (self.xmid <= self.pg_xmax[iPG]))[-1])
+                colidx_min = int(np.argwhere((self.xmid + 0.5 * self.delr >= self.pg_xmin[iPG]) & \
+                    (self.xmid - 0.5 * self.delr <= self.pg_xmax[iPG]))[0])
+                colidx_max = int(np.argwhere((self.xmid + 0.5 * self.delr >= self.pg_xmin[iPG]) & \
+                    (self.xmid - 0.5 * self.delr <= self.pg_xmax[iPG]))[-1])
                 # np.where((self.xmid < right) & (self.xmid > left))    
             except IndexError as e:
                 print(e,"Set colidx_min and colidx_max to None.")
                 colidx_min, colidx_max = None, None            
+
+            try:
+                # Determine row indices
+                rowidx_min = int(np.argwhere((self.ymid + 0.5 * self.delc >= self.pg_ymin[iPG]) & \
+                    (self.ymid - 0.5 * self.delc <= self.pg_ymax[iPG]))[0])
+                rowidx_max = int(np.argwhere((self.ymid + 0.5 * self.delc >= self.pg_ymin[iPG]) & \
+                    (self.ymid - 0.5 * self.delc <= self.pg_ymax[iPG]))[-1])
+                # np.where((self.xmid < right) & (self.xmid > left))    
+            except IndexError as e:
+                print(e,"Set rowidx_min and rowidx_max to None.")
+                rowidx_min, rowidx_max = 0, 0            
+
+            try:
+                # Determine layer indices
+                layidx_min = int(np.argwhere((self.zmid + 0.5 * self.delv >= self.pg_zmin[iPG]) & \
+                    (self.zmid - 0.5 * self.delv <= self.pg_zmax[iPG]))[0]) # shallow layer
+                layidx_max = int(np.argwhere((self.zmid + 0.5 * self.delv >= self.pg_zmin[iPG]) & \
+                    (self.zmid - 0.5 * self.delv <= self.pg_zmax[iPG]))[-1])  # deepest layer
+                # np.where((self.xmid < right) & (self.xmid > left))    
+            except IndexError as e:
+                print(e,"Set layidx_min and layidx_max to 0.")
+                layidx_min, layidx_max = 0, 0            
 
             # Particles ids (use counter)
             self.pids[iPG] = []
@@ -1284,25 +1357,33 @@ class ModPathWell:
             # Particle group nodes
             self.pg_nodes[iPG] = []
 
-            for iCol in range(colidx_min,colidx_max):
-                # Particle row
-                p_row = 0
-                # Particle layer
-                p_lay = 0
-                # Particle column
-                p_col = iCol
-                # locations for reading output in modpath model
-                self.pg_nodes[iPG].append((p_lay,p_row,p_col))
-                for iPart_cell in range(nparticles_cell):
-                    # Add particle locations (lay,row,col)
-                    self.part_locs[iPG].append((p_lay,p_row,p_col))                    
-                    # Relative location of the particles in the cells
-                    self.localx[iPG].append((iPart_cell + 0.5)/(float(nparticles_cell)))
-                    self.localy[iPG].append(localy)
-                    self.localz[iPG].append(localz)
-                    # particle count
-                    pcount += 1 
-                    self.pids[iPG].append(pcount)
+            for iRow in range(rowidx_min,rowidx_max+1):
+                for iLay in range(layidx_min,layidx_max+1):
+                    for iCol in range(colidx_min,colidx_max+1):
+                    
+                        # Particle row
+                        p_row = iRow
+                        # Particle layer
+                        p_lay = iLay
+                        # Particle column
+                        p_col = iCol
+
+                        # check for active cell
+                        if self.ibound[p_lay,p_row,p_col] == 0:
+                            continue
+                        
+                        # locations for reading output in modpath model
+                        self.pg_nodes[iPG].append((p_lay,p_row,p_col))
+                        for iPart_cell in range(nparticles_cell):
+                            # Add particle locations (lay,row,col)
+                            self.part_locs[iPG].append((p_lay,p_row,p_col))                    
+                            # Relative location of the particles in the cells
+                            self.localx[iPG].append((iPart_cell + 0.5)/(float(nparticles_cell)))
+                            self.localy[iPG].append(localy)
+                            self.localz[iPG].append(localz)
+                            # particle count
+                            pcount += 1 
+                            self.pids[iPG].append(pcount)
 
             # Particle distribution package - particle allocation
             #modpath.mp7particledata.Part...
@@ -1312,8 +1393,7 @@ class ModPathWell:
                                                 timeoffset = timeoffset, 
                                                 particleids = self.pids[iPG])
 
-            # particle group filename
-            self.pg_filename = self.pg_filenames[iPG]
+
             # particle group object
             # modpath.mp7particlegroup.Part.......
             self.pg[iPG] = flopy.modpath.ParticleGroup(particlegroupname=iPG,
@@ -1324,6 +1404,173 @@ class ModPathWell:
                 location input style 1.  '''
             self.trackingdirection = trackingdirection
 
+    def _create_point_particles(self, point_parameters = None,
+                                                   localx = 0.5, 
+                                                   localy = 0.5, 
+                                                   localz = 0.5,
+                                                   timeoffset=0.0, drape=0,
+                                                   trackingdirection = 'forward',
+                                                   releasedata=0.0):
+        ''' Class to create the most basic particle data type (starting location
+        input style 1). Input style 1 is the most general input style and provides
+        the highest flexibility in customizing starting locations, see flopy docs.
+        ###########################################################################
+        Create points using dictionary 'point_parameters' with start position(s) 'x_start', 'y_start' and 'z_start'.
+        '''
+
+        
+        if point_parameters is None:
+            point_parameters = self.schematisation_dict.get('point_parameters')
+        else:
+            point_parameters = self.schematisation_dict.get(point_parameters)
+
+        ## Particle group data ##
+        if point_parameters is None:
+            pgroups = []
+        else:
+            pgroups = list(point_parameters.keys())
+
+        # xmin and xmax per pg
+        if not hasattr(self, "x_start_particle"):
+            self.x_start_particle = {}
+        if not hasattr(self, "y_start_particle"):
+            self.y_start_particle = {}
+        if not hasattr(self, "z_start_particle"):
+            self.z_start_particle = {}            
+
+        # particle group filenames
+        if not hasattr(self, "pg_filenames"):
+            self.pg_filenames = {}
+        for iPG in pgroups:
+            self.pg_filenames[iPG] = iPG + ".sloc"
+
+        # particle starting locations [(lay,row,col),(k,i,j),...]
+        if not hasattr(self, "part_locs"):
+            self.part_locs = {}  
+        # Relative location within grid cells (per particle group)
+        if not hasattr(self, "localx"):
+            self.localx = {}  
+        if not hasattr(self, "localy"):
+            self.localy = {}  
+        if not hasattr(self, "localz"):
+            self.localz = {}  
+
+        # Particle id [part group, particle id] - zero based integers
+        if not hasattr(self, "pids"):
+            print("Create a new particle id dataset dict.")
+            self.pids = {}
+        if not hasattr(self, "pg"):
+            print("Create a new particle group dataset dict.")
+            self.pg = {}
+        # Particle group nodes
+        if not hasattr(self, "pg_nodes"):
+            print("Create a new particle group nodes dataset dict.")
+            self.pg_nodes = {}
+
+        # Particle data objects
+        if not hasattr(self, "pd"):
+            print("Create a new particle dataset dict.")
+            self.pd = {}
+
+
+        # Particle counter
+        pcount = -1 
+            
+        for iPG in pgroups:
+
+            if len(iPG) == 0:
+                # Particle group not entering via point source
+                continue
+
+            # x_start
+            if "x_start" in point_parameters.get(iPG):
+                self.x_start_particle[iPG] = point_parameters.get(iPG).get("x_start")
+            else:
+                self.x_start_particle[iPG] = self.xmid[0]
+            # y_start
+            if "y_start" in point_parameters.get(iPG):
+                self.y_start_particle[iPG] = point_parameters.get(iPG).get("y_start")
+            else:
+                self.y_start_particle[iPG] = self.ymid[0]
+            # z_start
+            if "z_start" in point_parameters.get(iPG):
+                self.z_start_particle[iPG] = point_parameters.get(iPG).get("z_start")
+            else:
+                self.z_start_particle[iPG] = self.zmid[0]
+
+            try:
+                # Determine particle column idx
+                p_col = np.argmin(abs(self.xmid - self.x_start_particle[iPG]))
+            except IndexError as e:
+                print(e,"Set p_col to 0")
+                p_col = 0  
+
+            try:   
+                # Determine particle row idx  
+                p_row = np.argmin(abs(self.ymid - self.y_start_particle[iPG]))
+            except IndexError as e:
+                print(e,"Set p_row to 0")
+                p_row = 0    
+
+            try:
+                # Determine particle layer idx
+                p_lay = np.argmin(abs(self.zmid - self.z_start_particle[iPG]))
+            except IndexError as e:
+                print(e,"Set p_lay to 0")
+                p_lay = 0  
+
+            # Particles ids (use counter)
+            self.pids[iPG] = []
+            # Particle location list per particle group
+            self.part_locs[iPG] = []
+            # Relative location within grid cells (per particle group)
+            self.localx[iPG] = []
+            self.localy[iPG] = []
+            self.localz[iPG] = []
+            # Particle group nodes
+            self.pg_nodes[iPG] = []
+
+            # Cell boundary locations
+            left, right = self.xmid[p_col] - 0.5 * self.delr[p_col], self.xmid[p_col] + 0.5 * self.delr[p_col]
+            back, front = self.ymid[p_row] - 0.5 * self.delc[p_row], self.ymid[p_row] + 0.5 * self.delc[p_row]
+            bot, top = self.zmid[p_lay] - 0.5 * self.delv[p_lay], self.zmid[p_lay] + 0.5 * self.delv[p_lay]
+
+            # Calculate localx, localy, localz using cell boundary locations
+            localx = (self.x_start_particle[iPG] - left) / (right - left)
+            localy = (self.y_start_particle[iPG] - back) / (front - back)
+            localz = (self.z_start_particle[iPG] - bot) / (top - bot)
+
+            if self.ibound[p_lay,p_row,p_col] != 0:
+                # locations for reading output in modpath model
+                self.pg_nodes[iPG].append((p_lay,p_row,p_col))
+                # Add particle locations (lay,row,col)
+                self.part_locs[iPG].append((p_lay,p_row,p_col))                    
+                # Relative location of the particles in the cells
+                self.localx[iPG].append(localx)
+                self.localy[iPG].append(localy)
+                self.localz[iPG].append(localz)
+                # particle count
+                pcount += 1 
+                self.pids[iPG].append(pcount)
+
+                # Particle distribution package - particle allocation
+                #modpath.mp7particledata.Part...
+                self.pd[iPG] = flopy.modpath.ParticleData(partlocs = self.part_locs[iPG], structured=True,
+                                                    drape=drape, localx= self.localx[iPG], 
+                                                    localy= self.localy[iPG], localz= self.localz[iPG],
+                                                    timeoffset = timeoffset, 
+                                                    particleids = self.pids[iPG])
+
+
+                # particle group object
+                # modpath.mp7particlegroup.Part.......
+                self.pg[iPG] = flopy.modpath.ParticleGroup(particlegroupname=iPG,
+                                                                    filename= self.pg_filenames[iPG],
+                                                                    releasedata=releasedata,
+                                                                    particledata=self.pd[iPG])
+                ''' ParticleGroup class to create MODPATH 7 particle group data for
+                    location input style 1.  '''
+            self.trackingdirection = trackingdirection
 
     def _create_particles_ibound(self, ibound_parameters = None,
                                                    nparticles_cell: int = 1,
@@ -1868,7 +2115,7 @@ class ModPathWell:
             nodes.append(iLay * self.nrow * self.ncol + iRow * self.ncol + iCol)
         return nodes
 
-    def xyz_to_layrowcol(self,xyz_point, round_digits = 4):
+    def xyz_to_layrowcol(self,xyz_point, round_digits = 3):
         ''' obtain lay, row, col index of an xyz_point list [x,y,z]. '''
 
         # Round XYZ to 4 digits
@@ -1924,7 +2171,7 @@ class ModPathWell:
             node_indices[iPart] = []
             for iNode in range(nr_nodes):
                 # list lay, row, col of nodes and store them in 'node_indices' dict
-                node_idx = self.xyz_to_layrowcol(xyz_point = xyz_nodes[iPart][iNode].tolist())
+                node_idx = self.xyz_to_layrowcol(xyz_point = xyz_nodes[iPart][iNode].tolist(), round_digits = 2)
                 node_indices[iPart].append(node_idx)
 
         return node_indices
@@ -1948,6 +2195,12 @@ class ModPathWell:
         pth_object = flopy.utils.PathlineFile(fpth)
         # Raw pathline data
         pth_data = pth_object.get_destination_pathline_data(nodes)
+        # Round rec.arrays to 3 decimals
+        for idx,iPart in enumerate(pth_data):
+            pth_data[idx]["x"] = pth_data[idx]["x"].round(3)
+            pth_data[idx]["y"] = pth_data[idx]["y"].round(3)
+            pth_data[idx]["z"] = pth_data[idx]["z"].round(3)
+        
         time, xyz_nodes, txyz, dist, tdiff = {}, {}, {}, {}, {}
         # number of particles within file
         npart = len(pth_data)
@@ -1965,13 +2218,14 @@ class ModPathWell:
                                 pth_data[idx]["y"],
                                 pth_data[idx]["z"],
                                 ]).T
+
             # Remove identical data (based on identical times)
             txyz[idx] = np.unique(txyz[idx], axis = 0)
             # time data
             time[idx] = txyz[idx][:,0]
             # xyz data
             xyz_nodes[idx] = txyz[idx][:,1:]
-            
+
             # Determine number of remaining nodes
             n_nodes = min(xyz_nodes[idx].shape[0],time[idx].shape[0])
             if xyz_nodes[idx].shape[0] != time[idx].shape[0]:
@@ -2088,6 +2342,14 @@ class ModPathWell:
                 pth_data =  \    # Raw pathline data
                 '''
 
+                # Check, if axisymmetric or 2D --> y should be self.ymid[0]
+                if (self.model_type == "axisymmetric") | (self.model_type == "2D"):
+                
+                    for iKey in xyz_nodes.keys():
+                        xyz_nodes[iKey] = np.array([(round(idx_[0],3),
+                                                    round(self.ymid[0],3),
+                                                    round(idx_[2],3)) for idx_ in xyz_nodes[iKey]])
+                    
                 # col, lay, row index
                 node_indices = self.get_node_indices(xyz_nodes = xyz_nodes)
                 # Particle indices
@@ -2098,7 +2360,7 @@ class ModPathWell:
                 for iPart in part_idx:
 
                     # Fill recarray using pathline_data
-                    particle_data[f"{iPG}-{iNode}-{iPart}"] = copy.deepcopy(pth_data[iPart])
+                    particle_data[f"{iPG}-{iNode}-{iPart}"] = copy.deepcopy(pth_data[iPart][:-1])
                     
                     # Loop through rec.arrays of pth_data using part_idx 
                     for iParm in parm_list:
@@ -2131,7 +2393,7 @@ class ModPathWell:
                     # Export rec.arrays as pd dataframe
                     df_particle_data[f"{iPG}-{iNode}-{iPart}"] = pd.DataFrame.from_records(data = particle_data[f"{iPG}-{iNode}-{iPart}"],
                                                                                 index = "particleid",
-                                                                                exclude = ["k"]).iloc[:-1,:]
+                                                                                exclude = ["k"]).iloc[:,:]   #[:-1]
                     # Decode object series
                     for iCol in df_particle_data[f"{iPG}-{iNode}-{iPart}"].columns:
                         if df_particle_data[f"{iPG}-{iNode}-{iPart}"][iCol].dtype == "object":
@@ -2209,8 +2471,8 @@ class ModPathWell:
             endpoint = xyzt_data.loc[xyzt_data.total_travel_time == xyzt_data.total_travel_time.max(),
                                         ["xcoord","ycoord","zcoord"]].values.tolist()[0]
             # Nodes of start and endpoints
-            node_start[fid] = self.xyz_to_layrowcol(xyz_point = startpoint)
-            node_end[fid] = self.xyz_to_layrowcol(xyz_point = endpoint)
+            node_start[fid] = self.xyz_to_layrowcol(xyz_point = startpoint, round_digits = 2)
+            node_end[fid] = self.xyz_to_layrowcol(xyz_point = endpoint, round_digits = 2)
             # Count start points in cell
             count_startpoints[node_start[fid]] = count_startpoints.get(node_start[fid],0) + 1
             count_endpoints[node_end[fid]] = count_endpoints.get(node_end[fid],0) + 1
@@ -2218,17 +2480,25 @@ class ModPathWell:
         for fid in flowline_id:
             if self.trackingdirection == "forward":
                 # starting point is used to calculate flux of pathline (flux_pathline)
-                flux_pathline[fid] = round(np.sqrt((frf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]**2 + \
-                                            flf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]**2 + \
-                                            fff[node_start[fid][0],node_start[fid][1],node_start[fid][2]]**2)) / \
+                flux_pathline[fid] = round(abs(frf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) + \
+                                            abs(flf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) + \
+                                            abs(fff[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) / \
                                     count_startpoints[node_start[fid]],4)
+
+                # flux_pathline[fid] = round(np.sqrt((frf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]**2 + \
+                #                             flf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]**2 + \
+                #                             fff[node_start[fid][0],node_start[fid][1],node_start[fid][2]]**2)) / \
+                #                     count_startpoints[node_start[fid]],4)
             elif self.trackingdirection == "backward":
                 # endpoint is used to calculate flux of pathline
-                flux_pathline[fid] = round(np.sqrt((frf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]**2 + \
-                                            flf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]**2 + \
-                                            fff[node_end[fid][0],node_end[fid][1],node_end[fid][2]]**2)) / \
+                flux_pathline[fid] = round(abs(frf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) + \
+                                            abs(flf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) + \
+                                            abs(fff[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) / \
                                     count_startpoints[node_end[fid]],4)
-
+                # flux_pathline[fid] = round(np.sqrt((frf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]**2 + \
+                #                             flf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]**2 + \
+                #                             fff[node_end[fid][0],node_end[fid][1],node_end[fid][2]]**2)) / \
+                #                     count_startpoints[node_end[fid]],4)
             # endpoint id
             endpoint_id[fid] = self.material[node_end[fid][0],node_end[fid][1],node_end[fid][2]]
 
@@ -2391,7 +2661,7 @@ class ModPathWell:
                 pH0 = 7., 
                 const_BM = 1.38e-23,
                 temp_water = 10., rho_water = 999.703,
-                pathogen_diam = 2.33e-8, v_por = 0.01):
+                species_diam = 2.33e-8, v_por = 0.01):
 
         ''' For more information about the advective microbial removal calculation: 
                 BTO2012.015: Ch 6.7 (page 71-74)
@@ -2411,14 +2681,14 @@ class ModPathWell:
         # Boltzmann constant (const_BM) [1,38 × 10-23 J K-1] 
         # Water temperature 'temp_water' [degrees celcius]
         # Water density 'rho_water' [kg m-3]
-        # Pathogen diameter 'pathogen_diam' [m]
+        # Pathogen diameter 'species_diam' [m]
         # porewater velocity 'v_por' [m/d]
         
         # Check - (example 'E_coli'):
         >> k_att = calc_katt(part_idx = [0], por_eff = [0.33], korrelgrootte = [0.00025],
                 bots_eff = 0.001, const_BM = 1.38e-23,
                 temp_water = [10.], rho_water = [999.703],
-                pathogen_diam = 2.33e-8, v_por = [0.01])
+                species_diam = 2.33e-8, v_por = [0.01])
         >> print(k_att)
         >> {0: 0.7993188853572424} # [/day]
         
@@ -2426,7 +2696,7 @@ class ModPathWell:
         ---------
         df_flowline: pandas.DataFrame
             Column "collision_eff" for each node
-            Column "pathogen_diam" for each node
+            Column "species_diam" for each node
 
         df_particle: pandas.DataFrame
             Column "relative_distance" for each node
@@ -2456,8 +2726,8 @@ class ModPathWell:
                                       value = alpha0)
         # Pathogen diameter [m]
         df_flowline = self._df_fillna(df_flowline,
-                                df_column = 'pathogen_diam',
-                                value = pathogen_diam)
+                                df_column = 'species_diam',
+                                value = species_diam)
 
         # Water temperature [degrees Celsius]
         df_particle = self._df_fillna(df_particle,
@@ -2495,15 +2765,15 @@ class ModPathWell:
         #         df_flowline['collision_eff'] = df_flowline['collision_eff'].fillna(coll_eff_mean)
    
         # # Pathogen diameter [m]
-        # if not 'pathogen_diam' in df_flowline.columns:
-        #     df_flowline['pathogen_diam'] = pathogen_diam
+        # if not 'species_diam' in df_flowline.columns:
+        #     df_flowline['species_diam'] = species_diam
         # else:
         #     # fill series (if needed with default value)
-        #     if df_flowline['pathogen_diam'].dropna().empty:
-        #         df_flowline['pathogen_diam'] = df_flowline['pathogen_diam'].fillna(pathogen_diam)
+        #     if df_flowline['species_diam'].dropna().empty:
+        #         df_flowline['species_diam'] = df_flowline['species_diam'].fillna(species_diam)
         #     else: # fill empty rows (with mean value of other records)
-        #         pathogen_diam_mean = df_flowline['pathogen_diam'].values.mean()
-        #         df_flowline['pathogen_diam'] = df_flowline['pathogen_diam'].fillna(pathogen_diam_mean)
+        #         species_diam_mean = df_flowline['species_diam'].values.mean()
+        #         df_flowline['species_diam'] = df_flowline['species_diam'].fillna(species_diam_mean)
 
         # # Water temperature
         # if not 'temperature' in df_particle.columns:
@@ -2580,7 +2850,7 @@ class ModPathWell:
  
             # Diffusion constant 'D_BM' (Eq.6: BTO2012.015) --> eenheid: m2 s-1
             D_BM[pid] = (const_BM * (df_particle.loc[pid,"temperature"].values + 273.)) / \
-                        (3 * np.pi * df_flowline.loc[pid,"pathogen_diam"] * mu[pid])
+                        (3 * np.pi * df_flowline.loc[pid,"species_diam"] * mu[pid])
             # Diffusieconstante 'D_BM' (Eq.6: BTO2012.015) --> eenheid: m2 d-1
             D_BM[pid] *= 86400.
 
@@ -2605,7 +2875,7 @@ class ModPathWell:
     def calc_advective_microbial_removal(self,df_particle,df_flowline, 
                                         endpoint_id, trackingdirection = "forward",
                                         mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, pH0 = 6.8, const_BM = 1.38e-23,
-                                        temp_water = 11., rho_water = 999.703, pathogen_diam = 2.33e-8,
+                                        temp_water = 11., rho_water = 999.703, species_diam = 2.33e-8,
                                         conc_start = 1., conc_gw = 0.):
                                         
         ''' Calculate the advective microbial removal along pathlines
@@ -2681,7 +2951,7 @@ class ModPathWell:
                                                     mu1 = mu1, grainsize = grainsize, alpha0 = alpha0, 
                                                     pH0 = pH0, const_BM = const_BM,
                                                     temp_water = temp_water, 
-                                                    rho_water = rho_water, pathogen_diam = pathogen_diam)
+                                                    rho_water = rho_water, species_diam = species_diam)
 
         # Starting concentration [-]
         df_flowline = self._df_fillna(df_flowline,
@@ -2952,12 +3222,20 @@ class ModPathWell:
 
             # Create radial distance array with particle locations
             # self._create_radial_distance_array() # Analytische fluxverdeling
-            self._create_radial_distance_particles_recharge(recharge_parameters = self.schematisation_dict.get('diffuse_parameters'),
+            self._create_radial_distance_particles_recharge(recharge_parameters = 'diffuse_parameters',
                                                             nparticles_cell = 1,
-                                                            localy=0.5, localz=0.5,
+                                                            localy=0.5, localz=1.,
                                                             timeoffset=0.0, drape=0,
                                                             trackingdirection = self.trackingdirection,
                                                             releasedata=0.0)  
+
+            self._create_point_particles(point_parameters = "point_parameters",
+                                                   localx = 0.5, 
+                                                   localy = 0.5, 
+                                                   localz = 0.5,
+                                                   timeoffset = 0.0, drape = 0,
+                                                   trackingdirection = 'forward',
+                                                   releasedata = 0.0)
 
             # self._create_particles_ibound(ibound_parameters = None,
             #                                                 nparticles_cell = 1,
