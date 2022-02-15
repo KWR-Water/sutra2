@@ -1671,107 +1671,6 @@ class ModPathWell:
         # self.mp7.run_model(silent=False)
         self.success_mp,_ = self.mp7.run_model(silent=False)
 
-### Functie: Check xmin, xmax,
-    '''
-
-  	def make_discretisation():
-        self.grid
- 
-  	def assign_material(self):  
-        self.material  # name of dictionary
-        self.wells
-   
-  
-  	def assign_aquifer_parameters():
-        self.khor
-  		self.VANI
-  		#etc.,
-
-  	def assign_wells():
-  	    self.WELL_package  # np.array
-  		self.Q
-  		self.well_id
-
-    	def assign_multi_nodal_well():
-  	    self.wellid  # np.array
-  		self.....
-	def assign_ibound():
-        self.ibound  # 3 D grid
-  			self.head
-    '''
-
-
-    '''
-  	def assign_recharge_boundary():
-  		self.recharge  #2 D grid
-  
-  
-    def create_modflow_packages(... , **kwargs):
-		""" Generate flopy files."""
-		self.dry_cells  #
-  		self.other_general_parameters  #
-  
-    def generate_modflow_files():
-		""" Generate input files for modflow computation."""
-
-    def run_modflow():
-  		run modflow
-  		if condition X is met:
-			self.modflow_has_run = True
- 
-  	def modpath_startpoints_recharge():
-				""" Generate startpoints for MODPATH forward computation.
-        
-        Parameters
-        ----------
-        xmin_start_particle  # close to well, default = 0
-  			xmax_start_particle  # far away from well, default = model radius
-  			number_of_particles  # user defined, defualt 100        
-        
-        Return
-        ------
-        df_startpoints: pd.DataFrame  # OR DICTIONARY IF THAT IS EASIER -> STEVEN
-		        columns: col, row, lay, localx, localy, localz, flowline_id, startpoint_id, discharge
-        """
-  			init: self.xmin_start_particle = 0
-  			self.number_of_particles = ....
-	  		self.xmax_start_particle = well_radius if not defined
-  
-  			# distribute start point particles based on equal distance
-				dx = (xmax - xmin) / number_of_particles
-	
-  			discharge = integrate volume
-  
-  			self.df_startpoints
-  			
-  
-   	def modpath_endpoints_from_well():
-  			# same as above, for wells
- 
-    def create_modpath_packages(self.df_startpoints):
-				self.track_direction  # forward or backward
- 
-    def generate_modpath_files():
-  
-    def run_modpath():
- 				self.modpath_has_run
-  			if condition X is met:
-						self.modpath_has_run = True
-    
-    def export_to_df(self, grid_material, what_to_export='all'):
-  	    """ Export to dataframe....
-
-        Parameters
-        ----------
-        what_to_export: String
-        		options: 'all', 'omp', 'microbial_parameters'
-        """
-        # df_flowline = pd.DataFrame()
-        # df_particle = pd.DataFrame()
-
-  		#delete the unwanted columns depending on what the user asks for here
-  		# return df_flowline, df_particle
-    '''
     def _export_to_df(self, mppth):
         """ Makes 'df_flowline' and 'df_particle' for ModPath model simulation
   
@@ -2344,6 +2243,9 @@ class ModPathWell:
         # endpoint ids
         endpoint_id = {}
 
+        # Removal function
+        df_flowline.loc[:,"removal_function"] = self.schematisation.removal_function
+        
         for fid in flowline_id:
             # X,Y,Z,time data per particle flowline 
             xyzt_data = df_particle.loc[df_particle.index == fid, 
@@ -2360,6 +2262,10 @@ class ModPathWell:
             # Count start points in cell
             count_startpoints[node_start[fid]] = count_startpoints.get(node_start[fid],0) + 1
             count_endpoints[node_end[fid]] = count_endpoints.get(node_end[fid],0) + 1
+
+            # flowline_type
+            df_flowline.loc[fid,"flowline_type"] = self.flowline_type[fid]
+
 
         for fid in flowline_id:
             if self.trackingdirection == "forward":
