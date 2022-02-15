@@ -1190,7 +1190,7 @@ class ModPathWell:
     #         # Radial distance array per particle group
     #         self.radial_distance[iPG] = self.pg_xmin[iPG] + ((self.pg_xmax[iPG] - self.pg_xmin[iPG]) * np.sqrt(self.fraction_flux))
 
-    def _create_radial_distance_particles_recharge(self, recharge_parameters = None,
+    def _create_diffuse_particles(self, recharge_parameters = None,
                                                    nparticles_cell: int = 1,
                                                    localy=0.5, localz=0.5,
                                                    timeoffset=0.0, drape=0,
@@ -1592,164 +1592,6 @@ class ModPathWell:
                     location input style 1.  '''
             self.trackingdirection = trackingdirection
 
-    def _create_particles_ibound(self, ibound_parameters = None,
-                                                   nparticles_cell: int = 1,
-                                                   localy=0.5, localz=0.5,
-                                                   timeoffset=0.0, drape=0,
-                                                   trackingdirection = 'forward',
-                                                   releasedata=0.0):
-        ''' Class to create the most basic particle data type (starting location
-        input style 1). Input style 1 is the most general input style and provides
-        the highest flexibility in customizing starting locations, see flopy docs.
-        '''
-        # SUGGESTION SR: --> add term to dictionary 'recharge_parameters' as 'nparticles_cell'
-        
-        if ibound_parameters is None:
-            ibound_parameters = self.schematisation_dict.get('ibound_parameters')
-
-        ## Particle group data ##
-        pgroups = list(ibound_parameters.keys())
-        # xmin and xmax per pg
-        if not hasattr(self, "pg_xmin"):
-            self.pg_xmin = {}
-        if not hasattr(self, "pg_xmax"):
-            self.pg_xmax = {}
-
-        # particle group filenames
-        if not hasattr(self, "pg_filenames"):
-            self.pg_filenames = {}
-        for iPG in pgroups:
-            self.pg_filenames[iPG] = iPG + ".sloc"
-
-        # particle starting locations [(lay,row,col),(k,i,j),...]
-        if not hasattr(self, "part_locs"):
-            self.part_locs = {}  
-        # Relative location within grid cells (per particle group)
-        if not hasattr(self, "localx"):
-            self.localx = {}  
-        if not hasattr(self, "localy"):
-            self.localy = {}  
-        if not hasattr(self, "localz"):
-            self.localz = {}  
-
-        # Particle id [part group, particle id] - zero based integers
-        if not hasattr(self, "pids"):
-            print("Create a new particle id dataset dict.")
-            self.pids = {}
-        if not hasattr(self, "pg"):
-            print("Create a new particle group dataset dict.")
-            self.pg = {}
-        # Particle group nodes
-        if not hasattr(self, "pg_nodes"):
-            print("Create a new particle group nodes dataset dict.")
-            self.pg_nodes = {}
-
-        # Particle data objects
-        if not hasattr(self, "pd"):
-            print("Create a new particle dataset dict.")
-            self.pd = {}
-
-
-        # Particle counter
-        pcount = -1 
-               
-        for iPG in pgroups:
-
-            if len(iPG) == 0:
-                # Particle group not entering via recharge
-                continue
-
-            # xmin
-            self.pg_xmin[iPG] = ibound_parameters.get(iPG).get("xmin")
-            # xmax
-            self.pg_xmax[iPG] = ibound_parameters.get(iPG).get("xmax")
-
-            try:
-                # Determine column indices
-                colidx_min = int(np.argwhere((self.xmid >= self.pg_xmin[iPG]) & (self.xmid <= self.pg_xmax[iPG]))[0])
-                colidx_max = int(np.argwhere((self.xmid >= self.pg_xmin[iPG]) & (self.xmid <= self.pg_xmax[iPG]))[-1])
-                # np.where((self.xmid < right) & (self.xmid > left))    
-            except IndexError as e:
-                print(e,"Set colidx_min and colidx_max to None.")
-                colidx_min, colidx_max = None, None            
-
-            # Particles ids (use counter)
-            self.pids[iPG] = []
-            # Particle location list per particle group
-            self.part_locs[iPG] = []
-            # Relative location within grid cells (per particle group)
-            self.localx[iPG] = []
-            self.localy[iPG] = []
-            self.localz[iPG] = []
-            # Particle group nodes
-            self.pg_nodes[iPG] = []
-
-            for iCol in range(colidx_min,colidx_max):
-                # Particle row
-                p_row = 0
-                # Particle layer
-                p_lay = 0
-                # Particle column
-                p_col = iCol
-                # locations for reading output in modpath model
-                self.pg_nodes[iPG].append((p_lay,p_row,p_col))
-                for iPart_cell in range(nparticles_cell):
-                    # Add particle locations (lay,row,col)
-                    self.part_locs[iPG].append((p_lay,p_row,p_col))                    
-                    # Relative location of the particles in the cells
-                    self.localx[iPG].append((iPart_cell + 0.5)/(float(nparticles_cell)))
-                    self.localy[iPG].append(localy)
-                    self.localz[iPG].append(localz)
-                    # particle count
-                    pcount += 1 
-                    self.pids[iPG].append(pcount)
-
-            # Particle distribution package - particle allocation
-            #modpath.mp7particledata.Part...
-            self.pd[iPG] = flopy.modpath.ParticleData(partlocs = self.part_locs[iPG], structured=True,
-                                                drape=drape, localx= self.localx[iPG], 
-                                                localy= self.localy[iPG], localz= self.localz[iPG],
-                                                timeoffset = timeoffset, 
-                                                particleids = self.pids[iPG])
-
-            # particle group filename
-            self.pg_filename = self.pg_filenames[iPG]
-            # particle group object
-            # modpath.mp7particlegroup.Part.......
-            self.pg[iPG] = flopy.modpath.ParticleGroup(particlegroupname=iPG,
-                                                                filename=self.pg_filenames[iPG],
-                                                                releasedata=releasedata,
-                                                                particledata=self.pd[iPG])
-            ''' ParticleGroup class to create MODPATH 7 particle group data for
-                location input style 1.  '''
-            self.trackingdirection = trackingdirection
-
-        
-
-        ## OLD analytical code ##
-        # self.spreading_distance = math.sqrt(self.schematisation.vertical_resistance_aquitard * self.schematisation.KD)
-        # # AH do not change to model_radius, since the radial distance for recharge is based on the phreatic value for BOTH cases
-        # self.radial_distance_recharge =  (math.sqrt(self.schematisation.well_discharge
-        #                                             / (math.pi * self.schematisation.recharge_rate)))
-
-        # if fraction_flux is None:
-        #     fraction_flux = np.array([0.00001, 0.0001, 0.001, 0.005])
-        #     fraction_flux = np.append(fraction_flux, np.arange(0.01, 1, 0.01))
-        #     fraction_flux = np.append(fraction_flux, [0.995, 0.9999])
-        
-        # self.fraction_flux = fraction_flux
-
-        # radial_distance = self.radial_distance_recharge * np.sqrt(self.fraction_flux)
-            
-        # if self.schematisation_type == 'semiconfined':
-
-        #     radial_distance = np.append(radial_distance,
-        #                             [(radial_distance[-1] + ((self.spreading_distance * 3) - radial_distance[-1]) / 3),
-        #                             (radial_distance[-1] + 2 *
-        #                             ((self.spreading_distance * 3) - radial_distance[-1]) / 3),
-        #                                 (self.spreading_distance * 3)])
-        
-        # self.radial_distance = radial_distance
 
     ####################################
     ### ModPath 7 input and analyses ###
@@ -3264,7 +3106,7 @@ class ModPathWell:
 
             # Create radial distance array with particle locations
             # self._create_radial_distance_array() # Analytische fluxverdeling
-            self._create_radial_distance_particles_recharge(recharge_parameters = 'diffuse_parameters',
+            self._create_diffuse_particles(recharge_parameters = 'diffuse_parameters',
                                                             nparticles_cell = 1,
                                                             localy=0.5, localz=1.,
                                                             timeoffset=0.0, drape=0,
