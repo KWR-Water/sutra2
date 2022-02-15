@@ -111,7 +111,7 @@ class Substance:
             omp_half_life: float
                 per redox zone, [days])
 
-        @SR (21-1-2022): ADD documentation microbial species        
+        @SR (21-1-2022): ADD documentation microbial species (mbs)        
         """
         self.substance_name = substance_name
 
@@ -191,7 +191,7 @@ class Substance:
         # self.micro_organism_dict = micro_organism_dict[substance_name]
         if removal_function == 'omp':
             self.substance_dict = substances_dict[substance_name]
-        elif removal_function == 'pathogen':
+        elif removal_function == 'mbs':  
             self.substance_dict = micro_organism_dict[substance_name]
 
 #ah_todo @MartinK, MartinvdS -> let the user specify the chemical in the Substance transport file instead of schematisation?
@@ -291,7 +291,7 @@ class SubstanceTransport():
             self.omp_inialized = False
             self.micro_species_inialized = True
         # Run init of 'pathogen'
-        elif well.schematisation.removal_function == 'pathogen':
+        elif well.schematisation.removal_function == 'mbs':
             self.omp_inialized = True
             self.micro_organism_inialized = False
         
@@ -344,7 +344,7 @@ class SubstanceTransport():
 
 
     def _init_micro_organism(self):
-        ''' Initialisation if the Substance is a pathogen'''
+        ''' Initialisation if the Substance is a microbial organism'''
         
         if self.micro_organism_inialized:
             pass
