@@ -1237,6 +1237,10 @@ class ModPathWell:
         for iPG in pgroups:
             self.pg_filenames[iPG] = iPG + ".sloc"
 
+    	# flowline_type: point_source (or diffuse_source)
+        if not hasattr(self, "flowline_type"):
+            self.flowline_type = {}
+
         # particle starting locations [(lay,row,col),(k,i,j),...]
         if not hasattr(self, "part_locs"):
             self.part_locs = {}  
@@ -1267,7 +1271,9 @@ class ModPathWell:
 
 
         # Particle counter
-        pcount = -1 
+        if not hasattr(self, "pcount"):
+            print("Create a new particle counter.")
+            self.pcount = -1
             
         for iPG in pgroups:
 
@@ -1382,8 +1388,12 @@ class ModPathWell:
                             self.localy[iPG].append(localy)
                             self.localz[iPG].append(localz)
                             # particle count
-                            pcount += 1 
-                            self.pids[iPG].append(pcount)
+                            self.pcount += 1 
+                            self.pids[iPG].append(self.pcount)
+
+                            # flowline_type: diffuse_source (or point_source)
+                            self.flowline_type[self.pcount] = 'diffuse_source'  
+
 
             # Particle distribution package - particle allocation
             #modpath.mp7particledata.Part...
@@ -1444,6 +1454,10 @@ class ModPathWell:
         for iPG in pgroups:
             self.pg_filenames[iPG] = iPG + ".sloc"
 
+    	# flowline_type: point_source (or diffuse_source)
+        if not hasattr(self, "flowline_type"):
+            self.flowline_type = {}     
+
         # particle starting locations [(lay,row,col),(k,i,j),...]
         if not hasattr(self, "part_locs"):
             self.part_locs = {}  
@@ -1474,7 +1488,9 @@ class ModPathWell:
 
 
         # Particle counter
-        pcount = -1 
+        if not hasattr(self, "pcount"):
+            print("Create a new particle counter.")
+            self.pcount = -1
             
         for iPG in pgroups:
 
@@ -1550,8 +1566,12 @@ class ModPathWell:
                 self.localy[iPG].append(localy)
                 self.localz[iPG].append(localz)
                 # particle count
-                pcount += 1 
-                self.pids[iPG].append(pcount)
+                self.pcount += 1 
+                self.pids[iPG].append(self.pcount)
+
+                # flowline_type: diffuse_source or point_source
+                self.flowline_type[self.pcount] = 'point_source'  
+
 
                 # Particle distribution package - particle allocation
                 #modpath.mp7particledata.Part...
@@ -2430,7 +2450,29 @@ class ModPathWell:
 
     # Fill df_flowline
     def fill_df_flowline(self, df_particle, model_cbc):
-        
+        '''
+        Fill df_flowline 
+
+        Parameters
+        ----------
+        Returns
+        -------
+        df_flowline: pandas.DataFrame
+            Column 'flowline_id': Integer
+            Column 'flowline_type': string
+                Described the type of contamination associated with the flowline,
+                either 'diffuse_source' or 'point_source'.
+            Column 'flowline_discharge': Float
+                Discharge associated with the flowline, [m3/d].
+            Column 'particle_release_day': Float
+            Column 'input_concentration'
+            Column 'endpoint_id': Integer
+                ID of Well (or drain) where the flowline ends.
+            Column 'well_discharge': float
+            Column 'substance': string
+            Column 'removal_function': string
+        '''
+
         # Default value for model_cbc
         if model_cbc is None:
             model_cbc = self.model_cbc

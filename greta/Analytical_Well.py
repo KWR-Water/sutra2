@@ -1134,7 +1134,7 @@ class AnalyticalWell():
         Column 'flowline_type': string
         Column 'flowline_discharge': Float
         Column 'particle_release_day': Float
-        Column 'input_concentration'
+        Column 'input_concentration': Float
         Column 'endpoint_id': Integer
         Column 'well_discharge': float
         Column 'substance': string
