@@ -118,7 +118,7 @@ def test_modpath_run_phreatic_nogravelpack():
     test_phrea = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                     computation_method = 'modpath',
                                     what_to_export='all',
-                                    removal_function = 'mbs',
+                                    removal_function = 'mbo',
                                     # biodegradation_sorbed_phase = False,
                                       well_discharge=-319.4*24,
                                       # vertical_resistance_shallow_aquifer=500,
@@ -198,7 +198,8 @@ def test_modpath_run_phreatic_nogravelpack():
                         run_mpmodel = True)
 
     # Calculate advective microbial removal
-    modpath_removal = ST.SubstanceTransport(modpath_phrea, substance = 'norovirus') #, df_particle, df_flowline)
+    modpath_removal = ST.SubstanceTransport(modpath_phrea,
+                                            organism = 'norovirus')
  
     # Calculate advective microbial removal
     # Final concentration per endpoint_id
@@ -208,8 +209,8 @@ def test_modpath_run_phreatic_nogravelpack():
                                             modpath_phrea.df_particle, modpath_phrea.df_flowline, 
                                             endpoint_id = endpoint_id,
                                             trackingdirection = modpath_phrea.trackingdirection,
-                                            mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, pH0 = 6.8, const_BM = 1.38e-23,
-                                            temp_water = 11., rho_water = 999.703, species_diam = 2.33e-8,
+                                            mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, reference_pH = 6.8, const_BM = 1.38e-23,
+                                            temp_water = 11., rho_water = 999.703, organism_diam = 2.33e-8,
                                             conc_start = 1., conc_gw = 0.)
 
     # df_particle file name 
@@ -237,7 +238,7 @@ def test_modpath_run_horizontal_flow_points():
     test_conf_hor = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
                                 computation_method = 'modpath',
                                 what_to_export='all',
-                                removal_function = 'mbs',
+                                removal_function = 'mbo',
                                 # biodegradation_sorbed_phase = False,
                                 well_discharge= well_discharge,
                                 # vertical_resistance_shallow_aquifer=500,
@@ -318,14 +319,14 @@ def test_modpath_run_horizontal_flow_points():
     substance_name = 'norovirus'
     alpha0 = {"suboxic": 1.e-3, "anoxic": 1.e-5, "deeply_anoxic": 1.e-5},
     reference_pH = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8},
-    species_diam =  2.33e-8,
+    organism_diam =  2.33e-8,
     mu1 = {"suboxic": 0.149,"anoxic": 0.023,"deeply_anoxic": 0.023}
 
     substance_parameters = {substance_name: 
                     {"substance_name": substance_name,
                         "alpha0": alpha0,
                         "reference_pH": reference_pH,
-                        "species_diam": species_diam,
+                        "organism_diam": organism_diam,
                         "mu1": mu1
                     }
                 }
@@ -357,7 +358,8 @@ def test_modpath_run_horizontal_flow_points():
 
 
     # Calculate advective microbial removal
-    modpath_removal = ST.SubstanceTransport(modpath_hor, substance = 'norovirus') #, df_particle, df_flowline)
+    modpath_removal = ST.SubstanceTransport(modpath_hor,
+                                            organism = 'norovirus')
  
     # Calculate advective microbial removal
     # Final concentration per endpoint_id
@@ -367,8 +369,8 @@ def test_modpath_run_horizontal_flow_points():
                                             modpath_hor.df_particle, modpath_hor.df_flowline, 
                                             endpoint_id = endpoint_id,
                                             trackingdirection = modpath_hor.trackingdirection,
-                                            mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, pH0 = 6.8, const_BM = 1.38e-23,
-                                            temp_water = 11., rho_water = 999.703, species_diam = 2.33e-8,
+                                            mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, reference_pH = 6.8, const_BM = 1.38e-23,
+                                            temp_water = 11., rho_water = 999.703, organism_diam = 2.33e-8,
                                             conc_start = 1., conc_gw = 0.)
 
     # df_particle file name 
@@ -396,7 +398,7 @@ def test_modpath_run_horizontal_flow_diffuse():
     test_conf_hor = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
                                 computation_method = 'modpath',
                                 what_to_export='all',
-                                removal_function = 'mbs',
+                                removal_function = 'mbo',
                                 # biodegradation_sorbed_phase = False,
                                 well_discharge= well_discharge,
                                 # vertical_resistance_shallow_aquifer=500,
@@ -487,14 +489,14 @@ def test_modpath_run_horizontal_flow_diffuse():
     substance_name = 'norovirus'
     alpha0 = {"suboxic": 1.e-3, "anoxic": 1.e-5, "deeply_anoxic": 1.e-5},
     reference_pH = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8},
-    species_diam =  2.33e-8,
+    organism_diam =  2.33e-8,
     mu1 = {"suboxic": 0.149,"anoxic": 0.023,"deeply_anoxic": 0.023}
 
     substance_parameters = {substance_name: 
                     {"substance_name": substance_name,
                         "alpha0": alpha0,
                         "reference_pH": reference_pH,
-                        "species_diam": species_diam,
+                        "organism_diam": organism_diam,
                         "mu1": mu1
                     }
                 }
@@ -526,7 +528,8 @@ def test_modpath_run_horizontal_flow_diffuse():
 
 
     # Calculate advective microbial removal
-    modpath_removal = ST.SubstanceTransport(modpath_hor, substance = 'norovirus') #, df_particle, df_flowline)
+    modpath_removal = ST.SubstanceTransport(modpath_hor,
+                                            organism = 'norovirus')
  
     # Calculate advective microbial removal
     # Final concentration per endpoint_id
@@ -536,8 +539,8 @@ def test_modpath_run_horizontal_flow_diffuse():
                                             modpath_hor.df_particle, modpath_hor.df_flowline, 
                                             endpoint_id = endpoint_id,
                                             trackingdirection = modpath_hor.trackingdirection,
-                                            mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, pH0 = 6.8, const_BM = 1.38e-23,
-                                            temp_water = 11., rho_water = 999.703, species_diam = 2.33e-8,
+                                            mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, reference_pH = 6.8, const_BM = 1.38e-23,
+                                            temp_water = 11., rho_water = 999.703, organism_diam = 2.33e-8,
                                             conc_start = 1., conc_gw = 0.)
 
     # df_particle file name 
@@ -559,7 +562,7 @@ def test_modpath_run_phreatic_withgravelpack_traveltimes():
     test_phrea_gp = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                 computation_method = 'modpath',
                                 what_to_export='all',
-                                removal_function = 'mbs',
+                                removal_function = 'mbo',
                                 # biodegradation_sorbed_phase = False,
                                 well_discharge=-319.4*24,
                                 # vertical_resistance_shallow_aquifer=500,
@@ -676,7 +679,7 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes():
     test_semiconf = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
                                     computation_method = 'modpath',
                                     what_to_export='all',
-                                    removal_function = 'mbs',
+                                    removal_function = 'mbo',
                                     # biodegradation_sorbed_phase = False,
                                       well_discharge=-319.4*24,
                                       # vertical_resistance_shallow_aquifer=500,
@@ -728,7 +731,7 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes():
                                       ncols_near_well = 20,
                                       ncols_far_well = 20,
                                       nlayers_target_aquifer = 20,
-                                    #   # MBS removal parameters
+                                    #   # mbo removal parameters
                                     #   mu1 = 0.023,  # nog uitschrijven
                                     #   alpha0 = 
 
@@ -766,7 +769,8 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes():
                         run_mpmodel = True)
 
     # Calculate advective microbial removal
-    modpath_removal = ST.SubstanceTransport(modpath_semiconf, substance = 'norovirus') #, df_particle, df_flowline)
+    modpath_removal = ST.SubstanceTransport(modpath_semiconf,
+                                            organism = 'norovirus')
     # modpath_removal.compute_omp_removal()
     # Final concentration per endpoint_id
     C_final = {}
@@ -775,8 +779,8 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes():
                                             modpath_semiconf.df_particle, modpath_semiconf.df_flowline, 
                                             endpoint_id = endpoint_id,
                                             trackingdirection = modpath_semiconf.trackingdirection,
-                                            mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, pH0 = 6.8, const_BM = 1.38e-23,
-                                            temp_water = 11., rho_water = 999.703, species_diam = 2.33e-8,
+                                            mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, reference_pH = 6.8, const_BM = 1.38e-23,
+                                            temp_water = 11., rho_water = 999.703, organism_diam = 2.33e-8,
                                             conc_start = 1., conc_gw = 0.)
 
     # df_particle file name 
@@ -826,7 +830,7 @@ def test_diffuse_modpath_run_semiconfined_nogravelpack_traveltimes():
     test_semiconf = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
                                     computation_method = 'modpath',
                                     what_to_export='all',
-                                    removal_function = 'mbs',
+                                    removal_function = 'mbo',
                                     # biodegradation_sorbed_phase = False,
                                       well_discharge=-319.4*24,
                                       # vertical_resistance_shallow_aquifer=500,
@@ -942,7 +946,7 @@ def test_phreatic_scheme_withgravelpack_dictinput():
     phreatic_scheme= AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                     computation_method = 'modpath',
                                     what_to_export='all',
-                                    removal_function = 'mbs',
+                                    removal_function = 'mbo',
                                     # biodegradation_sorbed_phase = False,
                                       well_discharge=-319.4*24,
                                       # vertical_resistance_shallow_aquifer=500,
@@ -1026,7 +1030,7 @@ def test_travel_time_distribution_phreatic():
     test_ = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                         computation_method= 'analytical',
                                         what_to_export='all',
-                                        removal_function = 'mbs',
+                                        removal_function = 'mbo',
                                         well_discharge=-319.4*24,
                                         # vertical_resistance_shallow_aquifer=500,
                                         hor_permeability_shallow_aquifer = 0.02,

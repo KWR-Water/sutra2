@@ -57,10 +57,10 @@ class HydroChemicalSchematisation:
     computation_method: string
         Defines the computational method used, choice of 'analytical' or 'modpath'
     removal_function: string
-        Choice of removal function for 'omp' or 'mbs'
+        Choice of removal function for 'omp' or 'mbo'
     what_to_export: string
         Defines what paramters are exported, 'all' exports all paramters, 'omp' only those relevant to the OMP or
-        'pathogen' only exports paramters relevant for the pathogen
+        'pathogen' only exports paramters relevant for the microbial organsims (mbo)
     temp_correction_Koc, temp_correction_halflife:: Bool
         KOC and half-life values generally refer to a standard lab temperature (tREF = 20-25oC) and should
         therefore be corrected when field temperature is different. Default is True
@@ -332,8 +332,8 @@ class HydroChemicalSchematisation:
 
         check_parameter_choice(parameters_choice = ['schematisation_type'], options =['phreatic', 'semiconfined',])
         check_parameter_choice(parameters_choice = ['computation_method'], options =['analytical', 'modpath',])
-        check_parameter_choice(parameters_choice = ['removal_function'], options =['omp','mbs',])
-        check_parameter_choice(parameters_choice = ['what_to_export'], options =['all','omp', 'mbs',])
+        check_parameter_choice(parameters_choice = ['removal_function'], options =['omp','mbo',])
+        check_parameter_choice(parameters_choice = ['what_to_export'], options =['all','omp', 'mbo',])
 
         self.temp_correction_Koc = temp_correction_Koc
         self.temp_correction_halflife = temp_correction_halflife

@@ -201,3 +201,5 @@ test_ws_phrea/*
 *df_particle.csv
 .gitignore
 research/phreatic_dict_nogravel_test.txt
+testing/test_ModPath_functions.py
+research/phreatic_dict_withgravel_test.txt

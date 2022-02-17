@@ -48,6 +48,85 @@ from greta.ModPath_functions import ModPathWell
 
 path = os.getcwd()  # path of working directory
 
+class Organism:
+    ''' 
+    Placeholder class which will later be replaced by the QSAR functionality of AquaPriori ?!
+
+    For removal of microbial organisms ('mbo') / pathogen 
+    
+    microbial_species_dict: dict
+    Attributes
+    ---------
+    organism_name: String
+        species_name of the substance (for now limited dictionary to 'norovirus' (MS2-virus)
+        
+    'alpha0': float
+        reference_collision_efficiency [-]
+        per redox zone ('suboxic', 'anoxic', deeply_anoxic')
+    'reference_pH': float
+        reference pH for calculating collision efficiency [-]
+        per redox zone ('suboxic', 'anoxic', deeply_anoxic')
+    'organism_diam': float
+        diameter of pathogen/species [m]
+    'mu1': float
+        inactivation coefficient [1/day]
+        per redox zone ('suboxic', 'anoxic', deeply_anoxic')
+    '''  
+    def __init__(self, organism_name, 
+                    removal_function = 'mbo'):
+        """
+        Parameters
+        ----------
+        organism: String,
+            name of the substance (for now limited dictionary to 'benzene', 'AMPA', 'benzo(a)pyrene'
+
+        Returns
+        -------
+        organism_dict: dictionary
+            'alpha0': float
+                reference_collision_efficiency [-]
+                per redox zone ('suboxic', 'anoxic', deeply_anoxic')
+            'reference_pH': float
+                reference pH for calculating collision efficiency [-]
+                per redox zone ('suboxic', 'anoxic', deeply_anoxic')
+            'organism_diam': float
+                diameter of pathogen/species [m]
+            'mu1': float
+                inactivation coefficient [1/day]
+                per redox zone ('suboxic', 'anoxic', deeply_anoxic')
+
+        @SR (21-1-2022): Adjust documentation for microbial organisms (mbo)        
+        """
+        self.organism_name = organism_name
+
+        # Dict    # Acties Steven 25-1-22
+        micro_organism_dict = {
+            "norovirus": 
+                {"organism_name": "norovirus",
+                    "alpha0": {
+                        "suboxic": 1.e-3, 
+                        "anoxic": 1.e-5, 
+                        "deeply_anoxic": 1.e-5
+                        },
+                    "reference_pH": {
+                        "suboxic": 6.6, 
+                        "anoxic": 6.8, 
+                        "deeply_anoxic": 6.8
+                        },
+                    "organism_diam": 2.33e-8,
+                    "mu1": {
+                        "suboxic": 0.149, 
+                        "anoxic": 0.023, 
+                        "deeply_anoxic": 0.023
+                        }
+                }
+            
+            }
+        #@ Steven voeg toe: micro_organism_dict
+        # self.micro_organism_dict = micro_organism_dict[substance_name]
+        self.organism_dict = micro_organism_dict[self.organism_name]
+
+        
 class Substance:
     ''' 
     Placeholder class which will later be replaced by the QSAR functionality of AquaPriori.
@@ -70,25 +149,6 @@ class Substance:
             disassociation constant for acid H-OMP, [-]
         omp_half_life: float
             per redox zone ('suboxic', 'anoxic', deeply_anoxic'), [days]
-    
-    For removal of microbial species / pathogen ('pathogen')
-    microbial_species_dict: dict
-    Attributes
-    ---------
-    species_name: String
-        species_name of the substance (for now limited dictionary to 'norovirus' (MS2-virus)
-        
-    'alpha0': float
-        reference_collision_efficiency [-]
-        per redox zone ('suboxic', 'anoxic', deeply_anoxic')
-    'pH0': float
-        reference pH for calculating collision efficiency [-]
-        per redox zone ('suboxic', 'anoxic', deeply_anoxic')
-    'species_diam': float
-        diameter of pathogen/species [m]
-    'mu1': float
-        inactivation coefficient [1/day]
-        per redox zone ('suboxic', 'anoxic', deeply_anoxic')
 
     '''
     def __init__(self, substance_name, 
@@ -110,8 +170,7 @@ class Substance:
                 disassociation constant for acic H-OMP [-]
             omp_half_life: float
                 per redox zone, [days])
-
-        @SR (21-1-2022): ADD documentation microbial species (mbs)        
+     
         """
         self.substance_name = substance_name
 
@@ -162,37 +221,8 @@ class Substance:
                     },
                 },
             }
-
-        # Dict    # Acties Steven 25-1-22
-        micro_organism_dict = {
-            "norovirus": 
-                {"substance_name": "norovirus",
-                    "alpha0": {
-                        "suboxic": 1.e-3, 
-                        "anoxic": 1.e-5, 
-                        "deeply_anoxic": 1.e-5
-                        },
-                    "reference_pH": {
-                        "suboxic": 6.6, 
-                        "anoxic": 6.8, 
-                        "deeply_anoxic": 6.8
-                        },
-                    "species_diam": 2.33e-8,
-                    "mu1": {
-                        "suboxic": 0.149, 
-                        "anoxic": 0.023, 
-                        "deeply_anoxic": 0.023
-                        }
-                }
-            
-            }
-
-        #@ Steven voeg toe: micro_organism_dict
-        # self.micro_organism_dict = micro_organism_dict[substance_name]
-        if removal_function == 'omp':
-            self.substance_dict = substances_dict[substance_name]
-        elif removal_function == 'mbs':  
-            self.substance_dict = micro_organism_dict[substance_name]
+        # to allow for other removal functions in future
+        self.substance_dict = substances_dict[substance_name]
 
 #ah_todo @MartinK, MartinvdS -> let the user specify the chemical in the Substance transport file instead of schematisation?
 # also let them feed it a dictionary with their own substance?
@@ -263,12 +293,28 @@ class SubstanceTransport():
         omp_half_life: float
             per redox zone ('suboxic', 'anoxic', deeply_anoxic'), [days]
 
+    organism: object
+        The microbial organism object with the microbial organism (mbo) of interest
+
+        organism_dict: dictionary
+            'alpha0': float
+                reference_collision_efficiency [-]
+                per redox zone ('suboxic', 'anoxic', deeply_anoxic')
+            'reference_pH': float
+                reference pH for calculating collision efficiency [-]
+                per redox zone ('suboxic', 'anoxic', deeply_anoxic')
+            'organism_diam': float
+                diameter of pathogen/species [m]
+            'mu1': float
+                inactivation coefficient [1/day]
+                per redox zone ('suboxic', 'anoxic', deeply_anoxic')
     """
 
 
     def __init__(self,
                 well: AnalyticalWell or ModPathWell,
-                substance: Substance):
+                substance: Substance = 'benzo(a)pyrene',
+                organism: Organism = 'norovirus'):
 
         '''
         Initialization of the Substanes class, checks for user-defined OMP substance paramters and overrides the database values.
@@ -279,6 +325,8 @@ class SubstanceTransport():
             The AnalyticalWell object for the schematisation of the aquifer type.
         substance: object
             The Substance object with the OMP of interest.
+        organism: object
+            The Organism object with microbial organism (MBO) of interest
 
 
         '''
@@ -290,17 +338,22 @@ class SubstanceTransport():
         if well.schematisation.removal_function == 'omp':
             self.omp_inialized = False
             self.micro_species_inialized = True
+            
         # Run init of 'pathogen'
-        elif well.schematisation.removal_function == 'mbs':
+        elif well.schematisation.removal_function == 'mbo':
             self.omp_inialized = True
             self.micro_organism_inialized = False
         
         # Load substance data
-        self.substance = Substance(substance, 
-                                    removal_function = well.schematisation.removal_function)
+        self.substance = Substance(substance_name = substance, 
+                                removal_function = well.schematisation.removal_function)
+        # Load microbial organism data
+        self.organism = Organism(organism_name = organism, 
+                                removal_function = well.schematisation.removal_function)
 
-        # PATHOGEN init
-        # @SR : init of microbial species (pathogen)
+        # microbial organism init
+        # @SR : init of microbial organisms (pathogen)
+
         # Check if ModPathWell (Class) can be used instead of 'AnalyticalWell'
         
 
@@ -327,6 +380,32 @@ class SubstanceTransport():
         else:
             self.substance_dict = self.substance.substance_dict
 
+        # # copied functionality for microbial organisms
+        # # @SR: check functionality: (substance parameters loaded only via class 'SubstanceTransport')?!
+        # if self.organism.organism_name == self.well.schematisation.substance:
+        #     # Compare the dictionaries and override the default values if the user inputs a value
+        #     # assumes that default dict contains the substance input by the user (we only have three right now though!)
+        #     default_organism_dict = self.organism.organism_dict
+        #     user_organism_dict = self.well.schematisation.substance_parameters #user input dictionary of values
+
+        #     # iterate through the dictionary keys
+        #     for key, value in user_organism_dict.items():
+        #         if type(value) is dict:
+        #             for tkey, cvalue in value.items():
+        #                 if cvalue is None: #reassign the value from the default dict if not input by the user
+        #                     user_organism_dict[key][tkey] = default_organism_dict[key][tkey]
+        #         else:
+        #             if value is None:
+        #                 user_organism_dict [key] = default_organism_dict[key]
+
+        #     self.organism_dict = user_organism_dict #assign updated dict as attribute of the class to be able to access later
+        # else:
+        
+        # Only allow for default values for organisms in the current Organism object
+        self.organism_dict = self.organism.organism_dict
+
+
+
         # self.df_flowline['substance'] = self.substance_dict['substance_name']
 
     def _init_omp(self):
@@ -344,15 +423,15 @@ class SubstanceTransport():
 
 
     def _init_micro_organism(self):
-        ''' Initialisation if the Substance is a microbial organism'''
+        ''' Initialisation if the Species is a microbial organism'''
         
         if self.micro_organism_inialized:
             pass
         else:
-            self.df_particle['mu1'] = self.df_particle['redox'].map(self.substance_dict['mu1'])
-            self.df_particle['alpha0'] = self.substance_dict['redox'].map(self.substance_dict['alpha0'])
-            self.df_particle['pH0'] = self.substance_dict['redox'].map(self.substance_dict['pH0'])
-            self.df_particle['species_diam'] = self.substance_dict['species_diam']
+            self.df_particle['mu1'] = self.df_particle['redox'].map(self.organism_dict['mu1'])
+            self.df_particle['alpha0'] = self.df_particle['redox'].map(self.organism_dict['alpha0'])
+            self.df_particle['reference_pH'] = self.df_particle['redox'].map(self.organism_dict['reference_pH'])
+            self.df_particle['organism_diam'] = self.organism_dict['organism_diam']
 
         self.micro_organism_inialized = True
 
@@ -812,10 +891,10 @@ class SubstanceTransport():
                 por_eff = 0.33, 
                 grainsize = 0.00025,
                 alpha0 = 0.001,
-                pH0 = 7., 
+                reference_pH = 7., 
                 const_BM = 1.38e-23,
                 temp_water = 10., rho_water = 999.703,
-                species_diam = 2.33e-8, v_por = 0.01):
+                organism_diam = 2.33e-8, v_por = 0.01):
 
         ''' For more information about the advective microbial removal calculation: 
                 BTO2012.015: Ch 6.7 (page 71-74)
@@ -835,14 +914,14 @@ class SubstanceTransport():
         # Boltzmann constant (const_BM) [1,38 × 10-23 J K-1] 
         # Water temperature 'temp_water' [degrees celcius]
         # Water density 'rho_water' [kg m-3]
-        # Pathogen/species diameter 'species_diam' [m]
+        # Organism/species diameter 'organism_diam' [m]
         # porewater velocity 'v_por' [m/d]
         
         # Check - (example 'E_coli'):
         >> k_att = calc_katt(part_idx = [0], por_eff = [0.33], korrelgrootte = [0.00025],
                 bots_eff = 0.001, const_BM = 1.38e-23,
                 temp_water = [10.], rho_water = [999.703],
-                pathogen_diam = 2.33e-8, v_por = [0.01])
+                organism_diam = 2.33e-8, v_por = [0.01])
         >> print(k_att)
         >> {0: 0.7993188853572424} # [/day]
         
@@ -850,7 +929,7 @@ class SubstanceTransport():
         ---------
         df_flowline: pandas.DataFrame
             Column "collision_eff" for each node
-            Column "species_diam" for each node
+            Column "organism_diam" for each node
 
         df_particle: pandas.DataFrame
             Column "relative_distance" for each node
@@ -869,7 +948,7 @@ class SubstanceTransport():
         # Collission efficiency [np.array]
         coll_eff = {}
         for pid in df_flowline.index:
-            coll_eff[pid] = alpha0 * 0.9**((df_particle.loc[pid,"pH"].values - pH0)/0.1)
+            coll_eff[pid] = alpha0 * 0.9**((df_particle.loc[pid,"pH"].values - reference_pH)/0.1)
 
             # Fill df_particle 'collision_eff'
             df_particle.loc[pid,"collision_eff"] = coll_eff[pid]
@@ -880,8 +959,8 @@ class SubstanceTransport():
                                       value = alpha0)
         # Pathogen diameter [m]
         df_flowline = self._df_fillna(df_flowline,
-                                df_column = 'species_diam',
-                                value = species_diam)
+                                df_column = 'organism_diam',
+                                value = organism_diam)
 
         # Water temperature [degrees Celsius]
         df_particle = self._df_fillna(df_particle,
@@ -908,38 +987,6 @@ class SubstanceTransport():
         # Create empty column 'lambda' in df_particle
         df_particle['lambda'] = None        
         
-        # if not 'collision_eff' in df_flowline.columns:
-        #     df_flowline['collision_eff'] = coll_eff
-        # else:
-        #     # fill series (if needed with default value)
-        #     if df_flowline['collision_eff'].dropna().empty:
-        #         df_flowline['collision_eff'] = df_flowline['collision_eff'].fillna(coll_eff)
-        #     else: # fill empty rows (with mean value of other records)
-        #         coll_eff_mean = df_flowline['collision_eff'].values.mean()
-        #         df_flowline['collision_eff'] = df_flowline['collision_eff'].fillna(coll_eff_mean)
-   
-        # # Pathogen diameter [m]
-        # if not 'pathogen_diam' in df_flowline.columns:
-        #     df_flowline['pathogen_diam'] = pathogen_diam
-        # else:
-        #     # fill series (if needed with default value)
-        #     if df_flowline['pathogen_diam'].dropna().empty:
-        #         df_flowline['pathogen_diam'] = df_flowline['pathogen_diam'].fillna(pathogen_diam)
-        #     else: # fill empty rows (with mean value of other records)
-        #         pathogen_diam_mean = df_flowline['pathogen_diam'].values.mean()
-        #         df_flowline['pathogen_diam'] = df_flowline['pathogen_diam'].fillna(pathogen_diam_mean)
-
-        # # Water temperature
-        # if not 'temperature' in df_particle.columns:
-        #     df_particle['temperature'] = temp_water
-        # else:
-        #     # fill series (if needed with default value)
-        #     if df_particle['temperature'].dropna().empty:
-        #         df_particle['temperature'] = df_particle['temperature'].fillna(temp_water)
-        #     else: # fill empty rows (with mean value of other records)
-        #         temp_water_mean = df_particle['temperature'].values.mean()
-        #         df_particle['temperature'] = df_particle['temperature'].fillna(temp_water_mean)
-
         # Calculate porewater velocity
         v_por, dist, tdiff = {}, {}, {}   
         for pid in df_flowline.index:
@@ -968,19 +1015,7 @@ class SubstanceTransport():
             # df_particle.loc[pid,"porewater_velocity"][-1] = v_por[pid][-1]
 
             # number of nodes
-            n_nodes = len(df_particle.loc[pid,:])
-            # #Distance array between nodes
-            # dist[pid] = np.zeros((n_nodes-1), dtype = 'float')
-            # # Time difference array
-            # tdiff[pid] = np.zeros((n_nodes-1), dtype = 'float')
-            # for iNode in range(1,n_nodes):
-            #     # Calculate internodal distance (m)
-            #     dist[pid][iNode-1] = np.sqrt((df_particle.loc[pid,"xcoord"][iNode] - df_particle.loc[pid,"xcoord"][iNode-1])**2 + \
-            #         (df_particle.loc[pid,"ycoord"][iNode] - df_particle.loc[pid,"ycoord"][iNode-1])**2 + \
-            #         (df_particle.loc[pid,"zcoord"][iNode] - df_particle.loc[pid,"zcoord"][iNode-1])**2)
-            #     # Calculate time difference between nodes
-            #     tdiff[pid][iNode-1] = (df_particle.loc[pid,"total_travel_time"][iNode] - df_particle.loc[pid,"total_travel_time"][iNode-1])
-                
+            n_nodes = len(df_particle.loc[pid,:])            
 
         # Create empty dicts and keys to keep track of arrays per particle id
         k_bots, gamma, As_happ, mu = {}, {}, {}, {}
@@ -1008,7 +1043,7 @@ class SubstanceTransport():
  
             # Diffusion constant 'D_BM' (Eq.6: BTO2012.015) --> eenheid: m2 s-1
             D_BM[pid] = (const_BM * (df_particle.loc[pid,"temperature"].values + 273.)) / \
-                        (3 * np.pi * df_flowline.loc[pid,"species_diam"] * mu[pid])
+                        (3 * np.pi * df_flowline.loc[pid,"organism_diam"] * mu[pid])
             # Diffusieconstante 'D_BM' (Eq.6: BTO2012.015) --> eenheid: m2 d-1
             D_BM[pid] *= 86400.
 
@@ -1032,8 +1067,8 @@ class SubstanceTransport():
         
     def calc_advective_microbial_removal(self,df_particle,df_flowline, 
                                         endpoint_id, trackingdirection = "forward",
-                                        mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, pH0 = 6.8, const_BM = 1.38e-23,
-                                        temp_water = 11., rho_water = 999.703, species_diam = 2.33e-8,
+                                        mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, reference_pH = 6.8, const_BM = 1.38e-23,
+                                        temp_water = 11., rho_water = 999.703, organism_diam = 2.33e-8,
                                         conc_start = 1., conc_gw = 0.):
                                         
         ''' Calculate the advective microbial removal along pathlines
@@ -1072,8 +1107,8 @@ class SubstanceTransport():
             Calculate the steady state concentration along traveled distance per 
             node for each pathline from startpoint to endpoint_id'.
             
-            With verwijderingscoëfficiënt 'lambda_' [/d]
-            effective porositty 'porosity' [-]
+            With removal coefficient 'lambda_' [/d]
+            effective porosity 'porosity' [-]
             Starting concentration 'input_concentration' per pathline
             Initial groundwater concentration 'starting_concentration_gw'
 
@@ -1103,13 +1138,14 @@ class SubstanceTransport():
             # direction: particle tracking direction (forward/backward)
 
         '''
+        self._init_micro_organism()
 
         # Calculate removal coefficient 'lambda' [/day].
         df_particle, df_flowline = self.calc_lambda(df_particle, df_flowline,
                                                     mu1 = mu1, grainsize = grainsize, alpha0 = alpha0, 
-                                                    pH0 = pH0, const_BM = const_BM,
+                                                    reference_pH = reference_pH, const_BM = const_BM,
                                                     temp_water = temp_water, 
-                                                    rho_water = rho_water, species_diam = species_diam)
+                                                    rho_water = rho_water, organism_diam = organism_diam)
 
         # Starting concentration [-]
         df_flowline = self._df_fillna(df_flowline,
