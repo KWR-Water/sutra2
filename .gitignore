@@ -203,3 +203,14 @@ test_ws_phrea/*
 research/phreatic_dict_nogravel_test.txt
 testing/test_ModPath_functions.py
 research/phreatic_dict_withgravel_test.txt
+research/phreatic_df_flowline_Modflow.xlsx
+research/phreatic_df_particle_Modflow.xlsx
+research/phreatic_dict_gravelpack.txt
+research/phreatic_dict_nogravel.txt
+research/phreatic_dict_withgravel_test.txt
+research/phreatic_test_scheme_dict.txt
+research/semiconfined_df_flowline_Modflow.xlsx
+research/semiconfined_df_particle_Modflow.xlsx
+research/semiconfined_dict_gravelpack.txt
+research/semiconfined_dict_nogravel.txt
+research/semiconfined_test_scheme_dict.txt
