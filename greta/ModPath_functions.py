@@ -2121,7 +2121,7 @@ class ModPathWell:
                 for iPart in part_idx:
 
                     # Fill recarray using pathline_data
-                    particle_data[f"{iPG}-{iNode}-{iPart}"] = copy.deepcopy(pth_data[iPart][:-1])
+                    particle_data[f"{iPG}-{iNode}-{iPart}"] = copy.deepcopy(pth_data[iPart][1:-1])
                     
                     # Loop through rec.arrays of pth_data using part_idx 
                     for iParm in parm_list:
