@@ -282,6 +282,8 @@ class HydroChemicalSchematisation:
                 halflife_anoxic=None,
                 halflife_deeply_anoxic=None,
 
+                
+
                 diffuse_input_concentration=1,
 
                 start_date_well = dt.datetime.strptime('1950-01-01', "%Y-%m-%d"),

@@ -314,7 +314,26 @@ class SubstanceTransport():
     def __init__(self,
                 well: AnalyticalWell or ModPathWell,
                 substance: Substance = 'benzo(a)pyrene',
-                organism: Organism = 'norovirus'):
+                organism: Organism = 'norovirus',
+                partition_coefficient_water_organic_carbon=None,
+                dissociation_constant=None,
+                halflife_suboxic=None,
+                halflife_anoxic=None,
+                halflife_deeply_anoxic=None,
+                alpha0_suboxic=None,
+                alpha0_anoxic=None,
+                alpha0_deeply_anoxic=None,
+                reference_pH_suboxic=None,
+                reference_pH_anoxic=None,
+                reference_pH_deeply_anoxic=None,
+                mu1_suboxic=None,
+                mu1_anoxic=None,
+                mu1_deeply_anoxic=None,
+                organism_diam=None,
+                # Add 'removal_function'=None?
+                removal_function=None
+                ):
+
 
         '''
         Initialization of the Substanes class, checks for user-defined OMP substance paramters and overrides the database values.
@@ -334,79 +353,126 @@ class SubstanceTransport():
         self.df_particle = well.df_particle
         self.df_flowline = well.df_flowline
 
+        # Substance
+        self.substance_name = substance
+        self.partition_coefficient_water_organic_carbon = partition_coefficient_water_organic_carbon
+        self.dissociation_constant = dissociation_constant
+        self.halflife_suboxic = halflife_suboxic
+        self.halflife_anoxic = halflife_anoxic
+        self.halflife_deeply_anoxic = halflife_deeply_anoxic
+        
+        # Organism
+        self.organism_name = organism
+        self.alpha0_suboxic=alpha0_suboxic
+        self.alpha0_anoxic=alpha0_anoxic
+        self.alpha0_deeply_anoxic=alpha0_deeply_anoxic
+        self.reference_pH_suboxic=reference_pH_suboxic
+        self.reference_pH_anoxic=reference_pH_anoxic
+        self.reference_pH_deeply_anoxic=reference_pH_deeply_anoxic
+        self.mu1_suboxic=mu1_suboxic
+        self.mu1_anoxic=mu1_anoxic
+        self.mu1_deeply_anoxic=mu1_deeply_anoxic
+        self.organism_diam=organism_diam        
+
+        # Removal function
+        if removal_function is not None:
+            self.removal_function = removal_function
+        else:
+            self.removal_function = well.schematisation.removal_function    
+
         # Run init of 'omp'
-        if well.schematisation.removal_function == 'omp':
+        if self.removal_function == 'omp':
             self.omp_inialized = False
             self.micro_species_inialized = True
             
         # Run init of 'pathogen'
-        elif well.schematisation.removal_function == 'mbo':
+        elif self.removal_function == 'mbo':
             self.omp_inialized = True
             self.micro_organism_inialized = False
-        
+
         # Load substance data
         self.substance = Substance(substance_name = substance, 
-                                removal_function = well.schematisation.removal_function)
+                                removal_function = self.removal_function)
         # Load microbial organism data
         self.organism = Organism(organism_name = organism, 
-                                removal_function = well.schematisation.removal_function)
+                                removal_function = self.removal_function)
+
+
+
+        # Create user dict with 'removal_parameters' from input
+        # if self.removal_function == 'omp':
+        user_removal_parameters = {
+            self.substance_name:
+                {'substance_name': self.substance_name,
+                'log_Koc': self.partition_coefficient_water_organic_carbon,
+                'pKa': self.dissociation_constant,
+                'omp_half_life': {
+                    'suboxic': self.halflife_suboxic,
+                    'anoxic': self.halflife_anoxic,
+                    'deeply_anoxic': self.halflife_deeply_anoxic,
+                    }
+                },
+            self.organism_name:
+                {"organism_name": self.organism_name,
+                    "alpha0": {
+                        "suboxic": self.alpha0_suboxic, 
+                        "anoxic": self.alpha0_anoxic, 
+                        "deeply_anoxic": self.alpha0_deeply_anoxic
+                        },
+                    "reference_pH": {
+                        "suboxic": self.reference_pH_suboxic, 
+                        "anoxic": self.reference_pH_anoxic, 
+                        "deeply_anoxic": self.reference_pH_deeply_anoxic
+                        },
+                    "organism_diam": self.organism_diam,
+                    "mu1": {
+                        "suboxic": self.mu1_suboxic, 
+                        "anoxic": self.mu1_anoxic, 
+                        "deeply_anoxic": self.mu1_deeply_anoxic
+                        }
+                    },
+                }
+
+        # Compare the removal_parameters dictionaries and override the default values if the user inputs a value
+        
+        if self.removal_function == 'omp':
+            # User defined removal parameters [omp]
+            user_removal_parameters = user_removal_parameters[self.substance_name]
+            # assumes that default dict contains the substance input by the user (we only have three right now though!)
+            default_removal_parameters = self.substance.substance_dict
+        elif self.removal_function == 'mbo':
+            # User defined removal parameters [omp]
+            user_removal_parameters = user_removal_parameters[self.organism_name]
+            # assumes that default dict contains microbial organism input (only norovirus currently supported)
+            default_removal_parameters = self.organism.organism_dict
+
+        # iterate through the dictionary keys
+        for key, value in user_removal_parameters.items():
+            if type(value) is dict:
+                for tkey, cvalue in value.items():
+                    if cvalue is None: #reassign the value from the default dict if not input by the user
+                        user_removal_parameters[key][tkey] = default_removal_parameters[key][tkey]
+                    elif type(cvalue) is dict:
+                        for subkey, subval in cvalue.items():
+                            if subval is None:
+                                user_removal_parameters[key][tkey][subkey] = default_removal_parameters[key][tkey][subkey]
+                    # else: no assignment from default dict required...
+            else:
+                if value is None:
+                    user_removal_parameters[key] = default_removal_parameters[key]
+            
+        #assign updated dict as attribute of the class to be able to access later
+        self.removal_parameters = user_removal_parameters 
 
         # microbial organism init
         # @SR : init of microbial organisms (pathogen)
 
         # Check if ModPathWell (Class) can be used instead of 'AnalyticalWell'
         
+        # # AH need to make sure here that the substance passed is the same, e.g. comapre the dictionaries BUT ALSO
+        # # make sure that user doesn't call one substance in the hydrochemicalschematisation class and another in the concentration class
+        # # probably only a problem for ourselves, this should be written into a larger "run" class for the model which could avoid this
 
-        # AH need to make sure here that the substance passed is the same, e.g. comapre the dictionaries BUT ALSO
-        # make sure that user doesn't call one substance in the hydrochemicalschematisation class and another in the concentration class
-        # probably only a problem for ourselves, this should be written into a larger "run" class for the model which could avoid this
-        if self.substance.substance_name == self.well.schematisation.substance:
-            # Compare the dictionaries and override the default values if the user inputs a value
-            # assumes that default dict contains the substance input by the user (we only have three right now though!)
-            default_substance_dict = self.substance.substance_dict
-            user_substance_dict = self.well.schematisation.substance_parameters #user input dictionary of values
-
-            # iterate through the dicitonary keys
-            for key, value in user_substance_dict .items():
-                if type(value) is dict:
-                    for tkey, cvalue in value.items():
-                        if cvalue is None: #reassign the value from the default dict if not input by the user
-                            user_substance_dict[key][tkey] = default_substance_dict[key][tkey]
-                else:
-                    if value is None:
-                        user_substance_dict [key] = default_substance_dict[key]
-
-            self.substance_dict = user_substance_dict #assign updated dict as attribute of the class to be able to access later
-        else:
-            self.substance_dict = self.substance.substance_dict
-
-        # # copied functionality for microbial organisms
-        # # @SR: check functionality: (substance parameters loaded only via class 'SubstanceTransport')?!
-        # if self.organism.organism_name == self.well.schematisation.substance:
-        #     # Compare the dictionaries and override the default values if the user inputs a value
-        #     # assumes that default dict contains the substance input by the user (we only have three right now though!)
-        #     default_organism_dict = self.organism.organism_dict
-        #     user_organism_dict = self.well.schematisation.substance_parameters #user input dictionary of values
-
-        #     # iterate through the dictionary keys
-        #     for key, value in user_organism_dict.items():
-        #         if type(value) is dict:
-        #             for tkey, cvalue in value.items():
-        #                 if cvalue is None: #reassign the value from the default dict if not input by the user
-        #                     user_organism_dict[key][tkey] = default_organism_dict[key][tkey]
-        #         else:
-        #             if value is None:
-        #                 user_organism_dict [key] = default_organism_dict[key]
-
-        #     self.organism_dict = user_organism_dict #assign updated dict as attribute of the class to be able to access later
-        # else:
-        
-        # Only allow for default values for organisms in the current Organism object
-        self.organism_dict = self.organism.organism_dict
-
-
-
-        # self.df_flowline['substance'] = self.substance_dict['substance_name']
 
     def _init_omp(self):
         ''' 
@@ -415,9 +481,9 @@ class SubstanceTransport():
         if self.omp_inialized:
             pass
         else:
-            self.df_particle['omp_half_life'] = self.df_particle['redox'].map(self.substance_dict['omp_half_life'])
-            self.df_particle['log_Koc'] = self.substance_dict['log_Koc']
-            self.df_particle['pKa'] = self.substance_dict['pKa']
+            self.df_particle['omp_half_life'] = self.df_particle['redox'].map(self.removal_parameters['omp_half_life'])
+            self.df_particle['log_Koc'] = self.removal_parameters['log_Koc']
+            self.df_particle['pKa'] = self.removal_parameters['pKa']
 
         self.omp_inialized = True
 
@@ -428,10 +494,10 @@ class SubstanceTransport():
         if self.micro_organism_inialized:
             pass
         else:
-            self.df_particle['mu1'] = self.df_particle['redox'].map(self.organism_dict['mu1'])
-            self.df_particle['alpha0'] = self.df_particle['redox'].map(self.organism_dict['alpha0'])
-            self.df_particle['reference_pH'] = self.df_particle['redox'].map(self.organism_dict['reference_pH'])
-            self.df_particle['organism_diam'] = self.organism_dict['organism_diam']
+            self.df_particle['mu1'] = self.df_particle['redox'].map(self.removal_parameters['mu1'])
+            self.df_particle['alpha0'] = self.df_particle['redox'].map(self.removal_parameters['alpha0'])
+            self.df_particle['reference_pH'] = self.df_particle['redox'].map(self.removal_parameters['reference_pH'])
+            self.df_particle['organism_diam'] = self.removal_parameters['organism_diam']
 
         self.micro_organism_inialized = True
 
@@ -680,7 +746,7 @@ class SubstanceTransport():
             self.df_flowline = self.df_flowline.append(df_flowline)
             self.df_flowline.reset_index(drop=True, inplace=True)
 
-            self.df_flowline['substance'] = self.substance_dict['substance_name']
+            self.df_flowline['substance'] = self.removal_parameters['substance_name']
 
         self._init_omp()
 
@@ -1208,6 +1274,8 @@ class SubstanceTransport():
             if df_flowline.loc[pid,"endpoint_id"] == endpoint_id:
                 C_final += (conc_steady[pid][idx_final] * df_flowline.loc[pid,"flowline_discharge"]) / \
                             df_flowline.loc[pid,"well_discharge"]
+        # Organism/Species name
+        self.df_flowline['organism'] = self.removal_parameters['organism_name']
 
 
         # return (adjusted) df_particle and df_flowline
