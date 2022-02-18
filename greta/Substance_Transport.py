@@ -58,7 +58,7 @@ class Organism:
     Attributes
     ---------
     organism_name: String
-        species_name of the substance (for now limited dictionary to 'norovirus' (MS2-virus)
+        species_name of the substance (for now limited dictionary to 'MS2' (MS2-virus)
         
     'alpha0': float
         reference_collision_efficiency [-]
@@ -101,8 +101,8 @@ class Organism:
 
         # Dict    # Acties Steven 25-1-22
         micro_organism_dict = {
-            "norovirus": 
-                {"organism_name": "norovirus",
+            "MS2": 
+                {"organism_name": "MS2",
                     "alpha0": {
                         "suboxic": 1.e-3, 
                         "anoxic": 1.e-5, 
@@ -314,7 +314,7 @@ class SubstanceTransport():
     def __init__(self,
                 well: AnalyticalWell or ModPathWell,
                 substance: Substance = 'benzo(a)pyrene',
-                organism: Organism = 'norovirus',
+                organism: Organism = 'MS2',
                 partition_coefficient_water_organic_carbon=None,
                 dissociation_constant=None,
                 halflife_suboxic=None,
@@ -443,7 +443,7 @@ class SubstanceTransport():
         elif self.removal_function == 'mbo':
             # User defined removal parameters [omp]
             user_removal_parameters = user_removal_parameters[self.organism_name]
-            # assumes that default dict contains microbial organism input (only norovirus currently supported)
+            # assumes that default dict contains microbial organism input (only MS2 currently supported)
             default_removal_parameters = self.organism.organism_dict
 
         # iterate through the dictionary keys

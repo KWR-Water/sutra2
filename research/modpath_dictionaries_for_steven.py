@@ -88,11 +88,6 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 0.75,
                                       substance = 'benzo(a)pyrene',
-                                      halflife_suboxic= 530,
-                                      halflife_anoxic= 2120,
-                                      halflife_deeply_anoxic= 2120,
-                                      partition_coefficient_water_organic_carbon= 6.43,
-                                      dissociation_constant= 99,
                                       # diameter_filterscreen = 0.2,
                                       point_input_concentration = 100.,
                                       discharge_point_contamination = 100.,#made up value
@@ -116,7 +111,6 @@ semi_dict_1  = { 'simulation_parameters' : semiconfined_scheme.simulation_parame
         'recharge_parameters' : semiconfined_scheme.recharge_parameters,
         'well_parameters' : semiconfined_scheme.well_parameters,
         'point_parameters' : semiconfined_scheme.point_parameters,
-        'substance_parameters' : semiconfined_scheme.substance_parameters,
         'bas_parameters' : semiconfined_scheme.bas_parameters,
 }
 
@@ -163,11 +157,6 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 0.75,
                                       substance = 'benzo(a)pyrene',
-                                      halflife_suboxic= 530,
-                                      halflife_anoxic= 2120,
-                                      halflife_deeply_anoxic= 2120,
-                                      partition_coefficient_water_organic_carbon= 6.43,
-                                      dissociation_constant= 99,
                                       diameter_filterscreen = 0.2,
                                       point_input_concentration = 100.,
                                       discharge_point_contamination = 100.,#made up value
@@ -190,7 +179,6 @@ semi_dict_2 = { 'simulation_parameters' : semiconfined_scheme.simulation_paramet
         'recharge_parameters' : semiconfined_scheme.recharge_parameters,
         'well_parameters' : semiconfined_scheme.well_parameters,
         'point_parameters' : semiconfined_scheme.point_parameters,
-        'substance_parameters' : semiconfined_scheme.substance_parameters,
         'bas_parameters' : semiconfined_scheme.bas_parameters,
 }
 
@@ -246,11 +234,6 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 0.75,
                                       substance = 'benzo(a)pyrene',
-                                      halflife_suboxic= 530,
-                                      halflife_anoxic= 2120,
-                                      halflife_deeply_anoxic= 2120,
-                                      partition_coefficient_water_organic_carbon= 6.43,
-                                      dissociation_constant= 99,
                                       # diameter_filterscreen = 0.2,
                                       point_input_concentration = 100.,
                                       discharge_point_contamination = 100.,#made up value
@@ -272,7 +255,6 @@ phreatic_dict_1 = { 'simulation_parameters' : phreatic_scheme.simulation_paramet
         'recharge_parameters' : phreatic_scheme.recharge_parameters,
         'well_parameters' : phreatic_scheme.well_parameters,
         'point_parameters' : phreatic_scheme.point_parameters,
-        'substance_parameters' : phreatic_scheme.substance_parameters,
         'bas_parameters' : phreatic_scheme.bas_parameters,
 }
 f = open("phreatic_dict_nogravel.txt","w")
@@ -318,11 +300,6 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 0.75,
                                       substance = 'benzo(a)pyrene',
-                                      halflife_suboxic= 530,
-                                      halflife_anoxic= 2120,
-                                      halflife_deeply_anoxic= 2120,
-                                      partition_coefficient_water_organic_carbon= 6.43,
-                                      dissociation_constant= 99,
                                       diameter_filterscreen = 0.2,
                                       point_input_concentration = 100.,
                                       discharge_point_contamination = 100.,#made up value
@@ -343,7 +320,6 @@ phreatic_dict_2 = { 'simulation_parameters' : phreatic_scheme.simulation_paramet
         'recharge_parameters' : phreatic_scheme.recharge_parameters,
         'well_parameters' : phreatic_scheme.well_parameters,
         'point_parameters' : phreatic_scheme.point_parameters,
-        'substance_parameters' : phreatic_scheme.substance_parameters,
         'bas_parameters' : phreatic_scheme.bas_parameters,
 }
 
@@ -390,7 +366,6 @@ phreatic_test_scheme_dict= { 'simulation_parameters' : phreatic_scheme.simulatio
         'recharge_parameters' : phreatic_scheme.recharge_parameters,
         'well_parameters' : phreatic_scheme.well_parameters,
         'point_parameters' : phreatic_scheme.point_parameters,
-        'substance_parameters' : phreatic_scheme.substance_parameters,
         'bas_parameters' : phreatic_scheme.bas_parameters,
 }
 
@@ -444,7 +419,6 @@ semiconfined_test_scheme_dict= { 'simulation_parameters' : phreatic_scheme.simul
         'recharge_parameters' : phreatic_scheme.recharge_parameters,
         'well_parameters' : phreatic_scheme.well_parameters,
         'point_parameters' : phreatic_scheme.point_parameters,
-        'substance_parameters' : phreatic_scheme.substance_parameters,
         'bas_parameters' : phreatic_scheme.bas_parameters,
 }
 

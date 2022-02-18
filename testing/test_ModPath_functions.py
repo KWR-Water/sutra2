@@ -39,7 +39,7 @@ if not os.path.exists(testfiles_dir):
 
 # <<<<<<< HEAD
 #%% 
-def test_modflow_run_phreatic_withgravelpack():
+def test_modflow_run_phreatic_withgravelpack(organism_name = "MS2"):
     ''' Phreatic scheme with gravelpack: modflow run.'''
     test_phrea = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                     computation_method = 'modpath',
@@ -76,12 +76,7 @@ def test_modflow_run_phreatic_withgravelpack():
                                       solid_density_shallow_aquifer= 2.650, 
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 0.75,
-                                      substance = 'norovirus',
-                                      halflife_suboxic= 530,
-                                      halflife_anoxic= 2120,
-                                      halflife_deeply_anoxic= 2120,
-                                      partition_coefficient_water_organic_carbon= 6.43,
-                                      dissociation_constant= 99,
+                                      substance = organism_name,
                                       diameter_filterscreen = 0.2,
                                       point_input_concentration = 100.,
                                       discharge_point_contamination = 100.,#made up value
@@ -113,7 +108,7 @@ def test_modflow_run_phreatic_withgravelpack():
 
     assert modpath_phrea.success_mf
 #%%
-def test_modpath_run_phreatic_nogravelpack():
+def test_modpath_run_phreatic_nogravelpack(organism_name = "MS2"):
     ''' Phreatic scheme without gravelpack: modpath run.'''
     test_phrea = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                     computation_method = 'modpath',
@@ -151,38 +146,17 @@ def test_modpath_run_phreatic_nogravelpack():
                                       solid_density_shallow_aquifer= 2.650, 
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 0.75,
-                                      substance = 'norovirus',
-                                      halflife_suboxic= 530,
-                                      halflife_anoxic= 2120,
-                                      halflife_deeply_anoxic= 2120,
-                                      partition_coefficient_water_organic_carbon= 6.43,
-                                      dissociation_constant= 99,
+                                      substance = organism_name,
                                       # diameter_filterscreen = 0.2,
                                       point_input_concentration = 100.,
                                       discharge_point_contamination = 100.,#made up value
                                       top_clayseal = 17,
                                       compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
-
-                                      # substance = 'benzene',
-                                      # halflife_suboxic=600,
-                                      # partition_coefficient_water_organic_carbon = 3.3,
-                                    
                                       ncols_near_well = 20,
                                       ncols_far_well = 80,
                                     )
 
     test_phrea.make_dictionary()
-    phreatic_dict_1 = { 'simulation_parameters' : test_phrea.simulation_parameters,
-                        'endpoint_id': test_phrea.endpoint_id,
-                        'mesh_refinement': test_phrea.mesh_refinement,
-                        'geo_parameters' : test_phrea.geo_parameters,
-                        'ibound_parameters' : test_phrea.ibound_parameters,
-                        'recharge_parameters' : test_phrea.recharge_parameters,
-                        'well_parameters' : test_phrea.well_parameters,
-                        'point_parameters' : test_phrea.point_parameters,
-                        'substance_parameters' : test_phrea.substance_parameters,
-                        'bas_parameters' : test_phrea.bas_parameters,
-                        }
     # Remove/empty point_parameters
     test_phrea.point_parameters = {}
 
@@ -199,7 +173,7 @@ def test_modpath_run_phreatic_nogravelpack():
 
     # Calculate advective microbial removal
     modpath_removal = ST.SubstanceTransport(modpath_phrea,
-                                            organism = 'norovirus')
+                                            organism = organism_name)
  
     # Calculate advective microbial removal
     # Final concentration per endpoint_id
@@ -225,7 +199,7 @@ def test_modpath_run_phreatic_nogravelpack():
     
     assert modpath_phrea.success_mp
 
-def test_modpath_run_horizontal_flow_points():
+def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
     ''' Horizontal flow test in target_aquifer: modpath run.'''
     # well discharge
     well_discharge = -1000.
@@ -272,18 +246,10 @@ def test_modpath_run_horizontal_flow_points():
                                 solid_density_shallow_aquifer= 2.650, 
                                 solid_density_target_aquifer= 2.650, 
                                 diameter_borehole = 0.2,
-                                substance = 'norovirus',
-                                halflife_suboxic= 530,
-                                halflife_anoxic= 2120,
-                                halflife_deeply_anoxic= 2120,
-                                partition_coefficient_water_organic_carbon= 6.43,
-                                dissociation_constant= 99,
+                                substance = organism_name,
                                 diameter_filterscreen = 0.2,
                                 top_clayseal = 0,
                                 compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
-                                # substance = 'benzene',
-                                # halflife_suboxic=600,
-                                # partition_coefficient_water_organic_carbon = 3.3,
                                 model_radius = distance_boundary,
                                 ncols_near_well = 20,
                                 ncols_far_well = 80,
@@ -316,34 +282,22 @@ def test_modpath_run_horizontal_flow_points():
     
 
     # microbial removal properties
-    substance_name = 'norovirus'
-    alpha0 = {"suboxic": 1.e-3, "anoxic": 1.e-5, "deeply_anoxic": 1.e-5},
-    reference_pH = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8},
-    organism_diam =  2.33e-8,
+    # organism_name = 'MS2'
+    alpha0 = {"suboxic": 1.e-3, "anoxic": 1.e-5, "deeply_anoxic": 1.e-5}
+    reference_pH = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8}
+    organism_diam =  2.33e-8
     mu1 = {"suboxic": 0.149,"anoxic": 0.023,"deeply_anoxic": 0.023}
 
-    substance_parameters = {substance_name: 
-                    {"substance_name": substance_name,
+    removal_parameters = {organism_name: 
+                    {"organism_name": organism_name,
                         "alpha0": alpha0,
                         "reference_pH": reference_pH,
                         "organism_diam": organism_diam,
                         "mu1": mu1
                     }
                 }
-    test_conf_hor.substance_parameters["norovirus"] = substance_parameters["norovirus"]
-
-
-    phreatic_dict_2 = { 'simulation_parameters' : test_conf_hor.simulation_parameters,
-                    'endpoint_id': test_conf_hor.endpoint_id,
-                    'mesh_refinement': test_conf_hor.mesh_refinement,
-                    'geo_parameters' : test_conf_hor.geo_parameters,
-                    'ibound_parameters' : test_conf_hor.ibound_parameters,
-                    'recharge_parameters' : test_conf_hor.recharge_parameters,
-                    'well_parameters' : test_conf_hor.well_parameters,
-                    'point_parameters' : test_conf_hor.point_parameters,
-                    'substance_parameters' : test_conf_hor.substance_parameters,
-                    'bas_parameters' : test_conf_hor.bas_parameters,
-                    }
+    # Removal parameters organism
+    rem_parms = removal_parameters[organism_name]
 
     # ModPath well
     modpath_hor = MP.ModPathWell(test_conf_hor, #test_phrea,
@@ -359,7 +313,18 @@ def test_modpath_run_horizontal_flow_points():
 
     # Calculate advective microbial removal
     modpath_removal = ST.SubstanceTransport(modpath_hor,
-                                            organism = 'norovirus')
+                            organism = organism_name,
+                            alpha0_suboxic = rem_parms["alpha0"]["suboxic"],
+                            alpha0_anoxic = rem_parms["alpha0"]["anoxic"],
+                            alpha0_deeply_anoxic =rem_parms["alpha0"]["deeply_anoxic"],
+                            reference_pH_suboxic =rem_parms["reference_pH"]["suboxic"],
+                            reference_pH_anoxic =rem_parms["reference_pH"]["anoxic"],
+                            reference_pH_deeply_anoxic =rem_parms["reference_pH"]["deeply_anoxic"],
+                            mu1_suboxic = rem_parms["mu1"]["suboxic"],
+                            mu1_anoxic = rem_parms["mu1"]["anoxic"],
+                            mu1_deeply_anoxic = rem_parms["mu1"]["deeply_anoxic"],
+                            organism_diam = rem_parms["organism_diam"]
+                            )
  
     # Calculate advective microbial removal
     # Final concentration per endpoint_id
@@ -369,8 +334,6 @@ def test_modpath_run_horizontal_flow_points():
                                             modpath_hor.df_particle, modpath_hor.df_flowline, 
                                             endpoint_id = endpoint_id,
                                             trackingdirection = modpath_hor.trackingdirection,
-                                            mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, reference_pH = 6.8, const_BM = 1.38e-23,
-                                            temp_water = 11., rho_water = 999.703, organism_diam = 2.33e-8,
                                             conc_start = 1., conc_gw = 0.)
 
     # df_particle file name 
@@ -385,7 +348,8 @@ def test_modpath_run_horizontal_flow_points():
 
     assert modpath_hor.success_mp
 
-def test_modpath_run_horizontal_flow_diffuse():
+def test_modpath_run_horizontal_flow_diffuse(organism_name = "MS2"):
+
     ''' Horizontal flow test in target_aquifer: modpath run.'''
     # well discharge
     well_discharge = -1000.
@@ -432,18 +396,10 @@ def test_modpath_run_horizontal_flow_diffuse():
                                 solid_density_shallow_aquifer= 2.650, 
                                 solid_density_target_aquifer= 2.650, 
                                 diameter_borehole = 0.2,
-                                substance = 'norovirus',
-                                halflife_suboxic= 530,
-                                halflife_anoxic= 2120,
-                                halflife_deeply_anoxic= 2120,
-                                partition_coefficient_water_organic_carbon= 6.43,
-                                dissociation_constant= 99,
+                                substance = organism_name,
                                 diameter_filterscreen = 0.2,
                                 top_clayseal = 0,
                                 compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
-                                # substance = 'benzene',
-                                # halflife_suboxic=600,
-                                # partition_coefficient_water_organic_carbon = 3.3,
                                 model_radius = distance_boundary,
                                 ncols_near_well = 20,
                                 ncols_far_well = 80,
@@ -469,7 +425,7 @@ def test_modpath_run_horizontal_flow_diffuse():
                             }
     # diffuse_parameters
     test_conf_hor.diffuse_parameters = {'source1': {
-                'substance_name': "norovirus",
+                'substance_name': organism_name,
                 'xmin': test_conf_hor.model_radius - 1.,
                 'xmax': test_conf_hor.model_radius,
                 'zmax': test_conf_hor.bottom_shallow_aquifer,
@@ -486,34 +442,22 @@ def test_modpath_run_horizontal_flow_diffuse():
     
 
     # microbial removal properties
-    substance_name = 'norovirus'
-    alpha0 = {"suboxic": 1.e-3, "anoxic": 1.e-5, "deeply_anoxic": 1.e-5},
-    reference_pH = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8},
-    organism_diam =  2.33e-8,
+    # organism_name = 'MS2'
+    alpha0 = {"suboxic": 1.e-3, "anoxic": 1.e-5, "deeply_anoxic": 1.e-5}
+    reference_pH = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8}
+    organism_diam =  2.33e-8
     mu1 = {"suboxic": 0.149,"anoxic": 0.023,"deeply_anoxic": 0.023}
 
-    substance_parameters = {substance_name: 
-                    {"substance_name": substance_name,
+    removal_parameters = {organism_name: 
+                    {"organism_name": organism_name,
                         "alpha0": alpha0,
                         "reference_pH": reference_pH,
                         "organism_diam": organism_diam,
                         "mu1": mu1
                     }
                 }
-    test_conf_hor.substance_parameters["norovirus"] = substance_parameters["norovirus"]
-
-
-    phreatic_dict_2 = { 'simulation_parameters' : test_conf_hor.simulation_parameters,
-                    'endpoint_id': test_conf_hor.endpoint_id,
-                    'mesh_refinement': test_conf_hor.mesh_refinement,
-                    'geo_parameters' : test_conf_hor.geo_parameters,
-                    'ibound_parameters' : test_conf_hor.ibound_parameters,
-                    'recharge_parameters' : test_conf_hor.recharge_parameters,
-                    'well_parameters' : test_conf_hor.well_parameters,
-                    'point_parameters' : test_conf_hor.point_parameters,
-                    'substance_parameters' : test_conf_hor.substance_parameters,
-                    'bas_parameters' : test_conf_hor.bas_parameters,
-                    }
+    # Removal parameters organism
+    rem_parms = removal_parameters[organism_name]
 
     # ModPath well
     modpath_hor = MP.ModPathWell(test_conf_hor, #test_phrea,
@@ -529,7 +473,18 @@ def test_modpath_run_horizontal_flow_diffuse():
 
     # Calculate advective microbial removal
     modpath_removal = ST.SubstanceTransport(modpath_hor,
-                                            organism = 'norovirus')
+                            organism = organism_name,
+                            alpha0_suboxic = rem_parms["alpha0"]["suboxic"],
+                            alpha0_anoxic = rem_parms["alpha0"]["anoxic"],
+                            alpha0_deeply_anoxic =rem_parms["alpha0"]["deeply_anoxic"],
+                            reference_pH_suboxic =rem_parms["reference_pH"]["suboxic"],
+                            reference_pH_anoxic =rem_parms["reference_pH"]["anoxic"],
+                            reference_pH_deeply_anoxic =rem_parms["reference_pH"]["deeply_anoxic"],
+                            mu1_suboxic = rem_parms["mu1"]["suboxic"],
+                            mu1_anoxic = rem_parms["mu1"]["anoxic"],
+                            mu1_deeply_anoxic = rem_parms["mu1"]["deeply_anoxic"],
+                            organism_diam = rem_parms["organism_diam"]
+                            )
  
     # Calculate advective microbial removal
     # Final concentration per endpoint_id
@@ -539,8 +494,6 @@ def test_modpath_run_horizontal_flow_diffuse():
                                             modpath_hor.df_particle, modpath_hor.df_flowline, 
                                             endpoint_id = endpoint_id,
                                             trackingdirection = modpath_hor.trackingdirection,
-                                            mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, reference_pH = 6.8, const_BM = 1.38e-23,
-                                            temp_water = 11., rho_water = 999.703, organism_diam = 2.33e-8,
                                             conc_start = 1., conc_gw = 0.)
 
     # df_particle file name 
@@ -555,7 +508,7 @@ def test_modpath_run_horizontal_flow_diffuse():
 
     assert modpath_hor.success_mp
 
-def test_modpath_run_phreatic_withgravelpack_traveltimes():
+def test_modpath_run_phreatic_withgravelpack_traveltimes(organism_name = "MS2"):
 
 
     ''' Phreatic scheme with gravelpack: modpath run.'''
@@ -595,37 +548,19 @@ def test_modpath_run_phreatic_withgravelpack_traveltimes():
                                 solid_density_shallow_aquifer= 2.650, 
                                 solid_density_target_aquifer= 2.650, 
                                 diameter_borehole = 0.75,
-                                substance = 'norovirus',
-                                halflife_suboxic= 530,
-                                halflife_anoxic= 2120,
-                                halflife_deeply_anoxic= 2120,
-                                partition_coefficient_water_organic_carbon= 6.43,
-                                dissociation_constant= 99,
+                                substance = organism_name,
                                 diameter_filterscreen = 0.2,
                                 point_input_concentration = 100.,
                                 discharge_point_contamination = 100.,#made up value
                                 top_clayseal = 17,
                                 compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
-                                # substance = 'benzene',
-                                # halflife_suboxic=600,
-                                # partition_coefficient_water_organic_carbon = 3.3,
+                                # Modpath grid parms
                                 ncols_near_well = 20,
                                 ncols_far_well = 80,
                             )
 
     test_phrea_gp.make_dictionary()
 
-    phreatic_dict_2 = { 'simulation_parameters' : test_phrea_gp.simulation_parameters,
-                        'endpoint_id': test_phrea_gp.endpoint_id,
-                        'mesh_refinement': test_phrea_gp.mesh_refinement,
-                        'geo_parameters' : test_phrea_gp.geo_parameters,
-                        'ibound_parameters' : test_phrea_gp.ibound_parameters,
-                        'recharge_parameters' : test_phrea_gp.recharge_parameters,
-                        'well_parameters' : test_phrea_gp.well_parameters,
-                        'point_parameters' : test_phrea_gp.point_parameters,
-                        'substance_parameters' : test_phrea_gp.substance_parameters,
-                        'bas_parameters' : test_phrea_gp.bas_parameters,
-                        }
     # Remove/empty point_parameters
     test_phrea_gp.point_parameters = {}
 
@@ -672,7 +607,7 @@ def test_modpath_run_phreatic_withgravelpack_traveltimes():
 #=======
 #%%
 
-def test_modpath_run_semiconfined_nogravelpack_traveltimes():
+def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"):
 
 
     ''' Phreatic scheme with gravelpack: modpath run.'''
@@ -713,27 +648,16 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes():
                                       solid_density_shallow_aquifer= 2.650, 
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 0.75,
-                                      substance = 'norovirus',
-                                      halflife_suboxic= 530,
-                                      halflife_anoxic= 2120,
-                                      halflife_deeply_anoxic= 2120,
-                                      partition_coefficient_water_organic_carbon= 6.43,
-                                      dissociation_constant= 99,
+                                      substance = organism_name,
                                       # diameter_filterscreen = 0.2,
                                       point_input_concentration = 100.,
                                       discharge_point_contamination = 100.,#made up value
                                       top_clayseal = 17,
                                       compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
                                       
-                                      # substance = 'benzene',
-                                      # halflife_suboxic=600,
-                                      # partition_coefficient_water_organic_carbon = 3.3,
                                       ncols_near_well = 20,
                                       ncols_far_well = 20,
                                       nlayers_target_aquifer = 20,
-                                    #   # mbo removal parameters
-                                    #   mu1 = 0.023,  # nog uitschrijven
-                                    #   alpha0 = 
 
                                     )
 
@@ -741,20 +665,7 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes():
 
     # Test diffuse_parameters (check line 796 in ModPath_functions)
     diffuse_parameters = test_semiconf.recharge_parameters
-    # diffuse_parameters['xmin'] = 15.
-    # diffuse_parameters['xmax'] = 16.
-    semiconf_dict_1 = { 'simulation_parameters' : test_semiconf.simulation_parameters,
-                        'endpoint_id': test_semiconf.endpoint_id,
-                        'mesh_refinement': test_semiconf.mesh_refinement,
-                        'geo_parameters' : test_semiconf.geo_parameters,
-                        'ibound_parameters' : test_semiconf.ibound_parameters,
-                        'recharge_parameters' : test_semiconf.recharge_parameters,
-                        'well_parameters' : test_semiconf.well_parameters,
-                        'diffuse_parameters': test_semiconf.recharge_parameters,
-                        'point_parameters' : test_semiconf.point_parameters,
-                        'substance_parameters' : test_semiconf.substance_parameters,
-                        'bas_parameters' : test_semiconf.bas_parameters,
-                        }
+
     # Remove/empty point_parameters
     test_semiconf.point_parameters = {}
 
@@ -770,7 +681,8 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes():
 
     # Calculate advective microbial removal
     modpath_removal = ST.SubstanceTransport(modpath_semiconf,
-                                            organism = 'norovirus')
+                                            organism = organism_name,
+                                            )
     # modpath_removal.compute_omp_removal()
     # Final concentration per endpoint_id
     C_final = {}
@@ -824,7 +736,7 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes():
 
 #%%
 
-def test_diffuse_modpath_run_semiconfined_nogravelpack_traveltimes():
+def test_diffuse_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"):
 
     ''' Phreatic scheme without gravelpack: modpath run.'''
     test_semiconf = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
@@ -864,21 +776,12 @@ def test_diffuse_modpath_run_semiconfined_nogravelpack_traveltimes():
                                       solid_density_shallow_aquifer= 2.650, 
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 0.75,
-                                      substance = 'norovirus',
-                                      halflife_suboxic= 530,
-                                      halflife_anoxic= 2120,
-                                      halflife_deeply_anoxic= 2120,
-                                      partition_coefficient_water_organic_carbon= 6.43,
-                                      dissociation_constant= 99,
+                                      substance = organism_name,
                                       # diameter_filterscreen = 0.2,
                                       point_input_concentration = 100.,
                                       discharge_point_contamination = 100.,#made up value
                                       top_clayseal = 17,
                                       compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
-                                      
-                                      # substance = 'benzene',
-                                      # halflife_suboxic=600,
-                                      # partition_coefficient_water_organic_carbon = 3.3,
                                       ncols_near_well = 20,
                                       ncols_far_well = 20,
                                       nlayers_target_aquifer = 20,
@@ -886,18 +789,7 @@ def test_diffuse_modpath_run_semiconfined_nogravelpack_traveltimes():
 
     test_semiconf.make_dictionary()
 
-    semiconf_dict_1 = { 'simulation_parameters' : test_semiconf.simulation_parameters,
-                        'endpoint_id': test_semiconf.endpoint_id,
-                        'mesh_refinement': test_semiconf.mesh_refinement,
-                        'geo_parameters' : test_semiconf.geo_parameters,
-                        'ibound_parameters' : test_semiconf.ibound_parameters,
-                        'recharge_parameters' : test_semiconf.recharge_parameters,
-                        'well_parameters' : test_semiconf.well_parameters,
-                        'point_parameters' : test_semiconf.point_parameters,
-                        'substance_parameters' : test_semiconf.substance_parameters,
-                        'bas_parameters' : test_semiconf.bas_parameters,
-                        }
-        # Remove/empty point_parameters
+    # Remove/empty point_parameters
     test_semiconf.point_parameters = {}
 
     modpath_semiconf = MP.ModPathWell(test_semiconf, #test_phrea,
@@ -940,7 +832,7 @@ def test_diffuse_modpath_run_semiconfined_nogravelpack_traveltimes():
 
 #%%
 
-def test_phreatic_scheme_withgravelpack_dictinput():
+def test_phreatic_scheme_withgravelpack_dictinput(organism_name = "MS2"):
     ''' Check writing and reading of dictionary files: phreatic scheme.'''
     
     phreatic_scheme= AW.HydroChemicalSchematisation(schematisation_type='phreatic',
@@ -979,20 +871,12 @@ def test_phreatic_scheme_withgravelpack_dictinput():
                                       solid_density_shallow_aquifer= 2.650, 
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 0.75,
-                                      substance = 'norovirus',
-                                      halflife_suboxic= 530,
-                                      halflife_anoxic= 2120,
-                                      halflife_deeply_anoxic= 2120,
-                                      partition_coefficient_water_organic_carbon= 6.43,
-                                      dissociation_constant= 99,
+                                      substance = organism_name,
                                       diameter_filterscreen = 0.2,
                                       point_input_concentration = 100.,
                                       discharge_point_contamination = 100.,#made up value
                                       top_clayseal = 17,
                                       compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
-                                      # substance = 'benzene',
-                                      # halflife_suboxic=600,
-                                      # partition_coefficient_water_organic_carbon = 3.3,
                                     )
 
     phreatic_scheme.make_dictionary()  
@@ -1005,7 +889,6 @@ def test_phreatic_scheme_withgravelpack_dictinput():
         'recharge_parameters' : phreatic_scheme.recharge_parameters,
         'well_parameters' : phreatic_scheme.well_parameters,
         'point_parameters' : phreatic_scheme.point_parameters,
-        'substance_parameters' : phreatic_scheme.substance_parameters,
         'bas_parameters' : phreatic_scheme.bas_parameters,
     }
 
@@ -1023,7 +906,7 @@ def test_phreatic_scheme_withgravelpack_dictinput():
 
 #%%
 
-def test_travel_time_distribution_phreatic():
+def test_travel_time_distribution_phreatic(organism_name = "MS2"):
     output_phreatic = pd.read_csv(path / 'phreatic_test.csv')
     output_phreatic = output_phreatic.round(7) #round to 7 digits (or any digit), keep same as for the output for the model to compare
 
@@ -1051,6 +934,7 @@ def test_travel_time_distribution_phreatic():
                                         solid_density_shallow_aquifer= 2.650,
                                         solid_density_target_aquifer= 2.650,
                                         diameter_borehole = 0.75,
+                                        substance=organism_name
                                         )
 
     well1 = AW.AnalyticalWell(test_)

@@ -276,13 +276,6 @@ class HydroChemicalSchematisation:
                 vertical_anisotropy_clayseal=None,
 
                 substance=None,
-                partition_coefficient_water_organic_carbon=None,
-                dissociation_constant=None,
-                halflife_suboxic=None,
-                halflife_anoxic=None,
-                halflife_deeply_anoxic=None,
-
-                
 
                 diffuse_input_concentration=1,
 
@@ -449,11 +442,6 @@ class HydroChemicalSchematisation:
 
         # Substance
         self.substance = substance
-        self.partition_coefficient_water_organic_carbon = partition_coefficient_water_organic_carbon
-        self.dissociation_constant = dissociation_constant
-        self.halflife_suboxic = halflife_suboxic
-        self.halflife_anoxic = halflife_anoxic
-        self.halflife_deeply_anoxic = halflife_deeply_anoxic
 
         # Diffuse contamination override if point contamination specified
         self.diffuse_input_concentration = diffuse_input_concentration
@@ -852,16 +840,18 @@ class HydroChemicalSchematisation:
         # of this package, this package should be able to accept a dictionary like
         # you define below.
         # AH_todo @MartinK -> ok, what should be different then? 
-        substance_parameters = {
-                'substance_name': self.substance,
-                'log_Koc': self.partition_coefficient_water_organic_carbon,
-                'pKa': self.dissociation_constant,
-                'omp_half_life': {
-                    'suboxic': self.halflife_suboxic,
-                    'anoxic': self.halflife_anoxic,
-                    'deeply_anoxic': self.halflife_deeply_anoxic,
-                    },
-            }
+        
+        ### substance_parameters replaced by removal_parameters in SubstanceTransport class (Substance_Transport.py)
+        # substance_parameters = {
+        #         'substance_name': self.substance,
+        #         'log_Koc': self.partition_coefficient_water_organic_carbon,
+        #         'pKa': self.dissociation_constant,
+        #         'omp_half_life': {
+        #             'suboxic': self.halflife_suboxic,
+        #             'anoxic': self.halflife_anoxic,
+        #             'deeply_anoxic': self.halflife_deeply_anoxic,
+        #             },
+        #     }
 
         # MK:should this be removed? #AH_todo @MartinvdS -> do we keep this dict if it is blank?
         bas_parameters = {
@@ -877,7 +867,7 @@ class HydroChemicalSchematisation:
         self.diffuse_parameters = diffuse_parameters
         self.well_parameters = well_parameters
         self.point_parameters = point_parameters
-        self.substance_parameters = substance_parameters
+        # self.substance_parameters = substance_parameters
         self.bas_parameters = bas_parameters
 
     # Here are functions to calculate the travel time through vadose zone, shared functions for
