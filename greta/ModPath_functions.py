@@ -1961,8 +1961,11 @@ class ModPathWell:
             pth_data[idx]["x"] = pth_data[idx]["x"].round(3)
             pth_data[idx]["y"] = pth_data[idx]["y"].round(3)
             pth_data[idx]["z"] = pth_data[idx]["z"].round(3)
-        
-        time, xyz_nodes, txyz, dist, tdiff = {}, {}, {}, {}, {}
+
+            # # Test unique
+            # test_unique = np.unique(pth_data[idx],return_index=True, return_inverse=True, axis = 0)
+
+        time_nodes, xyz_nodes, txyz, dist, tdiff = {}, {}, {}, {}, {}
         # number of particles within file
         npart = len(pth_data)
         # Numpy arrays storing the total distance traveled for each particle
@@ -1983,14 +1986,14 @@ class ModPathWell:
             # Remove identical data (based on identical times)
             txyz[idx] = np.unique(txyz[idx], axis = 0)
             # time data
-            time[idx] = txyz[idx][:,0]
+            time_nodes[idx] = txyz[idx][:,0]
             # xyz data
             xyz_nodes[idx] = txyz[idx][:,1:]
 
             # Determine number of remaining nodes
-            n_nodes = min(xyz_nodes[idx].shape[0],time[idx].shape[0])
-            if xyz_nodes[idx].shape[0] != time[idx].shape[0]:
-                print(xyz_nodes[idx].shape[0],time[idx].shape[0])
+            n_nodes = min(xyz_nodes[idx].shape[0],time_nodes[idx].shape[0])
+            if xyz_nodes[idx].shape[0] != time_nodes[idx].shape[0]:
+                print(xyz_nodes[idx].shape[0],time_nodes[idx].shape[0])
             #Distance array between nodes
             dist[idx] = np.zeros((n_nodes-1), dtype = 'float')
             # Time difference array
@@ -2001,14 +2004,14 @@ class ModPathWell:
                     (xyz_nodes[idx][iNode][1] - xyz_nodes[idx][iNode-1][1])**2 + \
                     (xyz_nodes[idx][iNode][2] - xyz_nodes[idx][iNode-1][2])**2)
                 # Calculate time difference between nodes
-                tdiff[idx][iNode-1] = (time[idx][iNode] - time[idx][iNode - 1])
+                tdiff[idx][iNode-1] = (time_nodes[idx][iNode] - time_nodes[idx][iNode - 1])
                 
             # Total distance covered per particle
             dist_tot[idx] = dist[idx].sum()
             # Total time covered per particle
-            time_tot[idx] = time[idx][-1]
+            time_tot[idx] = time_nodes[idx][-1]
                         
-        return xyz_nodes, dist, tdiff, dist_tot, time_tot, pth_data
+        return time_nodes, xyz_nodes, dist, tdiff, dist_tot, time_tot, pth_data
 
     # Make df_particle
     def fill_df_particle(self, particle_group,
@@ -2088,7 +2091,7 @@ class ModPathWell:
                 #     nodes_well = prf.get_nodes(locs = wel_locs, nrow = nrow, ncol = ncol) # m.dis.get_node(wel_locs.tolist())
 
                 # Read pathline data
-                xyz_nodes, dist_data,  \
+                time_nodes, xyz_nodes, dist_data,  \
                 time_diff, dist_tot,   \
                 time_tot, pth_data =  \
                             self.read_pathlinedata(fpth = mppth,
@@ -2121,7 +2124,7 @@ class ModPathWell:
                 for iPart in part_idx:
 
                     # Fill recarray using pathline_data
-                    particle_data[f"{iPG}-{iNode}-{iPart}"] = copy.deepcopy(pth_data[iPart][1:-1])
+                    particle_data[f"{iPG}-{iNode}-{iPart}"] = copy.deepcopy(pth_data[iPart][:]) # [:-1]
                     
                     # Loop through rec.arrays of pth_data using part_idx 
                     for iParm in parm_list:
@@ -2169,13 +2172,14 @@ class ModPathWell:
                                 "dissolved_organic_carbon":	"dissolved_organic_carbon", "pH": "pH",	"temperature": "temperature", "material": "material"}
                     df_particle_data[f"{iPG}-{iNode}-{iPart}"].rename(columns = colnames_df_particle, 
                                                                                     inplace = True, errors = "raise")
+                    df_particle_data[f"{iPG}-{iNode}-{iPart}"] = df_particle_data[f"{iPG}-{iNode}-{iPart}"].drop_duplicates(subset=["xcoord","ycoord","zcoord","total_travel_time"], keep = 'first')                                                                
 
                     # Append dataframes
                     df_particle_list.append(df_particle_data[f"{iPG}-{iNode}-{iPart}"])
 
         # Concatenate df_particle dataframes ('combined')
         if len(df_particle_list) > 0:
-            df_particle = pd.concat(df_particle_list, axis = 0, ignore_index = False)
+            df_particle = pd.concat(df_particle_list, axis = 0, ignore_index = False) #.drop_duplicates()
         else:
             colnames_df_particle = {"x": "xcoord","y":"ycoord","z":"zcoord","time":"total_travel_time","prsity_uncorr":"porosity",
                                 "solid_density": "solid_density", "fraction_organic_carbon": "fraction_organic_carbon", "redox": "redox", 
