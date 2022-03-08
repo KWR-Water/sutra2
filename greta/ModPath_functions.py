@@ -1240,6 +1240,8 @@ class ModPathWell:
     	# flowline_type: point_source (or diffuse_source)
         if not hasattr(self, "flowline_type"):
             self.flowline_type = {}
+        if not hasattr(self, "point_discharge"):
+            self.point_discharge = {}      
 
         # particle starting locations [(lay,row,col),(k,i,j),...]
         if not hasattr(self, "part_locs"):
@@ -1457,6 +1459,8 @@ class ModPathWell:
     	# flowline_type: point_source (or diffuse_source)
         if not hasattr(self, "flowline_type"):
             self.flowline_type = {}     
+        if not hasattr(self, "point_discharge"):
+            self.point_discharge = {}                
 
         # particle starting locations [(lay,row,col),(k,i,j),...]
         if not hasattr(self, "part_locs"):
@@ -1570,7 +1574,9 @@ class ModPathWell:
                 self.pids[iPG].append(self.pcount)
 
                 # flowline_type: diffuse_source or point_source
-                self.flowline_type[self.pcount] = 'point_source'  
+                self.flowline_type[self.pcount] = 'point_source'
+                # Add point_discharge
+                self.point_discharge[self.pcount] = point_parameters.get(iPG).get("discharge") 
 
 
                 # Particle distribution package - particle allocation
@@ -2273,22 +2279,30 @@ class ModPathWell:
 
         for fid in flowline_id:
             if self.trackingdirection == "forward":
-                # starting point is used to calculate flux of pathline (flux_pathline)
-                flux_pathline[fid] = round(abs(frf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) + \
-                                            abs(flf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) + \
-                                            abs(fff[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) / \
-                                    count_startpoints[node_start[fid]],4)
+
+                if df_flowline.loc[fid,"flowline_type"] in ["diffuse_source",]:
+                    # starting point is used to calculate flux of pathline (flux_pathline)
+                    flux_pathline[fid] = round(abs(frf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) + \
+                                                abs(flf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) + \
+                                                abs(fff[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) / \
+                                        count_startpoints[node_start[fid]],4)
+                elif df_flowline.loc[fid,"flowline_type"] in ["point_source",]:
+                    flux_pathline[fid] = self.point_discharge[fid]
 
                 # flux_pathline[fid] = round(np.sqrt((frf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]**2 + \
                 #                             flf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]**2 + \
                 #                             fff[node_start[fid][0],node_start[fid][1],node_start[fid][2]]**2)) / \
                 #                     count_startpoints[node_start[fid]],4)
             elif self.trackingdirection == "backward":
-                # endpoint is used to calculate flux of pathline
-                flux_pathline[fid] = round(abs(frf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) + \
-                                            abs(flf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) + \
-                                            abs(fff[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) / \
-                                    count_startpoints[node_end[fid]],4)
+
+                if df_flowline.loc[fid,"flowline_type"] == "diffuse_source":
+                    # endpoint is used to calculate flux of pathline
+                    flux_pathline[fid] = round(abs(frf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) + \
+                                                abs(flf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) + \
+                                                abs(fff[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) / \
+                                        count_startpoints[node_end[fid]],4)
+                elif df_flowline.loc[fid,"flowline_type"] in ["point_source",]:
+                    flux_pathline[fid] = self.point_discharge[fid]
                 # flux_pathline[fid] = round(np.sqrt((frf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]**2 + \
                 #                             flf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]**2 + \
                 #                             fff[node_end[fid][0],node_end[fid][1],node_end[fid][2]]**2)) / \
