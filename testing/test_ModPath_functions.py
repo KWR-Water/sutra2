@@ -255,7 +255,7 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
                                 ncols_far_well = 80,
                                 # Point contamination
                                 point_input_concentration = 1.,
-                                discharge_point_contamination = abs(well_discharge),
+                                discharge_point_contamination = abs(well_discharge / 10.),
                                 distance_point_contamination_from_well = x_point,
                                 depth_point_contamination = z_point,
                                 )
@@ -415,18 +415,22 @@ def test_modpath_run_horizontal_flow_diffuse(organism_name = "MS2"):
     
     # Confined top boundary ; no recharge_parameters
     test_conf_hor.ibound_parameters.pop("top_boundary1")
+
+    # Width (delr) outer boundary cells
+    delr_outer = 1.
+
     # Add outer boundary for horizontal flow test
     test_conf_hor.ibound_parameters["outer_boundary_target_aquifer"] = {
                             'top': test_conf_hor.bottom_shallow_aquifer,
                             'bot': test_conf_hor.bottom_target_aquifer,
-                            'xmin': test_conf_hor.model_radius - 1.,
+                            'xmin': test_conf_hor.model_radius - delr_outer,
                             'xmax': test_conf_hor.model_radius,
                             'ibound': -1
                             }
     # diffuse_parameters
     test_conf_hor.diffuse_parameters = {'source1': {
                 'substance_name': organism_name,
-                'xmin': test_conf_hor.model_radius - 1.,
+                'xmin': test_conf_hor.model_radius - delr_outer * 0.5,
                 'xmax': test_conf_hor.model_radius,
                 'zmax': test_conf_hor.bottom_shallow_aquifer,
                 'zmin': test_conf_hor.bottom_target_aquifer,
