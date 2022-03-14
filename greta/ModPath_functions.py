@@ -873,7 +873,8 @@ class ModPathWell:
                     if self.material[iLay,iRow,iCol] not in self.schematisation_dict["geo_parameters"].keys():
                         self.hk[iLay,iRow,iCol] = 999.
                         self.vani[iLay,iRow,iCol] = 999.
-       
+                        self.redox[iLay,iRow,iCol] = "anoxic"
+
         # Vertical conductivity [m/d]
         self.vka = self.hk / self.vani
         # and for 'storativity' ("ss": specific storage)
@@ -2168,46 +2169,60 @@ class ModPathWell:
                 tot_time_arr = {iPart: time_diff[iPart].sum() for iPart in part_idx}
 
                 for iPart in part_idx:
-
+                    # Loop through converted rec.arrays of pth_data using part_idx 
                     # Fill recarray using pathline_data
                     particle_data[f"{iPG}-{iNode}-{iPart}"] = copy.deepcopy(pth_data[iPart][:]) # [:-1]
+                    # Export rec.arrays as pd dataframe
+                    df_particle_data[f"{iPG}-{iNode}-{iPart}"] = pd.DataFrame.from_records(data = particle_data[f"{iPG}-{iNode}-{iPart}"],
+                                                                                index = "particleid",
+                                                                                exclude = ["k"]).iloc[:,:]
+                    # Drop duplicates                                                            
+                    df_particle_data[f"{iPG}-{iNode}-{iPart}"] = df_particle_data[f"{iPG}-{iNode}-{iPart}"].drop_duplicates(
+                        subset=["x","y","z","time"], keep = 'first') 
+
                     
-                    # Loop through rec.arrays of pth_data using part_idx 
                     for iParm in parm_list:
 
                         # Material property array
                         material_property_arr = getattr(self,iParm)
                         # dtype of array
                         mat_dtype = material_property_arr.dtype
-                        if mat_dtype == 'object':
-                            dtype_ = '|S20'
-                        else:
-                            dtype_ = mat_dtype
+                        # if mat_dtype == 'object':
+                        #     dtype_ = '|S20'
+                        # else:
+                        dtype_ = mat_dtype
                             
                         # Numpy array values
                         # Use parm values for the first row in both 2D and axisymmetric models
                         if self.model_type in ["axisymmetric","2D"]:
-                            parm_values = np.array([material_property_arr[idx[0],0,idx[2]] for idx in node_indices[iPart]],
-                                                    dtype = [(iParm,mat_dtype)])
+                            parm_values = np.array([material_property_arr[idx[0],0,idx[2]] for idx in node_indices[iPart]])
                         else: # else: Use pathline data columns
-                            parm_values = np.array([material_property_arr[idx[0],idx[1],idx[2]] for idx in node_indices[iPart]],
-                                                dtype = [(iParm,mat_dtype)])
-                        
-                        # Numpy recarray of material property
-                        parm_values_rec = parm_values.view(np.recarray)
+                            parm_values = np.array([material_property_arr[idx[0],idx[1],idx[2]] for idx in node_indices[iPart]])
+
+
                         # Append recarray to particle_data (dict of dicts of np.recarray)
-                        particle_data[f"{iPG}-{iNode}-{iPart}"] = rfn.rec_append_fields(base = particle_data[f"{iPG}-{iNode}-{iPart}"],
-                                                                                        names = iParm, data = parm_values_rec, 
-                                                                                        dtypes=dtype_)
+                        df_particle_data[f"{iPG}-{iNode}-{iPart}"].loc[:,iParm] = parm_values
+
+                        # df_particle_data[f"{iPG}-{iNode}-{iPart}"][iParm] = df_particle_data[f"{iPG}-{iNode}-{iPart}"][iParm].astype(dtype_)
+                        # rfn.rec_append_fields(base = particle_data[f"{iPG}-{iNode}-{iPart}"],
+                        #                                                                 names = iParm, data = parm_values_rec, 
+                        #                                                                 dtypes=dtype_)                        
+                        # # Numpy recarray of material property
+                        # parm_values_rec = parm_values.view(np.recarray)
+                        # # Append recarray to particle_data (dict of dicts of np.recarray)
+                        # particle_data[f"{iPG}-{iNode}-{iPart}"] = rfn.rec_append_fields(base = particle_data[f"{iPG}-{iNode}-{iPart}"],
+                        #                                                                 names = iParm, data = parm_values_rec, 
+                        #                                                                 dtypes=dtype_)
         
-                    # Export rec.arrays as pd dataframe
-                    df_particle_data[f"{iPG}-{iNode}-{iPart}"] = pd.DataFrame.from_records(data = particle_data[f"{iPG}-{iNode}-{iPart}"],
-                                                                                index = "particleid",
-                                                                                exclude = ["k"]).iloc[:,:]   #[:-1]
-                    # Decode object series
-                    for iCol in df_particle_data[f"{iPG}-{iNode}-{iPart}"].columns:
-                        if df_particle_data[f"{iPG}-{iNode}-{iPart}"][iCol].dtype == "object":
-                            df_particle_data[f"{iPG}-{iNode}-{iPart}"].loc[:,iCol] = df_particle_data[f"{iPG}-{iNode}-{iPart}"].loc[:,iCol].str.decode(encoding = 'UTF-8')
+                    # # Export rec.arrays as pd dataframe
+                    # df_particle_data[f"{iPG}-{iNode}-{iPart}"] = pd.DataFrame.from_records(data = particle_data[f"{iPG}-{iNode}-{iPart}"],
+                    #                                                             index = "particleid",
+                    #                                                             exclude = ["k"]).iloc[:,:]   #[:-1]
+
+                    # # Decode object series
+                    # for iCol in df_particle_data[f"{iPG}-{iNode}-{iPart}"].columns:
+                    #     if df_particle_data[f"{iPG}-{iNode}-{iPart}"][iCol].dtype == "object":
+                    #         df_particle_data[f"{iPG}-{iNode}-{iPart}"].loc[:,iCol] = df_particle_data[f"{iPG}-{iNode}-{iPart}"].loc[:,iCol].str.decode(encoding = 'UTF-8')
 
 
                     # Change index name of df_particle                                                           
@@ -2235,6 +2250,10 @@ class ModPathWell:
         # y-coordinate equals 0.5 * self.delc[0] in axisymmetric or 2D model
         if self.model_type in ["axisymmetric","2D"]:
             df_particle.loc[:,"ycoord"] = 0.5 * self.delc[0]
+
+        # remove duplicate records from df_particle
+        df_particle = df_particle.drop_duplicates(
+            subset=["xcoord","ycoord","zcoord","total_travel_time"], keep = 'first')
 
         return df_particle, df_particle_data
         

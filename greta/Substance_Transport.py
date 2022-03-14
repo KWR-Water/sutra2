@@ -946,14 +946,18 @@ class SubstanceTransport():
                 df[df_column] = df[df_column].fillna(value)
             else: 
                 # fill empty rows (with mean value of other records)
-                value_mean = df[df_column].values.mean()
-                df[df_column] = df[df_column].fillna(value_mean)
+                if not dtype_ == 'object':
+                    value_mean = df[df_column].values.mean()
+                    df[df_column] = df[df_column].fillna(value_mean)
+                else: 
+                    df[df_column] = df[df_column].fillna(value)
         # Adjust dtype
         df = df.astype({df_column: dtype_})
 
         return df
 
-    def calc_lambda(self, df_particle, df_flowline, mu1 = 0.149, mu1_std = 0.0932,
+    def calc_lambda(self, df_particle, df_flowline, redox = 'anoxic',
+                mu1 = 0.149, mu1_std = 0.0932,
                 por_eff = 0.33, 
                 grainsize = 0.00025,
                 alpha0 = 0.001,
@@ -1009,20 +1013,7 @@ class SubstanceTransport():
         # Create empty column 'porewater_velocity' in df_particle
         df_particle['porewater_velocity'] = None     
 
-        # Create empty column 'collision_eff' in df_particle
-        df_particle['collision_eff'] = None  
-        # Collission efficiency [np.array]
-        coll_eff = {}
-        for pid in df_flowline.index:
-            coll_eff[pid] = alpha0 * 0.9**((df_particle.loc[pid,"pH"].values - reference_pH)/0.1)
 
-            # Fill df_particle 'collision_eff'
-            df_particle.loc[pid,"collision_eff"] = coll_eff[pid]
-        
-        # Collision efficiency [-]
-        df_flowline = self._df_fillna(df_flowline,
-                                      df_column = 'collision_eff',
-                                      value = alpha0)
         # Pathogen diameter [m]
         df_flowline = self._df_fillna(df_flowline,
                                 df_column = 'organism_diam',
@@ -1046,7 +1037,42 @@ class SubstanceTransport():
         # grain size [m]
         df_particle = self._df_fillna(df_particle,
                                 df_column = 'grainsize',
-                                value = grainsize)      
+                                value = grainsize)
+
+        # # mu1 [day -1]
+        # df_particle = self._df_fillna(df_particle,
+        #                         df_column = 'redox',
+        #                         value = redox, dtype_ = 'object')
+
+        # alpha0 [-]
+        df_particle = self._df_fillna(df_particle,
+                                df_column = 'alpha0',
+                                value = self.removal_parameters['alpha0'][redox])
+        # reference pH [-]
+        df_particle = self._df_fillna(df_particle,
+                                df_column = 'reference_pH',
+                                value = self.removal_parameters['reference_pH'][redox])
+
+        # mu1 [day -1]
+        df_particle = self._df_fillna(df_particle,
+                                df_column = 'mu1',
+                                value = self.removal_parameters['mu1'][redox])
+
+        # Create empty column 'collision_eff' in df_particle
+        df_particle['collision_eff'] = None  
+
+        # Collission efficiency [np.array]
+        coll_eff = {}
+        for pid in df_flowline.index:
+            coll_eff[pid] = df_particle.loc[pid,"alpha0"].values * 0.9**((df_particle.loc[pid,"pH"].values - df_particle.loc[pid,"reference_pH"].values )/0.1)
+
+            # Fill df_particle 'collision_eff'
+            df_particle.loc[pid,"collision_eff"] = coll_eff[pid]
+
+        # Collision efficiency [-]
+        df_flowline = self._df_fillna(df_flowline,
+                                      df_column = 'collision_eff',
+                                      value = self.removal_parameters['alpha0'][redox])
 
         # Create empty column 'k_att' in df_particle
         df_particle['k_att'] = None
@@ -1133,9 +1159,11 @@ class SubstanceTransport():
         
     def calc_advective_microbial_removal(self,df_particle,df_flowline, 
                                         endpoint_id, trackingdirection = "forward",
-                                        mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, reference_pH = 6.8, const_BM = 1.38e-23,
+                                        grainsize = 0.00025, const_BM = 1.38e-23,
                                         temp_water = 11., rho_water = 999.703, organism_diam = 2.33e-8,
-                                        conc_start = 1., conc_gw = 0.):
+                                        conc_start = 1., conc_gw = 0.,
+                                        redox = 'anoxic',
+                                        mu1 = 0.023, alpha0 = 1.E-5, reference_pH = 6.8):
                                         
         ''' Calculate the advective microbial removal along pathlines
             from source to end_point.
@@ -1208,7 +1236,7 @@ class SubstanceTransport():
 
         # Calculate removal coefficient 'lambda' [/day].
         df_particle, df_flowline = self.calc_lambda(df_particle, df_flowline,
-                                                    mu1 = mu1, grainsize = grainsize, alpha0 = alpha0, 
+                                                    redox = redox, mu1 = mu1, grainsize = grainsize, alpha0 = alpha0, 
                                                     reference_pH = reference_pH, const_BM = const_BM,
                                                     temp_water = temp_water, 
                                                     rho_water = rho_water, organism_diam = organism_diam)
