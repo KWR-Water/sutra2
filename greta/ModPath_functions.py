@@ -2203,28 +2203,6 @@ class ModPathWell:
                         # Append recarray to particle_data (dict of dicts of np.recarray)
                         df_particle_data[f"{iPG}-{iNode}-{iPart}"].loc[:,iParm] = parm_values
 
-                        # df_particle_data[f"{iPG}-{iNode}-{iPart}"][iParm] = df_particle_data[f"{iPG}-{iNode}-{iPart}"][iParm].astype(dtype_)
-                        # rfn.rec_append_fields(base = particle_data[f"{iPG}-{iNode}-{iPart}"],
-                        #                                                                 names = iParm, data = parm_values_rec, 
-                        #                                                                 dtypes=dtype_)                        
-                        # # Numpy recarray of material property
-                        # parm_values_rec = parm_values.view(np.recarray)
-                        # # Append recarray to particle_data (dict of dicts of np.recarray)
-                        # particle_data[f"{iPG}-{iNode}-{iPart}"] = rfn.rec_append_fields(base = particle_data[f"{iPG}-{iNode}-{iPart}"],
-                        #                                                                 names = iParm, data = parm_values_rec, 
-                        #                                                                 dtypes=dtype_)
-        
-                    # # Export rec.arrays as pd dataframe
-                    # df_particle_data[f"{iPG}-{iNode}-{iPart}"] = pd.DataFrame.from_records(data = particle_data[f"{iPG}-{iNode}-{iPart}"],
-                    #                                                             index = "particleid",
-                    #                                                             exclude = ["k"]).iloc[:,:]   #[:-1]
-
-                    # # Decode object series
-                    # for iCol in df_particle_data[f"{iPG}-{iNode}-{iPart}"].columns:
-                    #     if df_particle_data[f"{iPG}-{iNode}-{iPart}"][iCol].dtype == "object":
-                    #         df_particle_data[f"{iPG}-{iNode}-{iPart}"].loc[:,iCol] = df_particle_data[f"{iPG}-{iNode}-{iPart}"].loc[:,iCol].str.decode(encoding = 'UTF-8')
-
-
                     # Change index name of df_particle                                                           
                     df_particle_data[f"{iPG}-{iNode}-{iPart}"].index.name = "flowline_id"
                     # Pseudonyms for df_particle column names
