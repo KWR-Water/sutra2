@@ -445,6 +445,17 @@ def test_modpath_run_horizontal_flow_diffuse(organism_name = "MS2"):
     startpoint_id = ["outer_boundary_target_aquifer"]
     
 
+    # ModPath well
+    modpath_hor = MP.ModPathWell(test_conf_hor, #test_phrea,
+                            workspace = "test_ws_conf_hor_diffuse",
+                            modelname = "confined_hor",
+                            bound_left = "xmin",
+                            bound_right = "xmax")
+    # print(modpath_phrea.__dict__)
+    # Run phreatic schematisation
+    modpath_hor.run_model(run_mfmodel = True,
+                        run_mpmodel = True)
+
     # microbial removal properties
     # organism_name = 'MS2'
     alpha0 = {"suboxic": 1.e-3, "anoxic": 1.e-5, "deeply_anoxic": 1.e-5}
@@ -462,18 +473,6 @@ def test_modpath_run_horizontal_flow_diffuse(organism_name = "MS2"):
                 }
     # Removal parameters organism
     rem_parms = removal_parameters[organism_name]
-
-    # ModPath well
-    modpath_hor = MP.ModPathWell(test_conf_hor, #test_phrea,
-                            workspace = "test_ws_conf_hor_diffuse",
-                            modelname = "confined_hor",
-                            bound_left = "xmin",
-                            bound_right = "xmax")
-    # print(modpath_phrea.__dict__)
-    # Run phreatic schematisation
-    modpath_hor.run_model(run_mfmodel = True,
-                        run_mpmodel = True)
-
 
     # Calculate advective microbial removal
     modpath_removal = ST.SubstanceTransport(modpath_hor,
@@ -578,7 +577,6 @@ def test_modpath_run_phreatic_withgravelpack_traveltimes(organism_name = "MS2"):
     # Run phreatic schematisation
     modpath_phrea.run_model(run_mfmodel = True,
                         run_mpmodel = True)
-
     
     # Create travel time plots
     fpath_scatter_times_log = os.path.join(modpath_phrea.dstroot,"log_travel_times_test.png")
@@ -605,6 +603,166 @@ def test_modpath_run_phreatic_withgravelpack_traveltimes(organism_name = "MS2"):
             y_text = 0, lognorm = False, xmin = xmin, xmax = xmax,
             line_dist = 1, dpi = 192, trackingdirection = "forward",
             cmap = 'viridis_r')
+
+    assert modpath_phrea.success_mp
+
+#%%
+def test_modpath_run_phreatic_withgravelpack_removal(organism_name = "MS2"):
+
+
+    ''' Phreatic scheme with gravelpack: modpath run.'''
+    test_phrea_gp = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
+                                computation_method = 'modpath',
+                                what_to_export='all',
+                                removal_function = 'mbo',
+                                # biodegradation_sorbed_phase = False,
+                                well_discharge=-319.4*24,
+                                # vertical_resistance_shallow_aquifer=500,
+                                porosity_vadose_zone=0.38,
+                                porosity_shallow_aquifer=0.35,
+                                porosity_target_aquifer=0.35,
+                                recharge_rate=0.3/365.25,
+                                moisture_content_vadose_zone=0.15,
+                                ground_surface = 22.0,
+                                thickness_vadose_zone_at_boundary=5.0,
+                                thickness_shallow_aquifer=10.0,
+                                thickness_target_aquifer=40.0,
+                                hor_permeability_target_aquifer=35.0,
+                                hor_permeability_shallow_aquifer = 0.02,
+                                thickness_full_capillary_fringe=0.4,
+                                redox_vadose_zone='anoxic', #'suboxic',
+                                redox_shallow_aquifer='anoxic',
+                                redox_target_aquifer='deeply_anoxic',
+                                pH_vadose_zone=5.,
+                                pH_shallow_aquifer=6.,
+                                pH_target_aquifer=7.,
+                                dissolved_organic_carbon_vadose_zone=10., 
+                                dissolved_organic_carbon_shallow_aquifer=4., 
+                                dissolved_organic_carbon_target_aquifer=2.,
+                                fraction_organic_carbon_vadose_zone=0.001,
+                                fraction_organic_carbon_shallow_aquifer=0.0005,
+                                fraction_organic_carbon_target_aquifer=0.0005, 
+                                temperature=11.,
+                                solid_density_vadose_zone= 2.650, 
+                                solid_density_shallow_aquifer= 2.650, 
+                                solid_density_target_aquifer= 2.650, 
+                                diameter_borehole = 0.75,
+                                substance = organism_name,
+                                diameter_filterscreen = 0.2,
+                                point_input_concentration = 100.,
+                                discharge_point_contamination = 100.,#made up value
+                                top_clayseal = 17,
+                                compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
+                                # Modpath grid parms
+                                ncols_near_well = 20,
+                                ncols_far_well = 80,
+                            )
+
+    test_phrea_gp.make_dictionary()
+
+    # Remove/empty point_parameters
+    test_phrea_gp.point_parameters = {}
+
+    # print(test_phrea.__dict__)
+    modpath_phrea = MP.ModPathWell(test_phrea_gp, #test_phrea,
+                            workspace = "test_ws_phrea_gp_removal",
+                            modelname = "phreatic",
+                            bound_left = "xmin",
+                            bound_right = "xmax")
+    # print(modpath_phrea.__dict__)
+    # Run phreatic schematisation
+    modpath_phrea.run_model(run_mfmodel = True,
+                        run_mpmodel = True)
+
+
+    # microbial removal properties
+    # organism_name = 'MS2'
+    alpha0 = {"suboxic": 1.e-3, "anoxic": 1.e-5, "deeply_anoxic": 1.e-5}
+    reference_pH = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8}
+    organism_diam =  2.33e-8
+    mu1 = {"suboxic": 0.149,"anoxic": 0.023,"deeply_anoxic": 0.023}
+
+    removal_parameters = {organism_name: 
+                    {"organism_name": organism_name,
+                        "alpha0": alpha0,
+                        "reference_pH": reference_pH,
+                        "organism_diam": organism_diam,
+                        "mu1": mu1
+                    }
+                }
+    # Removal parameters organism
+    rem_parms = removal_parameters[organism_name]
+
+    # Calculate advective microbial removal
+    modpath_removal = ST.SubstanceTransport(modpath_phrea,
+                            organism = organism_name,
+                            alpha0_suboxic = rem_parms["alpha0"]["suboxic"],
+                            alpha0_anoxic = rem_parms["alpha0"]["anoxic"],
+                            alpha0_deeply_anoxic =rem_parms["alpha0"]["deeply_anoxic"],
+                            reference_pH_suboxic =rem_parms["reference_pH"]["suboxic"],
+                            reference_pH_anoxic =rem_parms["reference_pH"]["anoxic"],
+                            reference_pH_deeply_anoxic =rem_parms["reference_pH"]["deeply_anoxic"],
+                            mu1_suboxic = rem_parms["mu1"]["suboxic"],
+                            mu1_anoxic = rem_parms["mu1"]["anoxic"],
+                            mu1_deeply_anoxic = rem_parms["mu1"]["deeply_anoxic"],
+                            organism_diam = rem_parms["organism_diam"]
+                            )
+ 
+    # Calculate advective microbial removal
+    # Final concentration per endpoint_id
+    C_final = {}
+    for endpoint_id in modpath_phrea.schematisation_dict.get("endpoint_id"):
+        df_particle, df_flowline, C_final[endpoint_id] = modpath_removal.calc_advective_microbial_removal(
+                                            modpath_phrea.df_particle, modpath_phrea.df_flowline, 
+                                            endpoint_id = endpoint_id,
+                                            trackingdirection = modpath_phrea.trackingdirection,
+                                            conc_start = 1., conc_gw = 0.)
+    
+        # Create travel time plots
+        fpath_scatter_times_log = os.path.join(modpath_phrea.dstroot,"log_travel_times_" + endpoint_id + ".png")
+        fpath_scatter_times = os.path.join(modpath_phrea.dstroot,"travel_times_" + endpoint_id + ".png")
+        # # df particle
+        # df_particle = modpath_removal.df_particle
+        # time limits
+        tmin, tmax = 0.1, 10000.
+        # xcoord bounds
+        xmin, xmax = 0., 50.
+
+        # Create travel time plots (lognormal)
+        modpath_removal.plot_age_distribution(df_particle=df_particle,
+                vmin = tmin,vmax = tmax,
+                fpathfig = fpath_scatter_times_log, figtext = None,x_text = 0,
+                y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
+                line_dist = 1, dpi = 192, trackingdirection = "forward",
+                cmap = 'viridis_r')
+
+        # Create travel time plots (linear)
+        modpath_removal.plot_age_distribution(df_particle=df_particle,
+                vmin = 0.,vmax = tmax,
+                fpathfig = fpath_scatter_times, figtext = None,x_text = 0,
+                y_text = 0, lognorm = False, xmin = xmin, xmax = xmax,
+                line_dist = 1, dpi = 192, trackingdirection = "forward",
+                cmap = 'viridis_r')
+
+        # Create concentration plots
+        fpath_scatter_removal_log = os.path.join(modpath_phrea.dstroot,"log_removal_" + endpoint_id + ".png")
+
+        # relative conc limits
+        cmin, cmax = 1.e-21, 1.
+        # xcoord bounds
+        xmin, xmax = 0., 50.
+
+        # Create travel time plots (lognormal)
+        modpath_removal.plot_logremoval(df_particle=df_particle,
+                df_flowline=df_flowline,
+                vmin = cmin,vmax = cmax,
+                fpathfig = fpath_scatter_removal_log, figtext = None,x_text = 0,
+                y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
+                line_dist = 1, dpi = 192, trackingdirection = "forward",
+                cmap = 'viridis_r')
+
+
+                
 
     assert modpath_phrea.success_mp
 

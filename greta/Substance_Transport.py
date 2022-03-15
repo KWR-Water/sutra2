@@ -22,7 +22,11 @@
 # INITIALISATION OF PYTHON e.g. packages, etc.
 # ------------------------------------------------------------------------------
 
+# Plotting modules
 import matplotlib.pyplot as plt
+import matplotlib 
+import matplotlib.colors as colors
+
 import numpy as np
 import pandas as pd
 import os
@@ -1307,16 +1311,242 @@ class SubstanceTransport():
 
 
         # return (adjusted) df_particle and df_flowline
-        return df_particle, df_flowline, C_final    
+        return df_particle, df_flowline, C_final
 
+    def plot_age_distribution(self, df_particle: pd.DataFrame,
+                                vmin = 0.,vmax = 1.,orientation = {'row': 0},
+                                fpathfig = None, figtext = None,x_text = 0,
+                                y_text = 0, lognorm = True, xmin = 0., xmax = None,
+                                line_dist = 1, dpi = 192, trackingdirection = "forward",
+                                cmap = 'viridis_r'):
+        ''' Create pathline plots with residence times 
+            using colours as indicator.
+            with: 
+            - df_particle: dataframe containing xyzt-points of the particle paths.
+            - fpathfig = output location of plots
+            figtext: figure text to show within plot starting at
+            x-location 'x_text' and y-location 'y_text'.
+            lognorm: True/False (if vmin <= 0. --> vmin = 1.e-5)
+            line_dist: min. distance between well pathlines at source (m)
+            line_freq: show every 'X' pathlines
+            dpi: pixel density
+            trackingdirection: direction of calculating flow along pathlines"
+            cmap: Uses colormap 'viridis_r' (viridis reversed as default)
+            '''
+   
+        if lognorm:
+            if vmin <= 0.:
+                vmin = 1.e-2
+
+        # Keep track of minimum line distance between pathlines ('line_dist')
+        xmin_plot = 0.
+        # Flowline IDs
+        flowline_ID = list(df_particle.index.unique())
+        for fid in flowline_ID:
+
+            x_points = df_particle.loc[df_particle.index == fid, "xcoord"].values
+#           y_points = df_particle.loc[df_particle.index == fid, "ycoord"].values
+            z_points = df_particle.loc[df_particle.index == fid, "zcoord"].values
+            # Cumulative travel times
+            time_points = df_particle.loc[df_particle.index == fid, "total_travel_time"].values
+
+            # Plot every 'line_dist' number of meters one line
+            if trackingdirection == "forward":
+                # x_origin: starting position of pathline
+                x_origin = x_points[0]  
+            else:
+                # x_origin: starting position of pathline
+                x_origin = x_points[-1]
+
+            # Check if line should be plotted
+            if x_origin > xmin_plot:
+                xmin_plot += line_dist
+                pass
+            else:
+                continue
+
+            # Combine to xyz scatter array with x,y,values
+            xyz_scatter = np.stack((x_points,z_points,time_points), axis = 1)
+
+            # Plot function (lines))
+            marker_size=0.05  # 's' in functie scatter
+            if lognorm:
+                # formatting of values (log or linear?)
+                norm_vals = colors.LogNorm()
+                # norm_labels = [str(iLog) for iLog in [8,7,6,5,4,3,2,1,0]]
+            else:
+                # formatting of values (log or linear: None?)
+                norm_vals = None
+                
+            # Mask values outside of vmin & vmax
+            time_vals = np.ma.masked_where((xyz_scatter[:,2] > vmax), xyz_scatter[:,2])
+            plt.scatter(xyz_scatter[:,0],
+                        xyz_scatter[:,1],
+                        s = marker_size,
+                        cmap = cmap,
+                        c=time_vals,
+                        marker = 'o',
+                        norm= norm_vals)
+            plt.plot(xyz_scatter[:,0],
+                        xyz_scatter[:,1], c = 'k', lw = 0.1)  
+                        # 'o', markersize = marker_size,
+                        # markerfacecolor="None", markeredgecolor='black') #, lw = 0.1)
+            plt.xlim(xmin,xmax)
+            plt.clim(vmin,vmax)
+        # Voeg kleurenbalk toe
+        cbar = plt.colorbar()
+        ticklabs_old = [t.get_text() for t in cbar.ax.get_yticklabels()]
+        # print(ticklabs_old)
+        # ticklabs_new = [str(iLab).replace("-0.0","0.0") for iLab in \
+        #                 np.linspace(-np.log10(vmin),0.,num = len(ticklabs_old), endpoint = True)]
+        # cbar.ax.set_yticklabels(ticklabs_new)
+        
+        # cbar.set_yticks([mn,md,mx])
+        # cbar.ax.set_yticklabels(norm_labels)
+        cbar.set_label("Residence time [days]")
+    #    cbar.set_label("Concentratie [N/L]")
+        # Titel
+        # plt.title("Pathogenenverwijdering in grondwater")
+        # Label x-as
+        plt.xlabel("Distance (m)")
+        # Label y-as
+        plt.ylabel("Depth (m)")
+        # Tekst voor in de figuur
+        if figtext is not None:
+            plt.text(x = x_text,y = y_text,s = figtext,
+                    bbox={'facecolor': 'gray', 'alpha': 0.5, 'pad': 10})
+            plt.subplots_adjust(left=0.5)
+        if fpathfig is None:
+            plt.show()
+        else:
+            plt.savefig(fpathfig, dpi = dpi)
+        # Sluit figuren af
+        plt.close('all')    
+
+
+    def plot_logremoval(self, df_particle: pd.DataFrame,
+                        df_flowline: pd.DataFrame,
+                        vmin = 0.,vmax = 1.,orientation = {'row': 0},
+                        fpathfig = None, figtext = None,x_text = 0,
+                        y_text = 0, lognorm = True, xmin = 0., xmax = None,
+                        line_dist = 1, dpi = 192, trackingdirection = "forward",
+                        cmap = 'viridis_r'):
+        ''' Create pathline plots with log removal
+            using colours as indicator.
+            with: 
+            - df_particle: dataframe containing xyzt-points of the particle paths.
+            - fpathfig = output location of plots
+            figtext: figure text to show within plot starting at
+            x-location 'x_text' and y-location 'y_text'.
+            lognorm: True/False (if vmin <= 0. --> vmin = 1.e-5)
+            line_dist: min. distance between well pathlines at source (m)
+            line_freq: show every 'X' pathlines
+            dpi: pixel density
+            trackingdirection: direction of calculating flow along pathlines"
+            cmap: Uses colormap 'viridis_r' (viridis reversed as default)
+            '''
+            
+        if lognorm:
+            if vmin <= 0.:
+                vmin = 1.e-2
+
+        # Keep track of minimum line distance between pathlines ('line_dist')
+        xmin_plot = 0.
+        # Flowline IDs
+        flowline_ID = list(df_particle.index.unique())
+        for fid in flowline_ID:
+
+            x_points = df_particle.loc[df_particle.index == fid, "xcoord"].values
+#           y_points = df_particle.loc[df_particle.index == fid, "ycoord"].values
+            z_points = df_particle.loc[df_particle.index == fid, "zcoord"].values
+            # Concentration along pathlines
+            conc_points = df_particle.loc[df_particle.index == fid, "steady_state_concentration"].values
+            # Starting concentration of pathline
+            starting_concentration = df_flowline.loc[fid,"starting_concentration"]
+            # Concentration relative to input
+            relative_conc = conc_points / starting_concentration
+
+            # Plot every 'line_dist' number of meters one line
+            if trackingdirection == "forward":
+                # x_origin: starting position of pathline
+                x_origin = x_points[0]  
+            else:
+                # x_origin: starting position of pathline
+                x_origin = x_points[-1]
+
+            # Check if line should be plotted
+            if x_origin > xmin_plot:
+                xmin_plot += line_dist
+                pass
+            else:
+                continue
+
+            # Combine to xyz scatter array with x,y,values
+            xyz_scatter = np.stack((x_points,z_points,relative_conc), axis = 1)
+
+            # Plot function (lines))
+            marker_size=0.05  # 's' in functie scatter
+            if lognorm:
+                # formatting of values (log or linear?)
+                norm_vals = colors.LogNorm()
+                norm_labels = [str(iLog) for iLog in [20,18,16,14,12,10,8,6,4,2,0]]
+            else:
+                # formatting of values (log or linear: None?)
+                norm_vals = None
+                
+            # Mask values outside of vmin & vmax
+            conc_vals = np.ma.masked_where((xyz_scatter[:,2] < vmin) | (xyz_scatter[:,2] > vmax), xyz_scatter[:,2])
+            plt.scatter(xyz_scatter[:,0],
+                        xyz_scatter[:,1],
+                        s = marker_size,
+                        cmap = cmap,
+                        c = conc_vals,
+                        marker = 'o',
+                        norm= norm_vals)
+            plt.plot(xyz_scatter[:,0],
+                        xyz_scatter[:,1], c = 'k', lw = 0.1)  
+                        # 'o', markersize = marker_size,
+                        # markerfacecolor="None", markeredgecolor='black') #, lw = 0.1)
+            plt.xlim(xmin,xmax)
+            plt.clim(vmin,vmax)
+        # Voeg kleurenbalk toe
+        cbar = plt.colorbar()
+        ticklabs_old = [t.get_text() for t in cbar.ax.get_yticklabels()]
+        # print(ticklabs_old)
+        # ticklabs_new = [str(iLab).replace("-0.0","0.0") for iLab in \
+        #                 np.linspace(-np.log10(vmin),0.,num = len(ticklabs_old), endpoint = True)]
+        # cbar.ax.set_yticklabels(ticklabs_new)
+        
+        # cbar.set_yticks([mn,md,mx])
+        cbar.ax.set_yticklabels(norm_labels)
+        cbar.set_label("Log removal [-]")
+    #    cbar.set_label("Concentratie [N/L]")
+        # Titel
+        # plt.title("Pathogenenverwijdering in grondwater")
+        # Label x-as
+        plt.xlabel("Distance (m)")
+        # Label y-as
+        plt.ylabel("Depth (m)")
+        # Tekst voor in de figuur
+        if figtext is not None:
+            plt.text(x = x_text,y = y_text,s = figtext,
+                    bbox={'facecolor': 'gray', 'alpha': 0.5, 'pad': 10})
+            plt.subplots_adjust(left=0.5)
+        if fpathfig is None:
+            plt.show()
+        else:
+            plt.savefig(fpathfig, dpi = dpi)
+        # Sluit figuren af
+        plt.close('all')    
+        
     def compute_pathogen_removal(self):
         #AH_todo
         pass
 
-    def plot_age_distribution(self):
-        #AH_todo
-        pass
+    # def plot_age_distribution(self):
+    #     #AH_todo
+    #     pass
 
-    def plot_logremoval(self):
-        #AH_todo
-        pass
+    # def plot_logremoval(self):
+    #     #AH_todo
+    #     pass
