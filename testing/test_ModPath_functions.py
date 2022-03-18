@@ -201,85 +201,6 @@ def test_modpath_run_phreatic_nogravelpack(organism_name = "MS2"):
 
 def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
     ''' Horizontal flow test in target_aquifer: modpath run.'''
-    # well discharge
-    well_discharge = -1000.
-    # distance to boundary
-    distance_boundary = 550.
-    # Center depth of target aquifer
-    z_point = 0 - 0.1 - 10.
-    x_point = distance_boundary - 1.
-    # Phreatic scheme without gravelpack: modpath run.
-    test_conf_hor = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
-                                computation_method = 'modpath',
-                                what_to_export='all',
-                                removal_function = 'mbo',
-                                # biodegradation_sorbed_phase = False,
-                                well_discharge= well_discharge,
-                                # vertical_resistance_shallow_aquifer=500,
-                                porosity_vadose_zone=0.33,
-                                porosity_shallow_aquifer=0.33,
-                                porosity_target_aquifer=0.33,
-                                recharge_rate=0.,
-                                moisture_content_vadose_zone=0.15,
-                                ground_surface = 0.0,
-                                thickness_vadose_zone_at_boundary=0.,
-                                thickness_shallow_aquifer=0.1,
-                                thickness_target_aquifer=20.0,
-                                hor_permeability_target_aquifer=10.0,
-                                hor_permeability_shallow_aquifer = 1.,
-                                vertical_anisotropy_shallow_aquifer = 1000.,
-                                thickness_full_capillary_fringe=0.4,
-                                redox_vadose_zone='anoxic', #'suboxic',
-                                redox_shallow_aquifer='anoxic',
-                                redox_target_aquifer='anoxic',
-                                pH_vadose_zone=7.5,
-                                pH_shallow_aquifer=7.5,
-                                pH_target_aquifer=7.5,
-                                dissolved_organic_carbon_vadose_zone=1., 
-                                dissolved_organic_carbon_shallow_aquifer=1., 
-                                dissolved_organic_carbon_target_aquifer=1.,
-                                fraction_organic_carbon_vadose_zone=0.001,
-                                fraction_organic_carbon_shallow_aquifer=0.001,
-                                fraction_organic_carbon_target_aquifer=0.001, 
-                                temperature=12.,
-                                solid_density_vadose_zone= 2.650, 
-                                solid_density_shallow_aquifer= 2.650, 
-                                solid_density_target_aquifer= 2.650, 
-                                diameter_borehole = 0.2,
-                                substance = organism_name,
-                                diameter_filterscreen = 0.2,
-                                top_clayseal = 0,
-                                compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
-                                model_radius = distance_boundary,
-                                ncols_near_well = 20,
-                                ncols_far_well = 80,
-                                # Point contamination
-                                point_input_concentration = 1.,
-                                discharge_point_contamination = abs(well_discharge / 10.),
-                                distance_point_contamination_from_well = x_point,
-                                depth_point_contamination = z_point,
-                                )
-
-    test_conf_hor.make_dictionary()
-    ### Adjust ibound_parameters to add horizontal flow ###
-    
-    # Confined top boundary ; no recharge_parameters
-    test_conf_hor.ibound_parameters.pop("top_boundary1")
-    # Add outer boundary for horizontal flow test
-    test_conf_hor.ibound_parameters["outer_boundary_target_aquifer"] = {
-                            'top': test_conf_hor.bottom_shallow_aquifer,
-                            'bot': test_conf_hor.bottom_target_aquifer,
-                            'xmin': test_conf_hor.model_radius - 1.,
-                            'xmax': test_conf_hor.model_radius,
-                            'ibound': -1
-                            }
-    # Remove/empty diffuse_parameters
-    test_conf_hor.diffuse_parameters = {}
-    
-
-    # Add point parameters                       
-    startpoint_id = ["outer_boundary_target_aquifer"]
-    
 
     # microbial removal properties
     # organism_name = 'MS2'
@@ -299,52 +220,146 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
     # Removal parameters organism
     rem_parms = removal_parameters[organism_name]
 
-    # ModPath well
-    modpath_hor = MP.ModPathWell(test_conf_hor, #test_phrea,
-                            workspace = "test_ws_conf_hor_pnts",
-                            modelname = "confined_hor",
-                            bound_left = "xmin",
-                            bound_right = "xmax")
-    # print(modpath_phrea.__dict__)
-    # Run phreatic schematisation
-    modpath_hor.run_model(run_mfmodel = True,
-                        run_mpmodel = True)
+    # dataframes
+    df_particle, df_flowline = {}, {}
+
+    # Distances to boundary
+    dist_boundary = [20, 50, 100, 150, 200]
+
+    df_conc = pd.DataFrame(index=dist_boundary, columns = ["Final_concentration"])
+    df_conc.index.name = "Boundary_distance"
+
+    for iDist in dist_boundary:
+
+        # well discharge
+        well_discharge = -1000.
+        # distance to boundary
+        distance_boundary = float(iDist)
+        # Center depth of target aquifer
+        z_point = 0 - 0.1 - 10.
+        x_point = distance_boundary - 0.5
+        # Phreatic scheme without gravelpack: modpath run.
+        test_conf_hor = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
+                                    computation_method = 'modpath',
+                                    what_to_export='all',
+                                    removal_function = 'mbo',
+                                    # biodegradation_sorbed_phase = False,
+                                    well_discharge= well_discharge,
+                                    # vertical_resistance_shallow_aquifer=500,
+                                    porosity_vadose_zone=0.33,
+                                    porosity_shallow_aquifer=0.33,
+                                    porosity_target_aquifer=0.33,
+                                    recharge_rate=0.,
+                                    moisture_content_vadose_zone=0.15,
+                                    ground_surface = 0.0,
+                                    thickness_vadose_zone_at_boundary=0.,
+                                    thickness_shallow_aquifer=0.1,
+                                    thickness_target_aquifer=20.0,
+                                    hor_permeability_target_aquifer=10.0,
+                                    hor_permeability_shallow_aquifer = 1.,
+                                    vertical_anisotropy_shallow_aquifer = 1000.,
+                                    thickness_full_capillary_fringe=0.4,
+                                    redox_vadose_zone='anoxic', #'suboxic',
+                                    redox_shallow_aquifer='anoxic',
+                                    redox_target_aquifer='anoxic',
+                                    pH_vadose_zone=7.5,
+                                    pH_shallow_aquifer=7.5,
+                                    pH_target_aquifer=7.5,
+                                    dissolved_organic_carbon_vadose_zone=1., 
+                                    dissolved_organic_carbon_shallow_aquifer=1., 
+                                    dissolved_organic_carbon_target_aquifer=1.,
+                                    fraction_organic_carbon_vadose_zone=0.001,
+                                    fraction_organic_carbon_shallow_aquifer=0.001,
+                                    fraction_organic_carbon_target_aquifer=0.001, 
+                                    temperature=12.,
+                                    solid_density_vadose_zone= 2.650, 
+                                    solid_density_shallow_aquifer= 2.650, 
+                                    solid_density_target_aquifer= 2.650, 
+                                    diameter_borehole = 0.2,
+                                    substance = organism_name,
+                                    diameter_filterscreen = 0.2,
+                                    top_clayseal = 0,
+                                    compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
+                                    model_radius = distance_boundary,
+                                    ncols_near_well = 10,
+                                    ncols_far_well = int(distance_boundary/5),
+                                    # Point contamination
+                                    point_input_concentration = 1.,
+                                    discharge_point_contamination = abs(well_discharge),
+                                    distance_point_contamination_from_well = x_point,
+                                    depth_point_contamination = z_point,
+                                    )
+
+        test_conf_hor.make_dictionary()
+        ### Adjust ibound_parameters to add horizontal flow ###
+
+        # Confined top boundary ; no recharge_parameters
+        test_conf_hor.ibound_parameters.pop("top_boundary1")
+        # Add outer boundary for horizontal flow test
+        test_conf_hor.ibound_parameters["outer_boundary_target_aquifer"] = {
+                                'top': test_conf_hor.bottom_shallow_aquifer,
+                                'bot': test_conf_hor.bottom_target_aquifer,
+                                'xmin': test_conf_hor.model_radius - 1.,
+                                'xmax': test_conf_hor.model_radius,
+                                'ibound': -1
+                                }
+        # Remove/empty diffuse_parameters
+        test_conf_hor.diffuse_parameters = {}
+
+        # ModPath well
+        modpath_hor = MP.ModPathWell(test_conf_hor, #test_phrea,
+                                workspace = "test_ws_conf_hor_pnts",
+                                modelname = "confined_hor",
+                                bound_left = "xmin",
+                                bound_right = "xmax")
+        # print(modpath_phrea.__dict__)
+
+        # Run phreatic schematisation
+        modpath_hor.run_model(run_mfmodel = True,
+                            run_mpmodel = True)
 
 
-    # Calculate advective microbial removal
-    modpath_removal = ST.SubstanceTransport(modpath_hor,
-                            organism = organism_name,
-                            alpha0_suboxic = rem_parms["alpha0"]["suboxic"],
-                            alpha0_anoxic = rem_parms["alpha0"]["anoxic"],
-                            alpha0_deeply_anoxic =rem_parms["alpha0"]["deeply_anoxic"],
-                            reference_pH_suboxic =rem_parms["reference_pH"]["suboxic"],
-                            reference_pH_anoxic =rem_parms["reference_pH"]["anoxic"],
-                            reference_pH_deeply_anoxic =rem_parms["reference_pH"]["deeply_anoxic"],
-                            mu1_suboxic = rem_parms["mu1"]["suboxic"],
-                            mu1_anoxic = rem_parms["mu1"]["anoxic"],
-                            mu1_deeply_anoxic = rem_parms["mu1"]["deeply_anoxic"],
-                            organism_diam = rem_parms["organism_diam"]
-                            )
- 
-    # Calculate advective microbial removal
-    # Final concentration per endpoint_id
-    C_final = {}
-    for endpoint_id in modpath_hor.schematisation_dict.get("endpoint_id"):
-        df_particle, df_flowline, C_final[endpoint_id] = modpath_removal.calc_advective_microbial_removal(
-                                            modpath_hor.df_particle, modpath_hor.df_flowline, 
-                                            endpoint_id = endpoint_id,
-                                            trackingdirection = modpath_hor.trackingdirection,
-                                            conc_start = 1., conc_gw = 0.)
-
-    # df_particle file name 
-    particle_fname = os.path.join(modpath_hor.dstroot,modpath_hor.schematisation_type + "_df_particle_microbial_removal.csv")
-    # Save df_particle 
-    df_particle.to_csv(particle_fname)
+        # Calculate advective microbial removal
+        modpath_removal = ST.SubstanceTransport(modpath_hor,
+                                organism = organism_name,
+                                alpha0_suboxic = rem_parms["alpha0"]["suboxic"],
+                                alpha0_anoxic = rem_parms["alpha0"]["anoxic"],
+                                alpha0_deeply_anoxic =rem_parms["alpha0"]["deeply_anoxic"],
+                                reference_pH_suboxic =rem_parms["reference_pH"]["suboxic"],
+                                reference_pH_anoxic =rem_parms["reference_pH"]["anoxic"],
+                                reference_pH_deeply_anoxic =rem_parms["reference_pH"]["deeply_anoxic"],
+                                mu1_suboxic = rem_parms["mu1"]["suboxic"],
+                                mu1_anoxic = rem_parms["mu1"]["anoxic"],
+                                mu1_deeply_anoxic = rem_parms["mu1"]["deeply_anoxic"],
+                                organism_diam = rem_parms["organism_diam"]
+                                )
     
-    # df_flowline file name
-    flowline_fname = os.path.join(modpath_hor.dstroot,modpath_hor.schematisation_type + "_df_flowline_microbial_removal.csv")
-    # Save df_flowline
-    df_flowline.to_csv(flowline_fname)
+        # Calculate advective microbial removal
+        # Final concentration per endpoint_id
+        C_final = {}
+        for endpoint_id in modpath_hor.schematisation_dict.get("endpoint_id"):
+            df_particle[iDist], df_flowline[iDist], C_final[endpoint_id] = modpath_removal.calc_advective_microbial_removal(
+                                                modpath_hor.df_particle, modpath_hor.df_flowline, 
+                                                endpoint_id = endpoint_id,
+                                                trackingdirection = modpath_hor.trackingdirection,
+                                                conc_start = 1., conc_gw = 0.)
+
+        # Add final concentration to summary dataframe
+        df_conc.loc[iDist,"Final_concentration"] = C_final[endpoint_id]
+
+        # df_particle file name 
+        particle_fname = os.path.join(modpath_hor.dstroot,modpath_hor.schematisation_type + "_df_particle_microbial_removal" + str(iDist) + "m.csv")
+        # Save df_particle 
+        df_particle[iDist].to_csv(particle_fname)
+        
+        # df_flowline file name
+        flowline_fname = os.path.join(modpath_hor.dstroot,modpath_hor.schematisation_type + "_df_flowline_microbial_removal" + str(iDist) + "m.csv")
+        # Save df_flowline
+        df_flowline[iDist].to_csv(flowline_fname)
+
+    # Save summary dataframe of final concentration (dependent on boudary type)
+    summary_conc_fname = os.path.join(modpath_hor.dstroot,"Final_concentrations.csv")
+    df_conc.to_csv(summary_conc_fname)
 
     assert modpath_hor.success_mp
 
@@ -354,10 +369,10 @@ def test_modpath_run_horizontal_flow_diffuse(organism_name = "MS2"):
     # well discharge
     well_discharge = -1000.
     # distance to boundary
-    distance_boundary = 550.
+    distance_boundary = 50.
     # Center depth of target aquifer
     z_point = 0 - 0.1 - 10.
-    x_point = distance_boundary - 1.
+    x_point = distance_boundary - 0.5
     # Phreatic scheme without gravelpack: modpath run.
     test_conf_hor = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
                                 computation_method = 'modpath',
@@ -401,8 +416,8 @@ def test_modpath_run_horizontal_flow_diffuse(organism_name = "MS2"):
                                 top_clayseal = 0,
                                 compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
                                 model_radius = distance_boundary,
-                                ncols_near_well = 20,
-                                ncols_far_well = 80,
+                                ncols_near_well = 10,
+                                ncols_far_well = int(distance_boundary/5),
                                 # Point contamination
                                 point_input_concentration = 1.,
                                 discharge_point_contamination = abs(well_discharge),
@@ -508,6 +523,50 @@ def test_modpath_run_horizontal_flow_diffuse(organism_name = "MS2"):
     flowline_fname = os.path.join(modpath_hor.dstroot,modpath_hor.schematisation_type + "_df_flowline_microbial_removal.csv")
     # Save df_flowline
     df_flowline.to_csv(flowline_fname)
+
+
+    # Create travel time plots
+    fpath_scatter_times_log = os.path.join(modpath_hor.dstroot,"log_travel_times_" + endpoint_id + ".png")
+    fpath_scatter_times = os.path.join(modpath_hor.dstroot,"travel_times_" + endpoint_id + ".png")
+    # # df particle
+    # df_particle = modpath_removal.df_particle
+    # time limits
+    tmin, tmax = 0.1, 10000.
+    # xcoord bounds
+    xmin, xmax = 0., min(50., x_point)
+
+    # Create travel time plots (lognormal)
+    modpath_removal.plot_age_distribution(df_particle=df_particle,
+            vmin = tmin,vmax = tmax,
+            fpathfig = fpath_scatter_times_log, figtext = None,x_text = 0,
+            y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
+            line_dist = 1, dpi = 192, trackingdirection = "forward",
+            cmap = 'viridis_r')
+
+    # Create travel time plots (linear)
+    modpath_removal.plot_age_distribution(df_particle=df_particle,
+            vmin = 0.,vmax = tmax,
+            fpathfig = fpath_scatter_times, figtext = None,x_text = 0,
+            y_text = 0, lognorm = False, xmin = xmin, xmax = xmax,
+            line_dist = 1, dpi = 192, trackingdirection = "forward",
+            cmap = 'viridis_r')
+
+    # Create concentration plots
+    fpath_scatter_removal_log = os.path.join(modpath_hor.dstroot,"log_removal_" + endpoint_id + ".png")
+
+    # relative conc limits
+    cmin, cmax = 1.e-21, 1.
+    # xcoord bounds
+    xmin, xmax = 0., min(50., x_point)
+
+    # Create travel time plots (lognormal)
+    modpath_removal.plot_logremoval(df_particle=df_particle,
+            df_flowline=df_flowline,
+            vmin = cmin,vmax = cmax,
+            fpathfig = fpath_scatter_removal_log, figtext = None,x_text = 0,
+            y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
+            line_dist = 1, dpi = 192, trackingdirection = "forward",
+            cmap = 'viridis_r')
 
     assert modpath_hor.success_mp
 
@@ -1115,6 +1174,9 @@ def test_travel_time_distribution_phreatic(organism_name = "MS2"):
     else:
         print("Success, no error in TTD!")
 
-# # %%
+
+
+
+#%%
 # if __name__ == "__main__":
 #     test_modpath_run_phreatic_withgravelpack()

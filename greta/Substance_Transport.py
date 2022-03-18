@@ -104,6 +104,8 @@ class Organism:
         self.organism_name = organism_name
 
         # Dict    # Acties Steven 25-1-22
+
+        # Naming convention organism: Uppercamelcase species
         micro_organism_dict = {
             "MS2": 
                 {"organism_name": "MS2",
@@ -111,20 +113,39 @@ class Organism:
                         "suboxic": 1.e-3, 
                         "anoxic": 1.e-5, 
                         "deeply_anoxic": 1.e-5
-                        },
+                    },
                     "reference_pH": {
                         "suboxic": 6.6, 
                         "anoxic": 6.8, 
                         "deeply_anoxic": 6.8
-                        },
+                    },
                     "organism_diam": 2.33e-8,
                     "mu1": {
-                        "suboxic": 0.149, 
+                        "suboxic": 0.039, 
                         "anoxic": 0.023, 
                         "deeply_anoxic": 0.023
-                        }
+                    }
+                },
+                # ALLES X 10
+            "Escherichia coli": 
+                {"organism_name": "Escherichia coli",
+                    "alpha0": {
+                        "suboxic": 1.e-2, 
+                        "anoxic": 1.e-4, 
+                        "deeply_anoxic": 1.e-4
+                    },
+                    "reference_pH": {
+                        "suboxic": 6.6, 
+                        "anoxic": 6.8, 
+                        "deeply_anoxic": 6.8
+                    },
+                    "organism_diam": 1.5e-6,
+                    "mu1": {
+                        "suboxic": 0.39, 
+                        "anoxic": 0.23, 
+                        "deeply_anoxic": 0.23
+                    }
                 }
-            
             }
         #@ Steven voeg toe: micro_organism_dict
         # self.micro_organism_dict = micro_organism_dict[substance_name]
@@ -1102,11 +1123,11 @@ class SubstanceTransport():
                     v_por[pid][i] = v_por[pid][i-1]
 
             # Fill column relative_distance in 'df_particle' 
-            df_particle.loc[pid,'relative_distance'] = np.array(list(dist[pid][1:]) + [0])
+            df_particle.loc[pid,'relative_distance'] = np.array([0] + list(dist[pid][1:]))
             # df_particle.loc[pid,'relative_distance'][-1] = 0
 
             # Fill porewater velocity in 'df_particle'
-            df_particle.loc[pid,"porewater_velocity"] = np.array(list(v_por[pid]) + [v_por[pid][-1]])
+            df_particle.loc[pid,"porewater_velocity"] = np.array([v_por[pid][0]] + list(v_por[pid]))
             # In the last pathline row the porewater_velocity is equal to previous velocity
             # df_particle.loc[pid,"porewater_velocity"][-1] = v_por[pid][-1]
 
@@ -1369,7 +1390,7 @@ class SubstanceTransport():
             xyz_scatter = np.stack((x_points,z_points,time_points), axis = 1)
 
             # Plot function (lines))
-            marker_size=0.05  # 's' in functie scatter
+            marker_size=0.5  # 's' in functie scatter
             if lognorm:
                 # formatting of values (log or linear?)
                 norm_vals = colors.LogNorm()
@@ -1485,7 +1506,7 @@ class SubstanceTransport():
             xyz_scatter = np.stack((x_points,z_points,relative_conc), axis = 1)
 
             # Plot function (lines))
-            marker_size=0.05  # 's' in functie scatter
+            marker_size=0.5  # 's' in functie scatter
             if lognorm:
                 # formatting of values (log or linear?)
                 norm_vals = colors.LogNorm()

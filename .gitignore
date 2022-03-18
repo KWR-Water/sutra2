@@ -214,3 +214,7 @@ research/semiconfined_df_particle_Modflow.xlsx
 research/semiconfined_dict_gravelpack.txt
 research/semiconfined_dict_nogravel.txt
 research/semiconfined_test_scheme_dict.txt
+*/results/*.csv
+
+research/sutra_functions.py
+testing/test_sutra_functions.py
