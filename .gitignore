@@ -216,6 +216,5 @@ research/semiconfined_dict_nogravel.txt
 research/semiconfined_test_scheme_dict.txt
 */results/*.csv
 
-# sutra module function tests
-# research/sutra_functions.py
-# testing/test_sutra_functions.py
+research/sutra_functions.py
+testing/test_sutra_functions.py
