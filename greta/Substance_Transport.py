@@ -435,28 +435,28 @@ class SubstanceTransport():
                     'suboxic': self.halflife_suboxic,
                     'anoxic': self.halflife_anoxic,
                     'deeply_anoxic': self.halflife_deeply_anoxic,
-                    }
-                },
+                }
+            },
             self.organism_name:
                 {"organism_name": self.organism_name,
                     "alpha0": {
                         "suboxic": self.alpha0_suboxic, 
                         "anoxic": self.alpha0_anoxic, 
                         "deeply_anoxic": self.alpha0_deeply_anoxic
-                        },
+                    },
                     "reference_pH": {
                         "suboxic": self.reference_pH_suboxic, 
                         "anoxic": self.reference_pH_anoxic, 
                         "deeply_anoxic": self.reference_pH_deeply_anoxic
-                        },
+                    },
                     "organism_diam": self.organism_diam,
                     "mu1": {
                         "suboxic": self.mu1_suboxic, 
                         "anoxic": self.mu1_anoxic, 
                         "deeply_anoxic": self.mu1_deeply_anoxic
-                        }
-                    },
-                }
+                    }
+                },
+            }
 
         # Compare the removal_parameters dictionaries and override the default values if the user inputs a value
         
@@ -1228,8 +1228,8 @@ class SubstanceTransport():
             
             With removal coefficient 'lambda_' [/d]
             effective porosity 'porosity' [-]
-            Starting concentration 'input_concentration' per pathline
-            Initial groundwater concentration 'starting_concentration_gw'
+            Starting concentration 'conc_start' per pathline
+            Initial groundwater concentration 'conc_gw'
 
             # Algemeen geldt voor de afbraak vanaf maaiveld tot eindpunt (zoals 'lek')
             # C_ = (C_mv-C_gw) * e^-(lambda_/v)*dr + C_gw
