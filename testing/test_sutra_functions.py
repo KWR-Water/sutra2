@@ -7,31 +7,79 @@ import pandas as pd
 import os
 import sys
 from pathlib import Path
+from pandas.testing import assert_frame_equal
+import warnings
 
 from zmq import zmq_version_info
 
 import greta.sutra_functions as SF
 
+# get directory of this file
+path = Path(__file__).parent #os.getcwd() #path of working directory
+
 
 #%%
-def test_mbo_removal_function(organism_name = "MS2"):
+def test_scenarios_mbo_removal_function(organism_name = "MS2"):
+
+    # Location of test file for scenarios
+    scenarios_fpath = os.path.join(path,"Testberekeningen_sutra_mbo_removal_220321.xlsx")
+    sheet_name = "Scenarios"
+    # Read scenario excel file
+    df_test = pd.read_excel(scenarios_fpath, sheet_name = sheet_name, skiprows = 1)
+
+    # df_output
+    columns_output = ["k_att","lambda","steady_state_concentration"]
+    df_output = pd.DataFrame(index = df_test.index, columns = columns_output)
 
     # Calculate advective microbial removal
     mbo_removal = SF.MicrobialRemoval(organism = organism_name)
- 
-    # Calculate final concentration after advective microbial removal
-    C_final,_,_ = mbo_removal.calc_advective_microbial_removal(grainsize = 0.00025,
-                                            temp_water = 11., rho_water = 999.703, 
-                                            conc_start = 1., conc_gw = 0.,
-                                            redox = 'anoxic',
-                                            distance_traveled = 100., traveltime = 10.,
-                                            # organism_diam = 2.33e-8,
-                                            # mu1 = 0.023,
-                                            # alpha0 = 1.E-5,
-                                            # reference_pH = 6.8
-                                            )
 
-    assert C_final > 0.
+    for fid in df_test.index:
+        organism_name = "MS2"
+        redox = df_test.at[fid,'redox']
+        alpha0 = df_test.at[fid,'alpha0']
+        reference_pH = df_test.at[fid,'reference_pH']
+        mu1 = df_test.at[fid,'mu1']
+        organism_diam = df_test.at[fid,'organism_diam']
+        por_eff = df_test.at[fid,'porosity']
+        grainsize = df_test.at[fid,'grainsize']
+        pH_water = df_test.at[fid,'pH']
+        temp_water = df_test.at[fid,'temperature']
+        rho_water = df_test.at[fid,'rho_water']
+        conc_start = 1.  # normally in df_flowline; use relative concentration as output
+        conc_gw = 0.     # normally in df_flowline; use relative concentration as output
+        distance_traveled = df_test.at[fid,'relative_distance']
+        traveltime = df_test.at[fid,'total_travel_time']
+ 
+        # Calculate final concentration after advective microbial removal
+        C_final = mbo_removal.calc_advective_microbial_removal(grainsize = grainsize,
+                                                temp_water = temp_water, rho_water = rho_water,
+                                                pH = pH_water, por_eff = por_eff, 
+                                                conc_start = conc_start, conc_gw = conc_gw,
+                                                redox = redox,
+                                                distance_traveled = distance_traveled, 
+                                                traveltime = traveltime,
+                                                organism_diam = organism_diam,
+                                                mu1 = mu1,
+                                                alpha0 = alpha0,
+                                                reference_pH = reference_pH )
+
+        # k_att, calculated
+        df_output.loc[fid,"k_att"] = mbo_removal.k_att
+        # lambda, calculated
+        df_output.loc[fid,"lambda"] = mbo_removal.lambda_
+        # (relative) concentration, calculated
+        df_output.loc[fid,"steady_state_concentration"] = C_final
+
+    # Calculate the difference between test dataframe and generated dataframe
+    diff_perc = np.abs((df_output.loc[:,columns_output].values - \
+                        df_test.loc[:,columns_output].values) / \
+                        df_test.loc[:,columns_output].values) * 100.
+
+
+
+    assert not np.any(diff_perc > 1.5)
+    #print("dataframe values differ to much: " + str(round(diff_perc.max(),2)) + " %")
 
 #%%
 def test_mbo_removal_function_check_default(organism_name = "MS2",
@@ -53,8 +101,11 @@ def test_mbo_removal_function_check_default(organism_name = "MS2",
     ## Default test
     # Calculate advective microbial removal
     mbo_removal_default = SF.MicrobialRemoval(organism = organism_name)
-    # Calculate advective microbial removal
-    C_final_default, lambda_default, k_att_default = mbo_removal_default.calc_advective_microbial_removal()
+    # Calculate final concentration after advective microbial removal
+    C_final_default= mbo_removal_default.calc_advective_microbial_removal()
+
+    # Lambda (default): inactivation 
+    lambda_default = mbo_removal_default.lambda_   
 
     '''
     ## Default parameters: ##
@@ -75,9 +126,9 @@ def test_mbo_removal_function_check_default(organism_name = "MS2",
     '''
 
     # Calculate advective microbial removal
-    mbo_removal = SF.MicrobialRemoval(organism = organism_name)
-    # Calculate advective microbial removal
-    C_final_test, lambda_test, k_att_test = mbo_removal.calc_advective_microbial_removal(grainsize = grainsize,
+    mbo_removal_test = SF.MicrobialRemoval(organism = organism_name)
+    # Calculate final concentration after advective microbial removal
+    C_final_test = mbo_removal_test.calc_advective_microbial_removal(grainsize = grainsize,
                                             temp_water = temp_water, rho_water = rho_water,
                                             pH = pH_water, por_eff = por_eff, 
                                             conc_start = 1., conc_gw = 0.,
@@ -90,9 +141,10 @@ def test_mbo_removal_function_check_default(organism_name = "MS2",
                                             reference_pH = reference_pH
                                             )
 
-    assert round(k_att_default,4) == round(k_att_test,4) 
-    assert round(lambda_default,4) == round(lambda_test,4) 
+    # Lambda: inactivation 
+    lambda_test = mbo_removal_test.lambda_     
 
+    assert round(lambda_default,4) == round(lambda_test,4) 
     assert round(C_final_default,4) == round(C_final_test,4)
 
 
@@ -126,7 +178,7 @@ def test_manual_input_mbo_removal(organism_name = "MS2"):
     # Calculate advective microbial removal
     mbo_removal = SF.MicrobialRemoval(organism = organism_name)
     # Calculate advective microbial removal
-    C_final, lambda_, k_att = mbo_removal.calc_advective_microbial_removal(grainsize = grainsize,
+    C_final = mbo_removal.calc_advective_microbial_removal(grainsize = grainsize,
                                             temp_water = temp_water, rho_water = rho_water,
                                             pH = pH_water, por_eff = por_eff, 
                                             conc_start = 1., conc_gw = 0.,
@@ -138,8 +190,9 @@ def test_manual_input_mbo_removal(organism_name = "MS2"):
                                             alpha0 = alpha0,
                                             reference_pH = reference_pH
                                             )
+    # Lambda: inactivation 
+    lambda_ = mbo_removal.lambda_                                             
 
-    assert round(k_att,4) == round(0.7993188853572424,4) 
     assert round(lambda_,4) == round(0.7993188853572424 + mu1,4) 
 
     assert round(C_final,3) == round(6.531818379725895e-42,3)

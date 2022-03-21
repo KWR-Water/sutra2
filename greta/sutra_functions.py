@@ -356,7 +356,7 @@ class MicrobialRemoval():
         v_por = distance_traveled / traveltime
 
         # Calculate removal coefficient lambda [day -1]
-        lambda_, k_att = self.calc_lambda(redox = redox, mu1 = mu1,
+        self.lambda_, self.k_att = self.calc_lambda(redox = redox, mu1 = mu1,
                                     por_eff = por_eff, grainsize = grainsize, 
                                     pH = pH, 
                                     temp_water = temp_water, 
@@ -366,9 +366,9 @@ class MicrobialRemoval():
                                     organism_diam = organism_diam)
 
         # Calculate concentration after microbial removal in subsurface
-        C_final = (conc_start - conc_gw) * np.exp(-(lambda_/v_por)*distance_traveled) + conc_gw
+        C_final = (conc_start - conc_gw) * np.exp(-(self.lambda_/v_por)*distance_traveled) + conc_gw
 
 
         # return final concentration 'C_final'
-        return C_final, lambda_, k_att
+        return C_final
 
