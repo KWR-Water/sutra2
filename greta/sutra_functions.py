@@ -231,11 +231,11 @@ class MicrobialRemoval():
                 mu1 = 0.149, mu1_std = 0.0932,
                 por_eff = 0.33,
                 grainsize = 0.00025,
+                pH = 7.5,
+                temp_water = 10.,
+                rho_water = 999.703,
                 alpha0 = 0.001,
                 reference_pH = 7.5,
-                pH = 7.5,
-                const_BM = 1.38e-23,
-                temp_water = 10., rho_water = 999.703,
                 organism_diam = 2.33e-8, v_por = 0.01):
         
         ''' For more information about the advective microbial removal calculation: 
@@ -307,13 +307,14 @@ class MicrobialRemoval():
         # removal coefficient 'lambda_' [/day], using the 'mu1' mean.
         lambda_ = k_att + mu1
 
-        return lambda_
+        return lambda_, k_att
     
     def calc_advective_microbial_removal(self, grainsize = 0.00025,
                                         temp_water = 11., rho_water = 999.703,
+                                        pH = 7.5, por_eff = 0.33,
                                         conc_start = 1., conc_gw = 0.,
                                         redox = 'anoxic',
-                                        distance_traveled = 1., time_diff = 1.,
+                                        distance_traveled = 1., traveltime = 100.,
                                         mu1 = None, alpha0 = None, reference_pH = None,
                                         organism_diam = None):
         ''' Calculate the advective microbial removal of microbial organisms
@@ -330,7 +331,7 @@ class MicrobialRemoval():
             Starting concentration 'conc_start' per pathline
             Initial groundwater concentration 'conc_gw'
             Distance between points 'distance_traveled' [m]
-            Time between start and endpoint [days]
+            Time between start and endpoint 'traveltime' [days]
 
             
         '''
@@ -352,19 +353,22 @@ class MicrobialRemoval():
             organism_diam = self.removal_parameters['organism_diam']
 
         # porewater_velocity
-        v_por = distance_traveled / time_diff
+        v_por = distance_traveled / traveltime
 
         # Calculate removal coefficient lambda [day -1]
-        lambda_ = self.calc_lambda(redox = redox, mu1 = mu1, 
-                                    grainsize = grainsize, alpha0 = alpha0, 
-                                    reference_pH = reference_pH,
+        lambda_, k_att = self.calc_lambda(redox = redox, mu1 = mu1,
+                                    por_eff = por_eff, grainsize = grainsize, 
+                                    pH = pH, 
                                     temp_water = temp_water, 
-                                    rho_water = rho_water, organism_diam = organism_diam)
+                                    rho_water = rho_water,
+                                    alpha0 = alpha0, 
+                                    reference_pH = reference_pH,
+                                    organism_diam = organism_diam)
 
         # Calculate concentration after microbial removal in subsurface
         C_final = (conc_start - conc_gw) * np.exp(-(lambda_/v_por)*distance_traveled) + conc_gw
 
 
         # return final concentration 'C_final'
-        return C_final
+        return C_final, lambda_, k_att
 
