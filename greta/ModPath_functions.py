@@ -1035,15 +1035,18 @@ class ModPathWell:
             # Output control stress period data
             self.spd_oc = {(0, 0): ['save head', 'save budget']}
             self.create_oc(spd_oc = self.spd_oc)
-            if len(self.well_names) > 0:
-                try:                        
-                    self.create_wel(spd_wel = self.spd_wel)
-                except Exception as e:
-                    print(e, "error loading well package.")
-            try:
-                self.create_rch(rech = self.recharge)
-            except Exception as e:
-                print(e, "no recharge assigned.")
+            if "well_parameters" in kwargs.keys():
+                if len(kwargs["well_parameters"]) > 0:
+                    try:                        
+                        self.create_wel(spd_wel = self.spd_wel)
+                    except Exception as e:
+                        print(e, "error loading well package.")
+            if "recharge_parameters" in kwargs.keys():
+                if len(kwargs["recharge_parameters"]) > 0:
+                    try:
+                        self.create_rch(rech = self.recharge)
+                    except Exception as e:
+                        print(e, "no recharge assigned.")
 
     def generate_modflow_files(self):
         ''' Write package data MODFLOW model. '''
@@ -1067,7 +1070,7 @@ class ModPathWell:
         ''' Main model run code. '''
         print ("Run model:",self.workspace, self.modelname +"\n")
         # Create modflow packages
-        self.create_modflow_packages()
+        self.create_modflow_packages(**self.schematisation_dict)
         # Generate modflow files
         self.generate_modflow_files()
 
