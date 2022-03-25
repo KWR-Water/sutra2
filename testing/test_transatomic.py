@@ -22,7 +22,7 @@ import warnings
 
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
-path
+
 
 #%%
 def test_travel_time_distribution_phreatic():

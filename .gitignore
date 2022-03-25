@@ -219,3 +219,4 @@ research/semiconfined_test_scheme_dict.txt
 # sutra module function tests
 # research/sutra_functions.py
 # testing/test_sutra_functions.py
+*.xlsx

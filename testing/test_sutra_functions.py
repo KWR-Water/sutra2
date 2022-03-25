@@ -78,7 +78,7 @@ def test_scenarios_mbo_removal_function(organism_name = "MS2"):
 
 
 
-    assert not np.any(diff_perc > 1.5)
+    assert not np.any(diff_perc > 0.5)
     #print("dataframe values differ to much: " + str(round(diff_perc.max(),2)) + " %")
 
 #%%
