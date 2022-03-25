@@ -1062,6 +1062,58 @@ class ModPathWell:
         except FileNotFoundError:
             pass
 
+    def create_modpath_packages(self, mp_exe = "mpath7", **kwargs):
+        ''' Create modpath packages used in the model run.'''
+
+        # Load the MP7 module/object
+        if mp_exe is None:
+            self.mp_exe = "mpath7"
+        else:
+            self.mp_exe = mp_exe
+
+        # Load mp7 object into Aximodel class
+        self.create_MP7object(mp_exe = self.mp_exe, mf_model = self.mf)#,
+
+        # Create radial distance array with particle locations
+        # self._create_radial_distance_array() # Analytische fluxverdeling
+        self._create_diffuse_particles(recharge_parameters = 'concentration_boundary_parameters',
+                                                        nparticles_cell = 1,
+                                                        localy=0.5, localz=1.,
+                                                        timeoffset=0.0, drape=0,
+                                                        trackingdirection = self.trackingdirection,
+                                                        releasedata=0.0)  
+
+        self._create_point_particles(point_parameters = "point_parameters",
+                                                localx = 0.5, 
+                                                localy = 0.5, 
+                                                localz = 0.5,
+                                                timeoffset = 0.0, drape = 0,
+                                                trackingdirection = self.trackingdirection,  ## 'forward'
+                                                releasedata = 0.0)
+
+        # Default flux interfaces
+        defaultiface = {'RECHARGE': 6, 'ET': 6}
+    
+        ## Model mpbas input ##
+        self.mpbas_input(prsity = self.porosity, defaultiface = defaultiface)
+
+        # Load modpath basic package
+        self.create_mpbas()
+        
+        # Select particle groups as input to the model
+        self.particlegroups = []
+        for iPG in self.pg:
+            self.particlegroups.append(self.pg[iPG])
+        # Only for unstruct grids:
+        #- Load modpath unstructured grid
+        #- Load modpath time discretization
+        
+        # Write modpath simulation File:
+        self.modpath_simulation(mp_model = None,# trackingdirection = None,
+                           simulationtype = 'combined', stoptimeoption = 'extend',
+                           particlegroups = self.particlegroups) 
+
+
     def run_modflowmod(self):         
         ''' Run modflow model '''
         self.success_mf, _ = self.mf.run_model(silent=False)
@@ -1789,31 +1841,9 @@ class ModPathWell:
                 self.mf_namfile = mf_namfile
                 self.create_mfmodel(self.mf_namfile)
 
-        
-        # Load the MP7 module/object
-        if mp_exe is None:
-            self.mp_exe = "mpath7"
-        else:
-            self.mp_exe = mp_exe
 
-        # Load mp7 object into Aximodel class
-        self.create_MP7object(mp_exe = self.mp_exe, mf_model = self.mf)#,
-
-        # Load modpath basic package
-        self.create_mpbas()
-        
-        # Select particle groups as input to the model
-        self.particlegroups = []
-        for iPG in self.pg:
-            self.particlegroups.append(self.pg[iPG])
-        # Only for unstruct grids:
-        #- Load modpath unstructured grid
-        #- Load modpath time discretization
-        
-        # Write modpath simulation File:
-        self.modpath_simulation(mp_model = None,# trackingdirection = None,
-                           simulationtype = 'combined', stoptimeoption = 'extend',
-                           particlegroups = self.particlegroups) 
+        # Create Modpath packages
+        self.create_modpath_packages(mp_exe = mp_exe)
 
         # Write files and execute the modpath model
         self.write_input_mp()
@@ -2741,28 +2771,6 @@ class ModPathWell:
         # Modpath simulation
         if self.run_mpmodel:
 
-            # Create radial distance array with particle locations
-            # self._create_radial_distance_array() # Analytische fluxverdeling
-            self._create_diffuse_particles(recharge_parameters = 'concentration_boundary_parameters',
-                                                            nparticles_cell = 1,
-                                                            localy=0.5, localz=1.,
-                                                            timeoffset=0.0, drape=0,
-                                                            trackingdirection = self.trackingdirection,
-                                                            releasedata=0.0)  
-
-            self._create_point_particles(point_parameters = "point_parameters",
-                                                   localx = 0.5, 
-                                                   localy = 0.5, 
-                                                   localz = 0.5,
-                                                   timeoffset = 0.0, drape = 0,
-                                                   trackingdirection = self.trackingdirection,  ## 'forward'
-                                                   releasedata = 0.0)
-
-            # Default flux interfaces
-            defaultiface = {'RECHARGE': 6, 'ET': 6}
-        
-            ## Model mpbas input ##
-            self.mpbas_input(prsity = self.porosity, defaultiface = defaultiface)
 
             # Run modpath model
             self.MP7modelrun()
