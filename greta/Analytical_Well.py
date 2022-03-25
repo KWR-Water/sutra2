@@ -192,7 +192,8 @@ class HydroChemicalSchematisation:
                 schematisation_type,  
 
                 computation_method='analytical', 
-                removal_function= 'omp',
+                removal_function = 'omp',
+                name = None,  # substance or species name
                 what_to_export = 'all', # MK: cryptic, AH_todo w/MartinK - better name for this
                 temp_correction_Koc=True,
                 temp_correction_halflife=True,
@@ -274,8 +275,9 @@ class HydroChemicalSchematisation:
                 vertical_anisotropy_target_aquifer=1.0,
                 vertical_anisotropy_gravelpack=None,
                 vertical_anisotropy_clayseal=None,
-
-                substance=None,
+                
+                # replaced by name: depends on removal_function if it is an microbial organism ['mbo'] or substance ['omp']
+                # substance=None,  
 
                 diffuse_input_concentration=1,
 
@@ -440,8 +442,15 @@ class HydroChemicalSchematisation:
 
         self.groundwater_level =self.ground_surface-self.thickness_vadose_zone_at_boundary
 
-        # Substance
-        self.substance = substance
+        self.organism = None
+        self.substance = None
+        if self.removal_function in ['omp',]:
+            # Substance name
+            self.substance = name  
+        elif self.removal_function in ['mbo',]:
+            # Organism name
+            self.organism = name
+
 
         # Diffuse contamination override if point contamination specified
         self.diffuse_input_concentration = diffuse_input_concentration
@@ -789,6 +798,7 @@ class HydroChemicalSchematisation:
                 'source1': {
                     # source1 -> recharge & diffuse sources
                     'substance_name': self.substance,
+                    'organism_name': self.organism,
                     'recharge': self.recharge_rate,
                     'xmin': self.diameter_gravelpack/2,
                     'xmax': self.model_radius,
@@ -799,10 +809,11 @@ class HydroChemicalSchematisation:
                 # 'source2' :{}> surface water (BAR & RBF) #@MartinvdS come back to this when we start this module
             }
 
-        # Diffuse+_parameters assigns location (and substance) of diffuse contamination
-        diffuse_parameters = {
+        # concentration_boundary assigns location (and substance/organism) of diffuse contamination
+        concentration_boundary_parameters = {
             'source1': { # source1 -> recharge & diffuse sources
                 'substance_name': self.substance,
+                'organism_name': self.organism,
                 'recharge': self.recharge_rate,
                 'xmin': self.diameter_gravelpack/2 + 0.1,
                 'xmax': self.model_radius,
@@ -812,17 +823,19 @@ class HydroChemicalSchematisation:
                 'TOC': self.total_organic_carbon_infiltration_water,
                 'input_concentration': self.diffuse_input_concentration,
                 },
-            # 'source2' :{}> surface water (BAR & RBF) #@MartinvdS come back to this when we start this module
-            }
+        # 'source2' :{}> surface water (BAR & RBF) #@MartinvdS come back to this when we start this module
+        }
+
 
         # Create point diciontary if point source concentration specified,
         # otherwise pass empty dictionary
         if self.point_input_concentration is None:
-            point_parameters= {}
+            point_parameters = {}
         else:
-            point_parameters= {
+            point_parameters = {
                 'point1': {
                     'substance_name': self.substance,
+                    'organism_name': self.organism,
                     'input_concentration': self.point_input_concentration,
                     'x_start': float(self.distance_point_contamination_from_well[0]), #AH Nov. 5 -> I think this might casue problems later in the loops for calculations later but deal with it when it comes
                     'z_start': self.depth_point_contamination,
@@ -864,7 +877,7 @@ class HydroChemicalSchematisation:
         self.geo_parameters = geo_parameters
         self.ibound_parameters = ibound_parameters
         self.recharge_parameters = recharge_parameters
-        self.diffuse_parameters = diffuse_parameters
+        self.concentration_boundary_parameters = concentration_boundary_parameters
         self.well_parameters = well_parameters
         self.point_parameters = point_parameters
         # self.substance_parameters = substance_parameters

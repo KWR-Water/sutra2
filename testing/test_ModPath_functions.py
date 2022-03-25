@@ -76,15 +76,12 @@ def test_modflow_run_phreatic_withgravelpack(organism_name = "MS2"):
                                       solid_density_shallow_aquifer= 2.650, 
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 0.75,
-                                      substance = organism_name,
+                                      name = organism_name,
                                       diameter_filterscreen = 0.2,
                                       point_input_concentration = 100.,
                                       discharge_point_contamination = 100.,#made up value
                                       top_clayseal = 17,
                                       compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
-                                      # substance = 'benzene',
-                                      # halflife_suboxic=600,
-                                      # partition_coefficient_water_organic_carbon = 3.3,
                                       ncols_near_well = 20,
                                       ncols_far_well = 80,
                                     )
@@ -146,7 +143,7 @@ def test_modpath_run_phreatic_nogravelpack(organism_name = "MS2"):
                                       solid_density_shallow_aquifer= 2.650, 
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 0.75,
-                                      substance = organism_name,
+                                      name = organism_name,
                                       # diameter_filterscreen = 0.2,
                                       point_input_concentration = 100.,
                                       discharge_point_contamination = 100.,#made up value
@@ -276,7 +273,7 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
                                     solid_density_shallow_aquifer= 2.650, 
                                     solid_density_target_aquifer= 2.650, 
                                     diameter_borehole = 0.2,
-                                    substance = organism_name,
+                                    name = organism_name,
                                     diameter_filterscreen = 0.2,
                                     top_clayseal = 0,
                                     compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
@@ -303,8 +300,8 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
                                 'xmax': test_conf_hor.model_radius,
                                 'ibound': -1
                                 }
-        # Remove/empty diffuse_parameters
-        test_conf_hor.diffuse_parameters = {}
+        # Remove/empty concentration_boundary_parameters
+        test_conf_hor.concentration_boundary_parameters = {}
 
         # ModPath well
         modpath_hor = MP.ModPathWell(test_conf_hor, #test_phrea,
@@ -411,7 +408,7 @@ def test_modpath_run_horizontal_flow_diffuse(organism_name = "MS2"):
                                 solid_density_shallow_aquifer= 2.650, 
                                 solid_density_target_aquifer= 2.650, 
                                 diameter_borehole = 0.2,
-                                substance = organism_name,
+                                name = organism_name,
                                 diameter_filterscreen = 0.2,
                                 top_clayseal = 0,
                                 compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
@@ -442,9 +439,9 @@ def test_modpath_run_horizontal_flow_diffuse(organism_name = "MS2"):
                             'xmax': test_conf_hor.model_radius,
                             'ibound': -1
                             }
-    # diffuse_parameters
-    test_conf_hor.diffuse_parameters = {'source1': {
-                'substance_name': organism_name,
+    # concentration_boundary_parameters
+    test_conf_hor.concentration_boundary_parameters = {'source1': {
+                'organism_name': organism_name,
                 'xmin': test_conf_hor.model_radius - delr_outer * 0.5,
                 'xmax': test_conf_hor.model_radius,
                 'zmax': test_conf_hor.bottom_shallow_aquifer,
@@ -610,7 +607,7 @@ def test_modpath_run_phreatic_withgravelpack_traveltimes(organism_name = "MS2"):
                                 solid_density_shallow_aquifer= 2.650, 
                                 solid_density_target_aquifer= 2.650, 
                                 diameter_borehole = 0.75,
-                                substance = organism_name,
+                                name = organism_name,
                                 diameter_filterscreen = 0.2,
                                 point_input_concentration = 100.,
                                 discharge_point_contamination = 100.,#made up value
@@ -706,7 +703,7 @@ def test_modpath_run_phreatic_withgravelpack_removal(organism_name = "MS2"):
                                 solid_density_shallow_aquifer= 2.650, 
                                 solid_density_target_aquifer= 2.650, 
                                 diameter_borehole = 0.75,
-                                substance = organism_name,
+                                name = organism_name,
                                 diameter_filterscreen = 0.2,
                                 point_input_concentration = 100.,
                                 discharge_point_contamination = 100.,#made up value
@@ -869,7 +866,7 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
                                       solid_density_shallow_aquifer= 2.650, 
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 0.75,
-                                      substance = organism_name,
+                                      name = organism_name,
                                       # diameter_filterscreen = 0.2,
                                       point_input_concentration = 100.,
                                       discharge_point_contamination = 100.,#made up value
@@ -884,8 +881,8 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
 
     test_semiconf.make_dictionary()
 
-    # Test diffuse_parameters (check line 796 in ModPath_functions)
-    diffuse_parameters = test_semiconf.recharge_parameters
+    # Test concentration_boundary_parameters (check line 796 in ModPath_functions)
+    concentration_boundary_parameters = test_semiconf.recharge_parameters
 
     # Remove/empty point_parameters
     test_semiconf.point_parameters = {}
@@ -997,7 +994,7 @@ def test_diffuse_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name
                                       solid_density_shallow_aquifer= 2.650, 
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 0.75,
-                                      substance = organism_name,
+                                      name = organism_name,
                                       # diameter_filterscreen = 0.2,
                                       point_input_concentration = 100.,
                                       discharge_point_contamination = 100.,#made up value
@@ -1092,7 +1089,7 @@ def test_phreatic_scheme_withgravelpack_dictinput(organism_name = "MS2"):
                                       solid_density_shallow_aquifer= 2.650, 
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 0.75,
-                                      substance = organism_name,
+                                      name = organism_name,
                                       diameter_filterscreen = 0.2,
                                       point_input_concentration = 100.,
                                       discharge_point_contamination = 100.,#made up value
@@ -1155,7 +1152,7 @@ def test_travel_time_distribution_phreatic(organism_name = "MS2"):
                                         solid_density_shallow_aquifer= 2.650,
                                         solid_density_target_aquifer= 2.650,
                                         diameter_borehole = 0.75,
-                                        substance=organism_name
+                                        name=organism_name
                                         )
 
     well1 = AW.AnalyticalWell(test_)

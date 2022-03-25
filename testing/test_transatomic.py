@@ -72,6 +72,7 @@ def test_retardation_temp_koc_correction(substance = 'benzene', schematisation_t
     test_ = HydroChemicalSchematisation(schematisation_type=schematisation_type,
                                         computation_method= 'analytical',
                                         what_to_export='omp',
+                                        name = substance,
                                       well_discharge=-319.4*24,
                                       hor_permeability_shallow_aquifer = 0.02,
                                       porosity_vadose_zone=0.38,
@@ -153,6 +154,7 @@ def test_steady_concentration_temp_koc_correction_phreatic(substance='benzene'):
     test_ = HydroChemicalSchematisation(schematisation_type='phreatic',
                                         computation_method= 'analytical',
                                         what_to_export='omp',
+                                        name = substance,
                                       well_discharge=-319.4*24,
                                     #   vertical_resistance_shallow_aquifer=500,
                                       hor_permeability_shallow_aquifer = 0.02,
@@ -239,11 +241,11 @@ def test_travel_time_distribution_semiconfined():
     output_semiconfined = output_semiconfined.round(7)
     test_ = HydroChemicalSchematisation(schematisation_type='semiconfined',
                                         computation_method= 'analytical',
-                                                what_to_export='omp',
+                                        what_to_export='omp',
                                         well_discharge=-319.4*24,
                                         # vertical_resistance_shallow_aquifer=500,
-                                      hor_permeability_shallow_aquifer = 0.02,
-                                      porosity_vadose_zone=0.38,
+                                        hor_permeability_shallow_aquifer = 0.02,
+                                        porosity_vadose_zone=0.38,
                                         porosity_shallow_aquifer=0.35,
                                         porosity_target_aquifer=0.35,
                                         recharge_rate=0.3/365.25,
@@ -256,10 +258,10 @@ def test_travel_time_distribution_semiconfined():
                                         # KD=1400,
                                         thickness_full_capillary_fringe=0.4,
                                         temperature=11,
-                                         solid_density_vadose_zone= 2.650,
-                                      solid_density_shallow_aquifer= 2.650,
-                                      solid_density_target_aquifer= 2.650,
-                                      diameter_borehole = 0.75,)
+                                        solid_density_vadose_zone= 2.650,
+                                        solid_density_shallow_aquifer= 2.650,
+                                        solid_density_target_aquifer= 2.650,
+                                        diameter_borehole = 0.75,)
     well1 = AnalyticalWell(test_)
     well1.semiconfined()
     output = well1.df_output
@@ -285,6 +287,7 @@ def test_steady_concentration_temp_koc_correction_semiconfined(substance='benzen
     test_ = HydroChemicalSchematisation(schematisation_type='semiconfined',
                                         computation_method= 'analytical',
                                         what_to_export='omp',
+                                        name = substance,
                                       well_discharge=-319.4*24,
                                       hor_permeability_shallow_aquifer = 0.02,
                                       porosity_vadose_zone=0.38,

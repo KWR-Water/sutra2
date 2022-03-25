@@ -223,7 +223,7 @@ class ModPathWell:
         # Required keys
         self.required_keys = ["simulation_parameters","geo_parameters",
         "ibound_parameters","recharge_parameters",
-        "well_parameters","diffuse_parameters","point_parameters", "mesh_refinement",
+        "well_parameters","concentration_boundary_parameters","point_parameters", "mesh_refinement",
         "endpoint_id"]
 
         if type(self.schematisation) == dict:
@@ -2740,7 +2740,7 @@ class ModPathWell:
 
             # Create radial distance array with particle locations
             # self._create_radial_distance_array() # Analytische fluxverdeling
-            self._create_diffuse_particles(recharge_parameters = 'diffuse_parameters',
+            self._create_diffuse_particles(recharge_parameters = 'concentration_boundary_parameters',
                                                             nparticles_cell = 1,
                                                             localy=0.5, localz=1.,
                                                             timeoffset=0.0, drape=0,
