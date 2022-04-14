@@ -1,4 +1,4 @@
-conda activate py-r ../requirements.txt
+conda activate py -r ../requirements.txt
 
 ipykernel
 matplotlib=3.3.4

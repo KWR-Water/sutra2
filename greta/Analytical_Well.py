@@ -969,8 +969,7 @@ class HydroChemicalSchematisation:
             thickness_vadose_zone_drawdown = (self.groundwater_level
                                                 + self.thickness_vadose_zone_at_boundary) - head
 
-            travel_time_unsaturated = (((self.groundwater_level + thickness_vadose_zone_drawdown
-                                    - self.groundwater_level
+            travel_time_unsaturated = (((thickness_vadose_zone_drawdown
                                     - self.thickness_full_capillary_fringe)
                                     * self.moisture_content_vadose_zone
                                     + self.thickness_full_capillary_fringe
@@ -982,8 +981,7 @@ class HydroChemicalSchematisation:
             if thickness_vadose_zone_drawdown < 0:
                 travel_time_unsaturated =  np.array([0])
             else:
-                travel_time_unsaturated = (((self.groundwater_level + thickness_vadose_zone_drawdown
-                                    - self.groundwater_level
+                travel_time_unsaturated = (((thickness_vadose_zone_drawdown
                                     - self.thickness_full_capillary_fringe)
                                     * self.moisture_content_vadose_zone
                                     + self.thickness_full_capillary_fringe

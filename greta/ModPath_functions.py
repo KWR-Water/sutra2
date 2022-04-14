@@ -818,6 +818,25 @@ class ModPathWell:
                                     grid = self.strt,
                                     dtype = 'int')      
 
+        # Calculate the travel time distribution for the semiconfined schematisation
+        # for each of the aquifer zones and creates df_flowline and df_particle dataframes for the analytical case.
+        if self.schematisation_type in ["phreatic"]:
+            self.schematisation._calculate_travel_time_unsaturated_zone(distance=self.delr.cumsum(axis=0))        
+            '''
+            # Assign attributes:
+            - 'head' --> head distribution with distance to abstraction well [m]
+            - 'travel_time_unsaturated' --> travel time through vadose zone [d]
+            - 'thickness_vadose_zone_drawdown' --> drawdown due to abstraction in pumping well [m]
+            '''   
+            self.strt = self.schematisation.head[0]     
+            self.travel_time_unsaturated = self.schematisation.travel_time_unsaturated
+            self.thickness_vadose_zone_drawdown = self.schematisation.thickness_vadose_zone_drawdown
+            self.head = self.schematisation.head
+        else:
+            self.travel_time_unsaturated = None
+            self.thickness_vadose_zone_drawdown = None
+            self.head = None
+
         # Set ibound of additional rows equal to zero
         self.ibound[:,1:,:] = 0
 
@@ -1073,15 +1092,29 @@ class ModPathWell:
 
         # Load mp7 object into Aximodel class
         self.create_MP7object(mp_exe = self.mp_exe, mf_model = self.mf)#,
+   
 
+        # Head modflowmodel
+        try:
+            # Load head data
+            _, self.head_mf = self.read_hdsobj(fname = self.model_hds,time = -1)
+        except Exception as e:
+            print (e,"Error loading strt_fw data\nstrt_fw set to '0'.")
+            self.head_mf = np.zeros((self.nlay,self.nrow,self.ncol), dtype= 'float')
+        
+        # # Drawdown in analytical model
+        # self.head_anal_dd = self.schematisation.head - self.schematisation.head.max()
+        # Drawdown in mfmodel (max head)
+        # self.head_mf_dd = self.head_mf[self.ibound != 0].min(axis=1) - self.head_mf[:,0,:].max()
+       
         # Create radial distance array with particle locations
         # self._create_radial_distance_array() # Analytische fluxverdeling
         self._create_diffuse_particles(recharge_parameters = 'concentration_boundary_parameters',
-                                                        nparticles_cell = 1,
-                                                        localy=0.5, localz=1.,
-                                                        timeoffset=0.0, drape=0,
-                                                        trackingdirection = self.trackingdirection,
-                                                        releasedata=0.0)  
+                                                nparticles_cell = 1,
+                                                localy=0.5, localz=1.,
+                                                timeoffset=0.0, drape=0,
+                                                trackingdirection = self.trackingdirection,
+                                                releasedata=0.0)  
 
         self._create_point_particles(point_parameters = "point_parameters",
                                                 localx = 0.5, 
@@ -1802,8 +1835,6 @@ class ModPathWell:
                             parm_list = parm_list,
                             mppth = mppth)
 
-        ''' TODO 211123: append phreatic pathline data '''
-
         # df_particle file name
         particle_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_particle.csv")
         # Save df_particle
@@ -1817,6 +1848,13 @@ class ModPathWell:
         flowline_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_flowline.csv")
         # Save df_flowline
         self.df_flowline.to_csv(flowline_fname)
+
+        ''' TODO 211123: append phreatic pathline data '''
+        # Append phreatic pathlines
+        # Calculate the phreatic travel time and add records to df_particle dataframe
+        # if self.schematisation_dict["vadose_parameters"]:
+        #     self.calc_traveltime_vadose_analytical(vadose_parameters = self.schematisation_dict["vadose_parameters"])
+
 
     def MP7modelrun(self, mf_namfile = None, mp_exe = None):
         ''' Modpath model run.'''
@@ -2355,34 +2393,20 @@ class ModPathWell:
                     # starting point is used to calculate flux of pathline (flux_pathline)
                     flux_pathline[fid] = round(self.calc_flux_cell(frf,flf,fff, loc = node_start[fid]) / \
                                         count_startpoints[node_start[fid]],4)
-                    # flux_pathline[fid] = round(abs(frf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) + \
-                    #                             abs(flf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) + \
-                    #                             abs(fff[node_start[fid][0],node_start[fid][1],node_start[fid][2]]) / \
-                    #                     count_startpoints[node_start[fid]],4)
+
                 elif df_flowline.loc[fid,"flowline_type"] in ["point_source",]:
                     flux_pathline[fid] = self.point_discharge[fid]
 
-                # flux_pathline[fid] = round(np.sqrt((frf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]**2 + \
-                #                             flf[node_start[fid][0],node_start[fid][1],node_start[fid][2]]**2 + \
-                #                             fff[node_start[fid][0],node_start[fid][1],node_start[fid][2]]**2)) / \
-                #                     count_startpoints[node_start[fid]],4)
             elif self.trackingdirection == "backward":
 
                 if df_flowline.loc[fid,"flowline_type"] in ["diffuse_source"]:
                     # endpoint is used to calculate flux of pathline
                     flux_pathline[fid] = round(self.calc_flux_cell(frf,flf,fff, loc = node_end[fid]) / \
                                             count_endpoints[node_end[fid]],4)
-                    # flux_pathline[fid] = round(abs(frf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) + \
-                    #                             abs(flf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) + \
-                    #                             abs(fff[node_end[fid][0],node_end[fid][1],node_end[fid][2]]) / \
-                    #                     count_startpoints[node_end[fid]],4)
                 elif df_flowline.loc[fid,"flowline_type"] in ["point_source",]:
                     flux_pathline[fid] = self.point_discharge[fid]
-                # flux_pathline[fid] = round(np.sqrt((frf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]**2 + \
-                #                             flf[node_end[fid][0],node_end[fid][1],node_end[fid][2]]**2 + \
-                #                             fff[node_end[fid][0],node_end[fid][1],node_end[fid][2]]**2)) / \
-                #                     count_startpoints[node_end[fid]],4)
-            # endpoint id
+
+          # endpoint id
             endpoint_id[fid] = self.material[node_end[fid][0],node_end[fid][1],node_end[fid][2]]
 
         # fill flowline_df
@@ -2541,152 +2565,181 @@ class ModPathWell:
 
         return df
 
-    def calc_advective_microbial_removal(self,df_particle,df_flowline, 
-                                        endpoint_id, trackingdirection = "forward",
-                                        mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, pH0 = 6.8, const_BM = 1.38e-23,
-                                        temp_water = 11., rho_water = 999.703, species_diam = 2.33e-8,
-                                        conc_start = 1., conc_gw = 0.):
-                                        
-        ''' Calculate the advective microbial removal along pathlines
-            from source to end_point.
 
-            For more information about the advective microbial removal calculation: 
-                BTO2012.015: Ch 6.7 (page 71-74)
+    def _calculate_travel_time_shallow_aquifer_phreatic(self,
+                                                        head,
+                                                        depth_point_contamination=None,
+                                                        ):
+        ''' Calculates the travel time in the shallow aquifer for the phreatic case.
+        If the depth_point_contamination is None, then the calculation is for a 
+        diffuse flow lines
+        #AH_todo finish this explanation
 
-            Relevant input:
-            df_particle: pandas.DataFrame
-                Column 'flowline_id'
-                Column 'xcoord'
-                Column 'ycoord'
-                Column 'zcoord'
-                Column 'relative_distance'
-                Column 'total_travel_time'
-                Column 'porosity'
-                Column 'lambda'
-                Column 'porewater_velocity'
+        Parameters
+        ----------
+        distance: array
+            Array of distance(s) [m] from the well.
+            For diffuse sources 'distance' is the 'radial_distance' array.
+            For point sources 'distance' is 'distance_point_contamination_from_well'.
+        depth_point_contamination: float
+            Depth [mASL] of the point source contamination, if only diffuse contamination None is passed.
 
-            df_flowline: pandas.DataFrame
-                Column 'flowline_id'
-                Column 'endpoint_id'
-                Column 'flowline_discharge'
-                Column 'well_discharge'
-
-            Return 
-            df_flowline: pandas.DataFrame
-                Column 'input_concentration': float   # (added)
-
-            df_particle: pandas.DataFrame
-                Column 'steady_state_concentration': float      # (added)
-                Column 'starting_concentration_gw': float                         # (added)
-        
-
-            Calculate the steady state concentration along traveled distance per 
-            node for each pathline from startpoint to endpoint_id'.
-            
-            With verwijderingscoëfficiënt 'lambda_' [/d]
-            effective porositty 'porosity' [-]
-            Starting concentration 'input_concentration' per pathline
-            Initial groundwater concentration 'starting_concentration_gw'
-
-            # Algemeen geldt voor de afbraak vanaf maaiveld tot eindpunt (zoals 'lek')
-            # C_ = (C_mv-C_gw) * e^-(lambda_/v)*dr + C_gw
-            # C_mv = C_maaiveld [aantal/l]; C_gw = C_grondwater [aantal/l]?
-            # v = (dr/dt) / por_eff --> poriewatersnelheid [m/d]
-            # Bij achtergrondconcentratie C_gw = 0., zoals nu:
-            # C_ = C_mv * e^-(lambda_/v)*r
-
-            # Check eindconcentratie van deze tijdstap
-            >> _,C_final = calc_pathlineconc(part_idx = [0], C0 = 1., C_gw = 0., por_vals = 0.33,
-                        lambda_ = {0: 0.1317345756973715}, xyz_start = [0,0,0], 
-                        xyz_eind = [0,0,1], t_start = 0., t_eind = 100.,
-                        dist_data = None, time_diff = None,
-                        direction = "backward")
-            >> print (C_final) [aantal/l]
-            >> 1.900378331566034e-06
-            
-            # Voor berekening per particle path "part_idx"
-            # Afgelegde afstanden tussen "xyz_node t" en "xyz_nodel t+1"
-            # voor iedere tijdstap (--> path_data)
-            dist_data: {0: np.array([1,1.2,1.3]),n+1: np.array([...])}
-            # Tijdsduur tussen iedere tijdstap "t" en "t+1"
-            # Zie parameter --> time_data
-            time_data: {0: np.array([2.2,2.4,1.6]),n+1: np.array([...])}
-            # direction: particle tracking direction (forward/backward)
-
+        Returns
+        -------
+        travel_time_shallow_aquifer: array
+            Travel time in the shallow aquifer for each point in the given distance array, [days].
         '''
 
-        # Calculate removal coefficient 'lambda' [/day].
-        df_particle, df_flowline = self.calc_lambda(df_particle, df_flowline,
-                                                    mu1 = mu1, grainsize = grainsize, alpha0 = alpha0, 
-                                                    pH0 = pH0, const_BM = const_BM,
-                                                    temp_water = temp_water, 
-                                                    rho_water = rho_water, species_diam = species_diam)
-
-        # Starting concentration [-]
-        df_flowline = self._df_fillna(df_flowline,
-                                df_column = 'starting_concentration',
-                                value = conc_start,
-                                dtype_ = 'float')
-
-        # Original concentration in groundwater [-]
-        df_flowline = self._df_fillna(df_flowline,
-                                df_column = 'starting_concentration_gw',
-                                value = conc_gw,
-                                dtype_ = 'float')
-
-        if 'steady_state_concentration' not in df_particle.columns:
-            # Steady state concentration [-]
-            df_particle['steady_state_concentration'] = None
-        
-        for pid in df_flowline.index:
-            df_particle.loc[pid,"steady_state_concentration"].iloc[0] = df_flowline.loc[pid,"starting_concentration"]
-
-        # Start dictionaries for relative and steady-state concentrations
-        conc_rel = {}
-        conc_steady = {}  # concentration corrected for initial concentration
-        for pid in df_flowline.index:
+        #MK: this is a complex if statement. please elaborate on what is happening in a comment
+        if depth_point_contamination is None:
+            travel_distance_shallow_aquifer = self.schematisation.thickness_shallow_aquifer - (self.schematisation.groundwater_level - head)
+            travel_time_shallow_aquifer = ((travel_distance_shallow_aquifer)
+                            * self.schematisation.porosity_shallow_aquifer / self.schematisation.recharge_rate)
             
-            # Calculate the relative removal along pathlines
-            exp_arg = -((df_particle.loc[pid,"lambda"].values/df_particle.loc[pid,"porewater_velocity"].values) *
-                                df_particle.loc[pid,'relative_distance'].values).astype('float')
+            #@MartinvdS -> under the default conditions, the travel time in the shallow aquifer is negative
+            # should we alter the default values or do we do below?
+            travel_time_shallow_aquifer[travel_time_shallow_aquifer<0] = 0
 
-            conc_rel[pid] = df_flowline.loc[pid,"starting_concentration_gw"] + \
-                            (df_flowline.loc[pid,"starting_concentration"] - df_flowline.loc[pid,"starting_concentration_gw"]) * \
-                                np.exp(exp_arg)
+        else:
+            # travel_distance_shallow_aquifer =
+            if depth_point_contamination <= head:
+                travel_distance_shallow_aquifer = depth_point_contamination - self.schematisation.bottom_shallow_aquifer
+                if travel_distance_shallow_aquifer < 0:
+                    travel_time_shallow_aquifer = np.array([0])
+                else:
+                    travel_time_shallow_aquifer = np.array([(travel_distance_shallow_aquifer
+                            * self.schematisation.porosity_shallow_aquifer / self.schematisation.recharge_rate)])
+            else:
+                travel_distance_shallow_aquifer = self.schematisation.thickness_shallow_aquifer - (self.schematisation.groundwater_level - head)
+                travel_time_shallow_aquifer = ((travel_distance_shallow_aquifer)
+                            * self.schematisation.porosity_shallow_aquifer / self.schematisation.recharge_rate)
 
-            if trackingdirection == 'forward':
-                conc_steady[pid] = (conc_rel[pid]/df_flowline.loc[pid,"starting_concentration"]).cumprod() * \
-                                    df_flowline.loc[pid,"starting_concentration"]
-                # Replace 'nan'-values by 0.
-                conc_steady[pid]  = np.nan_to_num(conc_steady[pid],0.)
-                
-                # Index of average final concentration "C_"  idx=-1[C0,...,..,...,Ct-1,C_final]
-                idx_final = -1
-                                
-            elif trackingdirection == 'backward':
-                conc_steady[pid] = (conc_rel[pid][::-1]/df_flowline.loc[pid,"starting_concentration"]).cumprod() * \
-                                    df_flowline.loc[pid,"starting_concentration"]
-                # Replace 'nan'-values by 0.
-                conc_steady[pid]  = np.nan_to_num(conc_steady[pid],0.)
-                # First value represents concentration of endpoint and v.v.
-                # Reverse array--> [C_final,Ct-1,..,...,C0]
-                conc_steady[pid] = conc_steady[pid][::-1]
-                # Index of average final concentration "C_" idx=0 [C_final,Ct-1,..,...,C0]
-                idx_final = 0
-
-            # Add steady_state_concentration to df_particle
-            df_particle.loc[pid,'steady_state_concentration'] = conc_steady[pid]
-
-        # Bereken gemiddelde eindconcentratie
-        C_final = 0.
-        for pid in df_flowline.index:
-            if df_flowline.loc[pid,"endpoint_id"] == endpoint_id:
-                C_final += (conc_steady[pid][idx_final] * df_flowline.loc[pid,"flowline_discharge"]) / \
-                            df_flowline.loc[pid,"well_discharge"]
+        return travel_time_shallow_aquifer
 
 
-        # return (adjusted) df_particle and df_flowline
-        return df_particle, df_flowline, C_final                        
+    def _calculate_travel_time_aquitard_semiconfined(self,
+                                                    distance,
+                                                    depth_point_contamination):
+        '''
+        Calculates the travel time in the shallow aquifer (aquitard) for the semiconfined case
+        using the the Peters (1985) solution (eq. 8.8 in \cite{Peters1985}, Equation A.12 in
+        TRANSATOMIC report BUT now implemented with n' (fraction of aquitard contacted, to
+        account for gaps in aquitard [-], here the porosity of the shallow
+        aquifer (aquitard)).
+
+        Parameters
+        ----------
+        distance: array
+            Array of distance(s) [m] from the well.
+            For diffuse sources 'distance' is the 'radial_distance' array.
+            For point sources 'distance' is 'distance_point_contamination_from_well'.
+        depth_point_contamination: float
+            Depth [mASL] of the point source contamination, if only diffuse contamination None is passed.
+
+        Returns
+        -------
+        travel_time_shallow_aquifer: array
+            Travel time in the shallow aquifer for each point in the given distance array, [days].
+        '''
+        
+        if depth_point_contamination is None:
+            travel_distance_shallow_aquifer  = self.schematisation.thickness_shallow_aquifer
+        elif depth_point_contamination > self.schematisation.bottom_shallow_aquifer:
+            travel_distance_shallow_aquifer  = self.schematisation.thickness_shallow_aquifer
+
+        else:
+            travel_distance_shallow_aquifer  = depth_point_contamination - self.schematisation.bottom_shallow_aquifer
+
+        self.travel_time_shallow_aquifer = (self.schematisation.porosity_shallow_aquifer
+                                            * (2 * math.pi * self.schematisation.KD * self.schematisation.vertical_resistance_shallow_aquifer
+                                            / (abs(self.schematisation.well_discharge))
+                                            * (travel_distance_shallow_aquifer
+                                            / besselk(0, distance
+                                            / math.sqrt(self.schematisation.KD * self.schematisation.vertical_resistance_shallow_aquifer)))
+                            ))
+        if travel_distance_shallow_aquifer < 0:
+            self.travel_time_shallow_aquifer =  np.array([0])
+
+        return self.travel_time_shallow_aquifer
+
+    # Insert paths for vadose_zone or aquitard based on analytical formulas
+    def calc_traveltime_vadose_analytical(self, vadose_parameters: dict = dict(), dict_key = 'vadose',
+                                            distance = None):
+        ''' Inherit functionality from Analytical_Well module'''
+
+        # Extract relevant parameters from 'vadose_parameters'
+
+
+        if vadose_parameters:  # Check if dict is filled or not
+
+            # Check for existance of dict_key
+            if not dict_key in vadose_parameters.keys():
+                dict_key = vadose_parameters.keys()[0] # Pick first available key in vadose_parameters
+
+            # Create distance array from df_particle if relevant 'vadose_parameters' exist
+            distance_xy = np.zeros((len(self.df_particle.index.unique()),3), dtype = 'float')
+            for iRow,pid in enumerate(self.df_particle.index.unique()):
+                # xcoord
+                distance_xy[iRow,0] = self.df_particle.loc[pid,"xcoord"].values[0]
+                # ycoord
+                distance_xy[iRow,1] = self.df_particle.loc[pid,"ycoord"].values[0]
+
+            #### MOVE TO: section 'create_modpath_packages', so before pathline simulation to determine depth vadose zone boundary (start of particles) ####
+
+            # # Calculate the travel time distribution for the semiconfined schematisation
+            # # for each of the aquifer zones and creates df_flowline and df_particle dataframes for the analytical case.
+            # if self.schematisation_type in ["phreatic","semiconfined"]:
+            #     self.schematisation._calculate_travel_time_unsaturated_zone(distance=distance_xy[:,0])   
+            '''
+            # Assign attributes:
+            - 'head' --> head distribution with distance to abstraction well [m]
+            - 'travel_time_unsaturated' --> travel time through vadose zone [d]
+            - 'thickness_vadose_zone_drawdown' --> drawdown due to abstraction in pumping well [m]
+            '''                    
+            # self.travel_time_unsaturated = self.schematisation.travel_time_unsaturated
+            # self.thickness_vadose_zone_drawdown = self.schematisation.thickness_vadose_zone_drawdown
+            # self.head = self.schematisation.head
+
+            # df_particle phreatic
+            df_cols = ["xcoord","ycoord","zcoord","total_travel_time",
+                        "porosity","solid_density","fraction_organic_carbon",
+                        "redox","dissolved_organic_carbon","pH","temperature","material"]
+            
+            # Define index of phreatic pathline df
+            flowline_id = self.df_particle.index.unique()
+            df_index = flowline_id
+
+            # Create df_particle for phreatic pathlines
+            df_phreatic = pd.DataFrame(index= df_index, columns = df_cols)
+            df_phreatic.index.name = "flowline_id"
+
+            # store arrays for df_phreatic
+            df_phreatic.loc[df_index,"xcoord"] = distance_xy[:,0]
+            df_phreatic.loc[df_index,"ycoord"] = distance_xy[:,1]
+            # Groundlevel
+            df_phreatic.loc[df_index,"zcoord"] = np.array([vadose_parameters[dict_key]['top']] * len(flowline_id))
+            # first record no time passed; shift other time values in dataframe afterwards
+            df_phreatic.loc[df_index,"total_travel_time"] = np.array([0.] * len(flowline_id))  
+            for iRow,pid in enumerate(self.df_particle.index.unique()):
+                # shift travel times with unsaturated zone traveltime
+                self.df_particle.loc[pid,"total_travel_time"] = self.df_particle.loc[pid,"total_travel_time"] # + self.travel_time_unsaturated[iRow] 
+
+            # Fill arrays to add to df_particle
+            df_phreatic.loc[df_index,"porosity"] = np.array([vadose_parameters[dict_key]['porosity']] * len(flowline_id))
+            df_phreatic.loc[df_index,"solid_density"] = np.array([vadose_parameters[dict_key]['solid_density']] * len(flowline_id))
+            df_phreatic.loc[df_index,"fraction_organic_carbon"] = np.array([vadose_parameters[dict_key]['fraction_organic_carbon']] * len(flowline_id))
+            df_phreatic.loc[df_index,"redox"] = np.array([vadose_parameters[dict_key]['redox']] * len(flowline_id))
+            df_phreatic.loc[df_index,"dissolved_organic_carbon"] = np.array([vadose_parameters[dict_key]['dissolved_organic_carbon']] * len(flowline_id))
+            df_phreatic.loc[df_index,"pH"] = np.array([vadose_parameters[dict_key]['pH']] * len(flowline_id))
+            df_phreatic.loc[df_index,"temperature"] = np.array([vadose_parameters[dict_key]['temperature']] * len(flowline_id))
+            df_phreatic.loc[df_index,"material"] = np.array(['vadose'] * len(flowline_id))
+            
+            # Append records to df_particle dataframe 
+            self.df_particle = self.df_particle.append(df_phreatic)
+
+            # sort by 'flowline_id' (=index) and 'time'
+            self.df_particle = self.df_particle.sort_values(['flowline_id', 'total_travel_time','xcoord'], ascending = [True,True,False])
+
 
     def run_model(self,
                     # simulation_parameters: dict or None = None,
@@ -2783,13 +2836,197 @@ class ModPathWell:
 
             # Export output data to particle_df and flowline_df
             self._export_to_df(mppth = self.mppth)
-
             print("Post-processing modpathrun of type", self.schematisation_type, "completed.")
 
-                
+
+
+#%%  
+
+def _calculate_hydraulic_head_phreatic(self, distance):
+    ''' Calcualtes the hydraulic head distribution for the phreatic schematisation case
+
+    Parameters
+    ----------
+    distance: array
+        Array of distance(s) [m] from the well, for diffuse sources given as
+        the array radial_distance, for point sources given as the distance_point_contamination_from_well.
+
+    Returns
+    -------
+    head: array
+        Hydraulic head for each point in the given distance array, [mASL].
+    '''
+    ##@Alex: check if this function works properly if a negative well_discharge is given)
+    head = (self.groundwater_level + (self.well_discharge
+                / (2 * math.pi * self.KD))
+                * np.log(self.radial_distance_recharge / distance))
+    return head
+
+
+# #ah_todo possibly split this into making the thickness, head and travel time (3 functions)? Advantages?
+# def _calculate_unsaturated_zone_travel_time_phreatic (self,
+#                                                     distance,
+#                                                     depth_point_contamination=None):
+#     '''
+#     Calculates the travel time in the unsaturated zone for the phreatic case.
+
+#     Parameters
+#     ----------
+#     distance: array
+#         Array of distance(s) [m] from the well.
+#         For diffuse sources 'distance' is the 'radial_distance' array.
+#         For point sources 'distance' is 'distance_point_contamination_from_well'.
+#     depth_point_contamination: float
+#         Depth [mASL] of the point source contamination, if only diffuse contamination None is passed.
+#         MK: depth_point_contamination is an attribute right? dont need for argument here. Moreover, the
+#             if depth_point_contamination is None:
+#         case seem to be already caught in the __init__ of Schematisation class
+#         AH_todo @MartinK -> yes it is an attribute, but this needs to be passed in the function to 
+#         distinguish between the diffuse and point source calculations
+#         #AH_todo review the logic of how the diffusion/point sources are calculated with @martinK
+
+#     Returns
+#     -------
+#     travel_time_unsaturated: array
+#         Travel time in the unsaturated zone for each point in the given distance array, [days].
+#     thickness_vadose_zone_drawdown: array
+#         Drawdown of the hydraulic head in the vadose zone for each point in the given distance array, [m].
+#     head: array
+#         Hydraulic head for each point in the given distance array, [mASL].
+#     '''
+
+#     head = self._calculate_hydraulic_head_phreatic(distance=distance)
+
+#     if depth_point_contamination is None:
+#         thickness_vadose_zone_drawdown = (self.groundwater_level
+#                                             + self.thickness_vadose_zone_at_boundary) - head
+
+#         travel_time_unsaturated = (((self.groundwater_level + thickness_vadose_zone_drawdown
+#                                 - self.groundwater_level
+#                                 - self.thickness_full_capillary_fringe)
+#                                 * self.moisture_content_vadose_zone
+#                                 + self.thickness_full_capillary_fringe
+#                                 * self.porosity_vadose_zone)
+#                             / self.recharge_rate)
+
+#     elif depth_point_contamination >= head:
+#         thickness_vadose_zone_drawdown = depth_point_contamination - head
+#         if thickness_vadose_zone_drawdown < 0:
+#             travel_time_unsaturated =  np.array([0])
+#         else:
+#             travel_time_unsaturated = (((self.groundwater_level + thickness_vadose_zone_drawdown
+#                                 - self.groundwater_level
+#                                 - self.thickness_full_capillary_fringe)
+#                                 * self.moisture_content_vadose_zone
+#                                 + self.thickness_full_capillary_fringe
+#                                 * self.porosity_vadose_zone)
+#                             / self.recharge_rate)
+#     else:
+#         travel_time_unsaturated = np.array([0])
+#         thickness_vadose_zone_drawdown = 0 #AH_todo possibly replace this with the travel distance, not thickness_vadose because this is a stand in for the travel distance?
+
+#     # raise warning if the thickness of the drawdown at the well is such that
+#     # it reaches the target aquifer
+
+#     #@MartinK -> how to raise this warning properly in the web interface? #AH_todo
+#     self.drawdown_at_well = self.ground_surface - thickness_vadose_zone_drawdown
+#     if self.drawdown_at_well[0] < self.bottom_target_aquifer:
+#         raise ValueError('The drawdown at the well is lower than the bottom of the target aquifer. Please select a different schematisation.') 
+
+#     elif self.drawdown_at_well[0] < self.bottom_shallow_aquifer:
+#         warnings.warn('The drawdown at the well is lower than the bottom of the shallow aquifer')
+    
+#     else:
+#         pass
+
+#     return travel_time_unsaturated, thickness_vadose_zone_drawdown, head
+
+# def _calculate_travel_time_unsaturated_zone(self,
+#                                             distance=None,
+#                                             depth_point_contamination=None):
+
+#     ''' Calculates the travel time in the unsaturated zone for the phreatic and semiconfined cases.
+#     The travel time is returned as an attribute of the object.
+
+#     MK: interesting that you put this method in this class and not in the Analytical Well class. From
+#     a data point of view it is good that you do it here because all the data you need is in this class. However,
+#     from a workflow point of view it makes less sense. Because the schematization is defined  in this class,
+#     not its derived quantities. I would move it to AnalyticalWell class. /UNLESS/ it is used by Modflow as well.
+#     # AH_todo, @MartinK -> yes, this is needed by Modflow schematisation, so leave here
+#     # @martinvdS, confirm that Modflow schematisation still needs the unsaturated zone travel times calculated in this class
+
+#     Parameters
+#     ----------
+#     distance: array, optional
+#         Array of distance(s) [m] from the well.
+#         For diffuse sources 'distance' is the 'radial_distance' array.
+#         For point sources 'distance' is 'distance_point_contamination_from_well'.
+#         MK: what if None? see: https://numpydoc.readthedocs.io/en/latest/format.html#parameters
+#         -> #ah_todo @MartinK - ok I assume then I just add optional to the description?
+#     depth_point_contamination: float, optional
+#         Depth [mASL] of the point source contamination, if only diffuse contamination None is passed.
+#         MK: what if None? -> #ah_todo @MartinK - ok I assume then I just add optional to the description?
+
+#     Returns
+#     -------
+#     travel_time_unsaturated: array
+#         Travel time in the unsaturated zone for each point in the given distance array returned as
+#         attrubute of the function, [days].
+
+#     '''
+
+#     self.spreading_distance = math.sqrt(self.vertical_resistance_shallow_aquifer * self.KD)
+
+#     # AH do not change to model_radius, since the radial distance for recharge is based on the phreatic value for BOTH cases
+#     self.radial_distance_recharge =  math.sqrt(abs(self.well_discharge
+#                                                 / (math.pi * self.recharge_rate )))
+
+#     # Diffuse source or regular travel time calculation use radial distance array
+#     # AH_todo alter here if we use multiple point sources
+#     # what does None mean? or not None?
+#     if distance is None:
+#         self._create_radial_distance_array()
+#         distance= self.radial_distance
+#     else:
+#         distance = distance
+
+#     '''Equation A.11 in TRANSATOMIC report '''
+
+#     if self.schematisation_type =='phreatic':
+#         # MK: I think a better structure would have been:
+#         # _calculate_unsaturated_zone_travel_time_phreatic as main method that calls another method with the
+#         # logic it has in common with schematization_type=semiconfined
+#         #AH I don't see the advantage of this, @martinK
+#         travel_time_unsaturated, self.thickness_vadose_zone_drawdown, self.head = self._calculate_unsaturated_zone_travel_time_phreatic(distance= distance,depth_point_contamination=depth_point_contamination)
+
+#     elif self.schematisation_type == 'semiconfined':
+#         # MK: couldn't you have put depth_point_contamination at self.ground_surface in the __init__? then you
+#         # don't need this if statement here.
+#         #AH_todo review the logic of how the diffusion/point sources are calculated with @martinK
+#         if depth_point_contamination is None:
+#             travel_distance = self.ground_surface - self.groundwater_level - self.thickness_full_capillary_fringe
+#         else:
+#             #if point contamination at depth, assign ground surface to depth
+#             travel_distance =  depth_point_contamination - self.groundwater_level - self.thickness_full_capillary_fringe
+
+#         travel_time_unsaturated =(((travel_distance)
+#                                     * self.moisture_content_vadose_zone
+#                                     + self.thickness_full_capillary_fringe
+#                                     * self.porosity_vadose_zone)
+#                                 / self.recharge_rate)
+
+#         if travel_distance < 0:
+#             travel_time_unsaturated = 0
+
+#         # travel time in semiconfined is one value, make it array by repeating the value
+#         # MK: do you have a test for this? ... 
+#         # AH_todo no not yet
+#         if not isinstance(distance, float):
+#             travel_time_unsaturated = [travel_time_unsaturated] * (len(distance))
+
+#     self.travel_time_unsaturated = travel_time_unsaturated
 
 '''
-#%%  
 class ModPathWell_OLD():
     """ Compute travel time distribution using MODFLOW and MODPATH.""" 
 

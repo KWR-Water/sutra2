@@ -89,7 +89,7 @@ def test_modflow_run_phreatic_withgravelpack(organism_name = "MS2"):
     test_phrea.make_dictionary()
     # print(test_phrea.__dict__)
     modpath_phrea = MP.ModPathWell(test_phrea,
-                            workspace = "test_ws",
+                            workspace = "test1_phrea_mf",
                             modelname = "phreatic",
                             bound_left = "xmin",
                             bound_right = "xmax")
@@ -159,7 +159,7 @@ def test_modpath_run_phreatic_nogravelpack(organism_name = "MS2"):
 
     # print(test_phrea.__dict__)
     modpath_phrea = MP.ModPathWell(test_phrea,
-                            workspace = "test_phrea_nogp",
+                            workspace = "test2_phrea_nogp",
                             modelname = "phreatic",
                             bound_left = "xmin",
                             bound_right = "xmax")
@@ -204,7 +204,7 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
     alpha0 = {"suboxic": 1.e-3, "anoxic": 1.e-5, "deeply_anoxic": 1.e-5}
     reference_pH = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8}
     organism_diam =  2.33e-8
-    mu1 = {"suboxic": 0.149,"anoxic": 0.023,"deeply_anoxic": 0.023}
+    mu1 = {"suboxic": 0.039,"anoxic": 0.023,"deeply_anoxic": 0.023}
 
     removal_parameters = {organism_name: 
                     {"organism_name": organism_name,
@@ -221,7 +221,8 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
     df_particle, df_flowline = {}, {}
 
     # Distances to boundary
-    dist_boundary = [20, 50, 100, 150, 200]
+    dist_boundary = [50] # list(range(25,100,5)) + list(range(100,560,10))
+    # [10,20, 50, 100, 150, 200,250,300,350,400,450,500,550]
 
     df_conc = pd.DataFrame(index=dist_boundary, columns = ["Final_concentration"])
     df_conc.index.name = "Boundary_distance"
@@ -278,8 +279,8 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
                                     top_clayseal = 0,
                                     compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
                                     model_radius = distance_boundary,
-                                    ncols_near_well = 10,
-                                    ncols_far_well = int(distance_boundary/5),
+                                    ncols_near_well = 20,
+                                    ncols_far_well = int(distance_boundary/10),
                                     # Point contamination
                                     point_input_concentration = 1.,
                                     discharge_point_contamination = abs(well_discharge),
@@ -305,7 +306,7 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
 
         # ModPath well
         modpath_hor = MP.ModPathWell(test_conf_hor, #test_phrea,
-                                workspace = "test_ws_conf_hor_pnts",
+                                workspace = "test3_conf_hor_pnts",
                                 modelname = "confined_hor",
                                 bound_left = "xmin",
                                 bound_right = "xmax")
@@ -459,7 +460,7 @@ def test_modpath_run_horizontal_flow_diffuse(organism_name = "MS2"):
 
     # ModPath well
     modpath_hor = MP.ModPathWell(test_conf_hor, #test_phrea,
-                            workspace = "test_ws_conf_hor_diffuse",
+                            workspace = "test4_conf_hor_diffuse",
                             modelname = "confined_hor",
                             bound_left = "xmin",
                             bound_right = "xmax")
@@ -625,7 +626,7 @@ def test_modpath_run_phreatic_withgravelpack_traveltimes(organism_name = "MS2"):
 
     # print(test_phrea.__dict__)
     modpath_phrea = MP.ModPathWell(test_phrea_gp, #test_phrea,
-                            workspace = "test_ws_phrea_gp",
+                            workspace = "test5_phrea_gp",
                             modelname = "phreatic",
                             bound_left = "xmin",
                             bound_right = "xmax")
@@ -721,7 +722,7 @@ def test_modpath_run_phreatic_withgravelpack_removal(organism_name = "MS2"):
 
     # print(test_phrea.__dict__)
     modpath_phrea = MP.ModPathWell(test_phrea_gp, #test_phrea,
-                            workspace = "test_ws_phrea_gp_removal",
+                            workspace = "test6_phrea_gp_removal",
                             modelname = "phreatic",
                             bound_left = "xmin",
                             bound_right = "xmax")
@@ -888,7 +889,7 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
     test_semiconf.point_parameters = {}
 
     modpath_semiconf = MP.ModPathWell(test_semiconf, # semiconf_dict_1, #test_phrea,
-                            workspace = "test1_ws_semiconf_nogp",
+                            workspace = "test7_semiconf_nogp",
                             modelname = "semi_conf_nogp",
                             bound_left = "xmin",
                             bound_right = "xmax")
@@ -1011,7 +1012,7 @@ def test_diffuse_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name
     test_semiconf.point_parameters = {}
 
     modpath_semiconf = MP.ModPathWell(test_semiconf, #test_phrea,
-                            workspace = "test1_ws_semiconf",
+                            workspace = "test8_semiconf",
                             modelname = "semi_conf_no_gp",
                             bound_left = "xmin",
                             bound_right = "xmax")
@@ -1124,7 +1125,7 @@ def test_phreatic_scheme_withgravelpack_dictinput(organism_name = "MS2"):
 
 #%%
 
-def test_travel_time_distribution_phreatic(organism_name = "MS2"):
+def test_travel_time_distribution_phreatic_analytical(organism_name = "MS2"):
     output_phreatic = pd.read_csv(path / 'phreatic_test.csv')
     output_phreatic = output_phreatic.round(7) #round to 7 digits (or any digit), keep same as for the output for the model to compare
 
@@ -1171,7 +1172,82 @@ def test_travel_time_distribution_phreatic(organism_name = "MS2"):
     else:
         print("Success, no error in TTD!")
 
+#%%
 
+def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name = "MS2"):
+    output_phreatic = pd.read_csv(path / 'phreatic_test.csv')
+    output_phreatic = output_phreatic.round(7) #round to 7 digits (or any digit), keep same as for the output for the model to compare
+
+    test_phrea = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
+                                        computation_method= 'analytical',
+                                        what_to_export='all',
+                                        removal_function = 'mbo',
+                                        well_discharge=-319.4*24,
+                                        # vertical_resistance_shallow_aquifer=500,
+                                        hor_permeability_shallow_aquifer = 0.02,
+                                        porosity_vadose_zone=0.38,
+                                        porosity_shallow_aquifer=0.35,
+                                        porosity_target_aquifer=0.35,
+                                        recharge_rate=0.3/365.25,
+                                        moisture_content_vadose_zone=0.15,
+                                        ground_surface = 22,
+                                        thickness_vadose_zone_at_boundary=5,
+                                        thickness_shallow_aquifer=10,
+                                        thickness_target_aquifer=40,
+                                        hor_permeability_target_aquifer=35,
+                                        # KD=1400,
+                                        thickness_full_capillary_fringe=0.4,
+                                        temperature=11,
+                                         solid_density_vadose_zone= 2.650,
+                                        solid_density_shallow_aquifer= 2.650,
+                                        solid_density_target_aquifer= 2.650,
+                                        diameter_borehole = 0.75,
+                                        name=organism_name
+                                        )
+
+    # AnalyticalWell object
+    well1_an = AW.AnalyticalWell(test_phrea)
+    well1_an.phreatic()
+    output_an = well1_an.df_particle
+    output_an = output_an.round(7)
+
+    # ModPath well object
+    well1_mp = MP.ModPathWell(test_phrea, #test_phrea,
+                            workspace = "test11_phrea",
+                            modelname = "phreatic",
+                            bound_left = "xmin",
+                            bound_right = "xmax")
+
+    # Run phreatic schematisation
+    well1_mp.run_model(run_mfmodel = True,
+                        run_mpmodel = True)
+
+    output_mp = well1_mp.df_particle
+    # output_mp = output_mp[["total_travel_time", "travel_time_unsaturated",
+    #                  "travel_time_shallow_aquifer", "travel_time_target_aquifer",
+    #                  "radial_distance", ]]
+    output_mp = output_mp.round(7)
+
+    # Export output of analytical and modpath calculations
+    
+    # df_particle file name (analytical well data)
+    particle_fname_an = os.path.join(well1_mp.dstroot,well1_mp.schematisation_type + "_df_particle_analytical.csv")
+    # Save df_particle 
+    output_an.to_csv(particle_fname_an)
+   
+    # df_particle file name 
+    particle_fname_mp = os.path.join(well1_mp.dstroot,well1_mp.schematisation_type + "_df_particle_modpath.csv")
+    # Save df_particle 
+    output_mp.to_csv(particle_fname_mp)
+
+
+    try:
+        assert_frame_equal(output_an, output_phreatic,check_dtype=False)
+
+    except AssertionError:
+        print("Assertion Exception Raised - TTD test")
+    else:
+        print("Success, no error in TTD!")
 
 
 #%%
