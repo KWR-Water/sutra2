@@ -1118,9 +1118,7 @@ class SubstanceTransport():
             # Calculate porewater velocity [m/day] (do not include effective porosity)
             v_por[pid] = abs(dist[pid][1:]/tdiff[pid][1:])
             # correct "0" velocity values
-            for i in range(len(v_por[pid])):
-                if v_por[pid][i] == 0.:
-                    v_por[pid][i] = v_por[pid][i-1]
+            v_por[pid][v_por[pid] == 0.] = 0.001
 
             # Fill column relative_distance in 'df_particle' 
             df_particle.loc[pid,'relative_distance'] = np.array([0] + list(dist[pid][1:]))

@@ -221,7 +221,7 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
     df_particle, df_flowline = {}, {}
 
     # Distances to boundary
-    dist_boundary = [50] # list(range(25,100,5)) + list(range(100,560,10))
+    dist_boundary = list(range(25,100,5)) + list(range(100,560,10)) # [260] #  + 
     # [10,20, 50, 100, 150, 200,250,300,350,400,450,500,550]
 
     df_conc = pd.DataFrame(index=dist_boundary, columns = ["Final_concentration"])
@@ -229,6 +229,7 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
 
     for iDist in dist_boundary:
 
+        
         # well discharge
         well_discharge = -1000.
         # distance to boundary
@@ -342,8 +343,9 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
                                                 trackingdirection = modpath_hor.trackingdirection,
                                                 conc_start = 1., conc_gw = 0.)
 
-        # Add final concentration to summary dataframe
-        df_conc.loc[iDist,"Final_concentration"] = C_final[endpoint_id]
+            # print("Final concentration at " + str(iDist) + " m is: " + str(round(C_final[endpoint_id],4)))
+            # Add final concentration to summary dataframe
+            df_conc.loc[iDist,"Final_concentration " + endpoint_id] = C_final[endpoint_id]
 
         # df_particle file name 
         particle_fname = os.path.join(modpath_hor.dstroot,modpath_hor.schematisation_type + "_df_particle_microbial_removal" + str(iDist) + "m.csv")

@@ -1954,21 +1954,26 @@ class ModPathWell:
             nodes.append(iLay * self.nrow * self.ncol + iRow * self.ncol + iCol)
         return nodes
 
-    def xyz_to_layrowcol(self,xyz_point, round_digits = 3):
+    # def round_down(self,value, decimals):
+    #     ''' round value down to n decimals.'''
+    #     factor = 1 / (10 ** decimals)
+    #     return np.round((value // factor) * factor, decimals)
+
+    def xyz_to_layrowcol(self,xyz_point, decimals = 3):
         ''' obtain lay, row, col index of an xyz_point list [x,y,z]. '''
 
         # Round XYZ to 4 digits
-        xyz_point = [round(iVal,round_digits) for iVal in xyz_point]
+        xyz_point = [np.round(iVal,decimals) for iVal in xyz_point]
 
         # min and max arrays in X-direction
-        xmin_arr = np.round(self.xmid-0.5*self.delr,round_digits)
-        xmax_arr = np.round(self.xmid+0.5*self.delr,round_digits)
+        xmin_arr = np.round(np.array([self.xmid[0] - 0.5 * self.delr[0]] + list(self.xmid[:-1] + 0.5 * self.delr[:-1])), decimals)
+        xmax_arr = np.round(self.xmid + 0.5 * self.delr, decimals)
         # min and max arrays in Y-direction
-        ymin_arr = np.round(self.ymid-0.5*self.delc,round_digits)
-        ymax_arr = np.round(self.ymid+0.5*self.delc,round_digits)
+        ymin_arr = np.round(self.ymid - 0.5 * self.delc, decimals)
+        ymax_arr = np.round(np.array([self.ymid[0] + 0.5 * self.delc[0]] + list(self.ymid[:-1] - 0.5 * self.delc[:-1])), decimals)
         # min and max arrays in Z-direction
-        zmin_arr = np.round(self.zmid-0.5*self.delv,round_digits)
-        zmax_arr = np.round(self.zmid+0.5*self.delv,round_digits)
+        zmin_arr = np.round(self.zmid - 0.5 * self.delv, decimals)
+        zmax_arr = np.round(np.array([self.zmid[0] + 0.5 * self.delv[0]] + list(self.zmid[:-1] - 0.5 * self.delv[:-1])), decimals)
 
         # node layer, row, column
         node_lay = np.argwhere((xyz_point[2] > zmin_arr) & \
@@ -2010,7 +2015,7 @@ class ModPathWell:
             node_indices[iPart] = []
             for iNode in range(nr_nodes):
                 # list lay, row, col of nodes and store them in 'node_indices' dict
-                node_idx = self.xyz_to_layrowcol(xyz_point = xyz_nodes[iPart][iNode].tolist(), round_digits = 2)
+                node_idx = self.xyz_to_layrowcol(xyz_point = xyz_nodes[iPart][iNode].tolist(), decimals = 3)
                 node_indices[iPart].append(node_idx)
 
         return node_indices
@@ -2110,10 +2115,11 @@ class ModPathWell:
 
             # Determine number of remaining nodes
             n_nodes = min(xyz_nodes[idx].shape[0],time_nodes[idx].shape[0])
-            if xyz_nodes[idx].shape[0] != time_nodes[idx].shape[0]:
-                print(xyz_nodes[idx].shape[0],time_nodes[idx].shape[0])
+            # if xyz_nodes[idx].shape[0] != time_nodes[idx].shape[0]:
+            #     print(xyz_nodes[idx].shape[0],time_nodes[idx].shape[0])
             #Distance array between nodes
             dist[idx] = np.zeros((n_nodes-1), dtype = 'float')
+            
             # Time difference array
             tdiff[idx] = np.zeros((n_nodes-1), dtype = 'float')
             for iNode in range(1,n_nodes):
@@ -2374,8 +2380,8 @@ class ModPathWell:
             endpoint = xyzt_data.loc[xyzt_data.total_travel_time == xyzt_data.total_travel_time.max(),
                                         ["xcoord","ycoord","zcoord"]].values.tolist()[0]
             # Nodes of start and endpoints
-            node_start[fid] = self.xyz_to_layrowcol(xyz_point = startpoint, round_digits = 5)
-            node_end[fid] = self.xyz_to_layrowcol(xyz_point = endpoint, round_digits = 5)
+            node_start[fid] = self.xyz_to_layrowcol(xyz_point = startpoint, decimals = 5)
+            node_end[fid] = self.xyz_to_layrowcol(xyz_point = endpoint, decimals = 5)
             # Count start points in cell
             count_startpoints[node_start[fid]] = count_startpoints.get(node_start[fid],0) + 1
             count_endpoints[node_end[fid]] = count_endpoints.get(node_end[fid],0) + 1
