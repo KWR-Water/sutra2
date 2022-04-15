@@ -1954,11 +1954,6 @@ class ModPathWell:
             nodes.append(iLay * self.nrow * self.ncol + iRow * self.ncol + iCol)
         return nodes
 
-    # def round_down(self,value, decimals):
-    #     ''' round value down to n decimals.'''
-    #     factor = 1 / (10 ** decimals)
-    #     return np.round((value // factor) * factor, decimals)
-
     def xyz_to_layrowcol(self,xyz_point, decimals = 3):
         ''' obtain lay, row, col index of an xyz_point list [x,y,z]. '''
 
