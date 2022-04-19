@@ -35,6 +35,7 @@ import pandas as pd
 import os
 import sys
 import copy
+import warnings
 
 # from pandas import read_excel
 from pandas import read_csv
@@ -818,24 +819,24 @@ class ModPathWell:
                                     grid = self.strt,
                                     dtype = 'int')      
 
-        # Calculate the travel time distribution for the semiconfined schematisation
-        # for each of the aquifer zones and creates df_flowline and df_particle dataframes for the analytical case.
-        if self.schematisation_type in ["phreatic"]:
-            self.schematisation._calculate_travel_time_unsaturated_zone(distance=self.delr.cumsum(axis=0))        
-            '''
-            # Assign attributes:
-            - 'head' --> head distribution with distance to abstraction well [m]
-            - 'travel_time_unsaturated' --> travel time through vadose zone [d]
-            - 'thickness_vadose_zone_drawdown' --> drawdown due to abstraction in pumping well [m]
-            '''   
-            self.strt = self.schematisation.head[0]     
-            self.travel_time_unsaturated = self.schematisation.travel_time_unsaturated
-            self.thickness_vadose_zone_drawdown = self.schematisation.thickness_vadose_zone_drawdown
-            self.head = self.schematisation.head
-        else:
-            self.travel_time_unsaturated = None
-            self.thickness_vadose_zone_drawdown = None
-            self.head = None
+        # # Calculate the travel time distribution for the semiconfined schematisation
+        # # for each of the aquifer zones and creates df_flowline and df_particle dataframes for the analytical case.
+        # if self.schematisation_type in ["phreatic"]:
+        #     self.schematisation._calculate_travel_time_unsaturated_zone(distance=self.delr.cumsum(axis=0))        
+        #     '''
+        #     # Assign attributes:
+        #     - 'head' --> head distribution with distance to abstraction well [m]
+        #     - 'travel_time_unsaturated' --> travel time through vadose zone [d]
+        #     - 'thickness_vadose_zone_drawdown' --> drawdown due to abstraction in pumping well [m]
+        #     '''   
+        #     self.strt = self.schematisation.head[0]     
+        #     self.travel_time_unsaturated = self.schematisation.travel_time_unsaturated
+        #     self.thickness_vadose_zone_drawdown = self.schematisation.thickness_vadose_zone_drawdown
+        #     self.head = self.schematisation.head
+        # else:
+        #     self.travel_time_unsaturated = None
+        #     self.thickness_vadose_zone_drawdown = None
+        #     self.head = None
 
         # Set ibound of additional rows equal to zero
         self.ibound[:,1:,:] = 0
@@ -1102,6 +1103,30 @@ class ModPathWell:
             print (e,"Error loading strt_fw data\nstrt_fw set to '0'.")
             self.head_mf = np.zeros((self.nlay,self.nrow,self.ncol), dtype= 'float')
         
+        # drawdown array
+        drawdown = self.schematisation.groundwater_level - self.head_mf[:,0,:].max(axis=0)
+        # self.head_mf_belowgwlevel = 
+
+        # Calculate the travel time distribution for the semiconfined schematisation
+        # for each of the aquifer zones and creates df_flowline and df_particle dataframes for the analytical case.
+        if self.schematisation_type in ["phreatic"]:
+            self.schematisation._calculate_travel_time_unsaturated_zone(distance=self.delr.cumsum(axis=0))        
+            '''
+            # Assign attributes:
+            - 'head' --> head distribution with distance to abstraction well [m]
+            - 'travel_time_unsaturated' --> travel time through vadose zone [d]
+            - 'thickness_vadose_zone_drawdown' --> drawdown due to abstraction in pumping well [m]
+            '''   
+            # self.strt = self.schematisation.head[0]     
+            self.travel_time_unsaturated = self.schematisation.travel_time_unsaturated
+            self.thickness_vadose_zone_drawdown = self.schematisation.thickness_vadose_zone_drawdown
+            self.head_analytical = self.schematisation.head
+        else:
+            self.travel_time_unsaturated = None
+            self.thickness_vadose_zone_drawdown = None
+            self.head_analytical = None
+
+
         # # Drawdown in analytical model
         # self.head_anal_dd = self.schematisation.head - self.schematisation.head.max()
         # Drawdown in mfmodel (max head)
@@ -1170,41 +1195,6 @@ class ModPathWell:
         # Model run completed succesfully
         print("Model run", self.workspace, self.modelname, "completed without errors:", self.success_mf)
 
-    # Here are functions to calculate the travel time through vadose zone, shared functions for
-    # Analytical and Modflow models
-    def _create_radial_distance_array(self, fraction_flux:np.array or None = None):
-
-        ''' Create array of radial distances from the well to a maximum value, radial distance recharge, which
-        is the distance from the well needed to recharge the well to meet the pumping demand. '''
-        # ah_todo change this to single array of 0.001 to 100
-        # right now we have this set up to directly compare with P. Stuyfzand's results
-        # in the 'final' version of the model can be a more fine mesh
-        # but need to think about how we change the testing
-
-        self.spreading_distance = math.sqrt(self.schematisation.vertical_resistance_aquitard * self.schematisation.KD)
-        # AH do not change to model_radius, since the radial distance for recharge is based on the phreatic value for BOTH cases
-        self.radial_distance_recharge =  (math.sqrt(self.schematisation.well_discharge
-                                                    / (math.pi * self.schematisation.recharge_rate)))
-
-        if fraction_flux is None:
-            fraction_flux = np.array([0.00001, 0.0001, 0.001, 0.005])
-            fraction_flux = np.append(fraction_flux, np.arange(0.01, 1, 0.01))
-            fraction_flux = np.append(fraction_flux, [0.995, 0.9999])
-        
-        self.fraction_flux = fraction_flux
-
-        radial_distance = self.radial_distance_recharge * np.sqrt(self.fraction_flux)
-            
-        if self.schematisation_type == 'semiconfined':
-
-            radial_distance = np.append(radial_distance,
-                                    [(radial_distance[-1] + ((self.spreading_distance * 3) - radial_distance[-1]) / 3),
-                                    (radial_distance[-1] + 2 *
-                                    ((self.spreading_distance * 3) - radial_distance[-1]) / 3),
-                                        (self.spreading_distance * 3)])
-        
-        self.radial_distance = radial_distance
-
     def particle_data(self, partlocs=None, structured=True, particleids=[0],
                                  localx=None, localy=0.5, localz=None,
                                  timeoffset=0.0, drape=None,
@@ -1239,45 +1229,154 @@ class ModPathWell:
                                              timeoffset = timeoffset, 
                                              particleids = particleids)
 
-    # def _create_radial_distance_particles_recharge(self, recharge_parameters = None,
-    #                                             fraction_flux:np.array or None = None):
 
-    #     ''' Create array of radial distances from the well to a maximum value, radial distance recharge, which
-    #     is the distance from the well needed to recharge the well to meet the pumping demand. '''
+    #ah_todo possibly split this into making the thickness, head and travel time (3 functions)? Advantages?
+    def _calculate_unsaturated_zone_travel_time_phreatic (self,
+                                                            distance: np.array,
+                                                            gw_level: int or float or np.array):
+        '''
+        Calculates the travel time in the unsaturated zone for the phreatic case.
 
-        
-    #     if recharge_parameters is None:
-    #         recharge_parameters = self.schematisation_dict.get('recharge_parameters')
-        
-    #     if fraction_flux is None:
-    #         fraction_flux = np.array([0.00001, 0.0001, 0.001, 0.005])
-    #         fraction_flux = np.append(fraction_flux, np.arange(0.01, 1, 0.01))
-    #         fraction_flux = np.append(fraction_flux, [0.995, 0.9999])
-        
-    #     self.fraction_flux = fraction_flux
+        Parameters
+        ----------
+        distance: array, optional
+            Array of distance(s) [m] from the well.
+            For diffuse sources 'distance' is the 'radial_distance' array.
+            For point sources 'distance' is 'distance_point_contamination_from_well'.
+            MK: what if None? see: https://numpydoc.readthedocs.io/en/latest/format.html#parameters
+            -> #ah_todo @MartinK - ok I assume then I just add optional to the description?
+        gw_level: array or float
+            Array or float of groundwater level in phreatic aquifer [m ASL]
 
-    #     ## Particle group data ##
-    #     pgroups = list(recharge_parameters.keys())
-    #     # xmin and xmax per pg
-    #     self.pg_xmin, self.pg_xmax = {}, {}
-    #     # Recharge rate per particle group
-    #     self.recharge_pg = {}
-    #     # Cumulative flux per particle group
-    #     self.flux_pg = {}
-    #     # Radial distance array per pg
-    #     self.radial_distance = {}
-    #     for iPG in pgroups:
-    #         # xmin
-    #         self.pg_xmin[iPG] = recharge_parameters.get(iPG).get("xmin")
-    #         # xmax
-    #         self.pg_xmax[iPG] = recharge_parameters.get(iPG).get("xmax")
-    #         # recharge rate per particle group
-    #         self.recharge_pg[iPG] = recharge_parameters.get(iPG).get("recharge")
-    #         # cumulative flux per particle group
-    #         self.flux_pg[iPG] = math.pi * (self.pg_xmax[iPG]**2 - self.pg_xmin[iPG]**2) * self.recharge_pg[iPG]
+        Returns
+        -------
+        travel_time_unsaturated: array
+            Travel time in the unsaturated zone for each point in the given distance array returned as
+            attrubute of the function, [days].
+        thickness_vadose_zone_drawdown: array
+            Thickness of the vadose zone, corresponding to the depth where saturated flow starts 
+            and where modpath particles are being released.
+        '''
+
+        # head = self._calculate_hydraulic_head_phreatic(distance=distance)
+
+        # # if depth_point_contamination is None:
+        # #     thickness_vadose_zone_drawdown = (self.groundwater_level
+        # #                                         + self.thickness_vadose_zone_at_boundary) - head
+
+        # #     travel_time_unsaturated = (((self.groundwater_level + thickness_vadose_zone_drawdown
+        # #                             - self.groundwater_level
+        # #                             - self.thickness_full_capillary_fringe)
+        # #                             * self.moisture_content_vadose_zone
+        # #                             + self.thickness_full_capillary_fringe
+        # #                             * self.porosity_vadose_zone)
+        # #                         / self.recharge_rate)
+
+        # # elif depth_point_contamination >= head:
+        # #     thickness_vadose_zone_drawdown = depth_point_contamination - head
+        # #     if thickness_vadose_zone_drawdown < 0:
+        # #         travel_time_unsaturated =  np.array([0])
+        # #     else:
+        # #         travel_time_unsaturated = (((self.groundwater_level + thickness_vadose_zone_drawdown
+        # #                             - self.groundwater_level
+        # #                             - self.thickness_full_capillary_fringe)
+        # #                             * self.moisture_content_vadose_zone
+        # #                             + self.thickness_full_capillary_fringe
+        # #                             * self.porosity_vadose_zone)
+        # #                         / self.recharge_rate)
+        # # else:
+        # #     travel_time_unsaturated = np.array([0])
+        # #     thickness_vadose_zone_drawdown = 0 #AH_todo possibly replace this with the travel distance, not thickness_vadose because this is a stand in for the travel distance?
+
+        # # raise warning if the thickness of the drawdown at the well is such that
+        # # it reaches the target aquifer
+
+        # #@MartinK -> how to raise this warning properly in the web interface? #AH_todo
+        # self.drawdown_at_well = self.ground_surface - thickness_vadose_zone_drawdown
+        # if self.drawdown_at_well[0] < self.bottom_target_aquifer:
+        #     raise ValueError('The drawdown at the well is lower than the bottom of the target aquifer. Please select a different schematisation.') 
+
+        # elif self.drawdown_at_well[0] < self.bottom_shallow_aquifer:
+        #     warnings.warn('The drawdown at the well is lower than the bottom of the shallow aquifer')
         
-    #         # Radial distance array per particle group
-    #         self.radial_distance[iPG] = self.pg_xmin[iPG] + ((self.pg_xmax[iPG] - self.pg_xmin[iPG]) * np.sqrt(self.fraction_flux))
+        # else:
+        #     pass
+
+        # return travel_time_unsaturated, thickness_vadose_zone_drawdown, head
+
+    def _calculate_travel_time_unsaturated_zone_mf(self,
+                                                distance: np.array,
+                                                gw_level = None,
+                                                depth_point_contamination=None):
+
+        ''' Calculates the travel time in the unsaturated zone for the phreatic and semiconfined cases.
+        The travel time is returned as an attribute of the object.
+
+        Parameters
+        ----------
+        distance: array, optional
+            Array of distance(s) [m] from the well.
+            For diffuse sources 'distance' is the 'radial_distance' array.
+            For point sources 'distance' is 'distance_point_contamination_from_well'.
+            MK: what if None? see: https://numpydoc.readthedocs.io/en/latest/format.html#parameters
+            -> #ah_todo @MartinK - ok I assume then I just add optional to the description?
+        gw_level: array
+            Array of groundwater level [m ASL]
+        depth_point_contamination: float, optional
+            Depth [mASL] of the point source contamination, if only diffuse contamination None is passed.
+            MK: what if None? -> #ah_todo @MartinK - ok I assume then I just add optional to the description?
+
+        Returns
+        -------
+        travel_time_unsaturated: array
+            Travel time in the unsaturated zone for each point in the given distance array returned as
+            attrubute of the function, [days].
+        thickness_vadose_zone_drawdown: array
+            Thickness of the vadose zone, corresponding to the depth where saturated flow starts 
+            and where modpath particles are being released.
+
+        '''
+
+
+        '''Equation A.11 in TRANSATOMIC report '''
+
+        if self.schematisation_type =='phreatic':
+            # MK: I think a better structure would have been:
+            # _calculate_unsaturated_zone_travel_time_phreatic as main method that calls another method with the
+            # logic it has in common with schematization_type=semiconfined
+            #AH I don't see the advantage of this, @martinK
+            travel_time_unsaturated, thickness_vadose_zone_drawdown = self._calculate_unsaturated_zone_travel_time_phreatic(distance= distance,gw_level=gw_level)
+
+        # elif self.schematisation_type == 'semiconfined':
+        #     # MK: couldn't you have put depth_point_contamination at self.ground_surface in the __init__? then you
+        #     # don't need this if statement here.
+        #     #AH_todo review the logic of how the diffusion/point sources are calculated with @martinK
+        #     if depth_point_contamination is None:
+        #         travel_distance = self.ground_surface - self.groundwater_level - self.thickness_full_capillary_fringe
+        #     else:
+        #         #if point contamination at depth, assign ground surface to depth
+        #         travel_distance =  depth_point_contamination - self.groundwater_level - self.thickness_full_capillary_fringe
+
+        #     travel_time_unsaturated =(((travel_distance)
+        #                                 * self.moisture_content_vadose_zone
+        #                                 + self.thickness_full_capillary_fringe
+        #                                 * self.porosity_vadose_zone)
+        #                             / self.recharge_rate)
+
+        #     if travel_distance < 0:
+        #         travel_time_unsaturated = 0
+
+        #     # travel time in semiconfined is one value, make it array by repeating the value
+        #     # MK: do you have a test for this? ... 
+        #     # AH_todo no not yet
+        #     if not isinstance(distance, float):
+        #         travel_time_unsaturated = [travel_time_unsaturated] * (len(distance))
+
+
+        # self.travel_time_unsaturated = travel_time_unsaturated
+        # self.thickness_vadose_zone_drawdown = thickness_vadose_zone_drawdown
+
+        return travel_time_unsaturated, thickness_vadose_zone_drawdown
 
     def _create_diffuse_particles(self, recharge_parameters = None,
                                                    nparticles_cell: int = 1,
@@ -2864,83 +2963,7 @@ def _calculate_hydraulic_head_phreatic(self, distance):
     return head
 
 
-# #ah_todo possibly split this into making the thickness, head and travel time (3 functions)? Advantages?
-# def _calculate_unsaturated_zone_travel_time_phreatic (self,
-#                                                     distance,
-#                                                     depth_point_contamination=None):
-#     '''
-#     Calculates the travel time in the unsaturated zone for the phreatic case.
 
-#     Parameters
-#     ----------
-#     distance: array
-#         Array of distance(s) [m] from the well.
-#         For diffuse sources 'distance' is the 'radial_distance' array.
-#         For point sources 'distance' is 'distance_point_contamination_from_well'.
-#     depth_point_contamination: float
-#         Depth [mASL] of the point source contamination, if only diffuse contamination None is passed.
-#         MK: depth_point_contamination is an attribute right? dont need for argument here. Moreover, the
-#             if depth_point_contamination is None:
-#         case seem to be already caught in the __init__ of Schematisation class
-#         AH_todo @MartinK -> yes it is an attribute, but this needs to be passed in the function to 
-#         distinguish between the diffuse and point source calculations
-#         #AH_todo review the logic of how the diffusion/point sources are calculated with @martinK
-
-#     Returns
-#     -------
-#     travel_time_unsaturated: array
-#         Travel time in the unsaturated zone for each point in the given distance array, [days].
-#     thickness_vadose_zone_drawdown: array
-#         Drawdown of the hydraulic head in the vadose zone for each point in the given distance array, [m].
-#     head: array
-#         Hydraulic head for each point in the given distance array, [mASL].
-#     '''
-
-#     head = self._calculate_hydraulic_head_phreatic(distance=distance)
-
-#     if depth_point_contamination is None:
-#         thickness_vadose_zone_drawdown = (self.groundwater_level
-#                                             + self.thickness_vadose_zone_at_boundary) - head
-
-#         travel_time_unsaturated = (((self.groundwater_level + thickness_vadose_zone_drawdown
-#                                 - self.groundwater_level
-#                                 - self.thickness_full_capillary_fringe)
-#                                 * self.moisture_content_vadose_zone
-#                                 + self.thickness_full_capillary_fringe
-#                                 * self.porosity_vadose_zone)
-#                             / self.recharge_rate)
-
-#     elif depth_point_contamination >= head:
-#         thickness_vadose_zone_drawdown = depth_point_contamination - head
-#         if thickness_vadose_zone_drawdown < 0:
-#             travel_time_unsaturated =  np.array([0])
-#         else:
-#             travel_time_unsaturated = (((self.groundwater_level + thickness_vadose_zone_drawdown
-#                                 - self.groundwater_level
-#                                 - self.thickness_full_capillary_fringe)
-#                                 * self.moisture_content_vadose_zone
-#                                 + self.thickness_full_capillary_fringe
-#                                 * self.porosity_vadose_zone)
-#                             / self.recharge_rate)
-#     else:
-#         travel_time_unsaturated = np.array([0])
-#         thickness_vadose_zone_drawdown = 0 #AH_todo possibly replace this with the travel distance, not thickness_vadose because this is a stand in for the travel distance?
-
-#     # raise warning if the thickness of the drawdown at the well is such that
-#     # it reaches the target aquifer
-
-#     #@MartinK -> how to raise this warning properly in the web interface? #AH_todo
-#     self.drawdown_at_well = self.ground_surface - thickness_vadose_zone_drawdown
-#     if self.drawdown_at_well[0] < self.bottom_target_aquifer:
-#         raise ValueError('The drawdown at the well is lower than the bottom of the target aquifer. Please select a different schematisation.') 
-
-#     elif self.drawdown_at_well[0] < self.bottom_shallow_aquifer:
-#         warnings.warn('The drawdown at the well is lower than the bottom of the shallow aquifer')
-    
-#     else:
-#         pass
-
-#     return travel_time_unsaturated, thickness_vadose_zone_drawdown, head
 
 # def _calculate_travel_time_unsaturated_zone(self,
 #                                             distance=None,
