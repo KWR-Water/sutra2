@@ -619,7 +619,7 @@ class HydroChemicalSchematisation:
                     },
 
                 self.well_name: { #AH nov. 11 changed to from 'inner_boundary_target_aquifer' to well_name (default 'well1')
-                    'head': self.bottom_vadose_zone_at_boundary,
+                    'head': self.bottom_shallow_aquifer,
                     'top': self.bottom_shallow_aquifer,
                     'bot': self.bottom_target_aquifer,
                     'xmin': 0,
