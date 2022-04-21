@@ -696,7 +696,7 @@ class HydroChemicalSchematisation:
                 'vadose': True,
                 'top': self.ground_surface,
                 'bot': self.bottom_vadose_zone_at_boundary,
-                'xmin': self.diameter_gravelpack/2,
+                'xmin': 0., # self.diameter_gravelpack/2,
                 'xmax': self.model_radius,
                 'porosity': self.porosity_vadose_zone,
                 'moisture_content': self.moisture_content_vadose_zone,
