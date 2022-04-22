@@ -290,10 +290,15 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
                                     )
 
         test_conf_hor.make_dictionary()
-        ### Adjust ibound_parameters to add horizontal flow ###
+        
 
+        # Remove "vadose" layer from geo_parameters
+        test_conf_hor.geo_parameters.pop("vadose")
+
+        ### Adjust ibound_parameters to add horizontal flow ###
         # Confined top boundary ; no recharge_parameters
         test_conf_hor.ibound_parameters.pop("top_boundary1")
+
         # Add outer boundary for horizontal flow test
         test_conf_hor.ibound_parameters["outer_boundary_target_aquifer"] = {
                                 'top': test_conf_hor.bottom_shallow_aquifer,
@@ -426,6 +431,11 @@ def test_modpath_run_horizontal_flow_diffuse(organism_name = "MS2"):
                                 )
 
     test_conf_hor.make_dictionary()
+
+    
+    # Remove "vadose" layer from geo_parameters
+    test_conf_hor.geo_parameters.pop("vadose")
+
     ### Adjust ibound_parameters to add horizontal flow ###
     
     # Confined top boundary ; no recharge_parameters

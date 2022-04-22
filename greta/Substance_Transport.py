@@ -1108,13 +1108,17 @@ class SubstanceTransport():
         v_por, dist, tdiff = {}, {}, {}   
         for pid in df_flowline.index:
 
-
+            # Distance squared argument
+            dist_ = (df_particle.loc[pid,"xcoord"].diff().values**2 + 
+                                df_particle.loc[pid,"ycoord"].diff().values**2 + 
+                                df_particle.loc[pid,"zcoord"].diff().values**2)
+            # Replace nan values
+            dist_ = np.nan_to_num(dist_.astype('float'),nan=0.)
             #Distance array between nodes
-            dist[pid] = np.sqrt((df_particle.loc[pid,"xcoord"].diff().values)**2 + \
-                                (df_particle.loc[pid,"ycoord"].diff().values)**2 + \
-                                (df_particle.loc[pid,"zcoord"].diff().values)**2)
+            dist[pid] = np.sqrt(dist_)
             # Time difference array
-            tdiff[pid] = df_particle.loc[pid,"total_travel_time"].diff().values
+            tdiff[pid] = np.nan_to_num(df_particle.loc[pid,"total_travel_time"].diff().values.astype('float'),0.001)
+
             # Calculate porewater velocity [m/day] (do not include effective porosity)
             v_por[pid] = abs(dist[pid][1:]/tdiff[pid][1:])
             # correct "0" velocity values
