@@ -128,6 +128,7 @@ If not defined, default values are used for the rest of the parameters. To view 
 
     phreatic_schematisation.__dict__
 
+Next we create a ModpathWell object for the HydroChemicalSchematisation object that we just made.
 
 Step 2: Run the AnalyticalWell class
 =====================================
@@ -158,7 +159,7 @@ of the cumulative fraction of abstracted water:
 
 From the AnalyticalWell class two other important outputs are:
 
-* df_particle - Pandas dataframe with data about the different flowlines per zone (unsaturated/shallow/target)
+* df_particle - Pandas dataframe with data about the different flowlines per zone (unsaturated/shallwo/target)
 * df_flowline - Pandas dataframe with data about the flowlines per flowline (eg. total travel time per flowline)
 
 Step 3: View the Substance class (Optional)
