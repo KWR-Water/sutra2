@@ -1210,7 +1210,7 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
                                         # KD=1400,
                                         thickness_full_capillary_fringe=0.4,
                                         temperature=11,
-                                         solid_density_vadose_zone= 2.650,
+                                        solid_density_vadose_zone= 2.650,
                                         solid_density_shallow_aquifer= 2.650,
                                         solid_density_target_aquifer= 2.650,
                                         diameter_borehole = 0.75,

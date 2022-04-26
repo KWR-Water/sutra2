@@ -225,7 +225,7 @@ in the SubstanceTransport class. The data are stored in a dictionary
     test_substance = Substance(substance_name='benzene')
     test_substance.substance_dict
 
-Step 3b: View the Organism class (Optional)
+Step 3b: View the Organism class (Optional) -- under construction
 ===========================================
 You can retrieve the default substance parameters used to calculate the removal of microbial organisms [mbo] 
 in the SubstanceTransport class. The data are stored in a dictionary
@@ -339,6 +339,8 @@ Also, we can plot the log removal along pathlines in a cross-section (optional)
                 cmap = 'viridis_r')
 
 .. image:: fpath_scatter_removal_log
+
+Step 4a: Calculate removal parmaters
 
 Step 4b: Calculate the OMP removal
 ========================================

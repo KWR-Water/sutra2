@@ -1321,7 +1321,6 @@ class ModPathWell:
         gw_level: array
             Array of groundwater level [m ASL]
 
-
         Returns
         -------
         travel_time_unsaturated: array
