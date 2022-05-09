@@ -1558,14 +1558,14 @@ class ModPathWell:
                 else:
                     self.gw_level = gw_level
                 # Set max gw level to model top
-                self.gw_level[self.gw_level > self.top] = self.top
+                self.gw_level[self.gw_level > self.bot[0]] = self.bot[0]
 
                 # layers in which particles are being released
                 layers = []
                 for iRow in range(rowidx_min,rowidx_max+1):
                     for iCol in range(colidx_min,colidx_max+1):
                         xyz_point = (self.xmid[iCol],self.ymid[iRow],self.gw_level[iRow,iCol])
-                        layers.append(self.xyz_to_layrowcol(xyz_point = xyz_point, decimals = 3)[0])
+                        layers.append(self.xyz_to_layrowcol(xyz_point = xyz_point, decimals = 5)[0])
                 # localz = (gw_level-bot)/(top-bot)
                 localz_release = []
                 idx_count = -1
@@ -1659,7 +1659,7 @@ class ModPathWell:
         else:
             pgroups = list(point_parameters.keys())
 
-        # xmin and xmax per pg
+        # xyz-starting locations per pg
         if not hasattr(self, "x_start_particle"):
             self.x_start_particle = {}
         if not hasattr(self, "y_start_particle"):
@@ -1882,8 +1882,10 @@ class ModPathWell:
                                          stopzone='off', zones=self.zones, retardationfactoroption='off',
                                          retardation=1.0, particlegroups=particlegroups,
                                          extension='mpsim')
-        # stoptimeoption: "extend" --> particle simulation continues beyond time specified in modflow BAS package
+        '''
+        stoptimeoption: "extend" --> particle simulation continues beyond time specified in modflow BAS package
         # timepointdata = [100*24,1/24.] # max 100 days of data
+        '''
 
     def write_input_mp(self):
         ''' Write package data ModPath model. '''
@@ -2088,7 +2090,7 @@ class ModPathWell:
 
         # Round XYZ to 4 digits
         xyz_point = [np.round(iVal,decimals) for iVal in xyz_point]
-
+        xyz_point
         # min and max arrays in X-direction
         xmin_arr = np.round(np.array([self.xmid[0] - 0.5 * self.delr[0]] + list(self.xmid[:-1] + 0.5 * self.delr[:-1])), decimals)
         xmax_arr = np.round(self.xmid + 0.5 * self.delr, decimals)
@@ -2100,13 +2102,25 @@ class ModPathWell:
         zmax_arr = np.round(np.array([self.zmid[0] + 0.5 * self.delv[0]] + list(self.zmid[:-1] - 0.5 * self.delv[:-1])), decimals)
 
         # node layer, row, column
-        node_lay = np.argwhere((xyz_point[2] > zmin_arr) & \
-                    (xyz_point[2] <= zmax_arr))[0][0]
-        node_row = np.argwhere((xyz_point[1] > ymin_arr) & \
-                    (xyz_point[1] <= ymax_arr))[0][0]
-        node_col = np.argwhere((xyz_point[0] > xmin_arr) & \
-                    (xyz_point[0] <= xmax_arr))[0][0]
-
+        try:
+            node_lay = np.argwhere((xyz_point[2] > zmin_arr) & \
+                        (xyz_point[2] <= zmax_arr))[0][0]
+        except IndexError:
+            node_lay = np.argwhere((xyz_point[2] >= zmin_arr) & \
+                (xyz_point[2] <= zmax_arr))[0][0]
+        try:
+            node_row = np.argwhere((xyz_point[1] > ymin_arr) & \
+                        (xyz_point[1] <= ymax_arr))[0][0]
+        except IndexError:
+            node_row = np.argwhere((xyz_point[1] >= ymin_arr) & \
+                        (xyz_point[1] <= ymax_arr))[0][0]
+        try:
+            node_col = np.argwhere((xyz_point[0] > xmin_arr) & \
+                        (xyz_point[0] <= xmax_arr))[0][0]
+        except IndexError:
+            node_col = np.argwhere((xyz_point[0] >= xmin_arr) & \
+                        (xyz_point[0] <= xmax_arr))[0][0]
+                        
         # Node index (lay,row,col)
         node_idx = (node_lay,node_row,node_col)
 
@@ -2141,7 +2155,7 @@ class ModPathWell:
                 # list lay, row, col of nodes and store them in 'node_indices' dict
                 node_idx = self.xyz_to_layrowcol(xyz_point = xyz_nodes[iPart][iNode].tolist(), decimals = 3)
                 node_indices[iPart].append(node_idx)
-
+                
         return node_indices
 
     def calc_flux_cell(self, frf,flf,fff, loc):
@@ -2555,8 +2569,6 @@ class ModPathWell:
 
         return df_flowline
      
-
-
     def plot_pathtimes(self,df_particle, 
                   vmin = 0.,vmax = 1.,orientation = {'row': 0},
                   fpathfig = None, figtext = None,x_text = 0,
@@ -2998,376 +3010,6 @@ def _calculate_hydraulic_head_phreatic(self, distance):
                 * np.log(self.radial_distance_recharge / distance))
     return head
 
-
-
-
-# def _calculate_travel_time_unsaturated_zone(self,
-#                                             distance=None,
-#                                             depth_point_contamination=None):
-
-#     ''' Calculates the travel time in the unsaturated zone for the phreatic and semiconfined cases.
-#     The travel time is returned as an attribute of the object.
-
-#     MK: interesting that you put this method in this class and not in the Analytical Well class. From
-#     a data point of view it is good that you do it here because all the data you need is in this class. However,
-#     from a workflow point of view it makes less sense. Because the schematization is defined  in this class,
-#     not its derived quantities. I would move it to AnalyticalWell class. /UNLESS/ it is used by Modflow as well.
-#     # AH_todo, @MartinK -> yes, this is needed by Modflow schematisation, so leave here
-#     # @martinvdS, confirm that Modflow schematisation still needs the unsaturated zone travel times calculated in this class
-
-#     Parameters
-#     ----------
-#     distance: array, optional
-#         Array of distance(s) [m] from the well.
-#         For diffuse sources 'distance' is the 'radial_distance' array.
-#         For point sources 'distance' is 'distance_point_contamination_from_well'.
-#         MK: what if None? see: https://numpydoc.readthedocs.io/en/latest/format.html#parameters
-#         -> #ah_todo @MartinK - ok I assume then I just add optional to the description?
-#     depth_point_contamination: float, optional
-#         Depth [mASL] of the point source contamination, if only diffuse contamination None is passed.
-#         MK: what if None? -> #ah_todo @MartinK - ok I assume then I just add optional to the description?
-
-#     Returns
-#     -------
-#     travel_time_unsaturated: array
-#         Travel time in the unsaturated zone for each point in the given distance array returned as
-#         attrubute of the function, [days].
-
-#     '''
-
-#     self.spreading_distance = math.sqrt(self.vertical_resistance_shallow_aquifer * self.KD)
-
-#     # AH do not change to model_radius, since the radial distance for recharge is based on the phreatic value for BOTH cases
-#     self.radial_distance_recharge =  math.sqrt(abs(self.well_discharge
-#                                                 / (math.pi * self.recharge_rate )))
-
-#     # Diffuse source or regular travel time calculation use radial distance array
-#     # AH_todo alter here if we use multiple point sources
-#     # what does None mean? or not None?
-#     if distance is None:
-#         self._create_radial_distance_array()
-#         distance= self.radial_distance
-#     else:
-#         distance = distance
-
-#     '''Equation A.11 in TRANSATOMIC report '''
-
-#     if self.schematisation_type =='phreatic':
-#         # MK: I think a better structure would have been:
-#         # _calculate_unsaturated_zone_travel_time_phreatic as main method that calls another method with the
-#         # logic it has in common with schematization_type=semiconfined
-#         #AH I don't see the advantage of this, @martinK
-#         travel_time_unsaturated, self.thickness_vadose_zone_drawdown, self.head = self._calculate_unsaturated_zone_travel_time_phreatic(distance= distance,depth_point_contamination=depth_point_contamination)
-
-#     elif self.schematisation_type == 'semiconfined':
-#         # MK: couldn't you have put depth_point_contamination at self.ground_surface in the __init__? then you
-#         # don't need this if statement here.
-#         #AH_todo review the logic of how the diffusion/point sources are calculated with @martinK
-#         if depth_point_contamination is None:
-#             travel_distance = self.ground_surface - self.groundwater_level - self.thickness_full_capillary_fringe
-#         else:
-#             #if point contamination at depth, assign ground surface to depth
-#             travel_distance =  depth_point_contamination - self.groundwater_level - self.thickness_full_capillary_fringe
-
-#         travel_time_unsaturated =(((travel_distance)
-#                                     * self.moisture_content_vadose_zone
-#                                     + self.thickness_full_capillary_fringe
-#                                     * self.porosity_vadose_zone)
-#                                 / self.recharge_rate)
-
-#         if travel_distance < 0:
-#             travel_time_unsaturated = 0
-
-#         # travel time in semiconfined is one value, make it array by repeating the value
-#         # MK: do you have a test for this? ... 
-#         # AH_todo no not yet
-#         if not isinstance(distance, float):
-#             travel_time_unsaturated = [travel_time_unsaturated] * (len(distance))
-
-#     self.travel_time_unsaturated = travel_time_unsaturated
-
-'''
-class ModPathWell_OLD():
-    """ Compute travel time distribution using MODFLOW and MODPATH.""" 
-
-    def _check_init_freatic():
-        # check the variables that we need for the individual aquifer types are not NONE aka set by the user
-  
-    def _check_init_semi_confined():
-        # check the variables that we need for the individual aquifer types are not NONE aka set by the user
-
-	  def model_size_freatic():
-				""" Compute Radius based on discharge of wells and recharge rate.
-        
-        Returns
-        -------
-        Radius of model
-        """
-
- 		def make_hydrogeological_schematisation()
-  			""" make hydrogeological schematisation.
-            Sets it to self.radius
-        """
-        #  convert dict with geological schematisation at well1 location to df 
-        df = pd.DataFrame([self.geodict])
-  		  # order df from top to bot
-  
-  			# to do later: give warning if space between top-bottom
-
-  			# identify aquifers and confining layers
-  			mask = df['k_vertical'] < 0.01
-  
-  			# add column to df -> contains well True/False
-  
-        # find all layers containing well screen
-			  # target_layers --> (top 'well' > bottom 'formation') & (bottom 'well' < top 'formation')
-  
-  			# get aquifer properties (kD, c) in layer containing well -> kD, c_below, c_above
-  
-  			self.df_schematisation = df
-  
-    def model_size_semiconfined():
-				""" Compute radius based on 5 * spreading distance (labda = sqrt[kDc]).
-            Sets it to self.radius
-        """
-  			KD = .... functie -> 
-  			c = .... functie ->  1/ (1/c_above + 1/c_below)
-  			labda = sqrt(KD * c)
-  			radius = 5 * labda
-  			self.radius = radius
-
-    def discretization(radius, df_schematisation):
-  			""" Generate discretisation of model.
-        
-        Parameters
-        ----------
-        borehole -> 0, 1 or many columns 
-        """"
-	  	  # Make extra second row to allow modpath
-  
-  			# horizontal: filterscreen
-  
-  		  # horizontal: borehole
-  
-  			# horizontal: tot 1xlengte  filters (of target aquifer)
-  
-  			# horizontal: tot modelrand
-  
-  			# verticaal: lagen met putten -> user defined dZ binnen putfilter
-  
-  			# verticaal: lagen zonder putten -> user defined dZ
-  
-  			# verticaal: phreatic aquifer -> prevent that cells fall dry
-  
-  			return del_r, del_c, del_l  #also x_mid, z_mid??
-
-  	def assign_array()
-  		'""" for each grid cell -> geo1, geo2, well1, well2, etc."""
-  	    self.grid_material  # np.array
- 
-  	def fixed_head_well_boundary():
-        self.grid_ibound
-
-	  def fixed_discharge_well_boundary():
-        self.grid_fixed_discharge
-
-  	def recharge_boundary():
-  			self.grid2D_recharge
-  
-  	def fixed_head_model_boundary():
-
-  
-	  def no_flow_model_boundary():
-  
-  
-  	def assign_parameters():
-  			""" Convert grid_material to parameters."""
-  	    self.K_vertical_grid =function(grid_material, dictionary_material_properties)
-
-    def assign_parameters_axisysmetric():
-
-    def create_modflow_packages(... , *kwargs):
-				""" Generate flopy files."""
-				self.dry_cells  #
-  			self.other_general_parameters  #
-  
-    def generate_modflow_files():
-				""" Generate input files for modflow computation."""
-
-    def run_modflow():
-  			run modflow
-  			if condition X is met:
-						self.modflow_has_run = True
- 
-  	def modpath_startpoints_from_recharge():
-				""" Generate startpoints for MODPATH computation.
-        
-        Parameters
-        ----------
-        xmin_start_particle  # close to well, default = 0
-  			xmax_start_particle  # far away from well, default = model radius
-  			number_of_particles  # user defined, defualt 100        
-        
-        Return
-        ------
-        df_startpoints: pd.DataFrame  # OR DICTIONARY IF THAT IS EASIER -> STEVEN
-		        columns: col, row, lay, localx, localy, localz, flowline_id, startpoint_id, discharge
-        """
-  			init: self.xmin_start_particle = 0
-  			self.number_of_particles = ....
-	  		self.xmax_start_particle = well_radius if not defined
-  
-  			# distribute start point particles based on equal distance
-				dx = (xmax - xmin) / number_of_particles
-	
-  			discharge = integrate volume
-  
-  			self.df_startpoints
-  			
-  
-   	def modpath_endpoints_from_well():
-  			# same as above, for wells
- 
-    def create_modpath_packages(self.df_startpoints):
-				self.track_direction  # forward or backward
- 
-    def generate_modpath_files():
-  
-    def run_modpath():
- 				self.modpath_has_run
-  			if condition X is met:
-						self.modpath_has_run = True
-
-  	def export_to_df(self, grid_material, what_to_export='all')
-  	    """ Export to dataframe....
-
-        Parameters
-        ----------
-        what_to_export: String
-        		options: 'all', 'omp', 'microbial_parameters'
-        """
-  			#delete the unwanted columns depending on what the user asks for here
-  			returns df_flowline, df_particle
-
-well = ModpathWell()
-if tracking_direction = 'forward'
-		well.modpath_startpoints_from_recharge()
-elif tracking_direction = 'backward'
-		well.modpath_endpoints_from_well()
-else
-  	raise KeyError('tracking direction argument not recognized')
-df_flow, df_particle = well.export_to_df('all')
-'''
-
-  
-#%%
-
-'''
-class SubstanceTransport():
-    """ Returns concentration in a groundwater well for a given Organic Micro Pollutant or microbial species.
-
-    Parameters
-    ----------
-    df_flowline: pandas.DataFrame
-        Column 'flowline_id': Integer
-        Column 'discharge': Float
-            Discharge associated with the flowline (m3/d)
-        Column 'particle_release_day': Float
-        Column 'input_concentration'
-        Column 'start_or_end_point_id': Integer ######################################
-        		ID of Well (or drain) where the flowline ends
-
-    df_particle: pandas.DataFrame
-        Column 'flowline_id'
-        Column 'travel_time'
-        Column 'xcoord'
-        Column 'ycoord'
-        Column 'zcoord'
-        Column 'redox'
-        Column 'temperature'
-        Column 'Kow'  # only necessary for OMP
-        Column 'Labda'  # only necessary for pathogen
-
-    Returns
-    -------    
-		
-
-    """
-
-    def __init__(self, substance: Substance, df_particle, df_flowline, removel_function?):
-        self.omp_inialized = False
-
-  
-  	def _init_omp()
-  		if self.omp_inialized:
-	  		self.df_part['Kow'] = self.df_part['redox'].apply(lambda x: substance.get_Kow(x)
-   		self.omp_inialized = True
-
-
-  	def _init_pathogen()
-
-
-  	def compute_omp_removal(self):
-       """ Returns the concentrain at each particle point.
-       
-       Paramneters
-       -----------
-       df_flowline, df_particle
-       
-       Returns
-       -------
-       df_particle: pandas.DataFrame
-       			extra column: 
-       			extra column: concentration
-            extra column: Retardation
-            extra column: break_through_time
-       
-       """
-			 self._init_omp()
-       self.df_part...
-
-    def compute_pathogen_removal(self):
-                                                             
-	  def compute_well_concentration(self, evaluation_time = None)
-        """ Returns the concentration in the raw water of each well (as defined by endpoind_id)."""
-      	if evaluation_time is None:
-          select all flowlines
-        else:
-          select flowline with break_through_time < evaluation_time                                                  
-		  	conc_flowline = concentration at end of selected flowline
-				concentration_well = sum (conc_selected_flowline_i * discharge_flowline_i) / sum discharge_all_flowline                                                             
-
-
-    def plot_concentration(self)
-                                           
-    def plot_age_distribution(self)
-
-    def plot_logremoval(self)
-
-'''
-
-'''
-#%%
-class Test():
-	def __init__(self):
-		self.alex = None
-                                                             
-	def call_alex(self):                                    
-		self.alex = 'called'
-	def print_it(self):
-		print(self.alex)
-                                                    
-# %%                       
-# the python user will call the function as follows
-concentration = SubstanceTransport()
-if removal_function == 'omp':
-		concentration.compute_omp_removal
-elif removal_function = 'omp':
-		concentration.compute_pathogen_removal
-else:
-  	raise KeyError('schematisation argument not recognized')
-                       
-'''
 
 #%%
 if __name__ == "__main__":
