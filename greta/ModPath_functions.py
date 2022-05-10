@@ -341,7 +341,7 @@ class ModPathWell:
                 # Keep "vadose" in geo_parameters and include as inactive boundary
                 schematisation["ibound_parameters"][iKey] = schematisation["ibound_parameters"].get(iKey,{})
                 # Add no-flow boundary indication (ibound = 0)
-                schematisation["ibound_parameters"][iKey]["ibound"] = 0
+                schematisation["ibound_parameters"][iKey]["ibound"] = 1
                 # Add extent of vadose zone location
                 for iBoundary in ["top","bot","xmin","xmax","ymin","ymax"]:
                     if iBoundary in schematisation[dict_key][iKey].keys():
@@ -872,10 +872,17 @@ class ModPathWell:
             layavg: Layer average of hydraulic conductivity
                 layavg: 0 --> harmonic mean 
                 layavg: 1 --> logarithmic mean (is used in axisymmetric models).
+                layavg: 2 --> arithmetic mean of saturated thickness and logarithmic mean of of hydraulic conductivity (unconfined flow correction)
         '''
 
         if self.model_type == "axisymmetric":
-            self.layavg = 1
+            # phreatic --> unconfined flow correction in upper layer
+            if self.schematisation_type in ["phreatic"]:
+                self.layavg = np.ones((self.nlay), dtype = 'int')
+                # self.layavg[:] = 2
+            # semiconfined --> axisymmetric, confined flow schematisation
+            elif self.schematisation_type in ["semiconfined"]:
+                self.layavg = 1
         else:  
             self.layavg = 0
         # geohydrological parameter names # list of schematisation_dict terms & dtype
@@ -1543,9 +1550,12 @@ class ModPathWell:
             # Particle group nodes
             self.pg_nodes[iPG] = []
 
+            # If particles are to be released at gwlevel
             if gw_level_release:
                 if gw_level is None:
                     try:
+
+                        # groundwater level array
                         self.gw_level = np.zeros((self.nrow,self.ncol), dtype = 'float')
                         for iRow in range(self.nrow):
                             for iCol in range(self.ncol):
@@ -1557,8 +1567,10 @@ class ModPathWell:
                         self.gw_level = np.zeros((self.nrow,self.ncol), dtype = 'float') + self.top
                 else:
                     self.gw_level = gw_level
-                # Set max gw level to model top
+                # Set max gw level to top of first active layer
+
                 self.gw_level[self.gw_level > self.bot[0]] = self.bot[0]
+                # self.gw_level[self.gw_level > self.top] = self.top
 
                 # layers in which particles are being released
                 layers = []
