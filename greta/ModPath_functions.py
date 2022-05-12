@@ -1009,7 +1009,7 @@ class ModPathWell:
         
     def create_lpf(self):
         ''' Add lpf Package to the MODFLOW model '''
-        self.lpf = flopy.modflow.ModflowLpf(self.mf, layavg = 1, ipakcb = self.iu_cbc, hk=self.hk, vka=self.vka, 
+        self.lpf = flopy.modflow.ModflowLpf(self.mf, layavg = self.layavg, ipakcb = self.iu_cbc, hk=self.hk, vka=self.vka, 
                                             ss = self.ss, storagecoefficient = True) 
         # layavg = 1 (--> logarithmic mean); storagecoefficient = True (means: storativity)
         
