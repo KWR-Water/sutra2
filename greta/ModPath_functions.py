@@ -809,7 +809,8 @@ class ModPathWell:
                    for iCol in range(colidx_min, colidx_max):
                         spd_wel[0].append([iLay, iRow, iCol, Qwell_day[iWell] * \
                                           (self.hk[iLay,iRow,iCol] * self.delv[iLay]) / KD_well[iWell]])
-        
+       
+
         return well_names,well_loc,KD_well, spd_wel, Qwell_day
 
     ####################
@@ -1002,7 +1003,7 @@ class ModPathWell:
         
     def create_lpf(self):
         ''' Add lpf Package to the MODFLOW model '''
-        self.lpf = flopy.modflow.ModflowLpf(self.mf, layavg = 1, ipakcb = self.iu_cbc, hk=self.hk, vka=self.vka, 
+        self.lpf = flopy.modflow.ModflowLpf(self.mf, layavg = self.layavg, ipakcb = self.iu_cbc, hk=self.hk, vka=self.vka, 
                                             ss = self.ss, storagecoefficient = True) 
         # layavg = 1 (--> logarithmic mean); storagecoefficient = True (means: storativity)
         
@@ -1051,6 +1052,25 @@ class ModPathWell:
         self.wel = flopy.modflow.ModflowWel(self.mf, ipakcb = self.iu_cbc,
                                      stress_period_data= self.spd_wel)
          # If ipakcb != 0: cell budget data is being saved.
+
+    # def create_MNW(self, spd_wel, ztop: float, zbotm: float, 
+    #                 well_row: int, well_col: int, well_radius: int or float):
+    #     ''' Add multi nodal well Package to the MODFLOW model. '''     
+                                           
+
+    #     # stress period data dict                        
+    #     self.spd_wel = spd_wel
+
+        
+
+    #     self.wel = flopy.modflow.mfmnw2 (self.mf, ipakcb = self.iu_cbc,
+    #                                  stress_period_data= self.spd_wel,
+    #                                  ztop = ztop,
+    #                                  zbotm = zbotm,
+    #                                  i = well_row,
+    #                                  j = well_col,
+    #                                  rw = well_radius)
+    #      # If ipakcb != 0: cell budget data is being saved.
 
     def create_modflow_packages(self, **kwargs):
         ''' Create modflow packages used in the model run.'''
