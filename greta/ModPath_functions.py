@@ -341,7 +341,7 @@ class ModPathWell:
                 # Keep "vadose" in geo_parameters and include as inactive boundary
                 schematisation["ibound_parameters"][iKey] = schematisation["ibound_parameters"].get(iKey,{})
                 # Add no-flow boundary indication (ibound = 0)
-                schematisation["ibound_parameters"][iKey]["ibound"] = 1
+                schematisation["ibound_parameters"][iKey]["ibound"] = 0
                 # Add extent of vadose zone location
                 for iBoundary in ["top","bot","xmin","xmax","ymin","ymax"]:
                     if iBoundary in schematisation[dict_key][iKey].keys():
@@ -863,28 +863,6 @@ class ModPathWell:
         # Set ibound of additional rows equal to zero
         self.ibound[:,1:,:] = 0
 
-        ''' ### lpf package input parms ###
-            
-            hk: Horizontal conductivity
-            vka: Vertical conductivity (-> if layvka = 0 (default))
-            ss: Specific storage (1/m)
-            storativity: # If True (default): Ss stands for storativity [-] instead of specific storage [1/m]
-            layavg: Layer average of hydraulic conductivity
-                layavg: 0 --> harmonic mean 
-                layavg: 1 --> logarithmic mean (is used in axisymmetric models).
-                layavg: 2 --> arithmetic mean of saturated thickness and logarithmic mean of of hydraulic conductivity (unconfined flow correction)
-        '''
-
-        if self.model_type == "axisymmetric":
-            # phreatic --> unconfined flow correction in upper layer
-            if self.schematisation_type in ["phreatic"]:
-                self.layavg = np.ones((self.nlay), dtype = 'int')
-                # self.layavg[:] = 2
-            # semiconfined --> axisymmetric, confined flow schematisation
-            elif self.schematisation_type in ["semiconfined"]:
-                self.layavg = 1
-        else:  
-            self.layavg = 0
         # geohydrological parameter names # list of schematisation_dict terms & dtype
         self.geoparm_names = {"moisture_content": [["geo_parameters"],"float",0.35],
                         "hk": [["geo_parameters"],"float",999.],
@@ -1009,7 +987,68 @@ class ModPathWell:
         
     def create_lpf(self):
         ''' Add lpf Package to the MODFLOW model '''
-        self.lpf = flopy.modflow.ModflowLpf(self.mf, layavg = self.layavg, ipakcb = self.iu_cbc, hk=self.hk, vka=self.vka, 
+
+        ''' ### lpf package input parms ###
+            
+            hk: Horizontal conductivity
+            vka: Vertical conductivity (-> if layvka = 0 (default))
+            ss: Specific storage (1/m)
+            storativity: # If True (default): Ss stands for storativity [-] instead of specific storage [1/m]
+            layavg: Layer average of hydraulic conductivity
+                layavg: 0 --> harmonic mean 
+                layavg: 1 --> logarithmic mean (is used in axisymmetric models).
+                layavg: 2 --> arithmetic mean of saturated thickness and logarithmic mean of of hydraulic conductivity (unconfined flow correction)
+        '''
+
+        # Wetting factor
+        self.wetfct = 0.1
+        # Iteration interval for attempting to wet cells
+        self.iwetit = 1
+        # Initial head above cell bottom after rewetting of cell
+        self.ihdwet = 0.
+
+        if self.model_type == "axisymmetric":
+            # phreatic scheme
+            if self.schematisation_type in ["phreatic"]:
+                # KD corrected for partial saturation of model cells
+                self.layavg = np.zeros((self.nlay), dtype = 'int') + 2
+                # self.layavg[:] = 2
+
+                # Phreatic model cells
+                # (dry if head < bot cell); First layer is inactive
+                self.laytyp = np.zeros((self.nlay), dtype = 'int')
+
+                # Wetting is active in upper layers (but the first one) (head in well is equal to top of well screen)
+                self.laywet = np.zeros((self.nlay), dtype = 'int')
+                # self.laywet[1] = 1
+
+            # semiconfined --> axisymmetric, confined flow schematisation
+            elif self.schematisation_type in ["semiconfined"]:
+                
+                self.layavg = np.ones((self.nlay), dtype = 'int')
+
+                # Confined model cells (no dry cells)
+                self.laytyp = np.zeros((self.nlay), dtype = 'int')
+
+                # Wetting is inactive
+                self.laywet = np.zeros((self.nlay), dtype = 'int')
+                
+        else:  
+            # Harmonic mean hydraulic conductivity for 2D-scheme (layavg = 0)
+            self.layavg = np.zeros((self.nlay), dtype = 'int')
+            # Confined model cells (no dry cells)
+            self.laytyp = np.zeros((self.nlay), dtype = 'int')
+            # Wetting is inactive
+            self.laywet = np.zeros((self.nlay), dtype = 'int')
+
+
+        self.lpf = flopy.modflow.ModflowLpf(self.mf, ipakcb = self.iu_cbc, layavg = self.layavg, 
+                                            laytyp = self.laytyp,
+                                            laywet = self.laywet, 
+                                            wetfct = self.wetfct,
+                                            iwetit = self.iwetit, 
+                                            ihdwet = self.ihdwet,
+                                            hk=self.hk, vka=self.vka, 
                                             ss = self.ss, storagecoefficient = True) 
         # layavg = 1 (--> logarithmic mean); storagecoefficient = True (means: storativity)
         
@@ -2842,7 +2881,7 @@ class ModPathWell:
                 # ycoord
                 distance_xy[iRow,1] = self.df_particle.loc[pid,"ycoord"].values[0]
                 # gw_level [assuming particles start at groundwater level]
-                gw_level_particles[iRow] = self.df_particle.loc[pid,"zcoord"].max()
+                gw_level_particles[iRow] = self.df_particle.loc[pid,"zcoord"].values[0]
 
             #### MOVE TO: section 'create_modpath_packages', so before pathline simulation to determine depth vadose zone boundary (start of particles) ####
 
@@ -2884,7 +2923,7 @@ class ModPathWell:
                 self.df_particle.loc[pid,"total_travel_time"] = self.df_particle.loc[pid,"total_travel_time"] + self.travel_time_unsaturated[iRow] 
 
             # Fill arrays to add to df_particle
-            df_phreatic.loc[df_index,"porosity"] = np.array([vadose_parameters[dict_key]['porosity']] * len(flowline_id))
+            df_phreatic.loc[df_index,"porosity"] = np.array([vadose_parameters[dict_key]['moisture_content']] * len(flowline_id))
             df_phreatic.loc[df_index,"solid_density"] = np.array([vadose_parameters[dict_key]['solid_density']] * len(flowline_id))
             df_phreatic.loc[df_index,"fraction_organic_carbon"] = np.array([vadose_parameters[dict_key]['fraction_organic_carbon']] * len(flowline_id))
             df_phreatic.loc[df_index,"redox"] = np.array([vadose_parameters[dict_key]['redox']] * len(flowline_id))
