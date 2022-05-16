@@ -606,7 +606,7 @@ class HydroChemicalSchematisation:
             # Additional meter added to the model radius for the fixed head boundary
             # only for the phreatic case, not for the semiconfined case
             # MK: initilize to None -> AH ok, initialized to None now in init
-            self.model_radius_computed = self.model_radius + 1
+            self.model_radius_computed = self.model_radius
 
             # only outer_boundary for phreatic
             ibound_parameters = {
@@ -697,7 +697,7 @@ class HydroChemicalSchematisation:
                 'top': self.ground_surface,
                 'bot': self.bottom_vadose_zone_at_boundary,
                 'xmin': 0., # self.diameter_gravelpack/2,
-                'xmax': self.model_radius,
+                'xmax': self.model_radius_computed,
                 'porosity': self.porosity_vadose_zone,
                 'moisture_content': self.moisture_content_vadose_zone,
                 'solid_density': self.solid_density_vadose_zone,
@@ -801,7 +801,7 @@ class HydroChemicalSchematisation:
                     'organism_name': self.organism,
                     'recharge': self.recharge_rate,
                     'xmin': self.diameter_gravelpack/2,
-                    'xmax': self.model_radius,
+                    'xmax': self.model_radius_computed,
                     'dissolved_organic_carbon': self.dissolved_organic_carbon_infiltration_water,
                     'TOC': self.total_organic_carbon_infiltration_water,
                     'input_concentration': self.diffuse_input_concentration,

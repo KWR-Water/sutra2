@@ -1003,9 +1003,9 @@ class ModPathWell:
         # Wetting factor
         self.wetfct = 0.1
         # Iteration interval for attempting to wet cells
-        self.iwetit = 1
+        self.iwetit = 1  # int
         # Initial head above cell bottom after rewetting of cell
-        self.ihdwet = 0.
+        self.ihdwet = 0  # int
 
         if self.model_type == "axisymmetric":
             # phreatic scheme
@@ -1016,11 +1016,14 @@ class ModPathWell:
 
                 # Phreatic model cells
                 # (dry if head < bot cell); First layer is inactive
-                self.laytyp = np.zeros((self.nlay), dtype = 'int')
+                self.laytyp = np.ones((self.nlay), dtype = 'int')
+                # Make target aquifer confined
+                self.laytyp[self.bot < self.schematisation.bottom_shallow_aquifer] = 0
 
                 # Wetting is active in upper layers (but the first one) (head in well is equal to top of well screen)
-                self.laywet = np.zeros((self.nlay), dtype = 'int')
-                # self.laywet[1] = 1
+                self.laywet = np.ones((self.nlay), dtype = 'int')
+                # No wetting in confined layers
+                self.laywet[self.bot < self.schematisation.bottom_shallow_aquifer] = 0
 
             # semiconfined --> axisymmetric, confined flow schematisation
             elif self.schematisation_type in ["semiconfined"]:
@@ -1041,8 +1044,12 @@ class ModPathWell:
             # Wetting is inactive
             self.laywet = np.zeros((self.nlay), dtype = 'int')
 
+        # Dry cell head
+        self.head_dry = -1.e30
 
-        self.lpf = flopy.modflow.ModflowLpf(self.mf, ipakcb = self.iu_cbc, layavg = self.layavg, 
+        self.lpf = flopy.modflow.ModflowLpf(self.mf, ipakcb = self.iu_cbc, 
+                                            hdry = self.head_dry,
+                                            layavg = self.layavg, 
                                             laytyp = self.laytyp,
                                             laywet = self.laywet, 
                                             wetfct = self.wetfct,
@@ -1594,21 +1601,53 @@ class ModPathWell:
                 if gw_level is None:
                     try:
 
-                        # groundwater level array
-                        self.gw_level = np.zeros((self.nrow,self.ncol), dtype = 'float')
+                        # groundwater level array (initially assume starting points at model top)
+                        self.gw_level = np.zeros((self.nrow,self.ncol), dtype = 'float') + self.top
                         for iRow in range(self.nrow):
                             for iCol in range(self.ncol):
                                 for iLay in range(self.nlay):
-                                    if self.ibound[iLay,iRow,iCol] != 0:
-                                        self.gw_level[iRow,iCol] = self.head_mf[iLay,iRow,iCol]
+                                    # Check for active cells
+                                    if self.ibound[iLay,iRow,iCol] == 0:
+                                        continue
+
+                                    # Check for uppermost active and wetted cell
+                                    elif abs(self.head_mf[iLay,iRow,iCol]) > 0.9 * abs(self.head_dry):
+                                        continue
+                                    else:
+                                        # Check if layer is confined
+                                        if self.laytyp[iLay] == 0:
+                                            # Gw level equals top of this cell
+                                            if iLay == 0:
+                                                self.gw_level[iRow,iCol] = self.top
+                                            else:
+                                                self.gw_level[iRow,iCol] = self.bot[iLay-1]
+                                        else:
+                                            # Check for gw_level value above bottom of active cell (for non-dry unconfined cells)
+                                            if self.head_mf[iLay,iRow,iCol] < self.bot[iLay]:
+                                                # gwlevel equals top of active (confined) cell
+                                                if iLay == 0:
+                                                    self.gw_level[iRow,iCol] = self.top
+                                                else:
+                                                    self.gw_level[iRow,iCol] = self.bot[iLay-1]
+                                            elif (iLay == 0) & (self.head_mf[iLay,iRow,iCol] > self.top):
+                                                # Set gwlevel to model top (top of confining layer)
+                                                self.gw_level[iRow,iCol] = self.top
+                                            elif (iLay > 0) & (self.head_mf[iLay,iRow,iCol] > self.bot[iLay-1]):
+                                                # Set max gw level to top of confining layer)
+                                                self.gw_level[iRow,iCol] = self.bot[iLay-1]
+                                            else:
+                                                # gw level equals head in active cell
+                                                    self.gw_level[iRow,iCol] = self.head_mf[iLay,iRow,iCol]
+
+                                        # go to next row, col combination
                                         break
                     except:
                         self.gw_level = np.zeros((self.nrow,self.ncol), dtype = 'float') + self.top
                 else:
                     self.gw_level = gw_level
-                # Set max gw level to top of first active layer
+                # # Set max gw level to top of first active layer
 
-                self.gw_level[self.gw_level > self.bot[0]] = self.bot[0]
+                # self.gw_level[self.gw_level > self.bot[0]] = self.bot[0]
                 # self.gw_level[self.gw_level > self.top] = self.top
 
                 # layers in which particles are being released
@@ -2877,11 +2916,11 @@ class ModPathWell:
             for iRow,pid in enumerate(self.df_particle.index.unique()):
 
                 # xcoord
-                distance_xy[iRow,0] = self.df_particle.loc[pid,"xcoord"].values[0]
+                distance_xy[iRow,0] = self.df_particle.loc[pid,"xcoord"].iloc[0]
                 # ycoord
-                distance_xy[iRow,1] = self.df_particle.loc[pid,"ycoord"].values[0]
+                distance_xy[iRow,1] = self.df_particle.loc[pid,"ycoord"].iloc[0]
                 # gw_level [assuming particles start at groundwater level]
-                gw_level_particles[iRow] = self.df_particle.loc[pid,"zcoord"].values[0]
+                gw_level_particles[iRow] = self.df_particle.loc[pid,"zcoord"].iloc[0]
 
             #### MOVE TO: section 'create_modpath_packages', so before pathline simulation to determine depth vadose zone boundary (start of particles) ####
 
