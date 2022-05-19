@@ -869,9 +869,9 @@ class ModPathWell:
                         "vani": [["geo_parameters"],"float",999.],
                         "porosity": [["geo_parameters"],"float",1.],
                         "solid_density": [["geo_parameters"],"float",2.5],
-                        "fraction_organic_carbon": [["geo_parameters"],"float",0.0],
+                        "fraction_organic_carbon": [["geo_parameters"],"float",0.001],
                         "redox": [["geo_parameters"],"object",0],
-                        "dissolved_organic_carbon": [["geo_parameters"],"float",0],
+                        "dissolved_organic_carbon": [["geo_parameters"],"float",1],
                         "pH": [["geo_parameters"],"float",7],
                         "temperature": [["geo_parameters"],"float",11]
                         }
