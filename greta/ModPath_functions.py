@@ -873,7 +873,8 @@ class ModPathWell:
                         "redox": [["geo_parameters"],"object",0],
                         "dissolved_organic_carbon": [["geo_parameters"],"float",1],
                         "pH": [["geo_parameters"],"float",7],
-                        "temperature": [["geo_parameters"],"float",11]
+                        "temperature": [["geo_parameters"],"float",11],
+                        "grainsize": [["geo_parameters"],"float",0.00025]
                         }
                       
 
@@ -2249,7 +2250,7 @@ class ModPathWell:
         df_particle_list = []
 
         # Create rec.arrays for porosity, pH, T, etc. to append to particle_data
-        parm_list = ["prsity_uncorr","solid_density","fraction_organic_carbon",
+        parm_list = ["prsity_uncorr","solid_density","grainsize","fraction_organic_carbon",
                     "redox","dissolved_organic_carbon", "pH","temperature","material"]
 
         # Create df_particle
@@ -2717,7 +2718,8 @@ class ModPathWell:
                     # Pseudonyms for df_particle column names
                     colnames_df_particle = {"x": "xcoord","y":"ycoord","z":"zcoord","time":"total_travel_time","prsity_uncorr":"porosity",
                                 "solid_density": "solid_density", "fraction_organic_carbon": "fraction_organic_carbon", "redox": "redox", 
-                                "dissolved_organic_carbon":	"dissolved_organic_carbon", "pH": "pH",	"temperature": "temperature", "material": "material"}
+                                "dissolved_organic_carbon":	"dissolved_organic_carbon", "pH": "pH",	"temperature": "temperature",
+                                "grainsize": "grainsize", "material": "material"}
                     df_particle_data[f"{iPG}-{iNode}-{iPart}"].rename(columns = colnames_df_particle, 
                                                                                     inplace = True, errors = "raise")
                     df_particle_data[f"{iPG}-{iNode}-{iPart}"] = df_particle_data[f"{iPG}-{iNode}-{iPart}"].drop_duplicates(subset=["xcoord","ycoord","zcoord","total_travel_time"], keep = 'first')                                                                

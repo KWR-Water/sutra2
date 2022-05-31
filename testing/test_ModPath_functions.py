@@ -217,6 +217,10 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
     # Removal parameters organism
     rem_parms = removal_parameters[organism_name]
 
+    # # test dataframe of final concentrations to assert the test
+    # summary_conc_fname_test = os.path.join(testfiles_dir,"Final_concentrations_horizontal_flow_test.csv")
+    # df_conc_horflow_test = pd.read_csv(summary_conc_fname)
+
     # dataframes
     df_particle, df_flowline = {}, {}
 
@@ -234,9 +238,11 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
         well_discharge = -1000.
         # distance to boundary
         distance_boundary = float(iDist)
+        # Thickness target aquifer
+        thickness_target_aquifer = 20.
         # Center depth of target aquifer
         z_point = 0 - 0.1 - 10.
-        x_point = distance_boundary - 0.5
+        x_point = distance_boundary - 0.25
         # Phreatic scheme without gravelpack: modpath run.
         test_conf_hor = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
                                     computation_method = 'modpath',
@@ -253,10 +259,10 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
                                     ground_surface = 0.0,
                                     thickness_vadose_zone_at_boundary=0.,
                                     thickness_shallow_aquifer=0.1,
-                                    thickness_target_aquifer=20.0,
+                                    thickness_target_aquifer= thickness_target_aquifer,
                                     hor_permeability_target_aquifer=10.0,
                                     hor_permeability_shallow_aquifer = 1.,
-                                    vertical_anisotropy_shallow_aquifer = 1000.,
+                                    vertical_anisotropy_shallow_aquifer = 10.,
                                     thickness_full_capillary_fringe=0.4,
                                     redox_vadose_zone='anoxic', #'suboxic',
                                     redox_shallow_aquifer='anoxic',
@@ -281,7 +287,7 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
                                     compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
                                     model_radius = distance_boundary,
                                     ncols_near_well = 20,
-                                    ncols_far_well = int(distance_boundary/10),
+                                    ncols_far_well = int((distance_boundary-thickness_target_aquifer)/0.5),
                                     # Point contamination
                                     point_input_concentration = 1.,
                                     discharge_point_contamination = abs(well_discharge),
@@ -304,7 +310,7 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
         test_conf_hor.ibound_parameters["outer_boundary_target_aquifer"] = {
                                 'top': test_conf_hor.bottom_shallow_aquifer,
                                 'bot': test_conf_hor.bottom_target_aquifer,
-                                'xmin': test_conf_hor.model_radius - 1.,
+                                'xmin': test_conf_hor.model_radius - 0.5,
                                 'xmax': test_conf_hor.model_radius,
                                 'ibound': -1
                                 }
@@ -318,6 +324,7 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
                                 bound_left = "xmin",
                                 bound_right = "xmax")
         # print(modpath_phrea.__dict__)
+        obj_dict = modpath_hor.__dict__
 
         # Run phreatic schematisation
         modpath_hor.run_model(run_mfmodel = True,
@@ -368,6 +375,8 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
     df_conc.to_csv(summary_conc_fname)
 
     assert modpath_hor.success_mp
+
+    # assert_frame_equal(df_conc.loc[dist_boundary], df_conc_horflow_test.loc[dist_boundary], check_dtype=False)
 
 def test_modpath_run_horizontal_flow_diffuse(organism_name = "MS2"):
 

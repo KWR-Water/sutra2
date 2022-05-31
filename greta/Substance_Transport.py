@@ -1094,10 +1094,10 @@ class SubstanceTransport():
             # Fill df_particle 'collision_eff'
             df_particle.loc[pid,"collision_eff"] = coll_eff[pid]
 
-        # Collision efficiency [-]
-        df_flowline = self._df_fillna(df_flowline,
-                                      df_column = 'collision_eff',
-                                      value = self.removal_parameters['alpha0'][redox])
+        # # Collision efficiency [-]
+        # df_flowline = self._df_fillna(df_flowline,
+        #                               df_column = 'collision_eff',
+        #                               value = self.removal_parameters['alpha0'][redox])
 
         # Create empty column 'k_att' in df_particle
         df_particle['k_att'] = None
@@ -1144,7 +1144,7 @@ class SubstanceTransport():
 
             # Botsingterm 'k_bots'
             k_bots[pid] = (3/2.)*((1-df_particle.loc[pid,"porosity"].values) / \
-                        df_particle.loc[pid,"grainsize"].values) * df_flowline.loc[pid,"collision_eff"]
+                        df_particle.loc[pid,"grainsize"].values) * df_particle.loc[pid,"collision_eff"].values
 
             # Porosity dependent variable 'gamma'
             gamma[pid] = (1-df_particle.loc[pid,"porosity"].values)**(1/3)
