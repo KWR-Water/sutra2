@@ -217,15 +217,17 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
     # Removal parameters organism
     rem_parms = removal_parameters[organism_name]
 
-    # # test dataframe of final concentrations to assert the test
-    # summary_conc_fname_test = os.path.join(testfiles_dir,"Final_concentrations_horizontal_flow_test.csv")
-    # df_conc_horflow_test = pd.read_csv(summary_conc_fname)
+    # test dataframe of final concentrations to assert the test
+    summary_conc_fname_test = os.path.join(testfiles_dir,"Final_concentrations_horizontal_flow_test.csv")
+    df_conc_horflow_test = pd.read_csv(summary_conc_fname_test,
+                                        index_col = 0)
+    df_conc_horflow_test.index.name = "Boundary_distance"
 
     # dataframes
     df_particle, df_flowline = {}, {}
 
     # Distances to boundary
-    dist_boundary = list(range(25,100,5)) + list(range(100,560,10)) # [260] #  + 
+    dist_boundary = list(range(10,100,5)) + list(range(100,560,10)) # [260] #  + 
     # [10,20, 50, 100, 150, 200,250,300,350,400,450,500,550]
 
     df_conc = pd.DataFrame(index=dist_boundary, columns = ["Final_concentration"])
@@ -349,16 +351,18 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
         # Calculate advective microbial removal
         # Final concentration per endpoint_id
         C_final = {}
+        # Start conc
+        conc_start = 1.
         for endpoint_id in modpath_hor.schematisation_dict.get("endpoint_id"):
             df_particle[iDist], df_flowline[iDist], C_final[endpoint_id] = modpath_removal.calc_advective_microbial_removal(
                                                 modpath_hor.df_particle, modpath_hor.df_flowline, 
                                                 endpoint_id = endpoint_id,
                                                 trackingdirection = modpath_hor.trackingdirection,
-                                                conc_start = 1., conc_gw = 0.)
+                                                conc_start = conc_start, conc_gw = 0.)
 
             # print("Final concentration at " + str(iDist) + " m is: " + str(round(C_final[endpoint_id],4)))
             # Add final concentration to summary dataframe
-            df_conc.loc[iDist,"Final_concentration " + endpoint_id] = C_final[endpoint_id]
+            df_conc.loc[iDist,"Final_concentration"] = C_final[endpoint_id]
 
         # df_particle file name 
         particle_fname = os.path.join(modpath_hor.dstroot,modpath_hor.schematisation_type + "_df_particle_microbial_removal" + str(iDist) + "m.csv")
@@ -376,7 +380,15 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
 
     assert modpath_hor.success_mp
 
-    # assert_frame_equal(df_conc.loc[dist_boundary], df_conc_horflow_test.loc[dist_boundary], check_dtype=False)
+    # relative tolerance
+    rtol = 5.e-3
+    # absolute tollerance
+    atol = rtol * conc_start
+
+    # Assert that dataframes are equal
+    assert_frame_equal(df_conc.loc[df_conc.index.isin(df_conc_horflow_test.index),:],
+                        df_conc_horflow_test.loc[df_conc_horflow_test.index.isin(df_conc.index),:],
+                        check_dtype=False,rtol = rtol,atol = atol)
 
 def test_modpath_run_horizontal_flow_diffuse(organism_name = "MS2"):
 
