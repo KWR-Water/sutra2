@@ -3101,7 +3101,7 @@ class ModPathWell:
         return self.travel_time_shallow_aquifer
 
     # Insert paths for vadose_zone or aquitard based on analytical formulas
-    def calc_traveltime_vadose_analytical(self, vadose_parameters: dict = dict(), dict_key = 'vadose',
+    def calc_traveltime_vadose_analytical(self, vadose_parameters: dict = dict(), dict_key = 'vadose_zone',
                                             distance = None, gw_level = None):
 
         ''' Inherit functionality from Analytical_Well module'''
@@ -3175,7 +3175,7 @@ class ModPathWell:
             df_phreatic.loc[df_index,"dissolved_organic_carbon"] = np.array([vadose_parameters[dict_key]['dissolved_organic_carbon']] * len(flowline_id))
             df_phreatic.loc[df_index,"pH"] = np.array([vadose_parameters[dict_key]['pH']] * len(flowline_id))
             df_phreatic.loc[df_index,"temperature"] = np.array([vadose_parameters[dict_key]['temperature']] * len(flowline_id))
-            df_phreatic.loc[df_index,"material"] = np.array(['vadose'] * len(flowline_id))
+            df_phreatic.loc[df_index,"material"] = np.array(['vadose_zone'] * len(flowline_id))
             
             # Append records to df_particle dataframe 
             self.df_particle = self.df_particle.append(df_phreatic)

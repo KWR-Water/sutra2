@@ -692,7 +692,7 @@ class HydroChemicalSchematisation:
 
         # Aquifer parameters dcitionary
         geo_parameters  = {
-            'vadose': {
+            'vadose_zone': {
                 'vadose': True,
                 'top': self.ground_surface,
                 'bot': self.bottom_vadose_zone_at_boundary,
@@ -707,7 +707,7 @@ class HydroChemicalSchematisation:
                 'pH': self.pH_vadose_zone,
                 'temperature': self.temperature_vadose_zone,
                 },
-            'layer1': {
+            'shallow_aquifer': {
                 'top': self.bottom_vadose_zone_at_boundary,
                 'bot': self.bottom_shallow_aquifer,
                 'xmin': self.diameter_gravelpack/2,
@@ -723,7 +723,7 @@ class HydroChemicalSchematisation:
                 'vani': self.vertical_anisotropy_shallow_aquifer,
                 'nlayers': self.nlayers_shallow_aquifer,
                 },
-            'layer2': {
+            'target_aquifer': {
                 'top': self.bottom_shallow_aquifer,
                 'bot': self.bottom_target_aquifer,
                 'xmin': self.diameter_gravelpack/2,

@@ -1,7 +1,7 @@
 
 #%%
 import pytest
-from pandas import read_csv
+from pandas import RangeIndex, read_csv
 import datetime as dt
 import numpy as np
 import pandas as pd
@@ -13,7 +13,12 @@ from pathlib import Path
 
 from zmq import zmq_version_info
 
-    
+# Plotting modules
+import matplotlib.pyplot as plt
+import matplotlib 
+import matplotlib.colors as colors
+
+# Greta modules    
 import greta.Analytical_Well as AW
 import greta.ModPath_functions as MP
 import greta.Substance_Transport as ST
@@ -301,7 +306,7 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
         
 
         # Remove "vadose" layer from geo_parameters
-        test_conf_hor.geo_parameters.pop("vadose")
+        test_conf_hor.geo_parameters.pop("vadose_zone")
 
         ### Adjust ibound_parameters to add horizontal flow ###
         # Confined top boundary ; no recharge_parameters
@@ -456,7 +461,7 @@ def test_modpath_run_horizontal_flow_diffuse(organism_name = "MS2"):
 
     
     # Remove "vadose" layer from geo_parameters
-    test_conf_hor.geo_parameters.pop("vadose")
+    test_conf_hor.geo_parameters.pop("vadose_zone")
 
     ### Adjust ibound_parameters to add horizontal flow ###
     
@@ -1210,8 +1215,9 @@ def test_travel_time_distribution_phreatic_analytical(organism_name = "MS2"):
 #%%
 
 def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name = "MS2"):
-    output_phreatic = pd.read_csv(path / 'phreatic_test.csv')
+    output_phreatic = pd.read_csv(path / 'phreatic_test_mp.csv')
     output_phreatic = output_phreatic.round(7) #round to 7 digits (or any digit), keep same as for the output for the model to compare
+    output_phreatic.index = RangeIndex(start = 1,stop=len(output_phreatic.index)+1)
 
     test_phrea = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                         computation_method= 'analytical',
@@ -1231,6 +1237,9 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
                                         thickness_target_aquifer=40,
                                         hor_permeability_target_aquifer=35,
                                         # KD=1400,
+                                        ncols_near_well = 5,
+                                        ncols_far_well = 100,
+                                        
                                         thickness_full_capillary_fringe=0.4,
                                         temperature=11,
                                         solid_density_vadose_zone= 2.650,
@@ -1243,8 +1252,8 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
     # AnalyticalWell object
     well1_an = AW.AnalyticalWell(test_phrea)
     well1_an.phreatic()
-    output_an = well1_an.df_particle
-    output_an = output_an.round(7)
+    df_particle_an = well1_an.df_particle
+    df_particle_an = df_particle_an.round(7)
 
     # ModPath well object
     well1_mp = MP.ModPathWell(test_phrea, #test_phrea,
@@ -1257,32 +1266,135 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
     well1_mp.run_model(run_mfmodel = True,
                         run_mpmodel = True)
 
-    output_mp = well1_mp.df_particle
-    # output_mp = output_mp[["total_travel_time", "travel_time_unsaturated",
+    df_particle_mp = well1_mp.df_particle
+    # Obtain "flowline_id" from current index ;Add RangeIndex
+    df_particle_mp["flowline_id"] = df_particle_mp.index
+    df_particle_mp.index = RangeIndex(start = 1,stop=len(df_particle_mp.index)+1)
+    # df_particle_mp = df_particle_mp[["total_travel_time", "travel_time_unsaturated",
     #                  "travel_time_shallow_aquifer", "travel_time_target_aquifer",
     #                  "radial_distance", ]]
-    output_mp = output_mp.round(7)
+    df_particle_mp = df_particle_mp.round(7)
 
     # Export output of analytical and modpath calculations
     
     # df_particle file name (analytical well data)
     particle_fname_an = os.path.join(well1_mp.dstroot,well1_mp.schematisation_type + "_df_particle_analytical.csv")
     # Save df_particle 
-    output_an.to_csv(particle_fname_an)
+    df_particle_an.to_csv(particle_fname_an)
    
     # df_particle file name 
     particle_fname_mp = os.path.join(well1_mp.dstroot,well1_mp.schematisation_type + "_df_particle_modpath.csv")
     # Save df_particle 
-    output_mp.to_csv(particle_fname_mp)
+    df_particle_mp.to_csv(particle_fname_mp)
+
+    # # Plot the distribution of traveltimes from the well to model radius
+    # def plot_travel_time_distribution(fig, ax, df_particle, times_col = "total_travel_time",
+    #                                   distance_col = "xcoord", index_col = "flowline_id"):
+    #     ''' Plot cumululative travel times using column 'times_col' relative to distance 'distance_col' 
+    #         per pathline with index column 'index_col'.'''
+
+    #     # Pathline indices
+    #     flowline_id = list(df_particle.loc[:,index_col].unique())
+        
+    #     # Distance points
+    #     distance_points = np.array((len(flowline_id)), dtype = 'float')
+    #     # Time points
+    #     time_points = np.array((len(flowline_id)), dtype = 'float')
+
+    #     for idx, fid in enumerate(flowline_id):
+    #         # Fill distance_points array
+    #         distance_points[idx] = df_particle.loc[df_particle[index_col] == fid,distance_col].sort_values(by = times_col, ascending = True)[-1]
+    #         # Fill time_points array
+    #         time_points[idx] = df_particle.loc[[df_particle[index_col] == fid,times_col].sort_values(by = times_col, ascending = True)[-1]
+        
+    #     # Plot time-radius plot
+    #     plt.plot(distance_points, time_points, lw = 0.1, ax = ax)
 
 
-    try:
-        assert_frame_equal(output_an, output_phreatic,check_dtype=False)
+    # fig, ax = plt.subplots(figsize= (1,1),dpi=300)
+    # # Pathlines (analytical model)
+    # plot_an = plot_travel_time_distribution(fig, ax, df_particle_an)
+    # # Pathlines (modpath model)
+    # plot_mp = plot_travel_time_distribution(fig, ax, df_particle_mp)    
+    # plt.show()
 
-    except AssertionError:
-        print("Assertion Exception Raised - TTD test")
-    else:
-        print("Success, no error in TTD!")
+    # Columns in summary dataframe traveltimes
+    summary_columns = output_phreatic.columns
+    # flowline indices
+    flowline_ids_an = list(df_particle_an.loc[:,"flowline_id"].unique())
+    # Zones to compare
+    zones = ["vadose_zone","shallow_aquifer","target_aquifer"]
+    
+                    #  ["total_travel_time",
+                    # "travel_time_vadose_zone",
+                    # "travel_time_shallow_aquifer",
+                    # "travel_time_target_aquifer",
+                    # "xcoord"]
+
+    # Summary traveltimes (analytical)
+    summary_traveltimes_an = pd.DataFrame(index = flowline_ids_an,
+                                        columns = summary_columns)
+    # Fill summary df         
+    for fid in flowline_ids_an:
+        # Total traveltime
+        summary_traveltimes_an.loc[fid,"total_travel_time"] = \
+                                df_particle_an.loc[df_particle_an["flowline_id"] == fid,:].sort_values(by="total_travel_time", 
+                                        ascending = True).loc[:,"total_travel_time"].iloc[-1]
+        # Starting location
+        summary_traveltimes_an.loc[fid,"xcoord"] = \
+                        df_particle_an.loc[df_particle_an["flowline_id"] == fid,:].sort_values(by="total_travel_time", 
+                                ascending = True).loc[:,"xcoord"].iloc[0]
+        for iZone in zones:
+            # Travel time per zone
+            summary_traveltimes_an.loc[fid,"travel_time_" + iZone] = df_particle_an.loc[(df_particle_an["flowline_id"] == fid) & (df_particle_an["zone"] == iZone),"travel_time"].values[0]
+
+    # Summary traveltimes (Numerical / modpath)
+    # flowline indices (modpath)
+    flowline_ids_mp = list(df_particle_mp.loc[:,"flowline_id"].unique())
+    summary_traveltimes_mp = pd.DataFrame(index = flowline_ids_mp,
+                                        columns = summary_columns)
+
+    # Fill summary df         
+    for fid in flowline_ids_mp:
+        # Total traveltime
+        summary_traveltimes_mp.loc[fid,"total_travel_time"] = \
+                                df_particle_mp.loc[df_particle_mp["flowline_id"] == fid,:].sort_values(by="total_travel_time", 
+                                        ascending = True).loc[:,"total_travel_time"].iloc[-1]
+        # Starting location
+        summary_traveltimes_mp.loc[fid,"xcoord"] = \
+                        df_particle_mp.loc[df_particle_mp["flowline_id"] == fid,:].sort_values(by="total_travel_time", 
+                                ascending = True).loc[:,"xcoord"].iloc[0]
+        
+        ## Travel time per zone ##
+        # Vadose zone
+        summary_traveltimes_mp.loc[fid,"travel_time_vadose_zone"] = abs(df_particle_mp.loc[(df_particle_mp["flowline_id"] == fid) & (df_particle_mp["material"] == "vadose_zone"),"total_travel_time"].values[0] - \
+                                                                    df_particle_mp.loc[(df_particle_mp["flowline_id"] == fid) & (df_particle_mp["material"] == "shallow_aquifer"),"total_travel_time"].values[0])
+        # Shallow aquifer
+        summary_traveltimes_mp.loc[fid,"travel_time_shallow_aquifer"] = abs(df_particle_mp.loc[(df_particle_mp["flowline_id"] == fid) & (df_particle_mp["material"] == "shallow_aquifer"),"total_travel_time"].values[0] - \
+                                                                    df_particle_mp.loc[(df_particle_mp["flowline_id"] == fid) & (df_particle_mp["material"] == "target_aquifer"),"total_travel_time"].values[0])
+        # Target aquifer
+        summary_traveltimes_mp.loc[fid,"travel_time_target_aquifer"] = abs(df_particle_mp.loc[(df_particle_mp["flowline_id"] == fid) & (df_particle_mp["material"] == "target_aquifer"),"total_travel_time"].values[0] - \
+                                                                    df_particle_mp.loc[(df_particle_mp["flowline_id"] == fid) & (df_particle_mp["material"] == "well1"),"total_travel_time"].values[0])
+
+
+    # df_particle file name (analytical well data)
+    summary_fname_an = os.path.join(well1_mp.dstroot,well1_mp.schematisation_type + "_summary_traveltimes_analytical.csv")
+    # Save df_particle 
+    summary_traveltimes_an.to_csv(summary_fname_an)
+   
+    # df_particle file name 
+    summary_fname_mp = os.path.join(well1_mp.dstroot,well1_mp.schematisation_type + "_summary_traveltimes_modpath.csv")
+    # Save df_particle 
+    summary_traveltimes_mp.to_csv(summary_fname_mp)
+
+    # try:
+    assert_frame_equal(summary_traveltimes_an.loc[:, summary_columns],
+                        output_phreatic.loc[:, summary_columns],check_dtype=False, check_index_type = False)
+
+    # except AssertionError:
+    #     print("Assertion Exception Raised - TTD test")
+    # else:
+    #     print("Success, no error in TTD!")
 
 
 #%%
