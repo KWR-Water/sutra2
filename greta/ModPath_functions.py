@@ -870,7 +870,7 @@ class ModPathWell:
                         "porosity": [["geo_parameters"],"float",1.],
                         "solid_density": [["geo_parameters"],"float",2.5],
                         "fraction_organic_carbon": [["geo_parameters"],"float",0.001],
-                        "redox": [["geo_parameters"],"object",0],
+                        "redox": [["geo_parameters"],"object","anoxic"],
                         "dissolved_organic_carbon": [["geo_parameters"],"float",1],
                         "pH": [["geo_parameters"],"float",7],
                         "temperature": [["geo_parameters"],"float",11],
@@ -880,7 +880,11 @@ class ModPathWell:
 
         for iParm, dict_keys in self.geoparm_names.items():
             # Temporary value grid
-            unitgrid = np.zeros((self.nlay,self.nrow,self.ncol), dtype = dict_keys[1]) + dict_keys[2]
+            if  dict_keys[1] not in ["object"]:
+                unitgrid = np.zeros((self.nlay,self.nrow,self.ncol), dtype = dict_keys[1]) + dict_keys[2]
+            else:
+                unitgrid = np.zeros((self.nlay,self.nrow,self.ncol), dtype = dict_keys[1])
+                unitgrid[:,:,:] = dict_keys[2]
             # Fill grid with new values
             grid = self.fill_grid(schematisation = self.schematisation_dict,
                                 dict_keys = dict_keys[0],
@@ -888,6 +892,9 @@ class ModPathWell:
                                 grid = unitgrid,
                                 dtype = dict_keys[1])
             self._update_property(property = iParm, value = grid)
+
+            
+
 
         # Assign material grid
         self.assign_material(schematisation = self.schematisation_dict,
@@ -2269,8 +2276,9 @@ class ModPathWell:
         ''' TODO 211123: append phreatic pathline data '''
         # Append phreatic pathlines
         # Calculate the phreatic travel time and add records to df_particle dataframe
-        if self.schematisation_dict["vadose_parameters"]:
-            self.calc_traveltime_vadose_analytical(vadose_parameters = self.schematisation_dict["vadose_parameters"])
+        if (self.schematisation_dict["vadose_parameters"]):
+            if self.schematisation_type in ["phreatic"]:
+                self.calc_traveltime_vadose_analytical(vadose_parameters = self.schematisation_dict["vadose_parameters"])
 
         # df_particle file name
         particle_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_particle.csv")
