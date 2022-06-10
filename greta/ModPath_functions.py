@@ -414,7 +414,7 @@ class ModPathWell:
         else:
             bound_list = np.sort(np.unique(np.round(bound_list,3)))[::-1]
         # size of grid cells in the dimension (delr, delc or delv) from zeroeth to n_th cell
-        cell_sizes =  abs(np.diff(bound_list))
+        cell_sizes = np.round(abs(np.diff(bound_list)),3)
 
         # Length of array
         len_arr = len(cell_sizes)
@@ -2733,7 +2733,8 @@ class ModPathWell:
         else:
             colnames_df_particle = {"x": "xcoord","y":"ycoord","z":"zcoord","time":"total_travel_time","prsity_uncorr":"porosity",
                                 "solid_density": "solid_density", "fraction_organic_carbon": "fraction_organic_carbon", "redox": "redox", 
-                                "dissolved_organic_carbon":	"dissolved_organic_carbon", "pH": "pH",	"temperature": "temperature", "material": "material"}
+                                "dissolved_organic_carbon":	"dissolved_organic_carbon", "pH": "pH",	"temperature": "temperature",
+                                "grainsize": "grainsize", "material": "material"}
             df_particle = pd.DataFrame(columns = colnames_df_particle)
 
         # y-coordinate equals 0.5 * self.delc[0] in axisymmetric or 2D model
@@ -3146,7 +3147,8 @@ class ModPathWell:
             # df_particle phreatic
             df_cols = ["xcoord","ycoord","zcoord","total_travel_time",
                         "porosity","solid_density","fraction_organic_carbon",
-                        "redox","dissolved_organic_carbon","pH","temperature","material"]
+                        "redox","dissolved_organic_carbon","pH","temperature",
+                        "grainsize","material"]
             
             # Define index of phreatic pathline df
             flowline_id = self.df_particle.index.unique()
@@ -3175,6 +3177,7 @@ class ModPathWell:
             df_phreatic.loc[df_index,"dissolved_organic_carbon"] = np.array([vadose_parameters[dict_key]['dissolved_organic_carbon']] * len(flowline_id))
             df_phreatic.loc[df_index,"pH"] = np.array([vadose_parameters[dict_key]['pH']] * len(flowline_id))
             df_phreatic.loc[df_index,"temperature"] = np.array([vadose_parameters[dict_key]['temperature']] * len(flowline_id))
+            df_phreatic.loc[df_index,"grainsize"] = np.array([vadose_parameters[dict_key]['grainsize']] * len(flowline_id))
             df_phreatic.loc[df_index,"material"] = np.array(['vadose_zone'] * len(flowline_id))
             
             # Append records to df_particle dataframe 

@@ -1336,6 +1336,48 @@ class SubstanceTransport():
         # return (adjusted) df_particle and df_flowline
         return df_particle, df_flowline, C_final
 
+    # Plot the distribution of traveltimes from the well to model radius
+    def plot_travel_time_distribution(self, df_particle, times_col = "total_travel_time",
+                                      distance_col = "xcoord", index_col = "flowline_id",
+                                      fpath_fig = None):
+        ''' Plot cumululative travel times using column 'times_col' relative to distance 'distance_col' 
+            per pathline with index column 'index_col'.'''
+
+        # Pathline indices
+        flowline_ids = list(df_particle.loc[:,index_col].unique())
+        
+        ## modpath solution ##
+        # Distance points
+        distance_points = np.empty((len(flowline_ids)), dtype = 'float')
+        # Time points
+        time_points = np.empty((len(flowline_ids)), dtype = 'float')
+
+        for idx, fid in enumerate(flowline_ids):
+
+            # Fill distance_points array
+            distance_points[idx] = df_particle.loc[df_particle[index_col] == fid, [distance_col,times_col]].sort_values(
+                                        by = times_col, ascending = True).iloc[0,0]
+            
+            # Fill time_points array
+            time_points[idx] = df_particle.loc[df_particle[index_col] == fid, [distance_col,times_col]].sort_values(
+                                        by = times_col, ascending = True).iloc[-1,1]
+        
+        
+        # Create travel time distribution plot
+        fig, ax = plt.subplots(figsize= (10,10),dpi=300)
+
+        # Plot time-radius plot
+        plt.plot(distance_points, time_points, lw = 0., marker = '.')  # analytical
+        plt.plot(distance_points, time_points, lw = 0.2)  # modpath
+        plt.xlabel("Radial distance (m)")
+        plt.ylabel("Travel time (days)")
+
+        # travel distribution plot (file name)
+        if fpath_fig is None:
+            fpath_fig = os.path.join(self.well.dstroot,self.well.schematisation_type + "_traveltime_distribution_modpath.png")
+        # Save figure
+        fig.savefig(fpath_fig)
+
     def plot_age_distribution(self, df_particle: pd.DataFrame,
                                 vmin = 0.,vmax = 1.,orientation = {'row': 0},
                                 fpathfig = None, figtext = None,x_text = 0,
