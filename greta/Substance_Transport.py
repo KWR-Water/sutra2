@@ -164,45 +164,6 @@ class Organism:
                         "deeply_anoxic": 0.1637
                     }
                 },
-            "MS2": 
-                {"organism_name": "MS2",
-                    "alpha0": {
-                        "suboxic": 1.e-3, 
-                        "anoxic": 1.e-5, 
-                        "deeply_anoxic": 1.e-5
-                    },
-                    "reference_pH": {
-                        "suboxic": 6.6, 
-                        "anoxic": 6.8, 
-                        "deeply_anoxic": 6.8
-                    },
-                    "organism_diam": 2.33e-8,
-                    "mu1": {
-                        "suboxic": 0.039, 
-                        "anoxic": 0.023, 
-                        "deeply_anoxic": 0.023
-                    }
-                },
-                # ALLES X 10
-            "Escherichia coli": 
-                {"organism_name": "Escherichia coli",
-                    "alpha0": {
-                        "suboxic": 1.e-2, 
-                        "anoxic": 1.e-4, 
-                        "deeply_anoxic": 1.e-4
-                    },
-                    "reference_pH": {
-                        "suboxic": 6.6, 
-                        "anoxic": 6.8, 
-                        "deeply_anoxic": 6.8
-                    },
-                    "organism_diam": 1.5e-6,
-                    "mu1": {
-                        "suboxic": 0.39, 
-                        "anoxic": 0.23, 
-                        "deeply_anoxic": 0.23
-                    }
-                }
             }
         #@ Steven voeg toe: micro_organism_dict
         # self.micro_organism_dict = micro_organism_dict[substance_name]
