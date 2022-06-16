@@ -107,6 +107,63 @@ class Organism:
 
         # Naming convention organism: Uppercamelcase species
         micro_organism_dict = {
+            "solani": 
+                {"organism_name": "solani",
+                    "alpha0": {
+                        "suboxic": 0.037, 
+                        "anoxic": 0.037e-2,     # NOT reported: factor 100 smaller than suboxic
+                        "deeply_anoxic": 0.037e-2
+                    },
+                    "reference_pH": {
+                        "suboxic": 7.5, 
+                        "anoxic": 7.5,          # NOT reported: assumed equal to suboxic
+                        "deeply_anoxic": 7.5    # NOT reported: assumed equal to suboxic
+                    },
+                    "organism_diam": 2.731e-6,
+                    "mu1": {
+                        "suboxic": 1.2472, 
+                        "anoxic": 0.1151, 
+                        "deeply_anoxic": 0.1151
+                    }
+                },
+            "carotovorum": 
+                {"organism_name": "carotovorum",
+                    "alpha0": {
+                        "suboxic": 1.e-3, 
+                        "anoxic": 0.577, 
+                        "deeply_anoxic": 0.577
+                    },
+                    "reference_pH": {
+                        "suboxic": 7.5, 
+                        "anoxic": 7.5, 
+                        "deeply_anoxic": 7.5
+                    },
+                    "organism_diam": 1.803e-6,
+                    "mu1": {
+                        "suboxic": 1.2664, 
+                        "anoxic": 0.1279, 
+                        "deeply_anoxic": 0.1279
+                    }
+                },
+            "solanacearum": 
+                {"organism_name": "solanacearum",
+                    "alpha0": {
+                        "suboxic": 0.011, 
+                        "anoxic": 0.456, 
+                        "deeply_anoxic": 0.456
+                    },
+                    "reference_pH": {
+                        "suboxic": 7.5, 
+                        "anoxic": 7.5, 
+                        "deeply_anoxic": 7.5
+                    },
+                    "organism_diam": 1.945e-6,
+                    "mu1": {
+                        "suboxic": 0.3519, 
+                        "anoxic": 0.1637, 
+                        "deeply_anoxic": 0.1637
+                    }
+                },
             "MS2": 
                 {"organism_name": "MS2",
                     "alpha0": {
@@ -865,7 +922,7 @@ class SubstanceTransport():
                             ylim=None,
                             as_fraction_input = None,
                             x_axis = 'Date'):
-
+        ## @Alex: adjust name of function to 'plot_concentration_timeseries'
         ''' Plot the concentration of the given OMP as a function of time since the start of the contamination
 
         Parameters
@@ -883,6 +940,8 @@ class SubstanceTransport():
 
         ReturnVage @MartinK what to put here?
         '''
+
+
 
         # reduce the amount of text per line by extracting the following parameters
         point_input_concentration = self.well.schematisation.point_input_concentration
