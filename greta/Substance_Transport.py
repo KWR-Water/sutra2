@@ -129,7 +129,7 @@ class Organism:
             "carotovorum": 
                 {"organism_name": "carotovorum",
                     "alpha0": {
-                        "suboxic": 1.e-3, 
+                        "suboxic": 0.300, 
                         "anoxic": 0.577, 
                         "deeply_anoxic": 0.577
                     },
