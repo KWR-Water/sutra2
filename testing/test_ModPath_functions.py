@@ -186,7 +186,7 @@ def test_modpath_run_phreatic_nogravelpack(organism_name = "MS2"):
                                             modpath_phrea.df_particle, modpath_phrea.df_flowline, 
                                             endpoint_id = endpoint_id,
                                             trackingdirection = modpath_phrea.trackingdirection,
-                                            mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, reference_pH = 6.8, const_BM = 1.38e-23,
+                                            mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, pH0 = 6.8, const_BM = 1.38e-23,
                                             temp_water = 11., rho_water = 999.703, organism_diam = 2.33e-8,
                                             conc_start = 1., conc_gw = 0.)
 
@@ -208,14 +208,14 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
     # microbial removal properties
     # organism_name = 'MS2'
     alpha0 = {"suboxic": 1.e-3, "anoxic": 1.e-5, "deeply_anoxic": 1.e-5}
-    reference_pH = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8}
+    pH0 = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8}
     organism_diam =  2.33e-8
     mu1 = {"suboxic": 0.039,"anoxic": 0.023,"deeply_anoxic": 0.023}
 
     removal_parameters = {organism_name: 
                     {"organism_name": organism_name,
                         "alpha0": alpha0,
-                        "reference_pH": reference_pH,
+                        "pH0": pH0,
                         "organism_diam": organism_diam,
                         "mu1": mu1
                     }
@@ -345,9 +345,9 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
                                 alpha0_suboxic = rem_parms["alpha0"]["suboxic"],
                                 alpha0_anoxic = rem_parms["alpha0"]["anoxic"],
                                 alpha0_deeply_anoxic =rem_parms["alpha0"]["deeply_anoxic"],
-                                reference_pH_suboxic =rem_parms["reference_pH"]["suboxic"],
-                                reference_pH_anoxic =rem_parms["reference_pH"]["anoxic"],
-                                reference_pH_deeply_anoxic =rem_parms["reference_pH"]["deeply_anoxic"],
+                                pH0_suboxic =rem_parms["pH0"]["suboxic"],
+                                pH0_anoxic =rem_parms["pH0"]["anoxic"],
+                                pH0_deeply_anoxic =rem_parms["pH0"]["deeply_anoxic"],
                                 mu1_suboxic = rem_parms["mu1"]["suboxic"],
                                 mu1_anoxic = rem_parms["mu1"]["anoxic"],
                                 mu1_deeply_anoxic = rem_parms["mu1"]["deeply_anoxic"],
@@ -513,14 +513,14 @@ def test_modpath_run_horizontal_flow_diffuse(organism_name = "MS2"):
     # microbial removal properties
     # organism_name = 'MS2'
     alpha0 = {"suboxic": 1.e-3, "anoxic": 1.e-5, "deeply_anoxic": 1.e-5}
-    reference_pH = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8}
+    pH0 = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8}
     organism_diam =  2.33e-8
     mu1 = {"suboxic": 0.149,"anoxic": 0.023,"deeply_anoxic": 0.023}
 
     removal_parameters = {organism_name: 
                     {"organism_name": organism_name,
                         "alpha0": alpha0,
-                        "reference_pH": reference_pH,
+                        "pH0": pH0,
                         "organism_diam": organism_diam,
                         "mu1": mu1
                     }
@@ -534,9 +534,9 @@ def test_modpath_run_horizontal_flow_diffuse(organism_name = "MS2"):
                             alpha0_suboxic = rem_parms["alpha0"]["suboxic"],
                             alpha0_anoxic = rem_parms["alpha0"]["anoxic"],
                             alpha0_deeply_anoxic =rem_parms["alpha0"]["deeply_anoxic"],
-                            reference_pH_suboxic =rem_parms["reference_pH"]["suboxic"],
-                            reference_pH_anoxic =rem_parms["reference_pH"]["anoxic"],
-                            reference_pH_deeply_anoxic =rem_parms["reference_pH"]["deeply_anoxic"],
+                            pH0_suboxic =rem_parms["pH0"]["suboxic"],
+                            pH0_anoxic =rem_parms["pH0"]["anoxic"],
+                            pH0_deeply_anoxic =rem_parms["pH0"]["deeply_anoxic"],
                             mu1_suboxic = rem_parms["mu1"]["suboxic"],
                             mu1_anoxic = rem_parms["mu1"]["anoxic"],
                             mu1_deeply_anoxic = rem_parms["mu1"]["deeply_anoxic"],
@@ -776,14 +776,14 @@ def test_modpath_run_phreatic_withgravelpack_removal(organism_name = "MS2"):
     # microbial removal properties
     # organism_name = 'MS2'
     alpha0 = {"suboxic": 1.e-3, "anoxic": 1.e-5, "deeply_anoxic": 1.e-5}
-    reference_pH = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8}
+    pH0 = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8}
     organism_diam =  2.33e-8
     mu1 = {"suboxic": 0.149,"anoxic": 0.023,"deeply_anoxic": 0.023}
 
     removal_parameters = {organism_name: 
                     {"organism_name": organism_name,
                         "alpha0": alpha0,
-                        "reference_pH": reference_pH,
+                        "pH0": pH0,
                         "organism_diam": organism_diam,
                         "mu1": mu1
                     }
@@ -797,9 +797,9 @@ def test_modpath_run_phreatic_withgravelpack_removal(organism_name = "MS2"):
                             alpha0_suboxic = rem_parms["alpha0"]["suboxic"],
                             alpha0_anoxic = rem_parms["alpha0"]["anoxic"],
                             alpha0_deeply_anoxic =rem_parms["alpha0"]["deeply_anoxic"],
-                            reference_pH_suboxic =rem_parms["reference_pH"]["suboxic"],
-                            reference_pH_anoxic =rem_parms["reference_pH"]["anoxic"],
-                            reference_pH_deeply_anoxic =rem_parms["reference_pH"]["deeply_anoxic"],
+                            pH0_suboxic =rem_parms["pH0"]["suboxic"],
+                            pH0_anoxic =rem_parms["pH0"]["anoxic"],
+                            pH0_deeply_anoxic =rem_parms["pH0"]["deeply_anoxic"],
                             mu1_suboxic = rem_parms["mu1"]["suboxic"],
                             mu1_anoxic = rem_parms["mu1"]["anoxic"],
                             mu1_deeply_anoxic = rem_parms["mu1"]["deeply_anoxic"],
@@ -951,7 +951,7 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
                                             modpath_semiconf.df_particle, modpath_semiconf.df_flowline, 
                                             endpoint_id = endpoint_id,
                                             trackingdirection = modpath_semiconf.trackingdirection,
-                                            mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, reference_pH = 6.8, const_BM = 1.38e-23,
+                                            mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, pH0 = 6.8, const_BM = 1.38e-23,
                                             temp_water = 11., rho_water = 999.703, organism_diam = 2.33e-8,
                                             conc_start = 1., conc_gw = 0.)
 
@@ -1578,14 +1578,14 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
     # microbial removal properties
     # organism_name = 'MS2'
     alpha0 = {"suboxic": 1.e-3, "anoxic": 1.e-5, "deeply_anoxic": 1.e-5}
-    reference_pH = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8}
+    pH0 = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8}
     organism_diam =  2.33e-8
     mu1 = {"suboxic": 0.149,"anoxic": 0.023,"deeply_anoxic": 0.023}
 
     removal_parameters = {organism_name: 
                     {"organism_name": organism_name,
                         "alpha0": alpha0,
-                        "reference_pH": reference_pH,
+                        "pH0": pH0,
                         "organism_diam": organism_diam,
                         "mu1": mu1
                     }
@@ -1599,9 +1599,9 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
                             alpha0_suboxic = rem_parms["alpha0"]["suboxic"],
                             alpha0_anoxic = rem_parms["alpha0"]["anoxic"],
                             alpha0_deeply_anoxic =rem_parms["alpha0"]["deeply_anoxic"],
-                            reference_pH_suboxic =rem_parms["reference_pH"]["suboxic"],
-                            reference_pH_anoxic =rem_parms["reference_pH"]["anoxic"],
-                            reference_pH_deeply_anoxic =rem_parms["reference_pH"]["deeply_anoxic"],
+                            pH0_suboxic =rem_parms["pH0"]["suboxic"],
+                            pH0_anoxic =rem_parms["pH0"]["anoxic"],
+                            pH0_deeply_anoxic =rem_parms["pH0"]["deeply_anoxic"],
                             mu1_suboxic = rem_parms["mu1"]["suboxic"],
                             mu1_anoxic = rem_parms["mu1"]["anoxic"],
                             mu1_deeply_anoxic = rem_parms["mu1"]["deeply_anoxic"],
