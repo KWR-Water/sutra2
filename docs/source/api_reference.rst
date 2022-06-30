@@ -6,5 +6,8 @@ API reference
 .. toctree::
    :maxdepth: 2
 
-   Analytical solutions <api/greta.Analytical_Well.rst>
-   schematisation <api/greta.Substance_Transport.rst>
+   Analytical well solutions module <api/greta.Analytical_Well.rst>
+   Modpath calculations module <api/greta.ModPath_functions.rst>
+   Substance transport module <api/greta.Substance_Transport.rst>
+
+..

@@ -16,8 +16,8 @@ Fields (PSWFs)
     tutorial.rst
     faq.rst
     glossary.rst
-    API reference <api/modules.rst>
+    api_reference.rst 
     about.rst
     known_issues.rst
 .. example.rst very large snippet
-
+    API reference <api/modules.rst>

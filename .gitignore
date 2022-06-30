@@ -222,3 +222,9 @@ testing/Testberekeningen_sutra_mbo_removal_220321.xlsx
 research/*.txt
 research/phreatic_dict_withgravel_test.txt
 docs/build
+testing/test11_traveltimes_modpath_vs_analytical.xlsx
+testing/test_ModPath_functions.py
+testing/phreatic_test_mp.csv
+research/phreatic_dict_withgravel_test.txt
+research/phreatic_dict_withgravel_test.txt
+research/phreatic_dict_withgravel_test.txt

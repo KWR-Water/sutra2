@@ -178,7 +178,7 @@ class ModPathWell:
             Column 'ycoord'
             Column 'zcoord'
             Column 'redox'
-            Column 'temperature'
+            Column 'temp_water'
         '''
 
         # get the non-default parameters
@@ -414,7 +414,7 @@ class ModPathWell:
         else:
             bound_list = np.sort(np.unique(np.round(bound_list,3)))[::-1]
         # size of grid cells in the dimension (delr, delc or delv) from zeroeth to n_th cell
-        cell_sizes =  abs(np.diff(bound_list))
+        cell_sizes = np.round(abs(np.diff(bound_list)),3)
 
         # Length of array
         len_arr = len(cell_sizes)
@@ -463,10 +463,9 @@ class ModPathWell:
 
         # Column data outputs:
         - self.delr: column widths of the model columns [np.array]
-            rounded to three decimals [mm scale].
+        rounded to three decimals [mm scale].
         - self.xmid: x-coordinates (middle) of the model columns [np.array]
         - self.ncol: number of model columns
-
 
         # Row data assignment (model_type: 3D)
         # N.B. for modeltype: (axisymmetric | 2D) the rows have a predefined width [2 rows, 1 m width]
@@ -482,11 +481,18 @@ class ModPathWell:
         - self.ymid: y-coordinates (middle) of the model rows [np.array]
         - self.nrow: number of model rows
         
-        Optional local outputs to return:
-        - empty_grid  # Empty numpy array with size (self.nlay,nrow,ncol)
-        - lay_bounds  # Upper and lower boundaries of the model grid cells [1D-array]
-        - row_bounds  # Left and right boundaries of the model grid cells [1D-array]
-        - col_bounds  # North-south boundaries of the grid-cells [1D-array]
+        Returns
+        -------
+
+        empty_grid: np.array
+            Empty numpy array with size (self.nlay,nrow,ncol)
+        lay_bounds: np.array
+            Upper and lower boundaries of the model grid cells [1D-array]
+        row_bounds: np.array
+            Left and right boundaries of the model grid cells [1D-array]
+        col_bounds: np.array
+            North-south boundaries of the grid-cells [1D-array]
+        
         '''
 
         if schematisation is None:
@@ -752,18 +758,17 @@ class ModPathWell:
             # Output:
             # Creates a dict with list of tuples representing the well locations
             well_loc = {"well1": [(5,0,0),(6,0,0)],
-                        "well2":}
+            "well2":}
             
             # Calculate cumulative KD per well [m2/day] (to calculate relative discharge per cell)
             KD_well = {"well1": 500.,
-                        "well2": 100.,...}
+            "well2": 100.,...}
             # Create stress period data [list of lists per stress period]:
             # wel_spd = {0: [[lay,row,col,discharge1],[lay,row,col,discharge2]]
 
             # Total discharge per day per well
             Qwell_day = = {"well1": -1000..,
-                        "well2": -1.,...}
-            
+            "well2": -1.,...}
         '''
 
         if (well_names is None) or (well_names == "None"):
@@ -870,16 +875,21 @@ class ModPathWell:
                         "porosity": [["geo_parameters"],"float",1.],
                         "solid_density": [["geo_parameters"],"float",2.5],
                         "fraction_organic_carbon": [["geo_parameters"],"float",0.001],
-                        "redox": [["geo_parameters"],"object",0],
+                        "redox": [["geo_parameters"],"object","anoxic"],
                         "dissolved_organic_carbon": [["geo_parameters"],"float",1],
                         "pH": [["geo_parameters"],"float",7],
-                        "temperature": [["geo_parameters"],"float",11]
+                        "temp_water": [["geo_parameters"],"float",11],
+                        "grainsize": [["geo_parameters"],"float",0.00025]
                         }
                       
 
         for iParm, dict_keys in self.geoparm_names.items():
             # Temporary value grid
-            unitgrid = np.zeros((self.nlay,self.nrow,self.ncol), dtype = dict_keys[1]) + dict_keys[2]
+            if  dict_keys[1] not in ["object"]:
+                unitgrid = np.zeros((self.nlay,self.nrow,self.ncol), dtype = dict_keys[1]) + dict_keys[2]
+            else:
+                unitgrid = np.zeros((self.nlay,self.nrow,self.ncol), dtype = dict_keys[1])
+                unitgrid[:,:,:] = dict_keys[2]
             # Fill grid with new values
             grid = self.fill_grid(schematisation = self.schematisation_dict,
                                 dict_keys = dict_keys[0],
@@ -887,6 +897,9 @@ class ModPathWell:
                                 grid = unitgrid,
                                 dtype = dict_keys[1])
             self._update_property(property = iParm, value = grid)
+
+            
+
 
         # Assign material grid
         self.assign_material(schematisation = self.schematisation_dict,
@@ -1111,19 +1124,21 @@ class ModPathWell:
                         discharge_parameter = "well_discharge"):
         ''' Add multi nodal well Package to the MODFLOW model. 
             # Function allows for a single row, col combination in current version per identified well.
-            Documented in: https://flopy.readthedocs.io/en/3.3.5/_modules/flopy/modflow/mfmnw2.html
-            With: 
+            Documented in `flopy docs - MNW2 <https://flopy.readthedocs.io/en/3.3.5/_modules/flopy/modflow/mfmnw2.html>`_.
+            
+            Parameters
+            -----------
             wellid: str or int
                 name of the well
             nnodes: int
                 nr of filter screens per vertical well (if nnodes < 0). 
                 Allows for input of ztop and zbot per filter screen.
-            ztop : float [m]
-                top elevation of open intervals of vertical well.
-            zbotm : float [m]
-                bottom elevation of open intervals of vertical well.
+            ztop : float
+                top elevation of open intervals of vertical well. [m]
+            zbotm : float
+                bottom elevation of open intervals of vertical well. [m]
             rw: float
-                well radius of the vertical well(s)
+                well radius of the vertical well(s) [m]
             '''     
 
         if (well_names is None) or (well_names == "None"):
@@ -1689,6 +1704,10 @@ class ModPathWell:
         if not hasattr(self, "localz"):
             self.localz = {}  
 
+        # Particle starting concentration   
+        if not hasattr(self, "inputconc_particle"):
+            self.inputconc_particle = {}       
+
         # Particle id [part group, particle id] - zero based integers
         if not hasattr(self, "pids"):
             print("Create a new particle id dataset dict.")
@@ -1907,6 +1926,8 @@ class ModPathWell:
                     # flowline_type: diffuse_source (or point_source)
                     self.flowline_type[self.pcount] = 'diffuse_source'  
 
+                    # Particle starting concentration   
+                    self.inputconc_particle[self.pcount] = recharge_parameters.get(iPG).get("input_concentration")     
 
             # Particle distribution package - particle allocation
             #modpath.mp7particledata.Part...
@@ -1971,7 +1992,11 @@ class ModPathWell:
         if not hasattr(self, "flowline_type"):
             self.flowline_type = {}     
         if not hasattr(self, "point_discharge"):
-            self.point_discharge = {}                
+            self.point_discharge = {} 
+
+        # Particle starting concentration   
+        if not hasattr(self, "inputconc_particle"):
+            self.inputconc_particle = {}          
 
         # particle starting locations [(lay,row,col),(k,i,j),...]
         if not hasattr(self, "part_locs"):
@@ -2089,6 +2114,8 @@ class ModPathWell:
                 # Add point_discharge
                 self.point_discharge[self.pcount] = point_parameters.get(iPG).get("discharge") 
 
+                # Starting concentration of particles
+                self.inputconc_particle[self.pcount] = point_parameters.get(iPG).get("input_conentration")
 
                 # Particle distribution package - particle allocation
                 #modpath.mp7particledata.Part...
@@ -2188,98 +2215,7 @@ class ModPathWell:
     def run_ModPathmod(self):         
         ''' Run ModPath model '''
         # self.mp7.run_model(silent=False)
-        self.success_mp,_ = self.mp7.run_model(silent=False)
-
-    def _export_to_df(self, mppth):
-        """ Makes 'df_flowline' and 'df_particle' for ModPath model simulation
-  
-            Parameters
-            -------
-            mppth: str
-                File location to ModPath pathline output (*.mppth)
-
-            Returns
-            -------
-            df_flowline: pandas.DataFrame
-                Column 'flowline_id': Integer
-                Column 'flowline_type': string
-                    Described the type of contamination associated with the flowline,
-                    either 'diffuse_source' or 'point_source'.
-                Column 'flowline_discharge': Float
-                    Discharge associated with the flowline, [m3/d].
-                Column 'particle_release_day': Float
-                Column 'input_concentration'
-                Column 'endpoint_id': Integer
-                    ID of Well (or drain) where the flowline ends.
-                Column 'well_discharge': float
-                Column 'substance': string
-                Column 'removal_function': string
-
-            df_particle: pandas.DataFrame
-                Column 'flowline_id': int
-                Column 'zone': string
-                    Zone in the aquifer, ground surface 'surface', 'vadose_zone', 'shallow_aquifer' or 'target_aquifer'
-                Column 'travel_time': float
-                    Travel time in the respective aquifer zone given in column 'zone.
-                Column 'xcoord': float
-                Column 'ycoord': float
-                Column 'zcoord': float
-                Column 'redox': float
-                    'suboxic', 'anoxic', deeply_anoxic'
-                Column 'temperature': float
-                    Of the respective aquifer zone.
-                Column 'travel_distance': float
-                Column 'porosity': float
-                Column 'dissolved_organic_carbon': float
-                Column 'pH': float
-                Column 'fraction_organic_carbon': float
-                Column 'solid_density': float
-        """
-
-        # MK:  this is something that I could imagine that you use it as an argument to the
-        # function.
-        #AH_todo, @MartinK, what is the advantage over using the attribute?
-        # what_to_export = self.schematisation.what_to_export
-
-        # pthline_data converted to rec.arrays (with fields appended)
-        self.particle_data = {}
-        # dataframes of particle data (dict)
-        self.df_particle_data = {}
-        # list the particle_data dataframes
-        df_particle_list = []
-
-        # Create rec.arrays for porosity, pH, T, etc. to append to particle_data
-        parm_list = ["prsity_uncorr","solid_density","fraction_organic_carbon",
-                    "redox","dissolved_organic_carbon", "pH","temperature","material"]
-
-        # Create df_particle
-        self.df_particle, self.df_particle_data = self.fill_df_particle(
-                            particle_group = self.pg,
-                            pg_nodes = self.pg_nodes,
-                            parm_list = parm_list,
-                            mppth = mppth)
-
-
-        
-        # Create dataframe df_flowline
-        self.df_flowline = self.fill_df_flowline(df_particle = self.df_particle,
-                                                model_cbc = self.model_cbc)
-
-        ''' TODO 211123: append phreatic pathline data '''
-        # Append phreatic pathlines
-        # Calculate the phreatic travel time and add records to df_particle dataframe
-        if self.schematisation_dict["vadose_parameters"]:
-            self.calc_traveltime_vadose_analytical(vadose_parameters = self.schematisation_dict["vadose_parameters"])
-
-        # df_particle file name
-        particle_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_particle.csv")
-        # Save df_particle
-        self.df_particle.to_csv(particle_fname)
-
-        # df_flowline file name
-        flowline_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_flowline.csv")
-        # Save df_flowline
-        self.df_flowline.to_csv(flowline_fname)        
+        self.success_mp,_ = self.mp7.run_model(silent=False)     
 
     def MP7modelrun(self, mf_namfile = None, mp_exe = None):
         ''' Modpath model run.'''
@@ -2455,15 +2391,21 @@ class ModPathWell:
     def calc_flux_cell(self, frf,flf,fff, loc):
         ''' Calculate the total volume flux along the cell boundary, using
         frf, flf and fff.
-        With: 
-            frf: np.array
-                flux right face (= positive to the right)
-            flf: np.array
-                flux lower face (= positive in downward direction)
-            fff: np.array
-                flux front face (= positive in 'southward' direction)
-            loc: tuple
-                cell location (lay,row,col)
+
+        Parameters
+        -----------
+
+        frf: np.array
+            flux right face (= positive to the right) [m^3 d-1]
+        
+        flf: np.array
+            flux lower face (= positive in downward direction) [m^3 d-1]
+        
+        fff: np.array
+            flux front face (= positive in 'southward' direction) [m^3 d-1]
+        
+        loc: tuple
+            cell location (lay,row,col)
         '''
 
         # fluxes along x-direction
@@ -2493,29 +2435,43 @@ class ModPathWell:
         return flux_total
 
     def read_pathlinedata(self,fpth, nodes):
-        ''' read pathlinedata from file fpth (extension: '*.mppth'), 
-            given the particle release node index 'nodes' obtained from 
-            a tuple or list of tuples (iLay,iRow,iCol).
-            Cell node indices can be obtained using the method get_node_ID((iLay,iRow,iCol))
+        ''' Read pathlinedata from file fpth (extension: '.mppth'),
+        given the particle release node index 'nodes' obtained from
+        a tuple or list of tuples (iLay,iRow,iCol).
+
+        Parameters
+        -----------
+        fpth: str
+            filepath of pathline data
+        nodes:
+            Cell node indices of starting locations.
+            Can be obtained using the method get_node_ID((iLay,iRow,iCol))
+        
+        Returns
+        -------- 
+        xyz_nodes:
+            The xyz coördinates of each node per tracked particle
+        dist: 
+            The distance between each node per tracked particle [L]
+        tdiff:
+            The travel time (difference) between each node per particle [T]
+        dist_tot: 
+            Total distance covered by each tracked particle [L]
+        time_tot: 
+            Total duration between release and ending of each particle [T]
+        pth_data: np.recarray
+            Complete recarray is returned to see what is in the file fpth.
             
-            Return xyz_nodes, dist, tdiff, dist_tot, time_tot, pth_data 
-            
-            with xyz_nodes, the xyz coördinates of each node per tracked particle
-            dist (L): the distance between each node per tracked particle
-            tdiff (T): the travel time (difference) between each node per particle
-            dist_tot: total distance cvered by each tracked particle
-            time_tot: total duration between release and ending of each particle
-            pth_data: complete recarray is returned to see what's in the file fpth.
-            
-                '''
+        '''
+
         pth_object = flopy.utils.PathlineFile(fpth)
         # Raw pathline data
         pth_data = pth_object.get_destination_pathline_data(nodes)
         # Round rec.arrays to 3 decimals
         for idx,iPart in enumerate(pth_data):
-            pth_data[idx]["x"] = pth_data[idx]["x"].round(3)
-            pth_data[idx]["y"] = pth_data[idx]["y"].round(3)
-            pth_data[idx]["z"] = pth_data[idx]["z"].round(3)
+            pth_data[idx]["x"] = pth_data[idx]["x"].round(4)
+            pth_data[idx]["y"] = pth_data[idx]["y"].round(4)
+            pth_data[idx]["z"] = pth_data[idx]["z"].round(4)
 
             # # Test unique
             # test_unique = np.unique(pth_data[idx],return_index=True, return_inverse=True, axis = 0)
@@ -2575,49 +2531,56 @@ class ModPathWell:
                         parm_list: list = list(),
                         mppth = None
                         ):
-        '''Fill the df_particle by flowline_id
+        '''Fill the df_particle, ordered by flowline_id and total_travel_time
 
         Parameters
         ----------
-        df: pandas.dataframe
-            Holder for df_particle, filled by the flowline_id
-        distance: array
-            Array of distance(s) [m] from the well.
-            For diffuse sources 'distance' is the 'radial_distance' array.
-            For point sources 'distance' is 'distance_point_contamination_from_well'.
-        travel_time_unsaturated: array
-            Travel time in the unsaturated zone for each point in the given distance array returned as
-            attrubute of the function, [days].
-        travel_time_shallow_aquifer: array
-            Travel time in the shallow aquifer for each point in the given distance array, [days].
-        travel_time_target_aquifer: array
-            Travel time in the target aquifer for each point in the given distance array, [days].
-        total_travel_time: array
-            Sum of the unsaturated, shallow and target aquifer travel times for each
-            point in the given distance array, [days].
-
+        particle_group: str
+            particle group name of released particles
+        pg_nodes: list of tuple or list of list
+            locations at which particles were started [(lay,row,col),(...)]
+        parm_list: 
+            list of columns to include in df_particle (to be returned)
+        mppth: str or Path
+            'modpath_name.pth' file location
 
         Returns
         -------
-        df: pandas.dataframe
+        df_particle: pandas.dataframe
             Holder for df_particle, filled by the flowline_id
 
-        flowline_id: ID of the flowline
-        zone
-        travel_time
-        total_travel_time
-        xcoord
-        ycoord
-        zcoord
-        redox
-        temperature
-        travel_distance
-        porosity
-        dissolved_organic_carbon
-        pH
-        fraction_organic_carbon
-        solid_density
+            flowline_id: int
+                ID of the flowline
 
+            xcoord: float
+                x coordinate of particle
+
+            ycoord: float
+                y coordinate of particle
+
+            zcoord: float
+                z coordinate of particle
+
+            total_travel_time:
+                travel time since start of model [days]
+
+            material: str
+                identifier for geological layer or other material/object wherein particle resides 
+
+            redox: str
+                redox condition [‘suboxic’,’anoxic’,’deeply_anoxic’]
+            temp_water: float
+                Water temperature [degrees celcius]
+            porosity: float
+                effective porosity [-]
+            dissolved_organic_carbon:
+                dissolved organic carbon (DOC) fraction [-]
+            pH: float
+                pH of the water [-]
+            fraction_organic_carbon
+                organic carbon fraction (foc) [-]
+            solid_density: float
+                Bulk density of the material [kg / L]
         '''
 
         if mppth is None:
@@ -2666,9 +2629,9 @@ class ModPathWell:
                 if (self.model_type == "axisymmetric") | (self.model_type == "2D"):
                 
                     for iKey in xyz_nodes.keys():
-                        xyz_nodes[iKey] = np.array([(round(idx_[0],3),
-                                                    round(self.ymid[0],3),
-                                                    round(idx_[2],3)) for idx_ in xyz_nodes[iKey]])
+                        xyz_nodes[iKey] = np.array([(round(idx_[0],4),
+                                                    round(self.ymid[0],4),
+                                                    round(idx_[2],4)) for idx_ in xyz_nodes[iKey]])
                     
                 # col, lay, row index
                 node_indices = self.get_node_indices(xyz_nodes = xyz_nodes)
@@ -2717,7 +2680,8 @@ class ModPathWell:
                     # Pseudonyms for df_particle column names
                     colnames_df_particle = {"x": "xcoord","y":"ycoord","z":"zcoord","time":"total_travel_time","prsity_uncorr":"porosity",
                                 "solid_density": "solid_density", "fraction_organic_carbon": "fraction_organic_carbon", "redox": "redox", 
-                                "dissolved_organic_carbon":	"dissolved_organic_carbon", "pH": "pH",	"temperature": "temperature", "material": "material"}
+                                "dissolved_organic_carbon":	"dissolved_organic_carbon", "pH": "pH",	"temp_water": "temp_water",
+                                "grainsize": "grainsize", "material": "material"}
                     df_particle_data[f"{iPG}-{iNode}-{iPart}"].rename(columns = colnames_df_particle, 
                                                                                     inplace = True, errors = "raise")
                     df_particle_data[f"{iPG}-{iNode}-{iPart}"] = df_particle_data[f"{iPG}-{iNode}-{iPart}"].drop_duplicates(subset=["xcoord","ycoord","zcoord","total_travel_time"], keep = 'first')                                                                
@@ -2731,7 +2695,8 @@ class ModPathWell:
         else:
             colnames_df_particle = {"x": "xcoord","y":"ycoord","z":"zcoord","time":"total_travel_time","prsity_uncorr":"porosity",
                                 "solid_density": "solid_density", "fraction_organic_carbon": "fraction_organic_carbon", "redox": "redox", 
-                                "dissolved_organic_carbon":	"dissolved_organic_carbon", "pH": "pH",	"temperature": "temperature", "material": "material"}
+                                "dissolved_organic_carbon":	"dissolved_organic_carbon", "pH": "pH",	"temp_water": "temp_water",
+                                "grainsize": "grainsize", "material": "material"}
             df_particle = pd.DataFrame(columns = colnames_df_particle)
 
         # y-coordinate equals 0.5 * self.delc[0] in axisymmetric or 2D model
@@ -2748,26 +2713,30 @@ class ModPathWell:
     # Fill df_flowline
     def fill_df_flowline(self, df_particle, model_cbc):
         '''
-        Fill df_flowline 
+        Fill df_flowline dataframe 
 
         Parameters
         ----------
+
+        df_particle: pd.DataFrame
+
         Returns
         -------
+
         df_flowline: pandas.DataFrame
             Column 'flowline_id': Integer
             Column 'flowline_type': string
-                Described the type of contamination associated with the flowline,
-                either 'diffuse_source' or 'point_source'.
-            Column 'flowline_discharge': Float
-                Discharge associated with the flowline, [m3/d].
-            Column 'particle_release_day': Float
+            Described the type of contamination associated with the flowline,
+            either 'diffuse_source' or 'point_source'.
+            Column 'flowline_discharge': float. Discharge associated with the flowline, [m3/d].
+            Column 'particle_release_day': float
             Column 'input_concentration'
             Column 'endpoint_id': Integer
-                ID of Well (or drain) where the flowline ends.
+            ID of Well (or drain) where the flowline ends.
             Column 'well_discharge': float
             Column 'substance': string
             Column 'removal_function': string
+
         '''
 
         # Default value for model_cbc
@@ -2779,7 +2748,7 @@ class ModPathWell:
 
         # Column names in df_flowline
         colnames_df_flowline = ["flowline_type","flowline_discharge","particle_release_day","endpoint_id",
-                        "well_discharge", "substance", "removal_function"]
+                        "well_discharge", "substance", "removal_function","starting_concentration"]
 
         df_flowline = pd.DataFrame(index = flowline_id, columns = colnames_df_flowline)
         # Change df_flowline index name
@@ -2821,6 +2790,8 @@ class ModPathWell:
             # flowline_type
             df_flowline.loc[fid,"flowline_type"] = self.flowline_type[fid]
 
+            # Starting concentration of particles
+            df_flowline.loc[fid,"starting_concentration"] = self.inputconc_particle[fid]
 
 
 
@@ -2862,7 +2833,99 @@ class ModPathWell:
             df_flowline.loc[df_flowline.endpoint_id == end_id,"well_discharge"] = well_discharge
 
         return df_flowline
-     
+
+    def _export_to_df(self, mppth):
+        """ Makes 'df_flowline' and 'df_particle' for ModPath model simulation
+  
+            Parameters
+            -------
+            mppth: str
+                File location to ModPath pathline output (*.mppth)
+
+            Returns
+            -------
+            df_flowline: pandas.DataFrame
+                Column 'flowline_id': Integer
+                Column 'flowline_type': string
+                    Described the type of contamination associated with the flowline,
+                    either 'diffuse_source' or 'point_source'.
+                Column 'flowline_discharge': Float
+                    Discharge associated with the flowline, [m3/d].
+                Column 'particle_release_day': Float
+                Column 'input_concentration'
+                Column 'endpoint_id': Integer
+                    ID of Well (or drain) where the flowline ends.
+                Column 'well_discharge': float
+                Column 'substance': string
+                Column 'removal_function': string
+
+            df_particle: pandas.DataFrame
+                Column 'flowline_id': int
+                Column 'zone': string
+                    Zone in the aquifer, ground surface 'surface', 'vadose_zone', 'shallow_aquifer' or 'target_aquifer'
+                Column 'travel_time': float
+                    Travel time in the respective aquifer zone given in column 'zone.
+                Column 'xcoord': float
+                Column 'ycoord': float
+                Column 'zcoord': float
+                Column 'redox': float
+                    'suboxic', 'anoxic', deeply_anoxic'
+                Column 'temp_water': float
+                    Of the respective aquifer zone.
+                Column 'travel_distance': float
+                Column 'porosity': float
+                Column 'dissolved_organic_carbon': float
+                Column 'pH': float
+                Column 'fraction_organic_carbon': float
+                Column 'solid_density': float
+        """
+
+        # MK:  this is something that I could imagine that you use it as an argument to the
+        # function.
+        #AH_todo, @MartinK, what is the advantage over using the attribute?
+        # what_to_export = self.schematisation.what_to_export
+
+        # pthline_data converted to rec.arrays (with fields appended)
+        self.particle_data = {}
+        # dataframes of particle data (dict)
+        self.df_particle_data = {}
+        # list the particle_data dataframes
+        df_particle_list = []
+
+        # Create rec.arrays for porosity, pH, T, etc. to append to particle_data
+        parm_list = ["prsity_uncorr","solid_density","grainsize","fraction_organic_carbon",
+                    "redox","dissolved_organic_carbon", "pH","temp_water","material"]
+
+        # Create df_particle
+        self.df_particle, self.df_particle_data = self.fill_df_particle(
+                            particle_group = self.pg,
+                            pg_nodes = self.pg_nodes,
+                            parm_list = parm_list,
+                            mppth = mppth)
+
+
+        
+        # Create dataframe df_flowline
+        self.df_flowline = self.fill_df_flowline(df_particle = self.df_particle,
+                                                model_cbc = self.model_cbc)
+
+        ''' TODO 211123: append phreatic pathline data '''
+        # Append phreatic pathlines
+        # Calculate the phreatic travel time and add records to df_particle dataframe
+        if (self.schematisation_dict["vadose_parameters"]):
+            if self.schematisation_type in ["phreatic"]:
+                self.calc_traveltime_vadose_analytical(vadose_parameters = self.schematisation_dict["vadose_parameters"])
+
+        # df_particle file name
+        particle_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_particle.csv")
+        # Save df_particle
+        self.df_particle.to_csv(particle_fname)
+
+        # df_flowline file name
+        flowline_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_flowline.csv")
+        # Save df_flowline
+        self.df_flowline.to_csv(flowline_fname)   
+
     def plot_pathtimes(self,df_particle, 
                   vmin = 0.,vmax = 1.,orientation = {'row': 0},
                   fpathfig = None, figtext = None,x_text = 0,
@@ -3099,7 +3162,7 @@ class ModPathWell:
         return self.travel_time_shallow_aquifer
 
     # Insert paths for vadose_zone or aquitard based on analytical formulas
-    def calc_traveltime_vadose_analytical(self, vadose_parameters: dict = dict(), dict_key = 'vadose',
+    def calc_traveltime_vadose_analytical(self, vadose_parameters: dict = dict(), dict_key = 'vadose_zone',
                                             distance = None, gw_level = None):
 
         ''' Inherit functionality from Analytical_Well module'''
@@ -3144,7 +3207,8 @@ class ModPathWell:
             # df_particle phreatic
             df_cols = ["xcoord","ycoord","zcoord","total_travel_time",
                         "porosity","solid_density","fraction_organic_carbon",
-                        "redox","dissolved_organic_carbon","pH","temperature","material"]
+                        "redox","dissolved_organic_carbon","pH","temp_water",
+                        "grainsize","material"]
             
             # Define index of phreatic pathline df
             flowline_id = self.df_particle.index.unique()
@@ -3172,8 +3236,9 @@ class ModPathWell:
             df_phreatic.loc[df_index,"redox"] = np.array([vadose_parameters[dict_key]['redox']] * len(flowline_id))
             df_phreatic.loc[df_index,"dissolved_organic_carbon"] = np.array([vadose_parameters[dict_key]['dissolved_organic_carbon']] * len(flowline_id))
             df_phreatic.loc[df_index,"pH"] = np.array([vadose_parameters[dict_key]['pH']] * len(flowline_id))
-            df_phreatic.loc[df_index,"temperature"] = np.array([vadose_parameters[dict_key]['temperature']] * len(flowline_id))
-            df_phreatic.loc[df_index,"material"] = np.array(['vadose'] * len(flowline_id))
+            df_phreatic.loc[df_index,"temp_water"] = np.array([vadose_parameters[dict_key]['temp_water']] * len(flowline_id))
+            df_phreatic.loc[df_index,"grainsize"] = np.array([vadose_parameters[dict_key]['grainsize']] * len(flowline_id))
+            df_phreatic.loc[df_index,"material"] = np.array(['vadose_zone'] * len(flowline_id))
             
             # Append records to df_particle dataframe 
             self.df_particle = self.df_particle.append(df_phreatic)

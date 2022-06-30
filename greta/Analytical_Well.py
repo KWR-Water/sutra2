@@ -84,6 +84,8 @@ class HydroChemicalSchematisation:
         Solid density, in kg/L, of each of the aquifer zones of interest.
     fraction_organic_carbon_vadose_zone, fraction_organic_carbon_shallow_aquifer, fraction_organic_carbon_target_aquifer: float
         Mass fraction of the organic carbon in the aquifer zone of interest.
+    grainsize_vadose_zone, grainsize_shallow_aquifer, grainsize_target_aquifer: float
+        Grain diameter (d50) of the sediment, [m].
     redox_vadose_zone, redox_shallow_aquifer, redox_target_aquifer: string
             Definition of redox zones follows the scheme presented by Stuyfzand (1993, 2012b), which is in simplified form:
             'suboxic': NO3 ≥ 1 mg/L, Fe = Mn < 0.1 mg/L;
@@ -97,8 +99,8 @@ class HydroChemicalSchematisation:
         Concentrtaion of the total organic carbon in the infiltrating water, [mg/L].
     pH_vadose_zone, pH_shallow_aquifer, pH_target_aquifer: float
         pH in each aquifer zone, dimensionless.
-    temperature, temperature_vadose_zone, temperature_shallow_aquifer, temperature_target_aquifer: float
-        Temperature, in degrees Celcius, for each aquifer zone. If only 'temperature' is given, the temperature in each zone is set to 'temperature'.
+    temp_water, temperature_vadose_zone, temperature_shallow_aquifer, temperature_target_aquifer: float
+        Temperature, in degrees Celcius, for each aquifer zone. If only 'temperature' is given, the temperature in each zone is set to 'temp_water'.
     recharge_rate: float
         Mean multi-annual groundwater recharge rate, [m/d].
     well_discharge: float
@@ -114,10 +116,14 @@ class HydroChemicalSchematisation:
         Top and bottom of the gravelpack of the well [mASL].
     diameter_gravelpack, inner_diameter_gravelpack: float
         Diameter and inner diameter of the gravelscreen of the well, [m].
+    grainsize_gravelpack: float
+        Grain diameter (d50) of the gravelpack, [m].
     top_clayseal, bottom_clayseal: float
         Top and bottom of the clayseal of the well [mASL].
-    diameter_clayseal: float
-        Diameter of the clayseal of the well, [m].
+    diameter_clayseal, inner_diameter_clayseal: float
+        Diameter and inner diameter of the clayseal of the well, [m].
+    grainsize_clayseal: float
+        Grain diameter (d50) of the clay seal, [m].
 
     hor_permeability_shallow_aquifer, hor_permeability_target_aquifer, hor_permebility_gravelpack, hor_permeability_clayseal: float
         Horizonatal permeability of each zone of the aquifer and the clayseal, [m/d].
@@ -220,6 +226,9 @@ class HydroChemicalSchematisation:
                 fraction_organic_carbon_vadose_zone=0.001,
                 fraction_organic_carbon_shallow_aquifer=0.0005,
                 fraction_organic_carbon_target_aquifer=0.0005,
+                grainsize_vadose_zone= 0.00025,
+                grainsize_shallow_aquifer=0.00025,
+                grainsize_target_aquifer=0.00025,
 
                 redox_vadose_zone='suboxic',
                 redox_shallow_aquifer='anoxic',
@@ -232,7 +241,7 @@ class HydroChemicalSchematisation:
                 pH_vadose_zone=7.0,
                 pH_shallow_aquifer=7.0,
                 pH_target_aquifer=7.0,
-                temperature=10.0,
+                temp_water=10.0,
                 temperature_vadose_zone=None,
                 temperature_shallow_aquifer=None,
                 temperature_target_aquifer=None,
@@ -258,18 +267,21 @@ class HydroChemicalSchematisation:
                 diameter_borehole=0.75,
                 top_filterscreen=None,
                 bottom_filterscreen=None,
-                diameter_filterscreen=0.75,
+                diameter_filterscreen=0.2,
                 inner_diameter_filterscreen=None,
                 top_gravelpack=None,
                 bottom_gravelpack=None,
                 diameter_gravelpack=None,
                 inner_diameter_gravelpack=None,
+                grainsize_gravelpack=0.001,
                 top_clayseal=None,
                 bottom_clayseal=None,
                 diameter_clayseal=None,
+                inner_diameter_clayseal=None,
+                grainsize_clayseal=0.000001,
                 hor_permeability_shallow_aquifer=1.0,
                 hor_permeability_target_aquifer=10.0,
-                hor_permebility_gravelpack=None,
+                hor_permeability_gravelpack=None,
                 hor_permeability_clayseal=None,
                 vertical_anisotropy_shallow_aquifer=1.0,
                 vertical_anisotropy_target_aquifer=1.0,
@@ -339,8 +351,8 @@ class HydroChemicalSchematisation:
 
         # Porous Medium
         self.ground_surface = ground_surface #as meters above sea level (m ASL)
-        self.thickness_vadose_zone_at_boundary = thickness_vadose_zone_at_boundary
-        self.bottom_vadose_zone_at_boundary = ground_surface - thickness_vadose_zone_at_boundary
+        self.thickness_vadose_zone_at_boundary = abs(thickness_vadose_zone_at_boundary)
+        self.bottom_vadose_zone_at_boundary = ground_surface - abs(thickness_vadose_zone_at_boundary)
         # self.head_boundary = head_boundary #AH @MartinvdS is this used anywhere? I don't think so...
 
         # check that thicknesses for shallow and target aquifer > 0
@@ -349,11 +361,11 @@ class HydroChemicalSchematisation:
         if thickness_target_aquifer <=0:
             raise ValueError('Error, thickness_target_aquifer should be > 0.')
 
-        self.thickness_shallow_aquifer = thickness_shallow_aquifer
-        self.bottom_shallow_aquifer = ground_surface - thickness_vadose_zone_at_boundary - thickness_shallow_aquifer
-        self.thickness_target_aquifer = thickness_target_aquifer
-        self.bottom_target_aquifer = self.bottom_shallow_aquifer - thickness_target_aquifer
-        self.thickness_full_capillary_fringe = thickness_full_capillary_fringe
+        self.thickness_shallow_aquifer = abs(thickness_shallow_aquifer)
+        self.bottom_shallow_aquifer = ground_surface - abs(thickness_vadose_zone_at_boundary) - abs(thickness_shallow_aquifer)
+        self.thickness_target_aquifer = abs(thickness_target_aquifer)
+        self.bottom_target_aquifer = self.bottom_shallow_aquifer - abs(thickness_target_aquifer)
+        self.thickness_full_capillary_fringe = abs(thickness_full_capillary_fringe)
         self.porosity_vadose_zone = porosity_vadose_zone
         self.porosity_shallow_aquifer = porosity_shallow_aquifer
         self.porosity_target_aquifer = porosity_target_aquifer
@@ -366,6 +378,9 @@ class HydroChemicalSchematisation:
         self.fraction_organic_carbon_vadose_zone = fraction_organic_carbon_vadose_zone
         self.fraction_organic_carbon_shallow_aquifer = fraction_organic_carbon_shallow_aquifer
         self.fraction_organic_carbon_target_aquifer = fraction_organic_carbon_target_aquifer
+        self.grainsize_vadose_zone = grainsize_vadose_zone
+        self.grainsize_shallow_aquifer = grainsize_shallow_aquifer
+        self.grainsize_target_aquifer = grainsize_target_aquifer
 
         # Hydrochemistry
         self.redox_vadose_zone = redox_vadose_zone
@@ -385,7 +400,7 @@ class HydroChemicalSchematisation:
         self.pH_vadose_zone = pH_vadose_zone
         self.pH_shallow_aquifer = pH_shallow_aquifer
         self.pH_target_aquifer = pH_target_aquifer
-        self.temperature = temperature
+        self.temp_water = temp_water
         self.temperature_vadose_zone = temperature_vadose_zone
         self.temperature_shallow_aquifer = temperature_shallow_aquifer
         self.temperature_target_aquifer = temperature_target_aquifer
@@ -416,14 +431,17 @@ class HydroChemicalSchematisation:
         self.bottom_gravelpack = bottom_gravelpack
         self.diameter_gravelpack = diameter_gravelpack
         self.inner_diameter_gravelpack = inner_diameter_gravelpack
+        self.grainsize_gravelpack = grainsize_gravelpack
         self.top_clayseal = top_clayseal
         self.bottom_clayseal = bottom_clayseal
         self.diameter_clayseal = diameter_clayseal
+        self.inner_diameter_clayseal = inner_diameter_clayseal
+        self.grainsize_clayseal = grainsize_clayseal
 
         # do we need this?
         self.hor_permeability_shallow_aquifer = hor_permeability_shallow_aquifer
         self.hor_permeability_target_aquifer = hor_permeability_target_aquifer
-        self.hor_permebility_gravelpack = hor_permebility_gravelpack
+        self.hor_permeability_gravelpack = hor_permeability_gravelpack
         self.hor_permeability_clayseal = hor_permeability_clayseal
         
         # @MartinvdS vertical anisotropy not used?
@@ -522,11 +540,11 @@ class HydroChemicalSchematisation:
 
         # Temperature
         if self.temperature_vadose_zone is None:
-            self.temperature_vadose_zone = self.temperature
+            self.temperature_vadose_zone = self.temp_water
         if self.temperature_shallow_aquifer is None:
-            self.temperature_shallow_aquifer = self.temperature
+            self.temperature_shallow_aquifer = self.temp_water
         if self.temperature_target_aquifer is None:
-            self.temperature_target_aquifer = self.temperature
+            self.temperature_target_aquifer = self.temp_water
 
         #Modpath params
         if particle_release_day is None:
@@ -539,12 +557,12 @@ class HydroChemicalSchematisation:
         if nlayers_shallow_aquifer is None:
             self.nlayers_shallow_aquifer = int(self.thickness_shallow_aquifer)
         else:
-            self.nlayers_shallow_aquifer =nlayers_shallow_aquifer
+            self.nlayers_shallow_aquifer = int(max(1,nlayers_shallow_aquifer))
 
         if nlayers_target_aquifer is None:
             self.nlayers_target_aquifer = int(self.thickness_target_aquifer)
         else:
-            self.nlayers_target_aquifer = nlayers_target_aquifer
+            self.nlayers_target_aquifer = int(max(1,nlayers_target_aquifer))
 
         top_shallow_aquifer = self.bottom_vadose_zone_at_boundary
         top_target_aquifer = self.bottom_shallow_aquifer
@@ -571,11 +589,12 @@ class HydroChemicalSchematisation:
             self.inner_diameter_filterscreen = self.diameter_filterscreen
         if diameter_clayseal is None:
             self.diameter_clayseal = diameter_borehole
+        if inner_diameter_clayseal is None:
             self.inner_diameter_clayseal = self.diameter_filterscreen
 
         #other default params
-        if hor_permebility_gravelpack is None:
-            self.hor_permebility_gravelpack = 1000
+        if hor_permeability_gravelpack is None:
+            self.hor_permeability_gravelpack = 1000
         if hor_permeability_clayseal is None:
             self.hor_permeability_clayseal = 0.001
         if vertical_anisotropy_gravelpack is None:
@@ -592,13 +611,14 @@ class HydroChemicalSchematisation:
 
 
     def make_dictionary(self,):
-        """ Returns dicitonaries of the different parameters for MODFLOW schematisation.
+        """ Returns dicitonaries of the different parameters for MODFLOW schematisation. """
+
         #MK: this still looks ugly as it basically repeats all the attributes. I think we need to think about something
-        better for this in a next iteration.
+        # better for this in a next iteration.
         #MK: I assume al the logic here (e.g.
-                    'xmax': self.diameter_filterscreen/2,
-                    ) is only required for modflow? if so then it is now correctly
-                    implemented. If not, then it is confusing, because the docstring here says it is only for MODFLOW"""
+        # 'xmax': self.diameter_filterscreen/2,
+        # ) is only required for modflow? if so then it is now correctly
+        # implemented. If not, then it is confusing, because the docstring here says it is only for MODFLOW
         #AH yes, this is in principle only for modflow. 
         if self.schematisation_type == 'phreatic':
             compute_thickness_vadose_zone = True # @MartinvdS what is this for? MK: this is never used, remove it -> AH I leave it for now until discuss w/Martin vds
@@ -610,11 +630,18 @@ class HydroChemicalSchematisation:
 
             # only outer_boundary for phreatic
             ibound_parameters = {
+                'inner_boundary_top_shallow_aquifer': {
+                    'top': self.ground_surface, #self.bottom_vadose_zone_at_boundary,
+                    'bot': self.bottom_vadose_zone_at_boundary,
+                    'xmin': 0,
+                    'xmax': self.diameter_borehole/2., #self.diameter_filterscreen/2.,
+                    'ibound':0,
+                    },
                 'inner_boundary_shallow_aquifer': {
                     'top': self.bottom_vadose_zone_at_boundary,
                     'bot': self.bottom_shallow_aquifer,
                     'xmin': 0,
-                    'xmax': self.diameter_filterscreen/2,
+                    'xmax': self.diameter_filterscreen/2.,
                     'ibound':0,
                     },
 
@@ -623,7 +650,7 @@ class HydroChemicalSchematisation:
                     'top': self.bottom_shallow_aquifer,
                     'bot': self.bottom_target_aquifer,
                     'xmin': 0,
-                    'xmax': self.diameter_filterscreen/2,
+                    'xmax': self.diameter_filterscreen/2.,
                     'ibound':-1,
                     }
                 }
@@ -640,7 +667,7 @@ class HydroChemicalSchematisation:
                     'head': self.bottom_vadose_zone_at_boundary,
                     'top': self.bottom_vadose_zone_at_boundary, # OLD: 10 cm ficticous thickness to allow head boundary
                     'bot': self.bottom_vadose_zone_at_boundary -0.1,  # NEW: ibound =-1 up to 10 cm below layer 1 top
-                    'xmin': self.diameter_gravelpack/2,
+                    'xmin': self.diameter_gravelpack/2.,
                     'xmax': self.model_radius_computed,
                     'ibound': -1,
                         },
@@ -692,11 +719,11 @@ class HydroChemicalSchematisation:
 
         # Aquifer parameters dcitionary
         geo_parameters  = {
-            'vadose': {
+            'vadose_zone': {
                 'vadose': True,
                 'top': self.ground_surface,
                 'bot': self.bottom_vadose_zone_at_boundary,
-                'xmin': 0., # self.diameter_gravelpack/2,
+                'xmin': self.diameter_gravelpack/2,
                 'xmax': self.model_radius_computed,
                 'porosity': self.porosity_vadose_zone,
                 'moisture_content': self.moisture_content_vadose_zone,
@@ -705,9 +732,12 @@ class HydroChemicalSchematisation:
                 'redox': self.redox_vadose_zone,
                 'dissolved_organic_carbon': self.dissolved_organic_carbon_vadose_zone,
                 'pH': self.pH_vadose_zone,
-                'temperature': self.temperature_vadose_zone,
+                'temp_water': self.temperature_vadose_zone,
+                'grainsize': self.grainsize_vadose_zone,
+                'hk': self.hor_permeability_shallow_aquifer,
+                'vani': self.vertical_anisotropy_shallow_aquifer
                 },
-            'layer1': {
+            'shallow_aquifer': {
                 'top': self.bottom_vadose_zone_at_boundary,
                 'bot': self.bottom_shallow_aquifer,
                 'xmin': self.diameter_gravelpack/2,
@@ -718,12 +748,13 @@ class HydroChemicalSchematisation:
                 'redox': self.redox_shallow_aquifer,
                 'dissolved_organic_carbon': self.dissolved_organic_carbon_shallow_aquifer,
                 'pH': self.pH_shallow_aquifer,
-                'temperature': self.temperature_shallow_aquifer,
+                'temp_water': self.temperature_shallow_aquifer,
+                'grainsize': self.grainsize_shallow_aquifer,
                 'hk': self.hor_permeability_shallow_aquifer,
                 'vani': self.vertical_anisotropy_shallow_aquifer,
                 'nlayers': self.nlayers_shallow_aquifer,
                 },
-            'layer2': {
+            'target_aquifer': {
                 'top': self.bottom_shallow_aquifer,
                 'bot': self.bottom_target_aquifer,
                 'xmin': self.diameter_gravelpack/2,
@@ -734,7 +765,8 @@ class HydroChemicalSchematisation:
                 'redox': self.redox_target_aquifer,
                 'dissolved_organic_carbon': self.dissolved_organic_carbon_target_aquifer,
                 'pH': self.pH_target_aquifer,
-                'temperature': self.temperature_target_aquifer,
+                'temp_water': self.temperature_target_aquifer,
+                'grainsize': self.grainsize_target_aquifer,
                 'hk': self.hor_permeability_target_aquifer,
                 'vani': self.vertical_anisotropy_target_aquifer,
                 'nlayers': self.nlayers_target_aquifer, #AH maybe this will change to vertical_resolution
@@ -742,11 +774,12 @@ class HydroChemicalSchematisation:
             'gravelpack1': {
                 'top': self.top_gravelpack,
                 'bot': self.bottom_gravelpack,
-                'xmin': self.inner_diameter_gravelpack/2,
-                'xmax': self.diameter_gravelpack/2,
+                'xmin': self.inner_diameter_gravelpack/2.,
+                'xmax': self.diameter_gravelpack/2.,
                 'porosity': self.porosity_gravelpack,
-                'hk': self.hor_permebility_gravelpack,
+                'hk': self.hor_permeability_gravelpack,
                 'vani': self.vertical_anisotropy_gravelpack,
+                'grainsize': self.grainsize_gravelpack,
                 },
             'clayseal1':{
                 'top': self.top_clayseal,
@@ -756,6 +789,7 @@ class HydroChemicalSchematisation:
                 'porosity': self.porosity_clayseal,
                 'hk': self.hor_permeability_clayseal,
                 'vani': self.vertical_anisotropy_clayseal,
+                'grainsize': self.grainsize_clayseal,
                 },
 
 
@@ -1138,7 +1172,7 @@ class AnalyticalWell():
         Column 'flowline_discharge': Float
         Column 'particle_release_day': Float
         Column 'input_concentration': Float
-        Column 'endpoint_id': Integer
+        Column 'endpoint_id': str
         Column 'well_discharge': float
         Column 'substance': string
         Column 'removal_function': string
@@ -1150,7 +1184,7 @@ class AnalyticalWell():
         Column 'ycoord': float
         Column 'zcoord': float
         Column 'redox': float
-        Column 'temperature': float
+        Column 'temp_water': float
         Column 'travel_distance': float
         Column 'porosity': float
         Column 'dissolved_organic_carbon': float
@@ -1541,7 +1575,7 @@ class AnalyticalWell():
                     Discharge associated with the flowline, [m3/d].
                 Column 'particle_release_day': Float
                 Column 'input_concentration'
-                Column 'endpoint_id': Integer
+                Column 'endpoint_id': str
                     ID of Well (or drain) where the flowline ends.
                 Column 'well_discharge': float
                 Column 'substance': string
@@ -1558,7 +1592,7 @@ class AnalyticalWell():
                 Column 'zcoord': float
                 Column 'redox': float
                     'suboxic', 'anoxic', deeply_anoxic'
-                Column 'temperature': float
+                Column 'temp_water': float
                     Of the respective aquifer zone.
                 Column 'travel_distance': float
                 Column 'porosity': float
@@ -1635,7 +1669,7 @@ class AnalyticalWell():
                         self.schematisation.model_width,
                          self.schematisation.ground_surface,
                          None,
-                         self.schematisation.temperature,
+                         self.schematisation.temp_water,
                          None,
                          None,
                          None,
@@ -1651,7 +1685,7 @@ class AnalyticalWell():
                          self.schematisation.model_width,
                          self.schematisation.bottom_vadose_zone_at_boundary, # @MartinvdS should this be the thickness_vadose_zone_drawdown??
                          self.schematisation.redox_vadose_zone,
-                         self.schematisation.temperature,
+                         self.schematisation.temp_water,
                          travel_distance_vadose,
                         #  self.schematisation.thickness_vadose_zone_at_boundary,
                          self.schematisation.porosity_vadose_zone,
@@ -1669,7 +1703,7 @@ class AnalyticalWell():
                          self.schematisation.model_width,
                          self.schematisation.bottom_shallow_aquifer,
                          self.schematisation.redox_shallow_aquifer,
-                         self.schematisation.temperature,
+                         self.schematisation.temp_water,
                          travel_distance_shallow,
                         #  self.schematisation.thickness_shallow_aquifer, # @MartinvdS does this need to account for the vadose zone drawdown?
                          self.schematisation.porosity_shallow_aquifer,
@@ -1687,7 +1721,7 @@ class AnalyticalWell():
                          self.schematisation.model_width,
                          self.schematisation.bottom_target_aquifer,
                          self.schematisation.redox_target_aquifer,
-                         self.schematisation.temperature,
+                         self.schematisation.temp_water,
                          travel_distance_target,
                         #  self.schematisation.thickness_target_aquifer,
                          self.schematisation.porosity_target_aquifer,
@@ -1706,7 +1740,7 @@ class AnalyticalWell():
                                                  'ycoord', #= the width of the cell .. default = 1 m
                                                  'zcoord',
                                                  'redox',
-                                                 'temperature',
+                                                 'temp_water',
                                                  'travel_distance',
                                                  'porosity',
                                                  'dissolved_organic_carbon',
@@ -1838,7 +1872,7 @@ class AnalyticalWell():
             Column 'flowline_discharge': Float
             Column 'particle_release_day': Float
             Column 'input_concentration'
-            Column 'endpoint_id': Integer
+            Column 'endpoint_id': str
             Column 'well_discharge': float
             Column 'substance': string
             Column 'removal_function': string
@@ -1850,7 +1884,7 @@ class AnalyticalWell():
             Column 'ycoord': float
             Column 'zcoord': float
             Column 'redox': float
-            Column 'temperature': float
+            Column 'temp_water': float
             Column 'travel_distance': float
             Column 'porosity': float
             Column 'dissolved_organic_carbon': float
@@ -1953,7 +1987,7 @@ class AnalyticalWell():
             Column 'flowline_discharge': Float
             Column 'particle_release_day': Float
             Column 'input_concentration'
-            Column 'endpoint_id': Integer
+            Column 'endpoint_id': str
             Column 'well_discharge': float
             Column 'substance': string
             Column 'removal_function': string
@@ -2047,7 +2081,7 @@ class AnalyticalWell():
             Column 'flowline_discharge': Float
             Column 'particle_release_day': Float
             Column 'input_concentration'
-            Column 'endpoint_id': Integer
+            Column 'endpoint_id': str
             Column 'well_discharge': float
             Column 'substance': string
             Column 'removal_function': string
@@ -2059,7 +2093,7 @@ class AnalyticalWell():
             Column 'ycoord': float
             Column 'zcoord': float
             Column 'redox': float
-            Column 'temperature': float
+            Column 'temp_water': float
             Column 'travel_distance': float
             Column 'porosity': float
             Column 'dissolved_organic_carbon': float
@@ -2161,7 +2195,7 @@ class AnalyticalWell():
             Column 'flowline_discharge': Float
             Column 'particle_release_day': Float
             Column 'input_concentration'
-            Column 'endpoint_id': Integer
+            Column 'endpoint_id': str
             Column 'well_discharge': float
             Column 'substance': string
             Column 'removal_function': string
