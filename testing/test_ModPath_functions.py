@@ -1411,6 +1411,36 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
     fpath_traveltime_plot = os.path.join(well1_mp.dstroot,well1_mp.schematisation_type + "_traveltimes_modpath.png")
     fig.savefig(fpath_traveltime_plot)
 
+
+    # Create travel time plots
+    fpath_scatter_times_log = os.path.join(well1_mp.dstroot,"log_travel_times_test.png")
+    fpath_scatter_times = os.path.join(well1_mp.dstroot,"travel_times_test.png")
+    # df particle
+    df_particle = well1_mp.df_particle
+    # time limits
+    tmin, tmax = 0.1, 10000.
+    # xcoord bounds
+    xmin, xmax = 0., 50.
+
+    # Create travel time plots (lognormal)
+    well1_mp.plot_pathtimes(df_particle = df_particle, 
+            vmin = tmin,vmax = tmax,
+            fpathfig = fpath_scatter_times_log, figtext = None,x_text = 0,
+            y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
+            line_dist = 1, dpi = 192, trackingdirection = "forward",
+            cmap = 'viridis_r')
+
+    # Create travel time plots (linear)
+    well1_mp.plot_pathtimes(df_particle = df_particle, 
+            vmin = 0.,vmax = tmax,
+            fpathfig = fpath_scatter_times, figtext = None,x_text = 0,
+            y_text = 0, lognorm = False, xmin = xmin, xmax = xmax,
+            line_dist = 1, dpi = 192, trackingdirection = "forward",
+            cmap = 'viridis_r')
+
+
+
+
     # try:
     assert_frame_equal(summary_traveltimes_an.loc[:, summary_columns],
                         output_phreatic.loc[:, summary_columns],check_dtype=False, check_index_type = False)
@@ -1439,7 +1469,7 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
                                 what_to_export='all',
                                 removal_function = 'mbo',
                                 # biodegradation_sorbed_phase = False,
-                                well_discharge=-100.,
+                                well_discharge=-1000.,
                                 # vertical_resistance_shallow_aquifer=500,
                                 porosity_vadose_zone=0.33,
                                 porosity_shallow_aquifer=0.33,
@@ -1480,6 +1510,7 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
                                 diameter_gravelpack = 0.75,
                                 diameter_clayseal = 0.75,
                                 point_input_concentration = 1.,
+                                diffuse_input_concentration=2.15E6,
                                 discharge_point_contamination = 100.,#made up value
                                 top_clayseal = 0,
                                 bottom_clayseal = -1.,
@@ -1501,7 +1532,7 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
     test_feces_contamination.point_parameters = {}
 
     # Add leakage at 9.5 m depth
-    leak_Q = -100.
+    leak_Q = -1.
     leak_depth = -9.5
     leak_depth_bot = leak_depth - 0.1
     test_feces_contamination.well_parameters = {
@@ -1597,6 +1628,7 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
         flowline_fname = os.path.join(modpath_phrea.dstroot,modpath_phrea.schematisation_type + "_df_flowline_microbial_removal.csv")
         # Save df_flowline
         df_flowline.to_csv(flowline_fname)
+
 
     
         # Create travel time plots

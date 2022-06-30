@@ -1697,6 +1697,10 @@ class ModPathWell:
         if not hasattr(self, "localz"):
             self.localz = {}  
 
+        # Particle starting concentration   
+        if not hasattr(self, "inputconc_particle"):
+            self.inputconc_particle = {}       
+
         # Particle id [part group, particle id] - zero based integers
         if not hasattr(self, "pids"):
             print("Create a new particle id dataset dict.")
@@ -1915,6 +1919,8 @@ class ModPathWell:
                     # flowline_type: diffuse_source (or point_source)
                     self.flowline_type[self.pcount] = 'diffuse_source'  
 
+                    # Particle starting concentration   
+                    self.inputconc_particle[self.pcount] = recharge_parameters.get(iPG).get("input_concentration")     
 
             # Particle distribution package - particle allocation
             #modpath.mp7particledata.Part...
@@ -1979,7 +1985,11 @@ class ModPathWell:
         if not hasattr(self, "flowline_type"):
             self.flowline_type = {}     
         if not hasattr(self, "point_discharge"):
-            self.point_discharge = {}                
+            self.point_discharge = {} 
+
+        # Particle starting concentration   
+        if not hasattr(self, "inputconc_particle"):
+            self.inputconc_particle = {}          
 
         # particle starting locations [(lay,row,col),(k,i,j),...]
         if not hasattr(self, "part_locs"):
@@ -2097,6 +2107,8 @@ class ModPathWell:
                 # Add point_discharge
                 self.point_discharge[self.pcount] = point_parameters.get(iPG).get("discharge") 
 
+                # Starting concentration of particles
+                self.inputconc_particle[self.pcount] = point_parameters.get(iPG).get("input_conentration")
 
                 # Particle distribution package - particle allocation
                 #modpath.mp7particledata.Part...
@@ -2522,9 +2534,9 @@ class ModPathWell:
         pth_data = pth_object.get_destination_pathline_data(nodes)
         # Round rec.arrays to 3 decimals
         for idx,iPart in enumerate(pth_data):
-            pth_data[idx]["x"] = pth_data[idx]["x"].round(3)
-            pth_data[idx]["y"] = pth_data[idx]["y"].round(3)
-            pth_data[idx]["z"] = pth_data[idx]["z"].round(3)
+            pth_data[idx]["x"] = pth_data[idx]["x"].round(4)
+            pth_data[idx]["y"] = pth_data[idx]["y"].round(4)
+            pth_data[idx]["z"] = pth_data[idx]["z"].round(4)
 
             # # Test unique
             # test_unique = np.unique(pth_data[idx],return_index=True, return_inverse=True, axis = 0)
@@ -2675,9 +2687,9 @@ class ModPathWell:
                 if (self.model_type == "axisymmetric") | (self.model_type == "2D"):
                 
                     for iKey in xyz_nodes.keys():
-                        xyz_nodes[iKey] = np.array([(round(idx_[0],3),
-                                                    round(self.ymid[0],3),
-                                                    round(idx_[2],3)) for idx_ in xyz_nodes[iKey]])
+                        xyz_nodes[iKey] = np.array([(round(idx_[0],4),
+                                                    round(self.ymid[0],4),
+                                                    round(idx_[2],4)) for idx_ in xyz_nodes[iKey]])
                     
                 # col, lay, row index
                 node_indices = self.get_node_indices(xyz_nodes = xyz_nodes)
@@ -2790,7 +2802,7 @@ class ModPathWell:
 
         # Column names in df_flowline
         colnames_df_flowline = ["flowline_type","flowline_discharge","particle_release_day","endpoint_id",
-                        "well_discharge", "substance", "removal_function"]
+                        "well_discharge", "substance", "removal_function","starting_concentration"]
 
         df_flowline = pd.DataFrame(index = flowline_id, columns = colnames_df_flowline)
         # Change df_flowline index name
@@ -2832,6 +2844,8 @@ class ModPathWell:
             # flowline_type
             df_flowline.loc[fid,"flowline_type"] = self.flowline_type[fid]
 
+            # Starting concentration of particles
+            df_flowline.loc[fid,"starting_concentration"] = self.inputconc_particle[fid]
 
 
 

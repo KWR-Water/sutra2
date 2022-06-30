@@ -594,7 +594,7 @@ class HydroChemicalSchematisation:
 
         #other default params
         if hor_permeability_gravelpack is None:
-            self.hor_permebility_gravelpack = 1000
+            self.hor_permeability_gravelpack = 1000
         if hor_permeability_clayseal is None:
             self.hor_permeability_clayseal = 0.001
         if vertical_anisotropy_gravelpack is None:
