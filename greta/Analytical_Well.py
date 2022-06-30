@@ -441,7 +441,7 @@ class HydroChemicalSchematisation:
         # do we need this?
         self.hor_permeability_shallow_aquifer = hor_permeability_shallow_aquifer
         self.hor_permeability_target_aquifer = hor_permeability_target_aquifer
-        self.hor_permebility_gravelpack = hor_permeability_gravelpack
+        self.hor_permeability_gravelpack = hor_permeability_gravelpack
         self.hor_permeability_clayseal = hor_permeability_clayseal
         
         # @MartinvdS vertical anisotropy not used?
@@ -630,11 +630,18 @@ class HydroChemicalSchematisation:
 
             # only outer_boundary for phreatic
             ibound_parameters = {
+                'inner_boundary_top_shallow_aquifer': {
+                    'top': self.ground_surface, #self.bottom_vadose_zone_at_boundary,
+                    'bot': self.bottom_vadose_zone_at_boundary,
+                    'xmin': 0,
+                    'xmax': self.diameter_borehole/2., #self.diameter_filterscreen/2.,
+                    'ibound':0,
+                    },
                 'inner_boundary_shallow_aquifer': {
                     'top': self.bottom_vadose_zone_at_boundary,
                     'bot': self.bottom_shallow_aquifer,
                     'xmin': 0,
-                    'xmax': self.diameter_filterscreen/2,
+                    'xmax': self.diameter_filterscreen/2.,
                     'ibound':0,
                     },
 
@@ -643,7 +650,7 @@ class HydroChemicalSchematisation:
                     'top': self.bottom_shallow_aquifer,
                     'bot': self.bottom_target_aquifer,
                     'xmin': 0,
-                    'xmax': self.diameter_filterscreen/2,
+                    'xmax': self.diameter_filterscreen/2.,
                     'ibound':-1,
                     }
                 }
@@ -660,7 +667,7 @@ class HydroChemicalSchematisation:
                     'head': self.bottom_vadose_zone_at_boundary,
                     'top': self.bottom_vadose_zone_at_boundary, # OLD: 10 cm ficticous thickness to allow head boundary
                     'bot': self.bottom_vadose_zone_at_boundary -0.1,  # NEW: ibound =-1 up to 10 cm below layer 1 top
-                    'xmin': self.diameter_gravelpack/2,
+                    'xmin': self.diameter_gravelpack/2.,
                     'xmax': self.model_radius_computed,
                     'ibound': -1,
                         },
@@ -727,6 +734,8 @@ class HydroChemicalSchematisation:
                 'pH': self.pH_vadose_zone,
                 'temp_water': self.temperature_vadose_zone,
                 'grainsize': self.grainsize_vadose_zone,
+                'hk': self.hor_permeability_shallow_aquifer,
+                'vani': self.vertical_anisotropy_shallow_aquifer
                 },
             'shallow_aquifer': {
                 'top': self.bottom_vadose_zone_at_boundary,
@@ -765,10 +774,10 @@ class HydroChemicalSchematisation:
             'gravelpack1': {
                 'top': self.top_gravelpack,
                 'bot': self.bottom_gravelpack,
-                'xmin': self.inner_diameter_gravelpack/2,
-                'xmax': self.diameter_gravelpack/2,
+                'xmin': self.inner_diameter_gravelpack/2.,
+                'xmax': self.diameter_gravelpack/2.,
                 'porosity': self.porosity_gravelpack,
-                'hk': self.hor_permebility_gravelpack,
+                'hk': self.hor_permeability_gravelpack,
                 'vani': self.vertical_anisotropy_gravelpack,
                 'grainsize': self.grainsize_gravelpack,
                 },

@@ -61,8 +61,8 @@ class Organism:
     microbial_species_dict: dict
     Attributes
     ---------
-    organism_name: String
-        species_name of the substance (for now limited dictionary to 'MS2' (MS2-virus)
+    organism_name: str
+        species_name of the substance
         
     'alpha0': float
         reference_collision_efficiency [-]
@@ -81,8 +81,9 @@ class Organism:
         """
         Parameters
         ----------
-        organism: String,
-            name of the substance (for now limited dictionary to 'benzene', 'AMPA', 'benzo(a)pyrene'
+        organism: str
+            name of the organism (for now limited dictionary to 
+            'solani','carotovorum', 'solanacearum')
 
         Returns
         -------
@@ -165,9 +166,29 @@ class Organism:
                     }
                 },
             }
-        #@ Steven voeg toe: micro_organism_dict
-        # self.micro_organism_dict = micro_organism_dict[substance_name]
-        self.organism_dict = micro_organism_dict[self.organism_name]
+
+        if self.organism_name in micro_organism_dict.keys():
+            self.organism_dict = micro_organism_dict[self.organism_name]
+        else: # return empty dict
+            self.organism_dict = \
+                {"organism_name": self.organism_name,
+                 "alpha0": {
+                    "suboxic": None, 
+                    "anoxic": None, 
+                    "deeply_anoxic": None
+                    },
+                 "pH0": {
+                    "suboxic": None, 
+                    "anoxic": None, 
+                    "deeply_anoxic": 7.5
+                    },
+                 "organism_diam": None,
+                 "mu1": {
+                    "suboxic": None, 
+                    "anoxic": None, 
+                    "deeply_anoxic": None
+                     }
+                }
 
         
 class Substance:
@@ -267,6 +288,22 @@ class Substance:
                     },
                 },
             }
+
+        if self.substance_name in substances_dict.keys():
+            self.substance_dict = substances_dict[self.substance_name]
+        else: # return empty dict
+            self.substance_dict = \
+                {"substance_name": self.organism_name,
+                 "log_Koc": None,
+                 "molar_mass": None,
+                 "pKa": None,
+                 "omp_half_life": {
+                    "suboxic": None, 
+                    "anoxic": None, 
+                    "deeply_anoxic": None
+                     }
+                }
+
         # to allow for other removal functions in future
         self.substance_dict = substances_dict[substance_name]
 
@@ -427,16 +464,6 @@ class SubstanceTransport():
         else:
             self.removal_function = well.schematisation.removal_function    
 
-        # Run init of 'omp'
-        if self.removal_function == 'omp':
-            self.omp_inialized = False
-            self.micro_species_inialized = True
-            
-        # Run init of 'pathogen'
-        elif self.removal_function == 'mbo':
-            self.omp_inialized = True
-            self.micro_organism_inialized = False
-
         # Load substance data
         self.substance = Substance(substance_name = substance, 
                                 removal_function = self.removal_function)
@@ -444,7 +471,15 @@ class SubstanceTransport():
         self.organism = Organism(organism_name = organism, 
                                 removal_function = self.removal_function)
 
-
+        # Run init of 'omp'
+        if self.removal_function == 'omp':
+            self.omp_inialized = False
+            self.micro_species_inialized = True
+      
+        # Run init of 'pathogen'
+        elif self.removal_function == 'mbo':
+            self.omp_inialized = True
+            self.micro_organism_inialized = False
 
         # Create user dict with 'removal_parameters' from input
         # if self.removal_function == 'omp':
@@ -490,7 +525,8 @@ class SubstanceTransport():
         elif self.removal_function == 'mbo':
             # User defined removal parameters [omp]
             user_removal_parameters = user_removal_parameters[self.organism_name]
-            # assumes that default dict contains microbial organism input (only MS2 currently supported)
+            # assumes that default dict contains microbial organism input 
+            # (for now limited dictionary to 'solani','carotovorum', 'solanacearum')
             default_removal_parameters = self.organism.organism_dict
 
         # iterate through the dictionary keys
@@ -1114,16 +1150,16 @@ class SubstanceTransport():
         # alpha0 [-]
         df_particle = self._df_fillna(df_particle,
                                 df_column = 'alpha0',
-                                value = self.removal_parameters['alpha0'][redox])
+                                value = alpha0)
         # reference pH [-]
         df_particle = self._df_fillna(df_particle,
                                 df_column = 'pH0',
-                                value = self.removal_parameters['pH0'][redox])
+                                value = pH0)
 
         # mu1 [day -1]
         df_particle = self._df_fillna(df_particle,
                                 df_column = 'mu1',
-                                value = self.removal_parameters['mu1'][redox])
+                                value = mu1)
 
         # Create empty column 'alpha' in df_particle
         df_particle['alpha'] = None  
@@ -1228,7 +1264,7 @@ class SubstanceTransport():
         
     def calc_advective_microbial_removal(self,df_particle,df_flowline, 
                                         endpoint_id, trackingdirection = "forward",
-                                        grainsize = 0.00025, const_BM = 1.38e-23,
+                                        grainsize = 0.00025,
                                         temp_water = 11., rho_water = 999.703, organism_diam = 2.33e-8,
                                         conc_start = 1., conc_gw = 0.,
                                         redox = 'anoxic',
@@ -1333,9 +1369,9 @@ class SubstanceTransport():
 
         # Calculate removal coefficient 'lamda' [/day].
         df_particle, df_flowline = self.calc_lambda(df_particle, df_flowline,
-                                                    redox = redox, mu1 = mu1, grainsize = grainsize, alpha0 = alpha0, 
-                                                    pH0 = pH0, const_BM = const_BM,
-                                                    temp_water = temp_water, 
+                                                    redox = redox, mu1 = mu1, 
+                                                    grainsize = grainsize, alpha0 = alpha0, 
+                                                    pH0 = pH0, temp_water = temp_water, 
                                                     rho_water = rho_water, organism_diam = organism_diam)
 
         # Starting concentration [-]
