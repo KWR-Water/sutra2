@@ -151,9 +151,9 @@ of the cumulative fraction of abstracted water:
     radial_plot = phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 2000], ylim=[1e3, 1e6])
     cumulative_plot = phreatic_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
 
-.. image:: travel_time_versus_radial_distance_phreatic.png
+.. image:: _images/travel_time_versus_radial_distance_phreatic.png
 
-.. image:: travel_time_versus_cumulative_abs_water_phreatic.png
+.. image:: _images/travel_time_versus_cumulative_abs_water_phreatic.png
 
 From the AnalyticalWell class two other important outputs are:
 
@@ -266,7 +266,7 @@ Plot the breakthrough curve at the well over time:
 
     benzene_plot = phreatic_concentration.plot_concentration(ylim=[0,10 ])
 
-.. image:: benzene_plot.png
+.. image:: _images/benzene_plot.png
 
 You can also compute the removal for a different OMP of interest:
 
@@ -285,7 +285,7 @@ the SubstanceTransport object.
     phreatic_concentration.compute_omp_removal()
     omp_x_plot = phreatic_concentration.plot_concentration(ylim=[0,100 ])
 
-.. image:: omp_x_plot.png
+.. image:: _images/omp_x_plot.png
 
 
 .. ipython:: python
@@ -296,7 +296,7 @@ the SubstanceTransport object.
     phreatic_concentration.compute_omp_removal()
     benzo_plot = phreatic_concentration.plot_concentration(ylim=[0,1])
 
-.. image:: benzo_plot.png
+.. image:: _images/benzo_plot.png
 
 .. ipython:: python
 
@@ -306,7 +306,7 @@ the SubstanceTransport object.
     phreatic_concentration.compute_omp_removal()
     ampa_plot = phreatic_concentration.plot_concentration( ylim=[0,1])
 
-.. image:: ampa_plot.png
+.. image:: _images/ampa_plot.png
 
 
 Other examples in the Bas_tutorial.py file are:
