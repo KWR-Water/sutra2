@@ -415,7 +415,8 @@ class SubstanceTransport():
 
 
         '''
-        Initialization of the Substanes class, checks for user-defined OMP substance paramters and overrides the database values.
+        Initialization of the SubstanceTransport class. Checks for either user-defined OMP substance parameters (removal_function == 'omp')
+        or user-defined microbial organism removal parameters (removal_function == 'mbo') and overrides the database values, if any.
 
         Parameters
         ----------
@@ -425,8 +426,26 @@ class SubstanceTransport():
             The Substance object with the OMP of interest.
         organism: object
             The Organism object with microbial organism (MBO) of interest
-
-
+        partition_coefficient_water_organic_carbon: float
+            Distribution coefficient of OMP between organic carbon and water, dimensionless.
+        dissociation_constant: float
+            Dissociation equilibirum constant of the OMP, dimensionless.
+        halflife_suboxic, halflife_anoxic, halflife_deeply_anoxic: float
+            Time required to reduce the concentration of the OMP by half, from any concentration point in time [days].
+        alpha0_suboxic, alpha0_anoxic, alpha0_deeply_anoxic: float
+            reference_collision_efficiency [-]
+            per redox zone ('suboxic', 'anoxic', deeply_anoxic')
+        pH0_suboxic, pH0_anoxic, pH0_deeply_anoxic: float
+            reference pH for calculating collision efficiency [-]
+            per redox zone ('suboxic', 'anoxic', deeply_anoxic')
+        mu1_suboxic, mu1_anoxic, mu1_deeply_anoxic: float
+            inactivation coefficient [1/day]
+            per redox zone ('suboxic', 'anoxic', deeply_anoxic')
+        organism_diam: float
+            diameter of pathogen/species [m]
+        removal_function: str 
+            removal_function: ['omp' or 'mbo']
+            Calculate removal of either organic micro pollutants ('omp') or microbial organisms ('mbo')
         '''
         self.well = well
         self.df_particle = well.df_particle
@@ -1294,7 +1313,6 @@ class SubstanceTransport():
             endpoint_id: str or int
                 ID for which to calculate the final concentration.
             
-            
             redox: str
                 redox condition ['suboxic','anoxic','deeply_anoxic']
             
@@ -1355,9 +1373,6 @@ class SubstanceTransport():
             starting_concentration_gw: pandas.Series  
                 Column 'starting_concentration_gw': float
                 Column added to df_flowline
-        
-
-
 
         '''
         self._init_micro_organism()

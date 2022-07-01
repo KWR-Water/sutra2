@@ -66,11 +66,10 @@ In this class you specify the:
 
     * Computational method ('analytical' or 'modpath').
     * The schematisation type ('phreatic', 'semiconfined').
-    .. ('riverbankfiltration', 'basinfiltration' coming soon).
     * The removal function ('omp' or 'mbo').
-
     * Input the relevant parameters for the porous media, the hydrochemistry, hydrology and the contamination of interest
 
+.. other schematisations ('riverbankfiltration', 'basinfiltration') coming soon.
 .. The class parameters can be roughly grouped into the following categories;
 
 .. * System.
@@ -187,38 +186,52 @@ In this example we use benzene. First we create the object and view the substanc
     # or via 'substance.substance_dict' ('default database parameters only', if available)
     phreatic_concentration.substance.substance_dict
 
+.. Optional: You may specify a different value for the substance parameters, for example
+.. a different half-life for the anoxic redox zone. This can be input in the HydroChemicalSchematisation
+.. and this will be used in the calculation for the removal for the OMP. The AnalyticalWell and 
+.. phreatic() functions must be rerun:
+
+.. .. ipython:: python
+
+..     phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
+..                                                             well_discharge=-7500, #m3/day
+..                                                             recharge_rate=0.0008, #m/day
+..                                                             thickness_vadose_zone_at_boundary=5,
+..                                                             thickness_shallow_aquifer=10,
+..                                                             thickness_target_aquifer=40,
+..                                                             hor_permeability_target_aquifer=35,
+..                                                             redox_vadose_zone='anoxic',
+..                                                             redox_shallow_aquifer='anoxic',
+..                                                             redox_target_aquifer='deeply_anoxic',
+..                                                             pH_target_aquifer=7.,
+..                                                             temp_water=11.,
+..                                                             name='benzene',
+..                                                             diffuse_input_concentration = 100, #ug/L
+..                                                             partition_coefficient_water_organic_carbon=2,
+..                                                             dissociation_constant=1,
+..                                                             halflife_suboxic=12, 
+..                                                             halflife_anoxic=420, 
+..                                                             halflife_deeply_anoxic=6000,
+..                                                             )
+..     phreatic_well = AnalyticalWell(phreatic_schematisation)
+..     phreatic_well.phreatic() 
+..     phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzene')
+    
 Optional: You may specify a different value for the substance parameters, for example
-a different half-life for the anoxic redox zone. This can be input in the HydroChemicalSchematisation
-and this will be used in the calculation for the removal for the OMP. The AnalyticalWell and 
-phreatic() functions must be rerun:
+a different half-life for the anoxic redox zone. This can be input in the SubstanceTransport
+and this will be used in the calculation for the removal for the OMP. The SubstanceTransportclass
+must be reloaded with the new input.
 
 .. ipython:: python
 
-    phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                                            well_discharge=-7500, #m3/day
-                                                            recharge_rate=0.0008, #m/day
-                                                            thickness_vadose_zone_at_boundary=5,
-                                                            thickness_shallow_aquifer=10,
-                                                            thickness_target_aquifer=40,
-                                                            hor_permeability_target_aquifer=35,
-                                                            redox_vadose_zone='anoxic',
-                                                            redox_shallow_aquifer='anoxic',
-                                                            redox_target_aquifer='deeply_anoxic',
-                                                            pH_target_aquifer=7.,
-                                                            temp_water=11.,
-                                                            name='benzene',
-                                                            diffuse_input_concentration = 100, #ug/L
-                                                            partition_coefficient_water_organic_carbon=2,
-                                                            dissociation_constant=1,
-                                                            halflife_suboxic=12, 
-                                                            halflife_anoxic=420, 
-                                                            halflife_deeply_anoxic=6000,
-                                                            )
-    phreatic_well = AnalyticalWell(phreatic_schematisation)
-    phreatic_well.phreatic() 
-    phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzene')
-    
-If you have specified a values for the substance (e.g. half-life, pKa, log_Koc),
+    phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzene',
+                                                partition_coefficient_water_organic_carbon=2,
+                                                dissociation_constant=1,
+                                                halflife_suboxic=12, 
+                                                halflife_anoxic=420, 
+                                                halflife_deeply_anoxic=6000)
+
+If you have specified values for the substance (e.g. half-life, pKa, log_Koc),
 the default value is overriden and used in the calculation of the removal. You can
 view the updated removal parameters ('substance dictionary') from the concentration object:
 
@@ -226,13 +239,12 @@ view the updated removal parameters ('substance dictionary') from the concentrat
 
     phreatic_concentration.removal_parameters
 
-Then we compute the removal by running the 'compute_omp_removal' function:
+Then we can compute the removal by running the 'compute_omp_removal' function:
 phreatic_concentration.compute_omp_removal()
 
 .. ipython:: python
     
     phreatic_concentration.compute_omp_removal()
-
 
 Once the removal has been calculated, you can view the steady-state concentration
 and breakthrough time per zone for the OMP in the df_particle:
