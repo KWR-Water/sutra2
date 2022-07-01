@@ -36,7 +36,7 @@ except ModuleNotFoundError:
 
 from greta.Analytical_Well import *
 from greta.Substance_Transport import *
-from testing.test_transatomic import *
+# from testing.test_transatomic import *
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
 
@@ -77,8 +77,8 @@ phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phrea
                                       redox_shallow_aquifer='anoxic',
                                       redox_target_aquifer='deeply_anoxic',
                                       pH_target_aquifer=7.,
-                                      temperature=11.,
-                                      substance='benzene',
+                                      temp_water=11.,
+                                      name='benzene',
                                       diffuse_input_concentration = 100, #ug/L
                                       )
 # The parameters from the HydroChemicalSchematisation class are added as attributes to
@@ -136,42 +136,27 @@ test_substance.substance_dict
 
 # In this example we use benzene. First we create the object and view the substance properties:
 phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzene')
-phreatic_concentration.substance_dict
+phreatic_concentration.substance.substance_dict
 
 # Optional: You may specify a different value for the substance parameters, for example
 # a different half-life for the anoxic redox zone. This can be input in the HydroChemicalSchematisation
 # and this will be used in the calculation for the removal for the OMP. The AnalyticalWell and 
 # phreatic() functions must be rerun:
 
-phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                      well_discharge=-7500, #m3/day
-                                      recharge_rate=0.0008, #m/day
-                                      thickness_vadose_zone_at_boundary=5,
-                                      thickness_shallow_aquifer=10,
-                                      thickness_target_aquifer=40,
-                                      hor_permeability_target_aquifer=35,
-                                      redox_vadose_zone='anoxic',
-                                      redox_shallow_aquifer='anoxic',
-                                      redox_target_aquifer='deeply_anoxic',
-                                      pH_target_aquifer=7.,
-                                      temperature=11.,
-                                      substance='benzene',
-                                      diffuse_input_concentration = 100, #ug/L
-                                      partition_coefficient_water_organic_carbon=2,
-                                      dissociation_constant=1,
-                                      halflife_suboxic=12, 
-                                      halflife_anoxic=420, 
-                                      halflife_deeply_anoxic=6000,
-                                      )
 phreatic_well = AnalyticalWell(phreatic_schematisation)
 phreatic_well.phreatic() 
-phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzene')
+phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzene',
+                                            partition_coefficient_water_organic_carbon=2,
+                                            dissociation_constant=1,
+                                            halflife_suboxic=12, 
+                                            halflife_anoxic=420, 
+                                            halflife_deeply_anoxic=6000)
 
 # If you have specified a values for the substance (e.g. half-life, pKa, log_Koc),
 # the default value is overriden and used in the calculation of the removal. You can
 # view the updated substance dictionary from the concentration object:
 
-phreatic_concentration.substance_dict
+phreatic_concentration.removal_parameters
 
 # Then we compute the removal by running the 'compute_omp_removal' function:
 # phreatic_concentration.compute_omp_removal()
@@ -248,7 +233,7 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
                                       fraction_organic_carbon_target_aquifer=0.0005, 
-                                      temperature=11,
+                                      temp_water=11,
                                       solid_density_vadose_zone=2.650, 
                                       solid_density_shallow_aquifer=2.650, 
                                       solid_density_target_aquifer=2.650, 
@@ -309,7 +294,7 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
                                       fraction_organic_carbon_target_aquifer=0.0005, 
-                                      temperature=11,
+                                      temp_water=11,
                                       solid_density_vadose_zone=2.650, 
                                       solid_density_shallow_aquifer=2.650, 
                                       solid_density_target_aquifer=2.650, 
@@ -372,7 +357,7 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
                                       fraction_organic_carbon_target_aquifer=0.0005, 
-                                      temperature=11,
+                                      temp_water=11,
                                       solid_density_vadose_zone=2.650, 
                                       solid_density_shallow_aquifer=2.650, 
                                       solid_density_target_aquifer=2.650, 
@@ -395,10 +380,12 @@ semiconfined_well = AnalyticalWell(semiconfined_scheme)
 semiconfined_well.semiconfined()   
 semiconfined_well.df_flowline
 semi_plot1 = semiconfined_well.plot_travel_time_versus_radial_distance(xlim=[0, 4000], ylim=[1e3, 1e6])
-semi_plot2 = semiconfined_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e10])
+# semi_plot2 = semiconfined_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 4000], ylim=[1e3, 1e10])
 semiconfined_conc = SubstanceTransport(semiconfined_well, substance = 'OMP-X')
 semiconfined_conc.compute_omp_removal()
 
 # Plot the concentration by the start dates or by time since start (year = 0)
 date_plot = semiconfined_conc.plot_concentration()
 time_plot = semiconfined_conc.plot_concentration(x_axis='Time') 
+
+#%%
