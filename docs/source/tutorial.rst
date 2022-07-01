@@ -108,8 +108,8 @@ Lets start with a simple example defining a HydroChemicalSchematisation object f
                                                         redox_shallow_aquifer='anoxic',
                                                         redox_target_aquifer='deeply_anoxic',
                                                         pH_target_aquifer=7.,
-                                                        temperature=11.,
-                                                        substance='benzene',
+                                                        temp_water=11.,
+                                                        name='benzene',
                                                         diffuse_input_concentration = 100, #ug/L
                                                         )
 
@@ -183,7 +183,9 @@ In this example we use benzene. First we create the object and view the substanc
 .. ipython:: python
 
     phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzene')
-    phreatic_concentration.substance_dict
+    phreatic_concentration.removal_parameters
+    # or via 'substance.substance_dict' ('default database parameters only', if available)
+    phreatic_concentration.substance.substance_dict
 
 Optional: You may specify a different value for the substance parameters, for example
 a different half-life for the anoxic redox zone. This can be input in the HydroChemicalSchematisation
@@ -203,8 +205,8 @@ phreatic() functions must be rerun:
                                                             redox_shallow_aquifer='anoxic',
                                                             redox_target_aquifer='deeply_anoxic',
                                                             pH_target_aquifer=7.,
-                                                            temperature=11.,
-                                                            substance='benzene',
+                                                            temp_water=11.,
+                                                            name='benzene',
                                                             diffuse_input_concentration = 100, #ug/L
                                                             partition_coefficient_water_organic_carbon=2,
                                                             dissociation_constant=1,
@@ -218,11 +220,11 @@ phreatic() functions must be rerun:
     
 If you have specified a values for the substance (e.g. half-life, pKa, log_Koc),
 the default value is overriden and used in the calculation of the removal. You can
-view the updated substance dictionary from the concentration object:
+view the updated removal parameters ('substance dictionary') from the concentration object:
 
 .. ipython:: python
 
-    phreatic_concentration.substance_dict
+    phreatic_concentration.removal_parameters
 
 Then we compute the removal by running the 'compute_omp_removal' function:
 phreatic_concentration.compute_omp_removal()

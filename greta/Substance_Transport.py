@@ -167,8 +167,28 @@ class Organism:
             }
         #@ Steven voeg toe: micro_organism_dict
         # self.micro_organism_dict = micro_organism_dict[substance_name]
-        self.organism_dict = micro_organism_dict[self.organism_name]
-
+        if self.organism_name in micro_organism_dict.keys():
+            self.organism_dict = micro_organism_dict[self.organism_name]
+        else: # return empty dict
+            self.organism_dict = \
+                {"organism_name": self.organism_name,
+                 "alpha0": {
+                    "suboxic": None, 
+                    "anoxic": None, 
+                    "deeply_anoxic": None
+                    },
+                 "pH0": {
+                    "suboxic": None, 
+                    "anoxic": None, 
+                    "deeply_anoxic": None
+                    },
+                 "organism_diam": None,
+                 "mu1": {
+                    "suboxic": None, 
+                    "anoxic": None, 
+                    "deeply_anoxic": None
+                     }
+                }
         
 class Substance:
     ''' 
@@ -267,8 +287,20 @@ class Substance:
                     },
                 },
             }
-        # to allow for other removal functions in future
-        self.substance_dict = substances_dict[substance_name]
+        if self.substance_name in substances_dict.keys():
+            self.substance_dict = substances_dict[self.substance_name]
+        else: # return empty dict
+            self.substance_dict = \
+                {"substance_name": self.substance_name,
+                 "log_Koc": 0,
+                 "molar_mass": 0,
+                 'pKa': None,
+                 "omp_half_life": {
+                    "suboxic": None, 
+                    "anoxic": None, 
+                    "deeply_anoxic": None
+                     }
+                }
 
 #ah_todo @MartinK, MartinvdS -> let the user specify the chemical in the Substance transport file instead of schematisation?
 # also let them feed it a dictionary with their own substance?
@@ -361,7 +393,7 @@ class SubstanceTransport():
     def __init__(self,
                 well: AnalyticalWell or ModPathWell,
                 substance: Substance = 'benzo(a)pyrene',
-                organism: Organism = 'MS2',
+                organism: Organism = 'solani',
                 partition_coefficient_water_organic_carbon=None,
                 dissociation_constant=None,
                 halflife_suboxic=None,
