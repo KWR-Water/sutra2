@@ -12,3 +12,4 @@ xlrd>=1.0.0
 pytest=6.2.3
 scipy=1.5.2
 autopep8=1.5.7
+tkinter

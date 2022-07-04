@@ -1338,7 +1338,7 @@ class ModPathWell:
                     self.strt = 0.
             
             # Open modflow object
-            self.create_mfobject(mf_exe = 'mf2005.exe')
+            self.create_mfobject(mf_exe = self.mf_exe)
             # Load packages
             self.create_dis(per_nr = iper)   
             self.create_bas()   
@@ -2234,7 +2234,7 @@ class ModPathWell:
             else:
                 # Load mfmodel assuming namfile exists in same folder
                 self.mf_namfile = os.path.join(self.workspace, self.modelname + '.nam')
-                self.create_mfobject(self.mf_namfile)
+                self.create_mfobject(mf_exe = self.mf_exe, fname_nam = self.mf_namfile)
         else:
             if hasattr(self, "mf"):
                 # modflow model "mf" already exists in object
@@ -2243,7 +2243,7 @@ class ModPathWell:
                 print("Load mf model using given namfile location:", mf_namfile)
                 # mf_namefile
                 self.mf_namfile = mf_namfile
-                self.create_mfobject(self.mf_namfile)
+                self.create_mfobject(mf_exe = self.mf_exe, fname_nam = self.mf_namfile)
 
 
         # Create Modpath packages
@@ -3035,7 +3035,7 @@ class ModPathWell:
                     bbox={'facecolor': 'gray', 'alpha': 0.5, 'pad': 10})
             plt.subplots_adjust(left=0.5)
         if fpathfig is None:
-            plt.show()
+            #plt.show()
         else:
             plt.savefig(fpathfig, dpi = dpi)
         # Sluit figuren af
@@ -3333,7 +3333,7 @@ class ModPathWell:
         if self.run_mfmodel:
 
             # Run modflow model
-            self.mfmodelrun(mf_exe = self.mf_exe)
+            self.mfmodelrun()
             
         # Modpath simulation
         if self.run_mpmodel:

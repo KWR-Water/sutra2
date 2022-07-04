@@ -45,6 +45,7 @@ Now, let’s try some examples. First we import the necessary python packages
     from pathlib import Path
 
     import matplotlib.pyplot as plt
+    from tkinter import *
     import numpy as np
     import pandas as pd
     import os
@@ -195,19 +196,19 @@ with lognorm = True: logarithmic distribution, using for example a 'viridis_r' (
 
 .. ipython:: python
 
-    .. fpath_plot = os.path.join(modpath_phrea.dstroot,"log_travel_times_test.png")
     # time limits
     tmin, tmax = 0.1, 10000.
     # xcoord bounds
     xmin, xmax = 0., 100.
     # Create travel time plots (lognormal)
-    modpath_phrea.plot_pathtimes(df_particle = df_particle, 
+    modpath_phrea.plot_pathtimes(df_particle = modpath_phrea.df_particle, 
             vmin = tmin,vmax = tmax,
-            fpathfig = fpath_scatter_times_log, figtext = None,x_text = 0,
+            fpathfig = None, figtext = None,x_text = 0,
             y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
             line_dist = 1, dpi = 192, trackingdirection = "forward",
             cmap = 'viridis_r')
 
+.. fpath_plot = os.path.join(modpath_phrea.dstroot,"log_travel_times_test.png")
 .. image: fpath_plot
 
 
