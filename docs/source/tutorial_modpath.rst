@@ -54,8 +54,9 @@ Now, let’s try some examples. First we import the necessary python packages
     from scipy.special import kn as besselk
     from pathlib import Path
 
-    from greta.Analytical_Well import *
-    from greta.Substance_Transport import *
+    import greta.Analytical_Well as AW
+    import greta.ModPath_functions as MP
+    import greta.Substance_Transport as ST
 
 
 
@@ -65,11 +66,12 @@ The first step is to define the hydrogeochemistry of the system using the HydroC
 In this class you specify the:
 
     * Computational method ('analytical' or 'modpath').
-    * The schematisation type ('phreatic', 'semiconfined').
-    .. ('riverbankfiltration', 'basinfiltration' coming soon).
+    * The schematisation type ('phreatic', 'semiconfined') 
+    * schematisation types 'riverbankfiltration', 'basinfiltration' yet to be supported
     * The removal function ('omp' or 'mbo').
-
     * Input the relevant parameters for the porous media, the hydrochemistry, hydrology and the contamination of interest
+
+.. ('riverbankfiltration', 'basinfiltration' coming soon).
 
 .. The class parameters can be roughly grouped into the following categories;
 
@@ -97,7 +99,7 @@ Lets start with a simple example defining a HydroChemicalSchematisation object f
 
 .. ipython:: python
 
-    phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
+    phreatic_schematisation = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                                         computation_method = 'modpath',
                                                         well_discharge=-7500, #m3/day
                                                         recharge_rate=0.0008, #m/day
@@ -134,11 +136,13 @@ The ModpathWell object requires a dictionary of the subsurface schematisation an
 the numerical model has to abide by in calculating flow velocity and direction of flow.
 
 .. ipython:: python
+
     phreatic_schematisation.make_dictionary()
 
 To view the created dictionary use the following snippet of code.
 
 .. ipython:: python
+
     schematisation_dict = {'simulation_parameters' : phreatic_schematisation.simulation_parameters,
         'endpoint_id': phreatic_schematisation.endpoint_id,
         'mesh_refinement': phreatic_schematisation.mesh_refinement,
@@ -149,6 +153,7 @@ To view the created dictionary use the following snippet of code.
         'point_parameters' : phreatic_schematisation.point_parameters,
         'concentration_boundary_parameters' : phreatic_schematisation.concentration_boundary_parameters,
     }
+    schematisation_dict
 
 The schematisation dict contains the following data:
 ..* simulation_parameters: simulation data such as schematisation_type and computation_method
@@ -169,14 +174,15 @@ The data files will be stored in location workspace using a given modelname.
 
 .. ipython:: python
 
-    modpath_phrea = ModpathWell(phreatic_schematisation,
+    modpath_phrea = MP.ModPathWell(phreatic_schematisation,
                                 workspace = "phreatic_test",
-                                modelname = "phreatic")
+                                modelname = "phreatic",
+                                mf_exe = "..//mf2005.exe", mp_exe = "..//mpath7.exe")
 
 Now we run the Modpath model, which numerically calculates the flow in the subsurface using the 
 'schematisation' dictionary stored in the HydroChemicalSchematisation object. By default the model will
 calculate both the hydraulic head distribution (using modflow: 'run_mfmodel' = True) and
-the particle pathlines [X,Y,Z,T-data] (using modpath: 'run_mpmodel' = True) along which OMP removal
+the particle pathlines [X,Y,Z,T-data] (using modpath: 'run_mpmodel' = True) with which OMP removal
 or microbial organism ('mbo') removal is later calculated.
 
 .. ipython:: python
@@ -189,12 +195,11 @@ with lognorm = True: logarithmic distribution, using for example a 'viridis_r' (
 
 .. ipython:: python
 
-    fpath_plot = os.path.join(modpath_phrea.dstroot,"log_travel_times_test.png")
+    .. fpath_plot = os.path.join(modpath_phrea.dstroot,"log_travel_times_test.png")
     # time limits
     tmin, tmax = 0.1, 10000.
     # xcoord bounds
     xmin, xmax = 0., 100.
-
     # Create travel time plots (lognormal)
     modpath_phrea.plot_pathtimes(df_particle = df_particle, 
             vmin = tmin,vmax = tmax,
@@ -203,7 +208,7 @@ with lognorm = True: logarithmic distribution, using for example a 'viridis_r' (
             line_dist = 1, dpi = 192, trackingdirection = "forward",
             cmap = 'viridis_r')
 
-.. image:: fpath_plot
+.. image: fpath_plot
 
 
 From the ModpathWell class two other important outputs are:
@@ -216,103 +221,107 @@ Step 3: Collect removal parameters
 
 Step 3a: View the Substance class (Optional)
 ===========================================
-You can retrieve the default substance parameters used to calculate the removal of organic micropollutants [OMP] 
+You can retrieve the default removal parameters used to calculate the removal of organic micropollutants [OMP] 
 in the SubstanceTransport class. The data are stored in a dictionary
 
 .. ipython:: python
     
-    test_substance = Substance(substance_name='benzene')
+    test_substance = ST.Substance(substance_name='benzene')
     test_substance.substance_dict
 
-Step 3b: View the Organism class (Optional) -- under construction
+Step 3b: View the Organism class (Optional)
 ===========================================
-You can retrieve the default substance parameters used to calculate the removal of microbial organisms [mbo] 
+You can retrieve the default removal parameters used to calculate the removal of microbial organisms [mbo] 
 in the SubstanceTransport class. The data are stored in a dictionary
 
 .. ipython:: python
     
-    test_organism = Organism(organism_name='MS2')
+    test_organism = ST.Organism(organism_name='MS2')
     test_organism.organism_dict
 
 
 Step 4: Run the SubstanceTransport class
 ========================================
-To calculate the removal and the steady-state concentration in each zone, create a concentration
+To calculate the removal and the steady-state concentration in each zone (analytical solution) or per particle node (modpath), create a concentration
 object by running the SubstanceTransport class with the phreatic_well object and specifying
 the OMP or microbial organism (mbo) of interest. 
 The type of removal is defined using the option 'removal_function: 'omp' or 'mbo'
-All required paraneters for removal are stored as 'removal_parameters'.
+All required parameters for removal are stored as 'removal_parameters'.
 
-In this example we use MS2, which is a kind of virus. First we create the object and view the organism properties:
+In this example we use solani, which is a plant pathogen. First we create the object and view the organism properties:
 
 .. ipython:: python
 
-    phreatic_concentration = SubstanceTransport(modpath_phrea, organism = 'MS2',
+    phreatic_concentration = SubstanceTransport(modpath_phrea, organism = 'solani',
                                                 removal_function = 'mbo')
-    phreatic_concentration.user_parameters 
+    phreatic_concentration.removal_parameters 
 
-Optional: You may specify a different value for the user_parameters, for example
-a different inactivation rate 'mu1' or collission related renoval 'alpha' for the anoxic redox zone.
+Optional: You may specify a different value for the removal_parameters, for example
+a different inactivation rate 'mu1' or collission related removal 'alpha' and optional reference pH for 
+calculating collision efficiency (pH0) for the anoxic redox zone while keeping other values as default.
 This can be input in the SubstanceTransport object and this will be used in the calculation for 
 the removal for the mbo.
 
 .. ipython:: python
 
-    phreatic_concentration = SubstanceTransport(modpath_phrea, organism = 'MS2',
+    phreatic_concentration = ST.SubstanceTransport(modpath_phrea, organism = 'MS2',
                                                 removal_function = 'mbo',
+                                                alpha0_suboxic=None,
+                                                alpha0_anoxic=1.e-4,
+                                                alpha0_deeply_anoxic=None,
+                                                pH0_suboxic=None,
+                                                pH0_anoxic=7.5,
+                                                pH0_deeply_anoxic=None,
+                                                mu1_suboxic=None,
                                                 mu1_anoxic=0.01,
-                                                alpha0_anoxic=1.e-4)
+                                                mu1_deeply_anoxic=None)
 
-Step 4a: Calculate the removal of microbial organisms ('mbo')
-========================================
-In this example we calculate the removal of MS2 from a diffuse source, given 
+Step 4a: Calculate the removal of a (non-default) microbial organism ('mbo')
+=============================================================================
+In this example we calculate the removal of 'MS2' from a diffuse source, given 
 that the modpath_model has completed successfully.
 
-First we choose to override the default removal parameters and create the 
+First we add removal parameters and create the 
 SubstanceTransport object.
 
-..ipython: python
-    # microbial removal properties
+.. ipython:: python
+
+    # microbial removal properties of microbial organism
     organism_name = 'MS2'
+    # reference_collision_efficiency [-]
     alpha0 = {"suboxic": 1.e-3, "anoxic": 1.e-5, "deeply_anoxic": 1.e-5}
-    reference_pH = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8}
+    # reference pH for calculating collision efficiency [-]
+    pH0 = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8}
+    # diameter of pathogen/species [m]
     organism_diam =  2.33e-8
+    # inactivation coefficient [1/day]
     mu1 = {"suboxic": 0.149,"anoxic": 0.023,"deeply_anoxic": 0.023}
-
-    removal_parameters = {organism_name: 
-                    {"organism_name": organism_name,
-                        "alpha0": alpha0,
-                        "reference_pH": reference_pH,
-                        "organism_diam": organism_diam,
-                        "mu1": mu1
-                    }
-                }
-    # Removal parameters organism
-    rem_parms = removal_parameters[organism_name]
-
     # Calculate advective microbial removal
     modpath_removal = ST.SubstanceTransport(modpath_phrea,
                             organism = organism_name,
-                            alpha0_suboxic = rem_parms["alpha0"]["suboxic"],
-                            alpha0_anoxic = rem_parms["alpha0"]["anoxic"],
-                            alpha0_deeply_anoxic =rem_parms["alpha0"]["deeply_anoxic"],
-                            reference_pH_suboxic =rem_parms["reference_pH"]["suboxic"],
-                            reference_pH_anoxic =rem_parms["reference_pH"]["anoxic"],
-                            reference_pH_deeply_anoxic =rem_parms["reference_pH"]["deeply_anoxic"],
-                            mu1_suboxic = rem_parms["mu1"]["suboxic"],
-                            mu1_anoxic = rem_parms["mu1"]["anoxic"],
-                            mu1_deeply_anoxic = rem_parms["mu1"]["deeply_anoxic"],
-                            organism_diam = rem_parms["organism_diam"]
+                            alpha0_suboxic = alpha0["suboxic"],
+                            alpha0_anoxic = alpha0["anoxic"],
+                            alpha0_deeply_anoxic = alpha0["deeply_anoxic"],
+                            pH0_suboxic = pH0["suboxic"],
+                            pH0_anoxic = pH0["anoxic"],
+                            pH0_deeply_anoxic = pH0["deeply_anoxic"],
+                            mu1_suboxic = mu1["suboxic"],
+                            mu1_anoxic = mu1["anoxic"],
+                            mu1_deeply_anoxic = mu1["deeply_anoxic"],
+                            organism_diam = organism_diam
                             )
+    # Removal parameters organism
+    modpath_removal.removal_parameters
 
 Then we calculate the final concentration after advective microbial removal of microbial organisms for a given endpoint_id
 using the function 'calc_advective_microbial_removal'. This function calls a separate function 'calc_lambda'
 which calculates the rate with which mbo's are removed per node along each given pathline. As input we use the
-dataframes df_particle and df_flowline, which have been created by the ModdpathWell class. These pandas dataframes
+dataframes df_particle and df_flowline, which have been created by the ModpathWell class. These pandas dataframes
 will be updated with calculated removal parameters and final_concentration per node. 
 Also, we can plot the log removal along pathlines in a cross-section (optional)
 
-..ipython: python
+.. ipython:: python
+
     C_final = {}
     for endpoint_id in modpath_phrea.schematisation_dict.get("endpoint_id"):
         df_particle, df_flowline, C_final[endpoint_id] = modpath_removal.calc_advective_microbial_removal(
@@ -321,7 +330,7 @@ Also, we can plot the log removal along pathlines in a cross-section (optional)
                                             conc_start = 1., conc_gw = 0.)
 
         # Create concentration plots
-        fpath_scatter_removal_log = os.path.join(modpath_phrea.dstroot,"log_removal_" + endpoint_id + ".png")
+        .. fpath_scatter_removal_log = os.path.join(modpath_phrea.dstroot,"log_removal_" + endpoint_id + ".png")
 
         # relative conc limits
         cmin, cmax = 1.e-11, 1.
@@ -337,86 +346,99 @@ Also, we can plot the log removal along pathlines in a cross-section (optional)
                 trackingdirection = "forward",
                 cmap = 'viridis_r')
 
-.. image:: fpath_scatter_removal_log
-
-Step 4a: Calculate removal parmaters
+.. image: fpath_scatter_removal_log
 
 Step 4b: Calculate the OMP removal
 ========================================
+Alternatively, you can calculate the removal of organic micropollutants (OMP). As example,
+we take the default removal parameters for a variety of substances.
 Note: For OMP you will have to specify values for substances (e.g. half-life, pKa, log_Koc).
-Any/all default values will be stored and used in the calculation of the removal. You can
-view the updated removal_parameters dictionary from the concentration object:
+Any/all default values will be stored and used in the calculation of the removal. 
 
 .. ipython:: python
 
-    phreatic_concentration.removal_parameters
+    # Calculate advective microbial removal
+    modpath_removal = ST.SubstanceTransport(modpath_phrea,
+                            substance = substance_name,
+                            partition_coefficient_water_organic_carbon=None,
+                            dissociation_constant=None,
+                            halflife_suboxic=None,
+                            halflife_anoxic=None,
+                            halflife_deeply_anoxic=None,
+                            )
 
-We compute the removal by running the 'compute_omp_removal' function:
-phreatic_concentration.compute_omp_removal()
+View the updated removal_parameters dictionary from the SubstanceTransport object
 
 .. ipython:: python
+
+    modpath_removal.removal_parameters
+
+.. We compute the removal by running the 'compute_omp_removal' function:
+.. phreatic_concentration.compute_omp_removal()
+
+.. .. ipython:: python
     
-    phreatic_concentration.compute_omp_removal()
+..     phreatic_concentration.compute_omp_removal()
 
-Once the removal has been calculated, you can view the steady-state concentration
-and breakthrough time per zone for the OMP in the df_particle:
+.. Once the removal has been calculated, you can view the steady-state concentration
+.. and breakthrough time per zone for the OMP in the df_particle:
 
-.. ipython:: python
+.. .. ipython:: python
 
-    phreatic_concentration.df_particle[['flowline_id', 'zone', 'steady_state_concentration', 'breakthrough_travel_time']].head(4)
+..     phreatic_concentration.df_particle[['flowline_id', 'zone', 'steady_state_concentration', 'breakthrough_travel_time']].head(4)
 
-View the steady-state concentration of the flowline or the steady-state
-contribution of the flowline to the concentration in the well
+.. View the steady-state concentration of the flowline or the steady-state
+.. contribution of the flowline to the concentration in the well
 
-.. ipython:: python
+.. .. ipython:: python
 
-    phreatic_concentration.df_flowline[['flowline_id', 'breakthrough_concentration', 'total_breakthrough_travel_time']].head(5)
+..     phreatic_concentration.df_flowline[['flowline_id', 'breakthrough_concentration', 'total_breakthrough_travel_time']].head(5)
 
-Plot the breakthrough curve at the well over time:
+.. Plot the breakthrough curve at the well over time:
 
-.. ipython:: python
+.. .. ipython:: python
 
-    benzene_plot = phreatic_concentration.plot_concentration(ylim=[0,10 ])
+..     benzene_plot = phreatic_concentration.plot_concentration(ylim=[0,10 ])
 
-.. image:: benzene_plot.png
+.. .. image:: benzene_plot.png
 
-You can also compute the removal for a different OMP of interest:
+.. You can also compute the removal for a different OMP of interest:
 
-* OMP-X: a ficticous OMP with no degradation or sorption
-* AMPA
-* benzo(a)pyrene
+.. * OMP-X: a ficticous OMP with no degradation or sorption
+.. * AMPA
+.. * benzo(a)pyrene
 
-To do so you can use the original schematisation, but specify a different OMP when you create
-the SubstanceTransport object.
+.. To do so you can use the original schematisation, but specify a different OMP when you create
+.. the SubstanceTransport object.
 
-.. ipython:: python
+.. .. ipython:: python
 
-    phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'OMP-X')
-    phreatic_concentration.compute_omp_removal()
-    omp_x_plot = phreatic_concentration.plot_concentration(ylim=[0,100 ])
+..     phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'OMP-X')
+..     phreatic_concentration.compute_omp_removal()
+..     omp_x_plot = phreatic_concentration.plot_concentration(ylim=[0,100 ])
 
-.. image:: omp_x_plot.png
+.. .. image:: omp_x_plot.png
 
-.. ipython:: python
+.. .. ipython:: python
 
-    phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzo(a)pyrene')
-    phreatic_concentration.compute_omp_removal()
-    benzo_plot = phreatic_concentration.plot_concentration(ylim=[0,1])
+..     phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzo(a)pyrene')
+..     phreatic_concentration.compute_omp_removal()
+..     benzo_plot = phreatic_concentration.plot_concentration(ylim=[0,1])
 
-.. image:: benzo_plot.png
+.. .. image:: benzo_plot.png
 
-.. ipython:: python
+.. .. ipython:: python
 
-    phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'AMPA')
-    phreatic_concentration.compute_omp_removal()
-    ampa_plot = phreatic_concentration.plot_concentration( ylim=[0,1])
+..     phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'AMPA')
+..     phreatic_concentration.compute_omp_removal()
+..     ampa_plot = phreatic_concentration.plot_concentration( ylim=[0,1])
 
-.. image:: ampa_plot.png
+.. .. image:: ampa_plot.png
 
-Other examples in the Bas_tutorial.py file are:
+.. Other examples in the Bas_tutorial.py file are:
 
-* diffuse/point source example for phreatic 
-* semiconfined example
+.. * diffuse/point source example for phreatic 
+.. * semiconfined example
 
 
 

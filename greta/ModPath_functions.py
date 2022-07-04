@@ -154,6 +154,7 @@ class ModPathWell:
     """ Compute travel time distribution using MODFLOW and MODPATH.""" 
     def __init__(self, schematisation: AnalyticalWell,
                        workspace: str or None = None, modelname: str or None = None,
+                       mf_exe = "mf2005.exe", mp_exe = "mpath7.exe",
                        bound_left: str = "xmin", bound_right: str = "xmax",
                        bound_top: str = "top", bound_bot: str = "bot",
                        bound_north: str = "ymin", bound_south: str = "ymax",
@@ -186,6 +187,10 @@ class ModPathWell:
         
         self.workspace = workspace  # workspace
         self.modelname = modelname  # modelname
+        # executables of modflow and modpath
+        self.mf_exe = mf_exe
+        self.mp_exe = mp_exe
+
         # Cbc unit flag (modflow oc-package input)
         iu_cbc = 130
         self.iu_cbc = iu_cbc
@@ -2229,7 +2234,7 @@ class ModPathWell:
             else:
                 # Load mfmodel assuming namfile exists in same folder
                 self.mf_namfile = os.path.join(self.workspace, self.modelname + '.nam')
-                self.create_mfmodel(self.mf_namfile)
+                self.create_mfobject(self.mf_namfile)
         else:
             if hasattr(self, "mf"):
                 # modflow model "mf" already exists in object
@@ -2238,7 +2243,7 @@ class ModPathWell:
                 print("Load mf model using given namfile location:", mf_namfile)
                 # mf_namefile
                 self.mf_namfile = mf_namfile
-                self.create_mfmodel(self.mf_namfile)
+                self.create_mfobject(self.mf_namfile)
 
 
         # Create Modpath packages
@@ -3252,7 +3257,7 @@ class ModPathWell:
                     xll = 0., yll = 0., perlen:dict or float or int = 365.*50, 
                     nstp:dict or int = 1, nper:int = 1,
                     steady:dict or bool = True,
-                    run_mfmodel = True, run_mpmodel = True):
+                    run_mfmodel = True, run_mpmodel = True,):
         ''' Run the combined modflow and modpath model using one 
             of four possible schematisation types:
             - "Phreatic"
@@ -3272,6 +3277,8 @@ class ModPathWell:
         #     self.simulation_parameters = self.schematisation_dict.simulation_parameters
         # else:
         #     self.simulation_parameters = simulation_parameters
+
+
 
         # Simulation parameters
         # Dict with stress period lengths
@@ -3326,14 +3333,14 @@ class ModPathWell:
         if self.run_mfmodel:
 
             # Run modflow model
-            self.mfmodelrun()
+            self.mfmodelrun(mf_exe = self.mf_exe)
             
         # Modpath simulation
         if self.run_mpmodel:
 
 
             # Run modpath model
-            self.MP7modelrun()
+            self.MP7modelrun(mp_exe = self.mp_exe)
 
             # self.success_mp = True
             print("modelrun of type", self.schematisation_type, "completed.")

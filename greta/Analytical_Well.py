@@ -133,14 +133,8 @@ class HydroChemicalSchematisation:
         Vertical anisotropy of each zone of the aquifer and the clayseal, [m/d].
         @MartinvdS  ratio of horizontal to vertical hydraulic conductivity?
         #AH MartinvdS error in this?
-    substance: string
-        Name of the OMP to use in the model.
-    partition_coefficient_water_organic_carbon: float
-        Distribution coefficient of OMP between organic carbon and water, dimensionless.
-    dissociation_constant: float
-        Dissociation equilibirum constant of the OMP, dimensionless.
-    halflife_suboxic, halflife_anoxic, halflife_deeply_anoxic: float
-        Time required to reduce the concentration of the OMP by half, from any concentration point in time [days].
+    name: string
+        Name of the OMP of MBO to use in the model.
     diffuse_input_concentration: float
         Concentration of the diffuse source of the OMP in the groundwater recharge, [ug/L].
     start_date_well: dt.datetime.strptime('YYYY-MM-DD', "%Y-%m-%d"),
