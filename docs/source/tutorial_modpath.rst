@@ -45,7 +45,6 @@ Now, let’s try some examples. First we import the necessary python packages
     from pathlib import Path
 
     import matplotlib.pyplot as plt
-    from tkinter import *
     import numpy as np
     import pandas as pd
     import os

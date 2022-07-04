@@ -3035,7 +3035,10 @@ class ModPathWell:
                     bbox={'facecolor': 'gray', 'alpha': 0.5, 'pad': 10})
             plt.subplots_adjust(left=0.5)
         if fpathfig is None:
-            plt.show()
+            try: plt.show()
+            except Exception as e: 
+                print(e)
+                pass
         else:
             plt.savefig(fpathfig, dpi = dpi)
         # Sluit figuren af
