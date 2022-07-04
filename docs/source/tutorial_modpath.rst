@@ -109,8 +109,8 @@ Lets start with a simple example defining a HydroChemicalSchematisation object f
                                                         redox_shallow_aquifer='anoxic',
                                                         redox_target_aquifer='deeply_anoxic',
                                                         pH_target_aquifer=7.,
-                                                        temperature=11.,
-                                                        substance='benzene',
+                                                        temp_water=11.,
+                                                        name='benzene',
                                                         diffuse_input_concentration = 100, #ug/L
                                                         )
 
@@ -203,7 +203,6 @@ with lognorm = True: logarithmic distribution, using for example a 'viridis_r' (
             line_dist = 1, dpi = 192, trackingdirection = "forward",
             cmap = 'viridis_r')
 
-A plot should then be shown below.
 .. image:: fpath_plot
 
 

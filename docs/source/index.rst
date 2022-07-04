@@ -13,7 +13,8 @@ Fields (PSWFs)
     :glob:
 
     getting-started.rst
-    Tutorial - Analytical removal approach <tutorial_analytical.rst>
+    Tutorial - Analytical approach <tutorial_analytical.rst>
+    Tutorial - Numerical approach <tutorial_modpath.rst>
     faq.rst
     glossary.rst
     api_reference.rst 
