@@ -487,13 +487,13 @@ class SubstanceTransport():
 
         # Run init of 'omp'
         if self.removal_function == 'omp':
-            self.omp_inialized = False
-            self.micro_species_inialized = True
+            self.omp_initialized = False
+            self.micro_organism_initialized = True
       
         # Run init of 'pathogen'
         elif self.removal_function == 'mbo':
-            self.omp_inialized = True
-            self.micro_organism_inialized = False
+            self.omp_initialized = True
+            self.micro_organism_initialized = False
 
         # Create user dict with 'removal_parameters' from input
         # if self.removal_function == 'omp':
@@ -575,20 +575,20 @@ class SubstanceTransport():
         ''' 
         Initialisation if the Substance is an OMP
         '''
-        if self.omp_inialized:
+        if self.omp_initialized:
             pass
         else:
             self.df_particle['omp_half_life'] = self.df_particle['redox'].map(self.removal_parameters['omp_half_life'])
             self.df_particle['log_Koc'] = self.removal_parameters['log_Koc']
             self.df_particle['pKa'] = self.removal_parameters['pKa']
 
-        self.omp_inialized = True
+        self.omp_initialized = True
 
 
     def _init_micro_organism(self):
         ''' Initialisation if the Species is a microbial organism'''
         
-        if self.micro_organism_inialized:
+        if self.micro_organism_initialized:
             pass
         else:
             self.df_particle['mu1'] = self.df_particle['redox'].map(self.removal_parameters['mu1'])
@@ -596,7 +596,7 @@ class SubstanceTransport():
             self.df_particle['pH0'] = self.df_particle['redox'].map(self.removal_parameters['pH0'])
             self.df_particle['organism_diam'] = self.removal_parameters['organism_diam']
 
-        self.micro_organism_inialized = True
+        self.micro_organism_initialized = True
 
 
     def _calculate_retardation(self):
@@ -1446,7 +1446,7 @@ class SubstanceTransport():
                 C_final += (conc_steady[pid][idx_final] * df_flowline.loc[pid,"flowline_discharge"]) / \
                             df_flowline.loc[pid,"well_discharge"]
         # Organism/Species name
-        self.df_flowline['organism'] = self.removal_parameters['organism_name']
+        self.df_flowline['organism'] = self.organism_name
 
 
         # return (adjusted) df_particle and df_flowline

@@ -328,15 +328,12 @@ Also, we can plot the log removal along pathlines in a cross-section (optional)
                                             modpath_phrea.df_particle, modpath_phrea.df_flowline, 
                                             endpoint_id = endpoint_id,
                                             conc_start = 1., conc_gw = 0.)
-
         # Create concentration plots
         .. fpath_scatter_removal_log = os.path.join(modpath_phrea.dstroot,"log_removal_" + endpoint_id + ".png")
-
         # relative conc limits
         cmin, cmax = 1.e-11, 1.
         # xcoord bounds
         xmin, xmax = 0., 50.
-
         # Create travel time plots (lognormal)
         modpath_removal.plot_logremoval(df_particle=df_particle,
                 df_flowline=df_flowline,
@@ -345,8 +342,6 @@ Also, we can plot the log removal along pathlines in a cross-section (optional)
                 y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
                 trackingdirection = "forward",
                 cmap = 'viridis_r')
-
-.. image: fpath_scatter_removal_log
 
 Step 4b: Calculate the OMP removal
 ========================================
@@ -373,12 +368,13 @@ View the updated removal_parameters dictionary from the SubstanceTransport objec
 
     modpath_removal.removal_parameters
 
-.. We compute the removal by running the 'compute_omp_removal' function:
-.. phreatic_concentration.compute_omp_removal()
+We compute the removal by running the 'compute_omp_removal' function:
+modpath_removal.compute_omp_removal()
 
-.. .. ipython:: python
+.. ipython:: python
     
-..     phreatic_concentration.compute_omp_removal()
+    modpath_removal.compute_omp_removal()
+
 
 .. Once the removal has been calculated, you can view the steady-state concentration
 .. and breakthrough time per zone for the OMP in the df_particle:
