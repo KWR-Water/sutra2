@@ -328,8 +328,6 @@ Also, we can plot the log removal along pathlines in a cross-section (optional)
                                             modpath_phrea.df_particle, modpath_phrea.df_flowline, 
                                             endpoint_id = endpoint_id,
                                             conc_start = 1., conc_gw = 0.)
-        # Create concentration plots
-        .. fpath_scatter_removal_log = os.path.join(modpath_phrea.dstroot,"log_removal_" + endpoint_id + ".png")
         # relative conc limits
         cmin, cmax = 1.e-11, 1.
         # xcoord bounds
