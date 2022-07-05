@@ -336,7 +336,7 @@ Also, we can plot the log removal along pathlines in a cross-section (optional)
         modpath_removal.plot_logremoval(df_particle=df_particle,
                 df_flowline=df_flowline,
                 vmin = cmin,vmax = cmax,
-                fpathfig = fpath_scatter_removal_log,
+                fpathfig = None,
                 y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
                 trackingdirection = "forward",
                 cmap = 'viridis_r')
