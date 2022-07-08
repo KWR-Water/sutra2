@@ -1,5 +1,5 @@
-
-====
+sutra2
+=======
 .. image:: https://readthedocs.org/projects/sutra2/badge/?version=latest&style=flat
                     :target: https://sutra2
 .readthedocs.io
@@ -27,6 +27,6 @@ or::
 License
 -------
 
-This package is MIT licensed. See `License File <https://github.com/KWR-Water//blob/master/LICENSE>`__.
+This package is MIT licensed. See `License File <https://github.com/KWR-Water/sutra2/blob/master/LICENSE>`__.
 
 .. _documentation: https://.readthedocs.io/en/latest/
