@@ -32,10 +32,10 @@ setup(
     },
     install_requires=[
         'pandas>=0.23',
-
         ],
     include_package_data=True,
-    url='https://github.com/KWR-Water/sutra2/archive/refs/tags/v_01.tar.gz',
+    url='https://github.com/KWR-Water/sutra2',
+    download_url = 'https://github.com/KWR-Water/sutra2/archive/refs/tags/v_01.tar.gz', 
     author='KWR Water Research Institute',
     author_email='martin.korevaar@kwrwater.nl, martin.van.der.schans@kwrwater.nl, alex.hocking@kwrwater.nl, steven.ros@kwrwater.nl',
 )

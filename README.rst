@@ -1,11 +1,9 @@
-sutra2
-=======
+SUTRA2
+===========
 .. image:: https://readthedocs.org/projects/sutra2/badge/?version=latest&style=flat
-                    :target: https://sutra2
-.readthedocs.io
+                    :target: https://sutra2.readthedocs.io
 .. image:: https://img.shields.io/travis/KWR-Water/sutra2
                     :target: https://travis-ci.com/KWR-Water/sutra2
-
 .. image:: https://img.shields.io/codecov/c/gh/KWR-Water/sutra2
                     :target: https://codecov.io/gh/KWR-Water/sutra2
 
@@ -29,4 +27,4 @@ License
 
 This package is MIT licensed. See `License File <https://github.com/KWR-Water/sutra2/blob/master/LICENSE>`__.
 
-.. _documentation: https://.readthedocs.io/en/latest/
+.. _documentation: https://sutra2.readthedocs.io/en/latest/
