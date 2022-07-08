@@ -1449,7 +1449,7 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
     #     print("Assertion Exception Raised - TTD test")
     # else:
     #     print("Success, no error in TTD!")
-
+9
 #%%
 def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
     ''' Scenario with feces at surface level near pumping well.
@@ -1637,9 +1637,9 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
         # # df particle
         # df_particle = modpath_removal.df_particle
         # time limits
-        tmin, tmax = 0.1, 10000.
+        tmin, tmax = 0.1, 50000.
         # xcoord bounds
-        xmin, xmax = 0., 50.
+        xmin, xmax = 0., 25.
 
         # Create travel time plots (lognormal)
         modpath_removal.plot_age_distribution(df_particle=df_particle,
@@ -1663,7 +1663,7 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
         # relative conc limits
         cmin, cmax = 1.e-21, 1.
         # xcoord bounds
-        xmin, xmax = 0., 50.
+        xmin, xmax = 0., 25.
 
         # Create travel time plots (lognormal)
         modpath_removal.plot_logremoval(df_particle=df_particle,
@@ -1672,10 +1672,7 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
                 fpathfig = fpath_scatter_removal_log, figtext = None,x_text = 0,
                 y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
                 line_dist = 1, dpi = 192, trackingdirection = "forward",
-                cmap = 'viridis_r')
-
-
-                
+                cmap = 'viridis_r')          
 
     assert modpath_phrea.success_mp
 

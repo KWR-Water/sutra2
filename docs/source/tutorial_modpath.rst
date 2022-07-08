@@ -220,7 +220,7 @@ Step 3: Collect removal parameters
 ===========================================
 
 Step 3a: View the Substance class (Optional)
-===========================================
+============================================
 You can retrieve the default removal parameters used to calculate the removal of organic micropollutants [OMP] 
 in the SubstanceTransport class. The data are stored in a dictionary
 
@@ -320,7 +320,10 @@ dataframes df_particle and df_flowline, which have been created by the ModpathWe
 will be updated with calculated removal parameters and final_concentration per node. 
 Also, we can plot the log removal along pathlines in a cross-section (optional)
 
+
+
 .. ipython:: python
+    :okwarning:
 
     C_final = {}
     for endpoint_id in modpath_phrea.schematisation_dict.get("endpoint_id"):
@@ -350,6 +353,8 @@ Any/all default values will be stored and used in the calculation of the removal
 
 .. ipython:: python
 
+    # substance (solani)
+    substance_name = 'solani'
     # Calculate advective microbial removal
     modpath_removal = ST.SubstanceTransport(modpath_phrea,
                             substance = substance_name,
