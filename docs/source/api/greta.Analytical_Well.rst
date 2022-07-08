@@ -1,7 +1,7 @@
-greta.Analytical\_Well module
+sutra2.Analytical\_Well module
 =============================
 
-.. automodule:: greta.Analytical_Well
+.. automodule:: sutra2.Analytical_Well
    :members:
    :undoc-members:
    :show-inheritance:

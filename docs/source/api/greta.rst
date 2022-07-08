@@ -1,4 +1,4 @@
-greta package
+sutra2 package
 =============
 
 Submodules
@@ -7,15 +7,15 @@ Submodules
 .. toctree::
    :maxdepth: 2
 
-   greta.Analytical_Well
-   greta.ModPath_functions
-   greta.Substance_Transport
-   greta.project_path
+   sutra2.Analytical_Well
+   sutra2.ModPath_functions
+   sutra2.Substance_Transport
+   sutra2.project_path
 
 Module contents
 ---------------
 
-.. automodule:: greta
+.. automodule:: sutra2
    :members:
    :undoc-members:
    :show-inheritance:

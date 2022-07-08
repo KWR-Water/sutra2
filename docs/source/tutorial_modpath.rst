@@ -54,9 +54,9 @@ Now, let’s try some examples. First we import the necessary python packages
     from scipy.special import kn as besselk
     from pathlib import Path
 
-    import greta.Analytical_Well as AW
-    import greta.ModPath_functions as MP
-    import greta.Substance_Transport as ST
+    import sutra2.Analytical_Well as AW
+    import sutra2.ModPath_functions as MP
+    import sutra2.Substance_Transport as ST
 
 
 

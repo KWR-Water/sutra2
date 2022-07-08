@@ -46,14 +46,14 @@ import math
 import re # regular expressions
 from scipy.special import kn as besselk
 
-from greta.Analytical_Well import AnalyticalWell
+from sutra2.Analytical_Well import AnalyticalWell
 
 # try:
-#     from greta.Analytical_Well import * 
-#     from greta.Substance_Transport import *
+#     from sutra2.Analytical_Well import * 
+#     from sutra2.Substance_Transport import *
 # except ModuleNotFoundError as e:
 #     print(e, ": second try.")
-#     module_path = os.path.join("..","greta")
+#     module_path = os.path.join("..","sutra2")
 #     if module_path not in sys.path:
 #         sys.path.insert(0,module_path)
 #     from Analytical_Well import * 
@@ -3455,7 +3455,7 @@ if __name__ == "__main__":
     # porosity_recharge_basin 
     # groundwater_level_above_saturated_zone = normal maximum rise of watertable above H0 [m];
 
-    # from greta.draft_transport_function import HydroChemicalSchematisation as HCS
+    # from sutra2.draft_transport_function import HydroChemicalSchematisation as HCS
     # HCS_test = HCS()
     # print(vars(HCS_test))
 

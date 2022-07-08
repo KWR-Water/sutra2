@@ -2,7 +2,7 @@
 About
 ========
 
-SSTR is developed by KWR Water Research Institute. The code is based on the original `Excel-based TRANSATOMIC program by Pieter Stuyfzand <https://library.kwrwater.nl/publication/59205490/>`_.
+Sutra2 is developed by KWR Water Research Institute. The code is based on the original `Excel-based TRANSATOMIC program by Pieter Stuyfzand <https://library.kwrwater.nl/publication/59205490/>`_.
 
 ..
   #AH @MartinK - some kind of link to TRANSATOMIC KWR report? e.g. https://library.kwrwater.nl/publication/59205490/
@@ -10,7 +10,7 @@ SSTR is developed by KWR Water Research Institute. The code is based on the orig
 
 License
 -------
-This package is MIT licensed. See `License File <https://github.com/KWR-Water/greta/blob/main/LICENSE/>`_.
+This package is MIT licensed. See `License File <https://github.com/KWR-Water/sutra2/blob/main/LICENSE/>`_.
 
 Acknowledgements
 -----------------
@@ -19,5 +19,3 @@ This tool was co-financed by the Horizon 2020 research and innovation programme 
 The main contributors are: Steven Ros, Alex Hockin, Martin Korevaar, Carina Eisfeld and Martin van der Schans.
 
 ..
-  #AH @MartinK - licence change name Greta to SSTR?
-  # @ALEX yes we need an overall change to the final name (SSTR or ...)

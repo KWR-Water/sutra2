@@ -15,8 +15,8 @@ from pathlib import Path
 #     from project_path import module_path
 
 
-from greta.Analytical_Well import *
-from greta.Substance_Transport import *
+from sutra2.Analytical_Well import *
+from sutra2.Substance_Transport import *
 from pandas.testing import assert_frame_equal
 import warnings
 

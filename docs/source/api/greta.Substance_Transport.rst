@@ -1,7 +1,7 @@
-greta.Substance\_Transport module
+sutra2.Substance\_Transport module
 =================================
 
-.. automodule:: greta.Substance_Transport
+.. automodule:: sutra2.Substance_Transport
    :members:
    :undoc-members:
    :show-inheritance:

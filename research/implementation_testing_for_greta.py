@@ -39,8 +39,8 @@ try:
 except ModuleNotFoundError:
     from project_path import module_path
 
-from greta.Analytical_Well import *
-from greta.Substance_Transport import *
+from sutra2.Analytical_Well import *
+from sutra2.Substance_Transport import *
 from testing.test_transatomic import *
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory

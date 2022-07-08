@@ -1,7 +1,7 @@
-greta
+sutra2
 =====
 
 .. toctree::
    :maxdepth: 2
 
-   greta
+   sutra2

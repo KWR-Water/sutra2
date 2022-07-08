@@ -38,16 +38,18 @@ from scipy.special import kn as besselk
 import datetime
 from datetime import timedelta
 
-# module_path = os.path.abspath(os.path.join("..","..","greta"))
+# module_path = os.path.abspath(os.path.join("..","..","sutra2
+#"))
 # if module_path not in sys.path:
 #     sys.path.insert(0,module_path)
 
-from greta.Analytical_Well import AnalyticalWell 
-from greta.ModPath_functions import ModPathWell
+from sutra2.Analytical_Well import AnalyticalWell 
+from sutra2.ModPath_functions import ModPathWell
 
 # from Analytical_Well import AnalyticalWell
 # from ModPath_functions import ModPathWell
-# # from greta.ModPath_functions import ModPathWell
+# # from sutra2
+#.ModPath_functions import ModPathWell
 # # from Analytical_Well import AnalyticalWell
 
 path = os.getcwd()  # path of working directory

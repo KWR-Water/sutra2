@@ -54,8 +54,8 @@ Now, let’s try some examples. First we import the necessary python packages
     from scipy.special import kn as besselk
     from pathlib import Path
 
-    from greta.Analytical_Well import *
-    from greta.Substance_Transport import *
+    from sutra2.Analytical_Well import *
+    from sutra2.Substance_Transport import *
 
 
 
@@ -151,11 +151,11 @@ of the cumulative fraction of abstracted water:
     radial_plot = phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 2000], ylim=[1e3, 1e6])
     cumulative_plot = phreatic_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
 
-.. image:: https://github.com/KWR-Water/greta/blob/main/docs/_images/travel_time_versus_radial_distance_phreatic.png?raw=true
+.. image:: https://github.com/KWR-Water/sutra2/blob/main/docs/_images/travel_time_versus_radial_distance_phreatic.png?raw=true
   :width: 600
   :alt: travel_time_versus_radial_distance_phreatic.png
 
-.. image:: https://github.com/KWR-Water/greta/blob/main/docs/_images/travel_time_versus_cumulative_abs_water_phreatic.png?raw=true
+.. image:: https://github.com/KWR-Water/sutra2/blob/main/docs/_images/travel_time_versus_cumulative_abs_water_phreatic.png?raw=true
   :width: 600
   :alt: travel_time_versus_cumulative_abs_water_phreatic.png
 
@@ -270,7 +270,7 @@ Plot the breakthrough curve at the well over time:
 
     benzene_plot = phreatic_concentration.plot_concentration(ylim=[0,10 ])
 
-.. image:: https://github.com/KWR-Water/greta/blob/main/docs/_images/benzene_plot.png?raw=true
+.. image:: https://github.com/KWR-Water/sutra2/blob/main/docs/_images/benzene_plot.png?raw=true
   :width: 600
   :alt: benzene_plot.png
 
@@ -291,7 +291,7 @@ the SubstanceTransport object.
     phreatic_concentration.compute_omp_removal()
     omp_x_plot = phreatic_concentration.plot_concentration(ylim=[0,100 ])
 
-.. image:: https://github.com/KWR-Water/greta/blob/main/docs/_images/omp_x_plot.png?raw=true
+.. image:: https://github.com/KWR-Water/sutra2/blob/main/docs/_images/omp_x_plot.png?raw=true
   :width: 600
   :alt: omp_x_plot.png
 
@@ -303,7 +303,7 @@ the SubstanceTransport object.
     phreatic_concentration.compute_omp_removal()
     benzo_plot = phreatic_concentration.plot_concentration(ylim=[0,1])
 
-.. image:: https://github.com/KWR-Water/greta/blob/main/docs/_images/benzo_plot.png?raw=true
+.. image:: https://github.com/KWR-Water/sutra2/blob/main/docs/_images/benzo_plot.png?raw=true
   :width: 600
   :alt: benzo_plot.png
 
@@ -315,7 +315,7 @@ the SubstanceTransport object.
     phreatic_concentration.compute_omp_removal()
     ampa_plot = phreatic_concentration.plot_concentration( ylim=[0,1])
 
-.. image:: https://github.com/KWR-Water/greta/blob/main/docs/_images/ampa_plot.png?raw=true
+.. image:: https://github.com/KWR-Water/sutra2/blob/main/docs/_images/ampa_plot.png?raw=true
   :width: 600
   :alt: ampa_plot.png
 

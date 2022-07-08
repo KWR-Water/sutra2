@@ -1,7 +1,7 @@
-greta.project\_path module
+sutra2.project\_path module
 ==========================
 
-.. automodule:: greta.project_path
+.. automodule:: sutra2.project_path
    :members:
    :undoc-members:
    :show-inheritance:

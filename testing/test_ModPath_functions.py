@@ -19,19 +19,19 @@ import matplotlib.pyplot as plt
 import matplotlib 
 import matplotlib.colors as colors
 
-# Greta modules    
-import greta.Analytical_Well as AW
-import greta.ModPath_functions as MP
-import greta.Substance_Transport as ST
+# sutra2 modules    
+import sutra2.Analytical_Well as AW
+import sutra2.ModPath_functions as MP
+import sutra2.Substance_Transport as ST
 
 # from Substance_Transport import *
 # from ModPath_functions import ModPathWell
 
 from pandas._testing import assert_frame_equal
-# from greta.ModPath_functions import ModPathWell  
+# from sutra2.ModPath_functions import ModPathWell  
 # =======
-# from greta.Analytical_Well import *
-# from greta.Substance_Transport import *
+# from sutra2.Analytical_Well import *
+# from sutra2.Substance_Transport import *
 # from pandas.testing import assert_frame_equal
 
 # get directory of this file

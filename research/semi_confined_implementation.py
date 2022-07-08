@@ -36,8 +36,8 @@ try:
 except ModuleNotFoundError:
     from project_path import module_path
 
-from greta.Analytical_Well import *
-from greta.Substance_Transport import *
+from sutra2.Analytical_Well import *
+from sutra2.Substance_Transport import *
 # if change classes to seperate files, then import them seperately here AH
 
 from testing.test_transatomic import *

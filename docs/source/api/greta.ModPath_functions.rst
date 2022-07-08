@@ -1,7 +1,7 @@
-greta.ModPath\_functions module
+sutra2.ModPath\_functions module
 ===============================
 
-.. automodule:: greta.ModPath_functions
+.. automodule:: sutra2.ModPath_functions
    :members:
    :undoc-members:
    :show-inheritance:
