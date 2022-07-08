@@ -18,5 +18,5 @@ help:
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
 
-	@sphinx-apidoc -f -o $(SOURCEDIR)/api ../greta
+	@sphinx-apidoc -f -o $(SOURCEDIR)/api ../sutra2
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)

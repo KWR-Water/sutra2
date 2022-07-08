@@ -1,7 +1,7 @@
 ===============
 Getting Started
 ===============
-SSTR (SubSurface TRansport) is a python package to model the behavior of Organic
+sutra2 (SUbsurface TRAnsport) is a python package to model the behavior of Organic
 MicroPollutants (OMPs) and pathogens for 4 standard types of Public Supply Well
 Fields (PSWFs).
 
@@ -17,11 +17,11 @@ Main features:
 
 Install
 -------
-SSTR requires Python 3.6 or later.
+sutra2 requires Python 3.6 or later.
 
-To get SSTR, use the following command::
+To get sutra2, use the following command::
 
-  pip install git+https://github.com/KWR-Water/greta.git
+  pip install git+https://github.com/KWR-Water/sutra2.git
 
 ..
   #AH @MartinK -> check how to do this. @ALEX: do we want to have this on pypi?
@@ -32,7 +32,7 @@ Philosophy
 ..
   #AH AH @MartinvdS @MartinK ...  what here?
 
-SSTR calculates the behavior of OMPs and pathogens for 4 standard types of PSWFs, which cover the most frequently occurring and most vulnerable
+sutra2 calculates the behavior of OMPs and pathogens for 4 standard types of PSWFs, which cover the most frequently occurring and most vulnerable
 groundwater resources for drinking water supply in the Netherlands (and Flanders).
 One of the aims of this approach is to forecast the behavior of new OMPs in
 groundwater. Groundwater is often overlooked in current environmental risk
