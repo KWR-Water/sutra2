@@ -95,7 +95,7 @@ def test_modflow_run_phreatic_withgravelpack(organism_name = "MS2"):
     test_phrea.make_dictionary()
     # print(test_phrea.__dict__)
     modpath_phrea = MP.ModPathWell(test_phrea,
-                            workspace = "test1_phrea_mf",
+                            workspace = os.path.join(path,"test1_phrea_mf"),
                             modelname = "phreatic",
                             bound_left = "xmin",
                             bound_right = "xmax")
@@ -165,7 +165,7 @@ def test_modpath_run_phreatic_nogravelpack(organism_name = "MS2"):
 
     # print(test_phrea.__dict__)
     modpath_phrea = MP.ModPathWell(test_phrea,
-                            workspace = "test2_phrea_nogp",
+                            workspace = os.path.join(path,"test2_phrea_nogp"),
                             modelname = "phreatic",
                             bound_left = "xmin",
                             bound_right = "xmax")
