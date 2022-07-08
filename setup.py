@@ -6,8 +6,8 @@ def read(fname):
         return f.read()
 
 setup(
-    name='greta',
-    version='0.2',
+    name='sutra2',
+    version='0.1',
     packages=find_packages(exclude=['tests*']),
     license='MIT',
     description='A python package for correction, validation and analysis of ground water quality samples',
@@ -24,11 +24,11 @@ setup(
     ],
     python_requires='>=3.6',
     project_urls={
-    'Source': 'https://github.com/KWR-Water/greta',
-    'Documentation': 'http://greta.readthedocs.io/en/latest/',
-    'Tracker': 'https://github.com/KWR-Water/greta/issues',
-    'Help': 'https://github.com/KWR-Water/greta/issues',
-    # 'Help': 'https://stackoverflow.com/questions/tagged/greta'
+    'Source': 'https://github.com/KWR-Water/sutra2',
+    'Documentation': 'http://sutra2.readthedocs.io/en/latest/',
+    'Tracker': 'https://github.com/KWR-Water/sutra2/issues',
+    'Help': 'https://github.com/KWR-Water/sutra2/issues',
+    # 'Help': 'https://stackoverflow.com/questions/tagged/sutra2'
     },
     install_requires=[
         'pandas>=0.23',
@@ -36,7 +36,7 @@ setup(
 
         ],
     include_package_data=True,
-    url='https://github.com/KWR-Water/greta',
+    url='https://github.com/KWR-Water/sutra2',
     author='KWR Water Research Institute',
     author_email='martin.korevaar@kwrwater.nl, martin.van.der.schans@kwrwater.nl, alex.hocking@kwrwater.nl, steven.ros@kwrwater.nl',
 )
