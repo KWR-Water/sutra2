@@ -32,7 +32,6 @@ setup(
     },
     install_requires=[
         'pandas>=0.23',
-        'molmass',
 
         ],
     include_package_data=True,
