@@ -1724,6 +1724,7 @@ class AnalyticalWell():
                          self.schematisation.fraction_organic_carbon_target_aquifer,
                          self.schematisation.solid_density_target_aquifer,
                          ]
+
             return df
 
         df_particle = pd.DataFrame(columns=['flowline_id',
@@ -1810,6 +1811,9 @@ class AnalyticalWell():
             # df_flowline['k_hor_clayseal'] = self.schematisation.k_hor_clayseal
             # df_flowline['vani_clayseal'] = self.schematisation.vani_clayseal
             # df_flowline['dz_well'] = self.schematisation.dz_well
+
+        # change df_particle index to 'flowline_id'
+        df_particle.index = df_particle["flowline_id"].values
 
         return df_flowline, df_particle
 

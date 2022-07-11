@@ -1346,8 +1346,6 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
             cmap = 'viridis_r')
 
 
-
-
     # try:
     assert_frame_equal(summary_traveltimes_an.loc[:, summary_columns],
                         output_phreatic.loc[:, summary_columns],check_dtype=False, check_index_type = False)
@@ -1583,6 +1581,111 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
 #                 cmap = 'viridis_r')          
 
 #     assert modpath_phrea.success_mp
+
+def test_omp_removal_analyticalwell_input(substance_name = 'AMPA'):
+    ''' calculate the removal of a default substance.'''
+
+    # Lets start with a simple example defining a HydroChemicalSchematisation object for a phreatic aquifer:
+
+    phreatic_schematisation = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
+                                                        computation_method='analytical',
+                                                        removal_function = 'omp',
+                                                        well_discharge=-7500, #m3/day
+                                                        recharge_rate=0.0008, #m/day
+                                                        thickness_vadose_zone_at_boundary=5, #m
+                                                        thickness_shallow_aquifer=10,  #m
+                                                        thickness_target_aquifer=40, #m
+                                                        hor_permeability_target_aquifer=35, #m/day
+                                                        redox_vadose_zone='anoxic',
+                                                        redox_shallow_aquifer='anoxic',
+                                                        redox_target_aquifer='deeply_anoxic',
+                                                        pH_target_aquifer=7.,
+                                                        temp_water=11.,
+                                                        name='benzene',
+                                                        diffuse_input_concentration = 100, #ug/L
+                                                        )
+
+    # The parameters from the HydroChemicalSchematisation class are added as attributes to
+    # the class and can be accessed for example:
+    phreatic_schematisation.schematisation_type
+    phreatic_schematisation.well_discharge
+    phreatic_schematisation.porosity_shallow_aquifer
+
+    # If not defined, default values are used for the rest of the parameters. To view all parameters in the schematisation:
+    phreatic_schematisation.__dict__
+
+    # Step 2: Run the AnalyticalWell class
+    # =====================================
+    # Next we create an AnalyticalWell object for the HydroChemicalSchematisation object we just made.
+    phreatic_well = AW.AnalyticalWell(phreatic_schematisation)
+
+    # Then we calculate the travel time for each of the zones unsaturated, shallow aquifer and target aquifer zones
+    # by running the .phreatic() function for the well object. 
+    phreatic_well.phreatic()
+
+    # The total travel time can be plotted as a function of radial distance from the well, or as a function
+    # of the cumulative fraction of abstracted water: 
+    radial_plot = phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 2000], ylim=[1e3, 1e6])
+    cumulative_plot = phreatic_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
+
+    # .. image:: https://github.com/KWR-Water/sutra2/blob/main/docs/_images/travel_time_versus_radial_distance_phreatic.png?raw=true
+    #   :width: 600
+    #   :alt: travel_time_versus_radial_distance_phreatic.png
+
+    # .. image:: https://github.com/KWR-Water/sutra2/blob/main/docs/_images/travel_time_versus_cumulative_abs_water_phreatic.png?raw=true
+    #   :width: 600
+    #   :alt: travel_time_versus_cumulative_abs_water_phreatic.png
+
+    # From the AnalyticalWell class two other important outputs are:
+
+    # * df_particle - Pandas dataframe with data about the different flowlines per zone (unsaturated/shallow/target)
+    # * df_flowline - Pandas dataframe with data about the flowlines per flowline (eg. total travel time per flowline)
+
+    # Step 3: View the Substance class (Optional)
+    # ===========================================
+    # You can retrieve the default substance parameters used to calculate the removal in the
+    # SubstanceTransport class. The data are stored in a dictionary
+    test_substance = ST.Substance(substance_name=substance_name)
+    test_substance.substance_dict
+
+
+    # Step 4: Run the SubstanceTransport class
+    # ========================================
+    # To calculate the removal and the steady-state concentration in each zone, create a concentration
+    # object by running the SubstanceTransport class with the phreatic_well object and specifying
+    # the OMP (or pathogen) of interest.
+
+    # In this example we use benzene. First we create the object and view the substance properties:
+    phreatic_concentration = ST.SubstanceTransport(well = phreatic_well, substance = substance_name)
+    phreatic_concentration.removal_parameters
+    # or via 'substance.substance_dict' ('default database parameters only', if available)
+    phreatic_concentration.substance.substance_dict
+
+    # .. Optional: You may specify a different value for the substance parameters, for example
+    # .. a different half-life for the anoxic redox zone. This can be input in the HydroChemicalSchematisation
+    # .. and this will be used in the calculation for the removal for the OMP. The AnalyticalWell and 
+    # .. phreatic() functions must be rerun:
+       
+    # Optional: You may specify a different value for the substance parameters, for example
+    # a different half-life for the anoxic redox zone. This can be input in the SubstanceTransport
+    # and this will be used in the calculation for the removal for the OMP. The SubstanceTransportclass
+    # must be reloaded with the new input.
+    phreatic_concentration = ST.SubstanceTransport(well = phreatic_well, substance = 'benzene',
+                                                partition_coefficient_water_organic_carbon=2,
+                                                dissociation_constant=1,
+                                                halflife_suboxic=12, 
+                                                halflife_anoxic=420, 
+                                                halflife_deeply_anoxic=6000)
+
+    # If you have specified values for the substance (e.g. half-life, pKa, log_Koc),
+    # the default value is overriden and used in the calculation of the removal. You can
+    # view the updated removal parameters ('substance dictionary') from the concentration object:
+    phreatic_concentration.removal_parameters
+
+    # Then we can compute the removal by running the 'compute_omp_removal' function:
+    # phreatic_concentration.compute_omp_removal()
+    phreatic_concentration.compute_omp_removal()
+
 
 #=======
 
