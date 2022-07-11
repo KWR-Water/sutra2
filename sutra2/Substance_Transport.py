@@ -793,12 +793,23 @@ class SubstanceTransport():
 
             """
 
-        self.df_flowline['input_concentration'] = self.well.schematisation.diffuse_input_concentration
-        self.df_particle['input_concentration'] = None
-        self.df_particle['steady_state_concentration'] = None
+        # load (diffuse) input concentration    
+        self.df_flowline.loc[:,'input_concentration'] = self.well.schematisation.diffuse_input_concentration
+        self.df_particle.loc[:,'input_concentration'] = None
+        if 'steady_state_concentration' not in self.df_particle.columns:
+            # Steady state concentration [-]
+            self.df_particle.loc[:,'steady_state_concentration'] = None
+        # First value of input_concentration/steady_state_concentration equals diffuse input concentration of pathline
+        for pid in self.df_flowline.index:
+            self.df_particle.loc[pid,"input_concentration"].iloc[0] = self.df_flowline.loc[pid,'input_concentration']
+            self.df_particle.loc[pid,"steady_state_concentration"].iloc[0] = self.df_flowline.loc[pid,'input_concentration']
 
-        self.df_particle.loc[self.df_particle.zone=='surface', 'input_concentration'] = self.well.schematisation.diffuse_input_concentration
-        self.df_particle.loc[self.df_particle.zone=='surface', 'steady_state_concentration'] = self.well.schematisation.diffuse_input_concentration
+        # self.df_flowline['input_concentration'] = self.well.schematisation.diffuse_input_concentration
+        # self.df_particle['input_concentration'] = None
+        # self.df_particle['steady_state_concentration'] = None
+
+        # self.df_particle.loc[self.df_particle.zone=='surface', 'input_concentration'] = self.well.schematisation.diffuse_input_concentration
+        # self.df_particle.loc[self.df_particle.zone=='surface', 'steady_state_concentration'] = self.well.schematisation.diffuse_input_concentration
 
         if self.well.schematisation.point_input_concentration:
             ''' point contamination '''
