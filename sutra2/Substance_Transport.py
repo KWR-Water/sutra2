@@ -546,7 +546,8 @@ class SubstanceTransport():
             default_removal_parameters = self.organism.organism_dict
 
         # iterate through the dictionary keys
-        for key, value in user_removal_parameters.items():
+        # @Steven: check of over user_removal_parameters moet worden geïtereerd?! --> ipv over default_parameters
+        for key, value in default_removal_parameters.items():
             if type(value) is dict:
                 for tkey, cvalue in value.items():
                     if cvalue is None: #reassign the value from the default dict if not input by the user
