@@ -347,22 +347,26 @@ Also, we can plot the log removal along pathlines in a cross-section (optional)
 Step 4b: Calculate the OMP removal
 ========================================
 Alternatively, you can calculate the removal of organic micropollutants (OMP). As example,
-we take the default removal parameters for a variety of substances.
-Note: For OMP you will have to specify values for substances (e.g. half-life, pKa, log_Koc).
+we take the default removal parameters for the substances 'AMPA'.
+Note: For OMP you will have to specify values relevant for substances (e.g. half-life, pKa, log_Koc).
 Any/all default values will be stored and used in the calculation of the removal. 
+Note that by default the class expects the removal of microbial organisms copied from removal_function 
+entered in modpath_phrea. We have to explicitly enter the removal_function below for removal op substances.
+removal_function == 'omp'
 
 .. ipython:: python
 
-    # substance (solani)
-    substance_name = 'solani'
-    # Calculate advective microbial removal
-    modpath_removal = ST.SubstanceTransport(modpath_phrea,
+    # substance (AMPA)
+    substance_name = 'AMPA'
+    # Calculate removal of organic micro-pollutants (removal_function = 'omp')
+    modpath_removal = ST.SubstanceTransport(well: modpath_phrea,
                             substance = substance_name,
                             partition_coefficient_water_organic_carbon=None,
                             dissociation_constant=None,
                             halflife_suboxic=None,
                             halflife_anoxic=None,
                             halflife_deeply_anoxic=None,
+                            removal_function = 'omp',
                             )
 
 View the updated removal_parameters dictionary from the SubstanceTransport object

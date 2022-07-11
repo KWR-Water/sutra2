@@ -1814,7 +1814,9 @@ class AnalyticalWell():
 
         # change df_particle index to 'flowline_id'
         df_particle.index = df_particle["flowline_id"].values
-
+        # change df_flowline index to 'flowline_id'
+        df_flowline.index = df_flowline["flowline_id"].values
+        
         return df_flowline, df_particle
 
     def phreatic(self,

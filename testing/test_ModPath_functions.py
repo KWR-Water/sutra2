@@ -1686,6 +1686,14 @@ def test_omp_removal_analyticalwell_input(substance_name = 'AMPA'):
     # phreatic_concentration.compute_omp_removal()
     phreatic_concentration.compute_omp_removal()
 
+    # Once the removal has been calculated, you can view the steady-state concentration
+    # and breakthrough time per zone for the OMP in the df_particle:
+    phreatic_concentration.df_particle[['flowline_id', 'zone', 'steady_state_concentration', 'travel_time']].head(4)
+
+    # View the steady-state concentration of the flowline or the steady-state
+    # contribution of the flowline to the concentration in the well
+    phreatic_concentration.df_flowline[['flowline_id', 'breakthrough_concentration', 'total_breakthrough_travel_time']].head(5)
+
 
 #=======
 

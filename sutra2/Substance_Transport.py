@@ -665,13 +665,15 @@ class SubstanceTransport():
         '''
 
 
-        # if log_Koc is zero, assign value of zero
-        if self.df_particle.log_Koc[0] == 0:
-            self.df_particle['Koc_temperature_correction'] = 0
-        elif self.well.schematisation.temp_correction_Koc:
-            self.df_particle['Koc_temperature_correction'] = 10 ** self.df_particle.log_Koc * 10 ** (1913 * (1 / (self.df_particle.temp_water + 273.15) - 1 / (20 + 273.15)))
+        # empty Koc_temperature_correction series to start with
+        self.df_particle['Koc_temperature_correction'] = 0
+        if self.well.schematisation.temp_correction_Koc:
+            self.df_particle.loc[self.df_particle.log_Koc != 0,'Koc_temperature_correction'] = 10 ** self.df_particle.log_Koc * 10 ** (1913 * (1 / (self.df_particle.temp_water + 273.15) - 1 / (20 + 273.15)))
         else:
-            self.df_particle['Koc_temperature_correction'] = self.df_particle.log_Koc
+            self.df_particle.loc[:,'Koc_temperature_correction'] = self.df_particle.loc[:,"log_Koc"]
+        
+        # if log_Koc is zero, assign value of zero
+        self.df_particle.loc[self.df_particle.log_Koc == 0,'Koc_temperature_correction'] = 0
 
     def _calculate_state_concentration_in_zone(self):
         '''
@@ -697,30 +699,30 @@ class SubstanceTransport():
             c_in = 100 - 100 * (1 - (DOC_TOC_ratio + (1 - DOC_TOC_ratio) / (1 + K_oc * TOC_inf  * 0.000001)))
             self.df_particle.loc[self.df_particle.zone=='surface', 'input_concentration']=c_in
 
-        for i in range(len(self.df_particle)-1):
-            if self.df_particle.steady_state_concentration.loc[i+1] is None:
+        for i in range(len(self.df_particle)):
+            if self.df_particle.steady_state_concentration.iloc[i] is None:
 
                 # if omp is persistent, value at end of zone equal to value incoming to zone
-                if self.df_particle.omp_half_life.loc[i+1] == 1e99:
-                    self.df_particle.at[i+1, 'steady_state_concentration'] = self.df_particle.steady_state_concentration.loc[i]
+                if self.df_particle.omp_half_life.iloc[i] == 1e99:
+                    self.df_particle.steady_state_concentration.iloc[i] = self.df_particle.steady_state_concentration.iloc[i-1]
 
                 # Column O in Phreatic excel sheet
                 # # AH 300 limit only to avoid very small numnbers, makes no difference for other calculations therefore left in
                 # Put back in, otherwise there is an error there are too many numbers in the output
                 # can't reproduce the error, so take out again
                 
-                elif (self.df_particle.travel_time.loc[i+1] * self.df_particle.retardation.loc[i+1]
-                                                                            / self.df_particle.omp_half_life_temperature_corrected.loc[i+1]) >300:
-                    self.df_particle.at[i+1, 'steady_state_concentration'] = 0
+                elif (self.df_particle.travel_time.iloc[i] * self.df_particle.retardation.iloc[i]
+                                                                            / self.df_particle.omp_half_life_temperature_corrected.iloc[i]) >300:
+                    self.df_particle.steady_state_concentration.iloc[i] = 0
 
                 # otherwise, calculate the outcoming concentration from the zone, given the input concentration to the zone.
                 # in the case of the vadose zone, the incoming concentration is the initial concentration
                 else:
-                    self.df_particle.at[i+1, 'steady_state_concentration'] = (self.df_particle.steady_state_concentration.loc[i]
-                                                                            / (2 ** (self.df_particle.travel_time.loc[i+1] * self.df_particle.retardation.loc[i+1]
-                                                                            / self.df_particle.omp_half_life_temperature_corrected.loc[i+1])))
+                    self.df_particle.steady_state_concentration.iloc[i] = (self.df_particle.steady_state_concentration.iloc[i-1]
+                                                                            / (2 ** (self.df_particle.travel_time.iloc[i] * self.df_particle.retardation.iloc[i]
+                                                                            / self.df_particle.omp_half_life_temperature_corrected.iloc[i])))
 
-    def _calculcate_total_breakthrough_travel_time(self):
+    def _calculate_total_breakthrough_travel_time(self):
         ''' Calculate the total time for breakthrough for each flowline at the well
 
         Returns
@@ -871,7 +873,7 @@ class SubstanceTransport():
 
         self.df_particle['breakthrough_travel_time'] = self.df_particle.retardation * self.df_particle.travel_time
 
-        self._calculcate_total_breakthrough_travel_time()
+        self._calculate_total_breakthrough_travel_time()
 
         # reduce the amount of text per line by extracting the following parameters
         self.compute_contamination_for_date = self.well.schematisation.compute_contamination_for_date

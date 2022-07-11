@@ -1,5 +1,5 @@
 sutra2
-=====
+======
 
 .. toctree::
    :maxdepth: 2
