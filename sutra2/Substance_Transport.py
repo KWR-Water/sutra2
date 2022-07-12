@@ -731,16 +731,16 @@ class SubstanceTransport():
             Column 'total_breakthrough_travel_time': float
 
         '''
-        self.df_flowline['total_breakthrough_travel_time']  = ""
-        self.df_flowline['breakthrough_concentration']  = ""
+        self.df_flowline['total_breakthrough_travel_time']  = 0
+        self.df_flowline['breakthrough_concentration']  = 0.
 
-        for i in range(len(self.df_flowline)):
-            flowline_id = i + 1
+        for fid in self.df_flowline.index: # range(len(self.df_flowline)):
+            # flowline_id = i + 1
 
-            df = self.df_particle.loc[self.df_particle['flowline_id'] == flowline_id]
-            df.fillna(0)['breakthrough_travel_time']
-            self.df_flowline.at[i, 'total_breakthrough_travel_time'] = sum(df.fillna(0)['breakthrough_travel_time'])
-            self.df_flowline.at[i, 'breakthrough_concentration'] = df['steady_state_concentration'].iloc[-1]
+            # df = self.df_particle.loc[fid,:]
+            # df.fillna(0)['breakthrough_travel_time']
+            self.df_flowline.at[fid, 'total_breakthrough_travel_time'] = sum(self.df_particle.loc[fid,:].fillna(0)['breakthrough_travel_time'])
+            self.df_flowline.at[fid, 'breakthrough_concentration'] = self.df_particle.loc[fid,'steady_state_concentration'].iloc[-1]
 
     def compute_omp_removal(self):
         """ 
