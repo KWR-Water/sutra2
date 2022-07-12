@@ -1662,7 +1662,7 @@ class AnalyticalWell():
                         distance,
                         self.schematisation.model_width,
                          self.schematisation.ground_surface,
-                         None,
+                         self.schematisation.redox_vadose_zone, # None
                          self.schematisation.temp_water,
                          None,
                          None,

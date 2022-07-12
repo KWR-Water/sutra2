@@ -450,6 +450,7 @@ def test_phreatic_diffuse_point_source():
 
     phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       computation_method= 'analytical',
+                                      removal_function = 'omp',
                                       what_to_export='omp',
                                       well_discharge=-319.4*24, #m3/day
                                       porosity_vadose_zone=0.38,
@@ -499,12 +500,18 @@ def test_phreatic_diffuse_point_source():
     phreatic_conc = SubstanceTransport(phreatic_well, substance = 'OMP-X')
     phreatic_conc.compute_omp_removal()
     df_well_concentration = phreatic_conc.compute_concentration_in_well_at_date()
-
+    df_well_concentration = df_well_concentration.astype({'time': 'int32', 'date': 'datetime64[ns]', 'total_concentration_in_well': 'float64'})
+    
     df_well_concentration_test = read_csv(path / 'phreatic_diffuse_point_test.csv', index_col=0)
     # AH the assert frame_equal is being difficult, so have to specify each data type
     df_well_concentration_test = df_well_concentration_test.astype({'time': 'int32', 'date': 'datetime64[ns]', 'total_concentration_in_well': 'float64'}) #etc
 
-    assert_frame_equal(df_well_concentration, df_well_concentration_test, check_dtype=False)
+    # relative tolerance
+    rtol = 5.e-3
+    # absolute tolerance
+    atol = 1e99 # (not limiting)
+    assert_frame_equal(df_well_concentration, df_well_concentration_test, check_dtype=False,
+                        rtol = rtol, atol = atol)
 
 #%%
 
@@ -514,6 +521,7 @@ def test_phreatic_diffuse_only_source():
 
     phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                     computation_method= 'analytical',
+                                    removal_function = 'omp',
                                     what_to_export='omp',
                                     well_discharge=-319.4*24, #m3/day
                                     porosity_vadose_zone=0.38,
@@ -561,8 +569,13 @@ def test_phreatic_diffuse_only_source():
     df_well_concentration_test = read_csv(path / 'phreatic_diffuse_only_test.csv', index_col=0)
     # AH the assert frame_equal is being difficult, so have to specify each data type
     df_well_concentration_test = df_well_concentration_test.astype({'time': 'int32', 'date': 'datetime64[ns]', 'total_concentration_in_well': 'float64'})
-
-    assert_frame_equal(df_well_concentration, df_well_concentration_test, check_dtype=False)
+    
+    # relative tolerance
+    rtol = 5.e-3
+    # absolute tolerance
+    atol = 1e99 # (not limiting)
+    assert_frame_equal(df_well_concentration, df_well_concentration_test, check_dtype=False,
+                        rtol = rtol, atol = atol)
 
 #%%
 def test_phreatic_point_only_source():
@@ -571,6 +584,7 @@ def test_phreatic_point_only_source():
 
     phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                     computation_method= 'analytical',
+                                    removal_function = 'omp',
                                     what_to_export='omp',
                                     well_discharge=-319.4*24, #m3/day
                                     porosity_vadose_zone=0.38,
@@ -626,7 +640,12 @@ def test_phreatic_point_only_source():
     # AH the assert frame_equal is being difficult, so have to specify each data type
     df_well_concentration_test = df_well_concentration_test.astype({'time': 'int32', 'date': 'datetime64[ns]', 'total_concentration_in_well': 'float64'})
 
-    assert_frame_equal(df_well_concentration, df_well_concentration_test, check_dtype=False)
+    # relative tolerance
+    rtol = 5.e-3
+    # absolute tolerance
+    atol = 1e99 # (not limiting)
+    assert_frame_equal(df_well_concentration, df_well_concentration_test, check_dtype=False,
+                        rtol = rtol, atol = atol)
 
 def test_drawdown_lower_than_target_aquifer():
     ''' Tests whether the correct exception is raised when the drawdown of the 

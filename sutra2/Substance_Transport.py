@@ -547,7 +547,7 @@ class SubstanceTransport():
 
         # iterate through the dictionary keys
         # @Steven: check of over user_removal_parameters moet worden geïtereerd?! --> ipv over default_parameters
-        for key, value in default_removal_parameters.items():
+        for key, value in user_removal_parameters.items():
             if type(value) is dict:
                 for tkey, cvalue in value.items():
                     if cvalue is None: #reassign the value from the default dict if not input by the user
@@ -648,7 +648,7 @@ class SubstanceTransport():
         else:
             self.df_particle['omp_half_life_temperature_corrected'] = self.df_particle['omp_half_life']
 
-        self.df_particle.loc[ self.df_particle.omp_half_life == 1e99, 'omp_half_life_temperature_corrected'] = 1e99
+        self.df_particle.loc[self.df_particle.omp_half_life == 1e99, 'omp_half_life_temperature_corrected'] = 1e99
 
     def _calculate_Koc_temperature_correction(self):
         ''' Corrects the OMP Koc for temperature if 'temp_correction_Koc' is 'True' in the HydroChemicalSchematisation.
@@ -668,8 +668,8 @@ class SubstanceTransport():
         # empty Koc_temperature_correction series to start with
         self.df_particle['Koc_temperature_correction'] = 0
         if self.well.schematisation.temp_correction_Koc:
-            self.df_particle.loc[self.df_particle.log_Koc != 0,'Koc_temperature_correction'] = 10 ** self.df_particle[self.df_particle.log_Koc != 0,"log_Koc"] * \
-                                                                        10 ** (1913 * (1 / (self.df_particle[self.df_particle.log_Koc != 0,"temp_water"] + 273.15) - 1 / (20 + 273.15)))
+            self.df_particle.loc[self.df_particle.log_Koc != 0,'Koc_temperature_correction'] = 10 ** self.df_particle.loc[self.df_particle.log_Koc != 0,"log_Koc"] * \
+                                                                        10 ** (1913 * (1 / (self.df_particle.loc[self.df_particle.log_Koc != 0,"temp_water"] + 273.15) - 1 / (20 + 273.15)))
         else:
             self.df_particle.loc[:,'Koc_temperature_correction'] = self.df_particle.loc[:,"log_Koc"]
         
@@ -704,7 +704,7 @@ class SubstanceTransport():
             if self.df_particle.steady_state_concentration.iloc[i] is None:
 
                 # if omp is persistent, value at end of zone equal to value incoming to zone
-                if self.df_particle.omp_half_life.iloc[i] == 1e99:
+                if (self.df_particle.omp_half_life.iloc[i] == 1e99) | np.isnan(self.df_particle.omp_half_life_temperature_corrected.iloc[i]):
                     self.df_particle.steady_state_concentration.iloc[i] = self.df_particle.steady_state_concentration.iloc[i-1]
 
                 # Column O in Phreatic excel sheet
@@ -1665,11 +1665,11 @@ class SubstanceTransport():
         flowline_ID = list(df_particle.index.unique())
         for fid in flowline_ID:
 
-            x_points = df_particle.loc[df_particle.index == fid, "xcoord"].values
-#           y_points = df_particle.loc[df_particle.index == fid, "ycoord"].values
-            z_points = df_particle.loc[df_particle.index == fid, "zcoord"].values
+            x_points = df_particle.loc[fid, "xcoord"].values
+#           y_points = df_particle.loc[fid, "ycoord"].values
+            z_points = df_particle.loc[fid, "zcoord"].values
             # Concentration along pathlines
-            conc_points = df_particle.loc[df_particle.index == fid, "steady_state_concentration"].values
+            conc_points = df_particle.loc[fid, "steady_state_concentration"].values
             # Starting concentration of pathline
             starting_concentration = df_flowline.loc[fid,"starting_concentration"]
             # Concentration relative to input
