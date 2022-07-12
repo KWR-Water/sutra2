@@ -1245,14 +1245,14 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
         
         ## Travel time per zone ##
         # Vadose zone
-        summary_traveltimes_mp.loc[fid,"travel_time_vadose_zone"] = abs(df_particle_mp.loc[(df_particle_mp["flowline_id"] == fid) & (df_particle_mp["material"] == "shallow_aquifer"),"total_travel_time"].values.min() - \
-                                                                    df_particle_mp.loc[(df_particle_mp["flowline_id"] == fid) & (df_particle_mp["material"] == "vadose_zone"),"total_travel_time"].values.min())
+        summary_traveltimes_mp.loc[fid,"travel_time_vadose_zone"] = abs(df_particle_mp.loc[(df_particle_mp["flowline_id"] == fid) & (df_particle_mp["zone"] == "shallow_aquifer"),"total_travel_time"].values.min() - \
+                                                                    df_particle_mp.loc[(df_particle_mp["flowline_id"] == fid) & (df_particle_mp["zone"] == "vadose_zone"),"total_travel_time"].values.min())
         # Shallow aquifer
-        summary_traveltimes_mp.loc[fid,"travel_time_shallow_aquifer"] = abs(df_particle_mp.loc[(df_particle_mp["flowline_id"] == fid) & (df_particle_mp["material"] == "target_aquifer"),"total_travel_time"].values.min() - \
-                                                                    df_particle_mp.loc[(df_particle_mp["flowline_id"] == fid) & (df_particle_mp["material"] == "shallow_aquifer"),"total_travel_time"].values.min())
+        summary_traveltimes_mp.loc[fid,"travel_time_shallow_aquifer"] = abs(df_particle_mp.loc[(df_particle_mp["flowline_id"] == fid) & (df_particle_mp["zone"] == "target_aquifer"),"total_travel_time"].values.min() - \
+                                                                    df_particle_mp.loc[(df_particle_mp["flowline_id"] == fid) & (df_particle_mp["zone"] == "shallow_aquifer"),"total_travel_time"].values.min())
         # Target aquifer
-        summary_traveltimes_mp.loc[fid,"travel_time_target_aquifer"] = abs(df_particle_mp.loc[(df_particle_mp["flowline_id"] == fid) & (df_particle_mp["material"] == "well1"),"total_travel_time"].values.min() - \
-                                                                    df_particle_mp.loc[(df_particle_mp["flowline_id"] == fid) & (df_particle_mp["material"] == "target_aquifer"),"total_travel_time"].values.min())
+        summary_traveltimes_mp.loc[fid,"travel_time_target_aquifer"] = abs(df_particle_mp.loc[(df_particle_mp["flowline_id"] == fid) & (df_particle_mp["zone"] == "well1"),"total_travel_time"].values.min() - \
+                                                                    df_particle_mp.loc[(df_particle_mp["flowline_id"] == fid) & (df_particle_mp["zone"] == "target_aquifer"),"total_travel_time"].values.min())
 
     # df_particle file name (analytical well data)
     summary_fname_an = os.path.join(well1_mp.dstroot,well1_mp.schematisation_type + "_summary_traveltimes_analytical.csv")
@@ -1701,6 +1701,7 @@ def test_omp_removal_modpath_input(substance_name = 'AMPA'):
 
     phreatic_schematisation = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                                         computation_method = 'modpath',
+                                                        removal_function = 'omp',
                                                         well_discharge=-7500, #m3/day
                                                         recharge_rate=0.0008, #m/day
                                                         thickness_vadose_zone_at_boundary=5, #m
@@ -1786,11 +1787,11 @@ def test_omp_removal_modpath_input(substance_name = 'AMPA'):
 
     # Once the removal has been calculated, you can view the steady-state concentration
     # and breakthrough time per zone for the OMP in the df_particle:
-    modpath_removal.df_particle[['flowline_id', 'zone', 'steady_state_concentration', 'travel_time']].head(4)
+    modpath_removal.df_particle[['zone', 'steady_state_concentration', 'travel_time']].head(4)
 
     # View the steady-state concentration of the flowline or the steady-state
     # contribution of the flowline to the concentration in the well
-    modpath_removal.df_flowline[['flowline_id', 'breakthrough_concentration', 'total_breakthrough_travel_time']].head(5)
+    modpath_removal.df_flowline[['breakthrough_concentration', 'total_breakthrough_travel_time']].head(5)
 
 #=======
 

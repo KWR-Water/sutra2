@@ -2657,7 +2657,6 @@ class ModPathWell:
                     df_particle_data[f"{iPG}-{iNode}-{iPart}"] = df_particle_data[f"{iPG}-{iNode}-{iPart}"].drop_duplicates(
                         subset=["x","y","z","time"], keep = 'first') 
 
-                    
                     for iParm in parm_list:
 
                         # Material property array
@@ -2686,7 +2685,7 @@ class ModPathWell:
                     colnames_df_particle = {"x": "xcoord","y":"ycoord","z":"zcoord","time":"total_travel_time","prsity_uncorr":"porosity",
                                 "solid_density": "solid_density", "fraction_organic_carbon": "fraction_organic_carbon", "redox": "redox", 
                                 "dissolved_organic_carbon":	"dissolved_organic_carbon", "pH": "pH",	"temp_water": "temp_water",
-                                "grainsize": "grainsize", "material": "material"}
+                                "grainsize": "grainsize", "material": "zone"}
                     df_particle_data[f"{iPG}-{iNode}-{iPart}"].rename(columns = colnames_df_particle, 
                                                                                     inplace = True, errors = "raise")
                     df_particle_data[f"{iPG}-{iNode}-{iPart}"] = df_particle_data[f"{iPG}-{iNode}-{iPart}"].drop_duplicates(subset=["xcoord","ycoord","zcoord","total_travel_time"], keep = 'first')                                                                
@@ -2701,7 +2700,7 @@ class ModPathWell:
             colnames_df_particle = {"x": "xcoord","y":"ycoord","z":"zcoord","time":"total_travel_time","prsity_uncorr":"porosity",
                                 "solid_density": "solid_density", "fraction_organic_carbon": "fraction_organic_carbon", "redox": "redox", 
                                 "dissolved_organic_carbon":	"dissolved_organic_carbon", "pH": "pH",	"temp_water": "temp_water",
-                                "grainsize": "grainsize", "material": "material"}
+                                "grainsize": "grainsize", "material": "zone"}
             df_particle = pd.DataFrame(columns = colnames_df_particle)
 
         # y-coordinate equals 0.5 * self.delc[0] in axisymmetric or 2D model
@@ -2921,6 +2920,10 @@ class ModPathWell:
             if self.schematisation_type in ["phreatic"]:
                 self.calc_traveltime_vadose_analytical(vadose_parameters = self.schematisation_dict["vadose_parameters"])
 
+        # Add travel time from time difference
+        for fid in self.df_particle.index.unique():
+            self.df_particle.loc[fid,"travel_time"] = np.array([0.] + list(self.df_particle.loc[fid,"total_travel_time"].values - self.df_particle.loc[fid,"total_travel_time"].shift(1).values)[1:])
+            
         # df_particle file name
         particle_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_particle.csv")
         # Save df_particle
@@ -3217,7 +3220,7 @@ class ModPathWell:
             df_cols = ["xcoord","ycoord","zcoord","total_travel_time",
                         "porosity","solid_density","fraction_organic_carbon",
                         "redox","dissolved_organic_carbon","pH","temp_water",
-                        "grainsize","material"]
+                        "grainsize","zone"]
             
             # Define index of phreatic pathline df
             flowline_id = self.df_particle.index.unique()
@@ -3247,7 +3250,7 @@ class ModPathWell:
             df_phreatic.loc[df_index,"pH"] = np.array([vadose_parameters[dict_key]['pH']] * len(flowline_id))
             df_phreatic.loc[df_index,"temp_water"] = np.array([vadose_parameters[dict_key]['temp_water']] * len(flowline_id))
             df_phreatic.loc[df_index,"grainsize"] = np.array([vadose_parameters[dict_key]['grainsize']] * len(flowline_id))
-            df_phreatic.loc[df_index,"material"] = np.array(['vadose_zone'] * len(flowline_id))
+            df_phreatic.loc[df_index,"zone"] = np.array(['vadose_zone'] * len(flowline_id))
             
             # Append records to df_particle dataframe 
             self.df_particle = self.df_particle.append(df_phreatic)
