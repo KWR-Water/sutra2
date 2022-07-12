@@ -829,37 +829,48 @@ class SubstanceTransport():
 
             if self.well.schematisation.schematisation_type == 'phreatic':
                 head = self.well.schematisation._calculate_hydraulic_head_phreatic(distance=distance)
-                df_flowline, df_particle = self.well._add_phreatic_point_sources(distance=distance,
+                df_flowline_points, df_particle_points = self.well._add_phreatic_point_sources(distance=distance,
                                             depth_point_contamination=depth,
                                             cumulative_fraction_abstracted_water=cumulative_fraction_abstracted_water)
 
             elif self.well.schematisation.schematisation_type == 'semiconfined':
                 bottom_vadose_zone = self.well.schematisation.bottom_vadose_zone_at_boundary
 
-                df_flowline, df_particle = self.well._add_semiconfined_point_sources(distance=distance,
+                df_flowline_points, df_particle_points = self.well._add_semiconfined_point_sources(distance=distance,
                                         depth_point_contamination=depth,  )
+            # Assign flowline id to point
+            df_particle_points['flowline_id'] += ind
+            df_flowline_points['flowline_id'] += ind
+            # reindex df_particle and df_flowline
+            df_particle_points.index = df_particle_points.flowline_id
+            df_flowline_points.index = df_flowline_points.flowline_id
 
-            df_particle['flowline_id'] = df_particle['flowline_id'] + ind
+            # Add (input) concentration to point source df's
+            df_flowline_points.loc[:,'input_concentration'] = self.well.schematisation.point_input_concentration
+            df_particle_points.loc[:,'input_concentration'] = None
+            df_particle_points.loc[:,'steady_state_concentration'] = None
 
-            df_flowline['input_concentration'] = self.well.schematisation.point_input_concentration
-            df_particle['input_concentration'] = None
-            df_particle['steady_state_concentration'] = None
-            df_particle.loc[self.df_particle.zone=='surface', 'input_concentration'] = self.well.schematisation.point_input_concentration
-            df_particle.loc[self.df_particle.zone=='surface', 'steady_state_concentration'] = self.well.schematisation.point_input_concentration
+            for fid in df_particle_points.flowline_id.unique():
+                df_particle_points.loc[fid, 'input_concentration'].iloc[0] = df_flowline_points.at[fid,'input_concentration']
+                df_particle_points.loc[fid, 'steady_state_concentration'].iloc[0] = df_flowline_points.at[fid,'input_concentration']
 
-            df_flowline['flowline_id'] = df_flowline['flowline_id'] + ind
-            df_flowline['flowline_type'] = "point_source"
-            df_flowline['flowline_discharge'] = abs(self.well.schematisation.discharge_point_contamination)
+            # Add flow/discharge data to point particle df's
+            df_flowline_points.loc[:,'flowline_type'] = "point_source"
+            df_flowline_points.loc[:,'flowline_discharge'] = abs(self.well.schematisation.discharge_point_contamination)
 
             #AH_todo, something here to loop through different point sources if more than one.
 
-            self.df_particle = self.df_particle.append(df_particle)
-            self.df_particle.reset_index(drop=True, inplace=True)
+            # Add point particles to self.df_particle and self.df_flowline & reindex based on flowline_id
+            self.df_particle = self.df_particle.append(df_particle_points)
+            self.df_particle.index = self.df_particle.flowline_id
+            # self.df_particle.reset_index(drop=True, inplace=True)
 
-            self.df_flowline = self.df_flowline.append(df_flowline)
-            self.df_flowline.reset_index(drop=True, inplace=True)
+            self.df_flowline = self.df_flowline.append(df_flowline_points)
+            self.df_flowline.index = self.df_flowline.flowline_id
+            # self.df_flowline.reset_index(drop=True, inplace=True)
 
-            self.df_flowline['substance'] = self.removal_parameters['substance_name']
+            # Add substance name
+            self.df_flowline.loc[:,'substance'] = self.removal_parameters['substance_name']
 
         self._init_omp()
 
