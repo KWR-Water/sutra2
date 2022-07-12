@@ -729,16 +729,15 @@ class SubstanceTransport():
             Column 'total_breakthrough_travel_time': float
 
         '''
-        self.df_flowline['total_breakthrough_travel_time']  = ""
-        self.df_flowline['breakthrough_concentration']  = ""
+        self.df_flowline['total_breakthrough_travel_time']  = 0 # ""
+        self.df_flowline['breakthrough_concentration']  = 0. # ""
 
-        for i in range(len(self.df_flowline)):
-            flowline_id = i + 1
+        for fid in self.df_flowline.index: #range(len(self.df_flowline)):
+            # flowline_id = i + 1
 
-            df = self.df_particle.loc[self.df_particle['flowline_id'] == flowline_id]
-            df.fillna(0)['breakthrough_travel_time']
-            self.df_flowline.at[i, 'total_breakthrough_travel_time'] = sum(df.fillna(0)['breakthrough_travel_time'])
-            self.df_flowline.at[i, 'breakthrough_concentration'] = df['steady_state_concentration'].iloc[-1]
+            df = self.df_particle.loc[self.df_particle['flowline_id'] == fid]
+            self.df_flowline.at[fid, 'total_breakthrough_travel_time'] = sum(df.fillna(0)['breakthrough_travel_time'])
+            self.df_flowline.at[fid, 'breakthrough_concentration'] = df['steady_state_concentration'].iloc[-1]
 
     def compute_omp_removal(self):
         """ 
@@ -816,37 +815,46 @@ class SubstanceTransport():
 
             if self.well.schematisation.schematisation_type == 'phreatic':
                 head = self.well.schematisation._calculate_hydraulic_head_phreatic(distance=distance)
-                df_flowline, df_particle = self.well._add_phreatic_point_sources(distance=distance,
+                df_flowline_points, df_particle_points = self.well._add_phreatic_point_sources(distance=distance,
                                             depth_point_contamination=depth,
                                             cumulative_fraction_abstracted_water=cumulative_fraction_abstracted_water)
 
             elif self.well.schematisation.schematisation_type == 'semiconfined':
                 bottom_vadose_zone = self.well.schematisation.bottom_vadose_zone_at_boundary
 
-                df_flowline, df_particle = self.well._add_semiconfined_point_sources(distance=distance,
+                df_flowline_points, df_particle_points = self.well._add_semiconfined_point_sources(distance=distance,
                                         depth_point_contamination=depth,  )
 
-            df_particle['flowline_id'] = df_particle['flowline_id'] + ind
+            # reindex by flowline_id
+            df_particle_points.loc[:,'flowline_id'] = df_particle_points.loc[:,'flowline_id'] + ind
+            df_particle_points.index = df_particle_points.flowline_id
+            df_flowline_points.loc[:,'flowline_id'] = df_flowline_points.loc[:,'flowline_id'] + ind
+            df_flowline_points.index = df_flowline_points.flowline_id
 
-            df_flowline['input_concentration'] = self.well.schematisation.point_input_concentration
-            df_particle['input_concentration'] = None
-            df_particle['steady_state_concentration'] = None
-            df_particle.loc[self.df_particle.zone=='surface', 'input_concentration'] = self.well.schematisation.point_input_concentration
-            df_particle.loc[self.df_particle.zone=='surface', 'steady_state_concentration'] = self.well.schematisation.point_input_concentration
+            # Set input concentration
+            df_flowline_points.loc[:,'input_concentration'] = self.well.schematisation.point_input_concentration
+            df_particle_points.loc[:,'input_concentration'] = None
+            df_particle_points.loc[:,'steady_state_concentration'] = None
+            for pid in df_particle_points.index.unique():
+                df_particle_points.loc[pid, 'input_concentration'].iloc[0] = df_flowline_points.loc[pid,'input_concentration']
+                df_particle_points.loc[pid, 'steady_state_concentration'].iloc[0] = df_flowline_points.loc[pid,'input_concentration']
 
-            df_flowline['flowline_id'] = df_flowline['flowline_id'] + ind
-            df_flowline['flowline_type'] = "point_source"
-            df_flowline['flowline_discharge'] = abs(self.well.schematisation.discharge_point_contamination)
+            # flowline/discharge data
+            df_flowline_points.loc[:,'flowline_type'] = "point_source"
+            df_flowline_points.loc[:,'flowline_discharge'] = abs(self.well.schematisation.discharge_point_contamination)
 
             #AH_todo, something here to loop through different point sources if more than one.
+            
+            # Voeg punten toe aan self.df_particle en self.df_flowline
+            self.df_particle = self.df_particle.append(df_particle_points)
+            self.df_particle.index = self.df_particle.flowline_id
+            # self.df_particle.reset_index(drop=True, inplace=True)
 
-            self.df_particle = self.df_particle.append(df_particle)
-            self.df_particle.reset_index(drop=True, inplace=True)
+            self.df_flowline = self.df_flowline.append(df_flowline_points)
+            self.df_flowline.index = self.df_flowline.flowline_id
+            # self.df_flowline.reset_index(drop=True, inplace=True)
 
-            self.df_flowline = self.df_flowline.append(df_flowline)
-            self.df_flowline.reset_index(drop=True, inplace=True)
-
-            self.df_flowline['substance'] = self.removal_parameters['substance_name']
+            self.df_flowline.loc[:,'substance'] = self.removal_parameters['substance_name']
 
         self._init_omp()
 
