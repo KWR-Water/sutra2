@@ -732,17 +732,6 @@ class SubstanceTransport():
             Column 'total_breakthrough_travel_time': float
 
         '''
-<<<<<<< HEAD
-        self.df_flowline['total_breakthrough_travel_time']  = 0 # ""
-        self.df_flowline['breakthrough_concentration']  = 0. # ""
-
-        for fid in self.df_flowline.index: #range(len(self.df_flowline)):
-            # flowline_id = i + 1
-
-            df = self.df_particle.loc[self.df_particle['flowline_id'] == fid]
-            self.df_flowline.at[fid, 'total_breakthrough_travel_time'] = sum(df.fillna(0)['breakthrough_travel_time'])
-            self.df_flowline.at[fid, 'breakthrough_concentration'] = df['steady_state_concentration'].iloc[-1]
-=======
         self.df_flowline['total_breakthrough_travel_time']  = 0
         self.df_flowline['breakthrough_concentration']  = 0.
 
@@ -753,7 +742,6 @@ class SubstanceTransport():
             # df.fillna(0)['breakthrough_travel_time']
             self.df_flowline.at[fid, 'total_breakthrough_travel_time'] = sum(self.df_particle.loc[fid,:].fillna(0)['breakthrough_travel_time'])
             self.df_flowline.at[fid, 'breakthrough_concentration'] = self.df_particle.loc[fid,'steady_state_concentration'].iloc[-1]
->>>>>>> check_omp_removal_modpathinput
 
     def compute_omp_removal(self):
         """ 
@@ -858,23 +846,6 @@ class SubstanceTransport():
             df_particle_points.index = df_particle_points.flowline_id
             df_flowline_points.index = df_flowline_points.flowline_id
 
-<<<<<<< HEAD
-            # reindex by flowline_id
-            df_particle_points.loc[:,'flowline_id'] = df_particle_points.loc[:,'flowline_id'] + ind
-            df_particle_points.index = df_particle_points.flowline_id
-            df_flowline_points.loc[:,'flowline_id'] = df_flowline_points.loc[:,'flowline_id'] + ind
-            df_flowline_points.index = df_flowline_points.flowline_id
-
-            # Set input concentration
-            df_flowline_points.loc[:,'input_concentration'] = self.well.schematisation.point_input_concentration
-            df_particle_points.loc[:,'input_concentration'] = None
-            df_particle_points.loc[:,'steady_state_concentration'] = None
-            for pid in df_particle_points.index.unique():
-                df_particle_points.loc[pid, 'input_concentration'].iloc[0] = df_flowline_points.loc[pid,'input_concentration']
-                df_particle_points.loc[pid, 'steady_state_concentration'].iloc[0] = df_flowline_points.loc[pid,'input_concentration']
-
-            # flowline/discharge data
-=======
             # Add (input) concentration to point source df's
             df_flowline_points.loc[:,'input_concentration'] = self.well.schematisation.point_input_concentration
             df_particle_points.loc[:,'input_concentration'] = None
@@ -885,7 +856,6 @@ class SubstanceTransport():
                 df_particle_points.loc[fid, 'steady_state_concentration'].iloc[0] = df_flowline_points.at[fid,'input_concentration']
 
             # Add flow/discharge data to point particle df's
->>>>>>> check_omp_removal_modpathinput
             df_flowline_points.loc[:,'flowline_type'] = "point_source"
             df_flowline_points.loc[:,'flowline_discharge'] = abs(self.well.schematisation.discharge_point_contamination)
 
@@ -896,12 +866,6 @@ class SubstanceTransport():
             self.df_particle.index = self.df_particle.flowline_id
             # self.df_particle.reset_index(drop=True, inplace=True)
 
-<<<<<<< HEAD
-            self.df_flowline = self.df_flowline.append(df_flowline_points)
-            self.df_flowline.index = self.df_flowline.flowline_id
-            # self.df_flowline.reset_index(drop=True, inplace=True)
-
-=======
             # Add point particles to self.df_particle and self.df_flowline & reindex based on flowline_id
             self.df_particle = self.df_particle.append(df_particle_points)
             self.df_particle.index = self.df_particle.flowline_id
@@ -912,7 +876,6 @@ class SubstanceTransport():
             # self.df_flowline.reset_index(drop=True, inplace=True)
 
             # Add substance name
->>>>>>> check_omp_removal_modpathinput
             self.df_flowline.loc[:,'substance'] = self.removal_parameters['substance_name']
 
         self._init_omp()
