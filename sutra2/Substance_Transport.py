@@ -668,7 +668,8 @@ class SubstanceTransport():
         # empty Koc_temperature_correction series to start with
         self.df_particle['Koc_temperature_correction'] = 0
         if self.well.schematisation.temp_correction_Koc:
-            self.df_particle.loc[self.df_particle.log_Koc != 0,'Koc_temperature_correction'] = 10 ** self.df_particle.log_Koc * 10 ** (1913 * (1 / (self.df_particle.temp_water + 273.15) - 1 / (20 + 273.15)))
+            self.df_particle.loc[self.df_particle.log_Koc != 0,'Koc_temperature_correction'] = 10 ** self.df_particle[self.df_particle.log_Koc != 0,"log_Koc"] * \
+                                                                        10 ** (1913 * (1 / (self.df_particle[self.df_particle.log_Koc != 0,"temp_water"] + 273.15) - 1 / (20 + 273.15)))
         else:
             self.df_particle.loc[:,'Koc_temperature_correction'] = self.df_particle.loc[:,"log_Koc"]
         
