@@ -712,7 +712,7 @@ class SubstanceTransport():
                 # Put back in, otherwise there is an error there are too many numbers in the output
                 # can't reproduce the error, so take out again
                 
-                elif (self.df_particle.travel_time.iloc[i] * self.df_particle.retardation.iloc[i]
+                elif (self.df_particle.total_travel_time.iloc[i] * self.df_particle.retardation.iloc[i]
                                                                             / self.df_particle.omp_half_life_temperature_corrected.iloc[i]) >300:
                     self.df_particle.steady_state_concentration.iloc[i] = 0
 
@@ -720,7 +720,7 @@ class SubstanceTransport():
                 # in the case of the vadose zone, the incoming concentration is the initial concentration
                 else:
                     self.df_particle.steady_state_concentration.iloc[i] = (self.df_particle.steady_state_concentration.iloc[i-1]
-                                                                            / (2 ** (self.df_particle.travel_time.iloc[i] * self.df_particle.retardation.iloc[i]
+                                                                            / (2 ** (self.df_particle.total_travel_time.iloc[i] * self.df_particle.retardation.iloc[i]
                                                                             / self.df_particle.omp_half_life_temperature_corrected.iloc[i])))
 
     def _calculate_total_breakthrough_travel_time(self):
@@ -888,7 +888,7 @@ class SubstanceTransport():
 
         self._calculate_state_concentration_in_zone()
 
-        self.df_particle['breakthrough_travel_time'] = self.df_particle.retardation * self.df_particle.travel_time
+        self.df_particle['breakthrough_travel_time'] = self.df_particle.retardation * self.df_particle.total_travel_time
 
         self._calculate_total_breakthrough_travel_time()
 

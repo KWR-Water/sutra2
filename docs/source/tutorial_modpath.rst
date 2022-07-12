@@ -252,7 +252,7 @@ In this example we use solani, which is a plant pathogen. First we create the ob
 
 .. ipython:: python
 
-    phreatic_concentration = SubstanceTransport(modpath_phrea, organism = 'solani',
+    phreatic_concentration = ST.SubstanceTransport(modpath_phrea, organism = 'solani',
                                                 removal_function = 'mbo')
     phreatic_concentration.removal_parameters 
 
@@ -359,7 +359,7 @@ removal_function == 'omp'
     # substance (AMPA)
     substance_name = 'AMPA'
     # Calculate removal of organic micro-pollutants (removal_function = 'omp')
-    modpath_removal = ST.SubstanceTransport(well: modpath_phrea,
+    modpath_removal = ST.SubstanceTransport(well = modpath_phrea,
                             substance = substance_name,
                             partition_coefficient_water_organic_carbon=None,
                             dissociation_constant=None,

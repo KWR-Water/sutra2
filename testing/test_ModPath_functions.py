@@ -1583,7 +1583,7 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
 #     assert modpath_phrea.success_mp
 
 def test_omp_removal_analyticalwell_input(substance_name = 'AMPA'):
-    ''' calculate the removal of a default substance.'''
+    ''' calculate the removal of a default substance using AnalyticalWell class.'''
 
     # Lets start with a simple example defining a HydroChemicalSchematisation object for a phreatic aquifer:
 
@@ -1694,6 +1694,103 @@ def test_omp_removal_analyticalwell_input(substance_name = 'AMPA'):
     # contribution of the flowline to the concentration in the well
     phreatic_concentration.df_flowline[['flowline_id', 'breakthrough_concentration', 'total_breakthrough_travel_time']].head(5)
 
+def test_omp_removal_modpath_input(substance_name = 'AMPA'):
+    ''' calculate the removal of a default substance using ModPathWell class.'''
+
+    # Lets start with a simple example defining a HydroChemicalSchematisation object for a phreatic aquifer:
+
+    phreatic_schematisation = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
+                                                        computation_method = 'modpath',
+                                                        well_discharge=-7500, #m3/day
+                                                        recharge_rate=0.0008, #m/day
+                                                        thickness_vadose_zone_at_boundary=5, #m
+                                                        thickness_shallow_aquifer=10,  #m
+                                                        thickness_target_aquifer=40, #m
+                                                        hor_permeability_target_aquifer=35, #m/day
+                                                        redox_vadose_zone='anoxic',
+                                                        redox_shallow_aquifer='anoxic',
+                                                        redox_target_aquifer='deeply_anoxic',
+                                                        pH_target_aquifer=7.,
+                                                        temp_water=11.,
+                                                        name='benzene',
+                                                        diffuse_input_concentration = 100, #ug/L
+                                                        )
+
+    # Then, we create a ModpathWell object for the HydroChemicalSchematisation object that we just made.
+    # The ModpathWell object requires a dictionary of the subsurface schematisation and a set of boundary conditions
+    # the numerical model has to abide by in calculating flow velocity and direction of flow.
+    phreatic_schematisation.make_dictionary()
+
+    # Step 2: Run the ModpathWell class
+    # =====================================
+    # Next we create an ModpathWell object for the HydroChemicalSchematisation object we just made.
+    # The data files will be stored in location workspace using a given modelname.
+    modpath_phrea = MP.ModPathWell(phreatic_schematisation,
+                                workspace = os.path.join(path,"test7_omp_removal"),
+                                modelname = "phreatic")
+
+    # Now we run the Modpath model, which numerically calculates the flow in the subsurface using the 
+    # 'schematisation' dictionary stored in the HydroChemicalSchematisation object. By default the model will
+    # calculate both the hydraulic head distribution (using modflow: 'run_mfmodel' = True) and
+    # the particle pathlines [X,Y,Z,T-data] (using modpath: 'run_mpmodel' = True) with which OMP removal
+    # or microbial organism ('mbo') removal is later calculated.
+    modpath_phrea.run_model(run_mfmodel = True,
+                        run_mpmodel = True)
+
+    # Step 3: Collect removal parameters
+    # ===========================================
+
+    # Step 3a: View the Substance class (Optional)
+    # ============================================
+    # You can retrieve the default removal parameters used to calculate the removal of organic micropollutants [OMP] 
+    # in the SubstanceTransport class. The data are stored in a dictionary
+    test_substance = ST.Substance(substance_name='benzene')
+    test_substance.substance_dict
+
+    # Step 4: Run the SubstanceTransport class
+    # ========================================
+    # To calculate the removal and the steady-state concentration in each zone (analytical solution) or per particle node (modpath), create a concentration
+    # object by running the SubstanceTransport class with the phreatic_well object and specifying
+    # the OMP or microbial organism (mbo) of interest. 
+    # The type of removal is defined using the option 'removal_function: 'omp' or 'mbo'
+    # All required parameters for removal are stored as 'removal_parameters'.
+
+    # Step 4b: Calculate the OMP removal
+    # ========================================
+    # As example, we take the default removal parameters for the substances 'AMPA'.
+    # Note: For OMP you will have to specify values relevant for substances (e.g. half-life, pKa, log_Koc).
+    # Any/all default values will be stored and used in the calculation of the removal. 
+    # Note that by default the class expects the removal of microbial organisms copied from removal_function 
+    # entered in modpath_phrea. We have to explicitly enter the removal_function below for removal op substances.
+    # removal_function == 'omp'
+
+    # substance (AMPA)
+    substance_name = 'AMPA'
+    # Calculate removal of organic micro-pollutants (removal_function = 'omp')
+    modpath_removal = ST.SubstanceTransport(well = modpath_phrea,
+                            substance = substance_name,
+                            partition_coefficient_water_organic_carbon=None,
+                            dissociation_constant=None,
+                            halflife_suboxic=None,
+                            halflife_anoxic=None,
+                            halflife_deeply_anoxic=None,
+                            removal_function = 'omp',
+                            )
+
+    # View the updated removal_parameters dictionary from the SubstanceTransport object
+    modpath_removal.removal_parameters
+
+    # We compute the removal by running the 'compute_omp_removal' function:
+    # modpath_removal.compute_omp_removal()
+    modpath_removal.compute_omp_removal()
+
+    # Once the removal has been calculated, you can view the steady-state concentration
+    # and breakthrough time per zone for the OMP in the df_particle:
+    modpath_removal.df_particle[['flowline_id', 'zone', 'steady_state_concentration', 'travel_time']].head(4)
+
+    # View the steady-state concentration of the flowline or the steady-state
+    # contribution of the flowline to the concentration in the well
+    modpath_removal.df_flowline[['flowline_id', 'breakthrough_concentration', 'total_breakthrough_travel_time']].head(5)
 
 #=======
 
