@@ -97,6 +97,8 @@ Lets start with a simple example defining a HydroChemicalSchematisation object f
 .. ipython:: python
 
     phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
+                                                        computation_method='analytical',
+                                                        removal_function = 'omp',
                                                         well_discharge=-7500, #m3/day
                                                         recharge_rate=0.0008, #m/day
                                                         thickness_vadose_zone_at_boundary=5, #m
@@ -185,7 +187,7 @@ In this example we use benzene. First we create the object and view the substanc
 
 .. ipython:: python
 
-    phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzene')
+    phreatic_concentration = SubstanceTransport(well = phreatic_well, substance = 'benzene')
     phreatic_concentration.removal_parameters
     # or via 'substance.substance_dict' ('default database parameters only', if available)
     phreatic_concentration.substance.substance_dict
@@ -228,7 +230,7 @@ must be reloaded with the new input.
 
 .. ipython:: python
 
-    phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzene',
+    phreatic_concentration = SubstanceTransport(well = phreatic_well, substance = 'benzene',
                                                 partition_coefficient_water_organic_carbon=2,
                                                 dissociation_constant=1,
                                                 halflife_suboxic=12, 
@@ -255,7 +257,7 @@ and breakthrough time per zone for the OMP in the df_particle:
 
 .. ipython:: python
 
-    phreatic_concentration.df_particle[['flowline_id', 'zone', 'steady_state_concentration', 'breakthrough_travel_time']].head(4)
+    phreatic_concentration.df_particle[['flowline_id', 'zone', 'steady_state_concentration', 'travel_time']].head(4)
 
 View the steady-state concentration of the flowline or the steady-state
 contribution of the flowline to the concentration in the well

@@ -547,7 +547,7 @@ class SubstanceTransport():
 
         # iterate through the dictionary keys
         # @Steven: check of over user_removal_parameters moet worden geïtereerd?! --> ipv over default_parameters
-        for key, value in default_removal_parameters.items():
+        for key, value in user_removal_parameters.items():
             if type(value) is dict:
                 for tkey, cvalue in value.items():
                     if cvalue is None: #reassign the value from the default dict if not input by the user
@@ -648,7 +648,7 @@ class SubstanceTransport():
         else:
             self.df_particle['omp_half_life_temperature_corrected'] = self.df_particle['omp_half_life']
 
-        self.df_particle.loc[ self.df_particle.omp_half_life == 1e99, 'omp_half_life_temperature_corrected'] = 1e99
+        self.df_particle.loc[self.df_particle.omp_half_life == 1e99, 'omp_half_life_temperature_corrected'] = 1e99
 
     def _calculate_Koc_temperature_correction(self):
         ''' Corrects the OMP Koc for temperature if 'temp_correction_Koc' is 'True' in the HydroChemicalSchematisation.
@@ -665,13 +665,16 @@ class SubstanceTransport():
         '''
 
 
-        # if log_Koc is zero, assign value of zero
-        if self.df_particle.log_Koc[0] == 0:
-            self.df_particle['Koc_temperature_correction'] = 0
-        elif self.well.schematisation.temp_correction_Koc:
-            self.df_particle['Koc_temperature_correction'] = 10 ** self.df_particle.log_Koc * 10 ** (1913 * (1 / (self.df_particle.temp_water + 273.15) - 1 / (20 + 273.15)))
+        # empty Koc_temperature_correction series to start with
+        self.df_particle['Koc_temperature_correction'] = 0
+        if self.well.schematisation.temp_correction_Koc:
+            self.df_particle.loc[self.df_particle.log_Koc != 0,'Koc_temperature_correction'] = 10 ** self.df_particle.loc[self.df_particle.log_Koc != 0,"log_Koc"] * \
+                                                                        10 ** (1913 * (1 / (self.df_particle.loc[self.df_particle.log_Koc != 0,"temp_water"] + 273.15) - 1 / (20 + 273.15)))
         else:
-            self.df_particle['Koc_temperature_correction'] = self.df_particle.log_Koc
+            self.df_particle.loc[:,'Koc_temperature_correction'] = self.df_particle.loc[:,"log_Koc"]
+        
+        # if log_Koc is zero, assign value of zero
+        self.df_particle.loc[self.df_particle.log_Koc == 0,'Koc_temperature_correction'] = 0
 
     def _calculate_state_concentration_in_zone(self):
         '''
@@ -697,30 +700,30 @@ class SubstanceTransport():
             c_in = 100 - 100 * (1 - (DOC_TOC_ratio + (1 - DOC_TOC_ratio) / (1 + K_oc * TOC_inf  * 0.000001)))
             self.df_particle.loc[self.df_particle.zone=='surface', 'input_concentration']=c_in
 
-        for i in range(len(self.df_particle)-1):
-            if self.df_particle.steady_state_concentration.loc[i+1] is None:
+        for i in range(len(self.df_particle)):
+            if self.df_particle.steady_state_concentration.iloc[i] is None:
 
                 # if omp is persistent, value at end of zone equal to value incoming to zone
-                if self.df_particle.omp_half_life.loc[i+1] == 1e99:
-                    self.df_particle.at[i+1, 'steady_state_concentration'] = self.df_particle.steady_state_concentration.loc[i]
+                if (self.df_particle.omp_half_life.iloc[i] == 1e99) | np.isnan(self.df_particle.omp_half_life_temperature_corrected.iloc[i]):
+                    self.df_particle.steady_state_concentration.iloc[i] = self.df_particle.steady_state_concentration.iloc[i-1]
 
                 # Column O in Phreatic excel sheet
                 # # AH 300 limit only to avoid very small numnbers, makes no difference for other calculations therefore left in
                 # Put back in, otherwise there is an error there are too many numbers in the output
                 # can't reproduce the error, so take out again
                 
-                elif (self.df_particle.travel_time.loc[i+1] * self.df_particle.retardation.loc[i+1]
-                                                                            / self.df_particle.omp_half_life_temperature_corrected.loc[i+1]) >300:
-                    self.df_particle.at[i+1, 'steady_state_concentration'] = 0
+                elif (self.df_particle.travel_time.iloc[i] * self.df_particle.retardation.iloc[i]
+                                                                            / self.df_particle.omp_half_life_temperature_corrected.iloc[i]) >300:
+                    self.df_particle.steady_state_concentration.iloc[i] = 0
 
                 # otherwise, calculate the outcoming concentration from the zone, given the input concentration to the zone.
                 # in the case of the vadose zone, the incoming concentration is the initial concentration
                 else:
-                    self.df_particle.at[i+1, 'steady_state_concentration'] = (self.df_particle.steady_state_concentration.loc[i]
-                                                                            / (2 ** (self.df_particle.travel_time.loc[i+1] * self.df_particle.retardation.loc[i+1]
-                                                                            / self.df_particle.omp_half_life_temperature_corrected.loc[i+1])))
+                    self.df_particle.steady_state_concentration.iloc[i] = (self.df_particle.steady_state_concentration.iloc[i-1]
+                                                                            / (2 ** (self.df_particle.travel_time.iloc[i] * self.df_particle.retardation.iloc[i]
+                                                                            / self.df_particle.omp_half_life_temperature_corrected.iloc[i])))
 
-    def _calculcate_total_breakthrough_travel_time(self):
+    def _calculate_total_breakthrough_travel_time(self):
         ''' Calculate the total time for breakthrough for each flowline at the well
 
         Returns
@@ -729,6 +732,7 @@ class SubstanceTransport():
             Column 'total_breakthrough_travel_time': float
 
         '''
+<<<<<<< HEAD
         self.df_flowline['total_breakthrough_travel_time']  = 0 # ""
         self.df_flowline['breakthrough_concentration']  = 0. # ""
 
@@ -738,6 +742,18 @@ class SubstanceTransport():
             df = self.df_particle.loc[self.df_particle['flowline_id'] == fid]
             self.df_flowline.at[fid, 'total_breakthrough_travel_time'] = sum(df.fillna(0)['breakthrough_travel_time'])
             self.df_flowline.at[fid, 'breakthrough_concentration'] = df['steady_state_concentration'].iloc[-1]
+=======
+        self.df_flowline['total_breakthrough_travel_time']  = 0
+        self.df_flowline['breakthrough_concentration']  = 0.
+
+        for fid in self.df_flowline.index: # range(len(self.df_flowline)):
+            # flowline_id = i + 1
+
+            # df = self.df_particle.loc[fid,:]
+            # df.fillna(0)['breakthrough_travel_time']
+            self.df_flowline.at[fid, 'total_breakthrough_travel_time'] = sum(self.df_particle.loc[fid,:].fillna(0)['breakthrough_travel_time'])
+            self.df_flowline.at[fid, 'breakthrough_concentration'] = self.df_particle.loc[fid,'steady_state_concentration'].iloc[-1]
+>>>>>>> check_omp_removal_modpathinput
 
     def compute_omp_removal(self):
         """ 
@@ -792,12 +808,23 @@ class SubstanceTransport():
 
             """
 
-        self.df_flowline['input_concentration'] = self.well.schematisation.diffuse_input_concentration
-        self.df_particle['input_concentration'] = None
-        self.df_particle['steady_state_concentration'] = None
+        # load (diffuse) input concentration    
+        self.df_flowline.loc[:,'input_concentration'] = self.well.schematisation.diffuse_input_concentration
+        self.df_particle.loc[:,'input_concentration'] = None
+        if 'steady_state_concentration' not in self.df_particle.columns:
+            # Steady state concentration [-]
+            self.df_particle.loc[:,'steady_state_concentration'] = None
+        # First value of input_concentration/steady_state_concentration equals diffuse input concentration of pathline
+        for pid in self.df_flowline.index:
+            self.df_particle.loc[pid,"input_concentration"].iloc[0] = self.df_flowline.loc[pid,'input_concentration']
+            self.df_particle.loc[pid,"steady_state_concentration"].iloc[0] = self.df_flowline.loc[pid,'input_concentration']
 
-        self.df_particle.loc[self.df_particle.zone=='surface', 'input_concentration'] = self.well.schematisation.diffuse_input_concentration
-        self.df_particle.loc[self.df_particle.zone=='surface', 'steady_state_concentration'] = self.well.schematisation.diffuse_input_concentration
+        # self.df_flowline['input_concentration'] = self.well.schematisation.diffuse_input_concentration
+        # self.df_particle['input_concentration'] = None
+        # self.df_particle['steady_state_concentration'] = None
+
+        # self.df_particle.loc[self.df_particle.zone=='surface', 'input_concentration'] = self.well.schematisation.diffuse_input_concentration
+        # self.df_particle.loc[self.df_particle.zone=='surface', 'steady_state_concentration'] = self.well.schematisation.diffuse_input_concentration
 
         if self.well.schematisation.point_input_concentration:
             ''' point contamination '''
@@ -824,7 +851,14 @@ class SubstanceTransport():
 
                 df_flowline_points, df_particle_points = self.well._add_semiconfined_point_sources(distance=distance,
                                         depth_point_contamination=depth,  )
+            # Assign flowline id to point
+            df_particle_points['flowline_id'] += ind
+            df_flowline_points['flowline_id'] += ind
+            # reindex df_particle and df_flowline
+            df_particle_points.index = df_particle_points.flowline_id
+            df_flowline_points.index = df_flowline_points.flowline_id
 
+<<<<<<< HEAD
             # reindex by flowline_id
             df_particle_points.loc[:,'flowline_id'] = df_particle_points.loc[:,'flowline_id'] + ind
             df_particle_points.index = df_particle_points.flowline_id
@@ -840,6 +874,18 @@ class SubstanceTransport():
                 df_particle_points.loc[pid, 'steady_state_concentration'].iloc[0] = df_flowline_points.loc[pid,'input_concentration']
 
             # flowline/discharge data
+=======
+            # Add (input) concentration to point source df's
+            df_flowline_points.loc[:,'input_concentration'] = self.well.schematisation.point_input_concentration
+            df_particle_points.loc[:,'input_concentration'] = None
+            df_particle_points.loc[:,'steady_state_concentration'] = None
+
+            for fid in df_particle_points.flowline_id.unique():
+                df_particle_points.loc[fid, 'input_concentration'].iloc[0] = df_flowline_points.at[fid,'input_concentration']
+                df_particle_points.loc[fid, 'steady_state_concentration'].iloc[0] = df_flowline_points.at[fid,'input_concentration']
+
+            # Add flow/discharge data to point particle df's
+>>>>>>> check_omp_removal_modpathinput
             df_flowline_points.loc[:,'flowline_type'] = "point_source"
             df_flowline_points.loc[:,'flowline_discharge'] = abs(self.well.schematisation.discharge_point_contamination)
 
@@ -850,10 +896,23 @@ class SubstanceTransport():
             self.df_particle.index = self.df_particle.flowline_id
             # self.df_particle.reset_index(drop=True, inplace=True)
 
+<<<<<<< HEAD
             self.df_flowline = self.df_flowline.append(df_flowline_points)
             self.df_flowline.index = self.df_flowline.flowline_id
             # self.df_flowline.reset_index(drop=True, inplace=True)
 
+=======
+            # Add point particles to self.df_particle and self.df_flowline & reindex based on flowline_id
+            self.df_particle = self.df_particle.append(df_particle_points)
+            self.df_particle.index = self.df_particle.flowline_id
+            # self.df_particle.reset_index(drop=True, inplace=True)
+
+            self.df_flowline = self.df_flowline.append(df_flowline_points)
+            self.df_flowline.index = self.df_flowline.flowline_id
+            # self.df_flowline.reset_index(drop=True, inplace=True)
+
+            # Add substance name
+>>>>>>> check_omp_removal_modpathinput
             self.df_flowline.loc[:,'substance'] = self.removal_parameters['substance_name']
 
         self._init_omp()
@@ -868,7 +927,7 @@ class SubstanceTransport():
 
         self.df_particle['breakthrough_travel_time'] = self.df_particle.retardation * self.df_particle.travel_time
 
-        self._calculcate_total_breakthrough_travel_time()
+        self._calculate_total_breakthrough_travel_time()
 
         # reduce the amount of text per line by extracting the following parameters
         self.compute_contamination_for_date = self.well.schematisation.compute_contamination_for_date
@@ -1648,11 +1707,11 @@ class SubstanceTransport():
         flowline_ID = list(df_particle.index.unique())
         for fid in flowline_ID:
 
-            x_points = df_particle.loc[df_particle.index == fid, "xcoord"].values
-#           y_points = df_particle.loc[df_particle.index == fid, "ycoord"].values
-            z_points = df_particle.loc[df_particle.index == fid, "zcoord"].values
+            x_points = df_particle.loc[fid, "xcoord"].values
+#           y_points = df_particle.loc[fid, "ycoord"].values
+            z_points = df_particle.loc[fid, "zcoord"].values
             # Concentration along pathlines
-            conc_points = df_particle.loc[df_particle.index == fid, "steady_state_concentration"].values
+            conc_points = df_particle.loc[fid, "steady_state_concentration"].values
             # Starting concentration of pathline
             starting_concentration = df_flowline.loc[fid,"starting_concentration"]
             # Concentration relative to input

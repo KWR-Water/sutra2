@@ -1662,7 +1662,7 @@ class AnalyticalWell():
                         distance,
                         self.schematisation.model_width,
                          self.schematisation.ground_surface,
-                         None,
+                         self.schematisation.redox_vadose_zone, # None
                          self.schematisation.temp_water,
                          None,
                          None,
@@ -1724,6 +1724,7 @@ class AnalyticalWell():
                          self.schematisation.fraction_organic_carbon_target_aquifer,
                          self.schematisation.solid_density_target_aquifer,
                          ]
+
             return df
 
         df_particle = pd.DataFrame(columns=['flowline_id',
@@ -1811,6 +1812,11 @@ class AnalyticalWell():
             # df_flowline['vani_clayseal'] = self.schematisation.vani_clayseal
             # df_flowline['dz_well'] = self.schematisation.dz_well
 
+        # change df_particle index to 'flowline_id'
+        df_particle.index = df_particle["flowline_id"].values
+        # change df_flowline index to 'flowline_id'
+        df_flowline.index = df_flowline["flowline_id"].values
+        
         return df_flowline, df_particle
 
     def phreatic(self,
