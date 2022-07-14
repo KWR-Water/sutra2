@@ -55,7 +55,7 @@ Now, let’s try some examples. First we import the necessary python packages
     import sutra2.Analytical_Well as AW
     import sutra2.ModPath_functions as MP
     import sutra2.Substance_Transport as ST
-    .. path = Path(__file__).parent # path of working directory
+    # path = Path(__file__).parent # path of working directory
 
 
 Step 1: Define the HydroChemicalSchematisation
