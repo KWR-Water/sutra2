@@ -161,6 +161,7 @@ class ModPathWell:
                        trackingdirection = "forward"): 
         ''''unpack/parse' all the variables from the hydrogeochemical schematizization """
        
+        #@Steven: Parameters df_particle & df_flowline mogen weg. Beschrijf wel overige invoer
         Parameters
         ----------
         df_flowline: pandas.DataFrame
@@ -2860,7 +2861,6 @@ class ModPathWell:
                 Column 'endpoint_id': Integer
                     ID of Well (or drain) where the flowline ends.
                 Column 'well_discharge': float
-                Column 'substance': string
                 Column 'removal_function': string
 
             df_particle: pandas.DataFrame
@@ -2913,7 +2913,6 @@ class ModPathWell:
         self.df_flowline = self.fill_df_flowline(df_particle = self.df_particle,
                                                 model_cbc = self.model_cbc)
 
-        ''' TODO 211123: append phreatic pathline data '''
         # Append phreatic pathlines
         # Calculate the phreatic travel time and add records to df_particle dataframe
         if (self.schematisation_dict["vadose_parameters"]):

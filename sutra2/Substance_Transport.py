@@ -1094,7 +1094,8 @@ class SubstanceTransport():
                 por_eff = 0.33, 
                 grainsize = 0.00025,
                 alpha0 = 0.001,
-                pH0 = 7.,
+                pH = 7.5,
+                pH0 = 7.5,
                 temp_water = 10., rho_water = 999.703,
                 organism_diam = 2.33e-8, v_por = 0.01):
 
@@ -1105,7 +1106,6 @@ class SubstanceTransport():
             
             Parameters
             -----------
-
             redox: str
                 redox condition ['suboxic','anoxic','deeply_anoxic']
             
@@ -1120,6 +1120,9 @@ class SubstanceTransport():
 
             alpha0: float
                 'reference sticky coefficient', for a reference pH [pH0]
+
+            pH: float
+                pH of the water [-]
 
             pH0: float
                 reference pH for which alpha0 was determined 
@@ -1145,7 +1148,6 @@ class SubstanceTransport():
             Return
             ---------
             df_flowline: pandas.DataFrame
-                Column "alpha" for each node
                 Column "organism_diam" for each node
 
             df_particle: pandas.DataFrame
@@ -1153,6 +1155,7 @@ class SubstanceTransport():
                 Column "porewater_velocity" for each node
                 Column "k_att" for each node
                 Column "lamda" for each node
+                Column "alpha" for each node
         '''
 
         # Boltzmann coefficient [J K-1]
@@ -1189,10 +1192,15 @@ class SubstanceTransport():
                                 df_column = 'grainsize',
                                 value = grainsize)
 
-        # # mu1 [day -1]
-        # df_particle = self._df_fillna(df_particle,
-        #                         df_column = 'redox',
-        #                         value = redox, dtype_ = 'object')
+        # pH of groundwater [-]
+        df_particle = self._df_fillna(df_particle,
+                                df_column = 'pH',
+                                value = pH)
+
+        # redox condition ['suboxic','anoxic','deeply_anoxic']
+        df_particle = self._df_fillna(df_particle,
+                                df_column = 'redox',
+                                value = redox, dtype_ = 'object')
 
         # alpha0 [-]
         df_particle = self._df_fillna(df_particle,
@@ -1211,18 +1219,13 @@ class SubstanceTransport():
         # Create empty column 'alpha' in df_particle
         df_particle['alpha'] = None  
 
-        # Collission efficiency [np.array]
-        coll_eff = {}
+        # Calculate 'sticky coefficient' alpha [np.array]
+        alpha = {}
         for pid in df_flowline.index:
-            coll_eff[pid] = df_particle.loc[pid,"alpha0"].values * 0.9**((df_particle.loc[pid,"pH"].values - df_particle.loc[pid,"pH0"].values )/0.1)
+            alpha[pid] = df_particle.loc[pid,"alpha0"].values * 0.9**((df_particle.loc[pid,"pH"].values - df_particle.loc[pid,"pH0"].values )/0.1)
 
             # Fill df_particle 'alpha'
-            df_particle.loc[pid,"alpha"] = coll_eff[pid]
-
-        # # Collision efficiency [-]
-        # df_flowline = self._df_fillna(df_flowline,
-        #                               df_column = 'alpha',
-        #                               value = self.removal_parameters['alpha0'][redox])
+            df_particle.loc[pid,"alpha"] = alpha[pid]
 
         # Create empty column 'k_att' in df_particle
         df_particle['k_att'] = None
@@ -1262,13 +1265,13 @@ class SubstanceTransport():
             n_nodes = len(df_particle.loc[pid,:])            
 
         # Create empty dicts and keys to keep track of arrays per particle id
-        k_bots, gamma, As_happ, mu = {}, {}, {}, {}
+        k_coll, gamma, As_happ, mu = {}, {}, {}, {}
         D_BM, k_diff, k_att, lamda = {}, {}, {}, {}
         # particle ids
         for pid in df_flowline.index:
 
-            # Botsingterm 'k_bots'
-            k_bots[pid] = (3/2.)*((1-df_particle.loc[pid,"porosity"].values) / \
+            # Collision term 'k_coll'
+            k_coll[pid] = (3/2.)*((1-df_particle.loc[pid,"porosity"].values) / \
                         df_particle.loc[pid,"grainsize"].values) * df_particle.loc[pid,"alpha"].values
 
             # Porosity dependent variable 'gamma'
@@ -1285,10 +1288,10 @@ class SubstanceTransport():
             mu[pid] = (df_particle.loc[pid,"rho_water"].values * 497.e-6) / \
                         (df_particle.loc[pid,"temp_water"].values + 42.5)**(3/2)
  
-            # Diffusion constant 'D_BM' (Eq.6: BTO2012.015) --> eenheid: m2 s-1
+            # Diffusion constant 'D_BM' (Eq.6: BTO2012.015) --> unit: m2 s-1
             D_BM[pid] = (const_BM * (df_particle.loc[pid,"temp_water"].values + 273.)) / \
                         (3 * np.pi * df_flowline.loc[pid,"organism_diam"] * mu[pid])
-            # Diffusieconstante 'D_BM' (Eq.6: BTO2012.015) --> eenheid: m2 d-1
+            # Diffusion constant 'D_BM' (Eq.6: BTO2012.015) --> unit: m2 d-1
             D_BM[pid] *= 86400.
 
             # Diffusion related attachment term 'k_diff'
@@ -1296,8 +1299,8 @@ class SubstanceTransport():
                         (df_particle.loc[pid,"grainsize"].values * df_particle.loc[pid,"porosity"].values * df_particle.loc[pid,"porewater_velocity"].values))**(2/3) * 
                             df_particle.loc[pid,"porewater_velocity"].values)
 
-            # hechtingssnelheidscoëfficiënt k_att [/dag]
-            k_att[pid] = k_bots[pid] * 4 * As_happ[pid]**(1/3) * k_diff[pid]
+            # 'attachment coefficient' k_att [/dag]
+            k_att[pid] = k_coll[pid] * 4 * As_happ[pid]**(1/3) * k_diff[pid]
             # removal coefficient 'lamda' [/day], using the 'mu1' mean.
             lamda[pid] = k_att[pid] + mu1
 
@@ -1312,10 +1315,13 @@ class SubstanceTransport():
     def calc_advective_microbial_removal(self,df_particle,df_flowline, 
                                         endpoint_id, trackingdirection = "forward",
                                         grainsize = 0.00025,
-                                        temp_water = 11., rho_water = 999.703, organism_diam = 2.33e-8,
-                                        conc_start = 1., conc_gw = 0.,
-                                        redox = 'anoxic',
-                                        mu1 = 0.023, alpha0 = 1.E-5, pH0 = 6.8):
+                                        temp_water = 11., rho_water = 999.703,
+                                        redox = 'anoxic', por_eff = 0.33,
+                                        pH = 7.5,
+                                        organism_name = None,
+                                        organism_diam = 2.33e-8,
+                                        mu1 = 0.023, alpha0 = 1.E-5, pH0 = 6.8,
+                                        conc_start = 1., conc_gw = 0.):
                                         
         ''' 
             Calculate the steady state concentration along traveled distance per 
@@ -1324,51 +1330,68 @@ class SubstanceTransport():
             For more information about the advective microbial removal calculation: 
                 BTO2012.015: Ch 6.7 (page 71-74)
 
+            #SR_todo: remove df_flowline 'substance', 'removal_function', 'starting_concentration' [species independent vars]
+            #SR todo: remove df_particle 'lamda' 
+            # --> not input, but output (replace 'substance' by 'name' of OMP or MBO)
+            
             Attributes
             -----------
             df_particle: pandas.DataFrame
-                Column 'flowline_id'
-                Column 'xcoord'
-                Column 'ycoord'
-                Column 'zcoord'
-                Column 'relative_distance'
-                Column 'total_travel_time'
-                Column 'porosity'
-                Column 'lamda'
-                Column 'porewater_velocity'
+                Column 'flowline_id': int
+                Column 'xcoord': float
+                Column 'ycoord': float
+                Column 'zcoord': float
+                Column 'relative_distance': float
+                Column 'travel_time': float
+                Column 'total_travel_time': float
+                Column 'porosity': float
+                Column 'porewater_velocity': float
+                # Column 'lamda'
 
             df_flowline: pandas.DataFrame
-                Column 'flowline_id'
-                Column 'endpoint_id'
-                Column 'flowline_discharge'
-                Column 'well_discharge'
+            
+                Column 'flowline_id': int or str
+                    Identifier of pathline
+                Column 'flowline_type': str
+                    Source of contamination ['diffuse_source','point_source',]
+                Column 'flowline_discharge': float
+                    Flux per flowline (='pathline') [m^3 d-1]
+                Column 'particle_release_day': float or int
+                    Delay in release of contaminants [days]
+                Column 'endpoint_id': int or str
+                    Endpoint id of the flowline
+                Column 'well_discharge': float
+                    Cumulative flux of flowlines to well [m^3 d-1]
 
             endpoint_id: str or int
                 ID for which to calculate the final concentration.
-            
+
+            tracking_direction: str
+                tracking direction of particles ['forward','backward']
+
+            grainsize: float
+                grain diameter of sediment [m]
+
+            temp_water: float
+                Water temperature [degrees celcius]
+
+            rho_water: float
+                Water density [kg m-3]
+
             redox: str
                 redox condition ['suboxic','anoxic','deeply_anoxic']
+
+            por_eff: float
+                effective porosity [-]
+
+            pH: float
+                pH of the water [-]
             
             mu1: float
                 inactivation coefficient [day-1]
             
-            por_eff: float
-                effective porosity [-]
-            
-            grainsize: float
-                grain diameter of sediment [m]
-            
-            pH: float
-                pH of the water [-]
-            
             pH0: float
                 reference pH for which alpha0 was determined 
-            
-            temp_water: float
-                Water temperature [degrees celcius]
-            
-            rho_water: float
-                Water density [kg m-3]
             
             alpha: float
                 'sticky coefficient' [-], pH corrected
@@ -1396,25 +1419,75 @@ class SubstanceTransport():
 
             Returns
             --------
-            input_concentration: pandas.Series
-                Column 'input_concentration': float
-                Column added to df_particle
+            df_flowline: pandas.DataFrame
+                Column "name": str
+                    organism name of organism to calculate removal for
+                Column "organism_diam": str
+                    organism diam of organism to calculate removal for
+                Column "removal_function": str
+                    filled with 'mbo' -> removal function for microbial organisms
+                    other option -> 'omp' -> for removal of organic micropollutants
+                Column "starting_concentration": float
+                    Starting concentration of OMP or mbo of interest [N/L]
+                Column "starting_concentration_gw": float
+                    Starting concentration in ambient groundwater [N/L]
+                Column "breakthrough_concentration": float
+                    Breakthrough_concentration oer flowline (after reaching endpoint_id) [N/L]
+                Column "breakthrough_travel_time": float
+                    Cumulative traeltime per flowline from start to endpoint [days]
+                Column "concentration_in_well": float
+                    Steady-state concentration in well for endpoint_id
+                    (assuming all flowlines were contaminated a traveltime duration ago)
 
-            steady_state_concentration: pandas.Series
-                Column 'steady_state_concentration': float
-                Column added to df_flowline
-            starting_concentration_gw: pandas.Series  
-                Column 'starting_concentration_gw': float
-                Column added to df_flowline
+            df_particle: pandas.DataFrame
+                Column "relative_distance": float
+                    distance between previous and current node
+                Column "porewater_velocity": float
+                    groundwater velocity between previous and current node
+                Column "k_att": float
+                    'attachment coefficient' [day-1]
+                Column "lamda": float
+                    'removal rate' [day-1] (redox dependent) --> calculated
+                Column "alpha": float
+                    'sticky coefficient' [-], pH corrected
+                Column "steady_state_concentration": float
+                    Steady-state concentration at each node, calculated [N/L]
 
         '''
+        if organism_name is None:
+            organism_name = self.organism_name
+        
+        # Organism/Species name
+        self.df_flowline['name'] = organism_name
+
+        # reduce the amount of text per line by extracting the following parameters
+        self.compute_contamination_for_date = self.well.schematisation.compute_contamination_for_date
+        start_date_well = self.well.schematisation.start_date_well
+        start_date_contamination = self.well.schematisation.start_date_contamination
+        self.end_date_contamination = self.well.schematisation.end_date_contamination
+
+        if start_date_well > start_date_contamination:
+            self.start_date = start_date_well
+            self.back_date_start = start_date_contamination
+
+        elif start_date_well <= start_date_contamination:
+            self.start_date = start_date_contamination
+            self.back_date_start = start_date_well
+
+        self.compute_date = self.compute_contamination_for_date - self.start_date
+        self.back_compute_date = self.start_date - self.back_date_start
+        
+        # add the particle release date
+        self.df_flowline['particle_release_day'] = (self.start_date - start_date_contamination).days
+
+        # Initialize mbo-parameters
         self._init_micro_organism()
 
         # Calculate removal coefficient 'lamda' [/day].
         df_particle, df_flowline = self.calc_lambda(df_particle, df_flowline,
-                                                    redox = redox, mu1 = mu1, 
+                                                    redox = redox, mu1 = mu1, por_eff = por_eff,
                                                     grainsize = grainsize, alpha0 = alpha0, 
-                                                    pH0 = pH0, temp_water = temp_water, 
+                                                    pH = pH, pH0 = pH0, temp_water = temp_water, 
                                                     rho_water = rho_water, organism_diam = organism_diam)
 
         # Starting concentration [-]
@@ -1429,8 +1502,20 @@ class SubstanceTransport():
                                 value = conc_gw,
                                 dtype_ = 'float')
 
+        if 'breakthrough_concentration' not in df_flowline.columns:
+            # breakthrough concentration for particles along a certain flowline
+            df_flowline['breakthrough_concentration'] = None
+
+        if 'breakthrough_traveltime' not in df_flowline.columns:
+            # breakthrough traveltime for particles along a certain flowline
+            df_flowline['breakthrough_travel_time'] = None
+
+        if 'concentration_in_well' not in df_particle.columns:
+            # Final (averaged) steady state concentration in well at endpoint_id [N/L]
+            df_particle['concentration_in_well'] = None
+
         if 'steady_state_concentration' not in df_particle.columns:
-            # Steady state concentration [-]
+            # steady-state concentration for particles along a certain flowline
             df_particle['steady_state_concentration'] = None
         
         for pid in df_flowline.index:
@@ -1472,15 +1557,26 @@ class SubstanceTransport():
             # Add steady_state_concentration to df_particle
             df_particle.loc[pid,'steady_state_concentration'] = conc_steady[pid]
 
-        # Bereken gemiddelde eindconcentratie
+        # Calculate average final concentration
         C_final = 0.
         for pid in df_flowline.index:
             if df_flowline.loc[pid,"endpoint_id"] == endpoint_id:
-                C_final += (conc_steady[pid][idx_final] * df_flowline.loc[pid,"flowline_discharge"]) / \
-                            df_flowline.loc[pid,"well_discharge"]
-        # Organism/Species name
-        self.df_flowline['organism'] = self.organism_name
+                # Steady-state concentration after breakthrough
+                C_breakthrough = conc_steady[pid][idx_final]
+                # Traveltime from contamination to endpoint location [days]
+                time_breakthrough = df_particle.loc[pid,"total_travel_time"].iloc[-1]
 
+                # Steady-state final concentration
+                C_final += (C_breakthrough * df_flowline.loc[pid,"flowline_discharge"]) / \
+                            df_flowline.loc[pid,"well_discharge"]
+
+                # Add breakthrough_concentration to df_flowline
+                df_flowline.loc[pid,'breakthrough_concentration'] = C_breakthrough
+                # Add breakthrough_traveltime to df_flowline
+                df_flowline.loc[pid,'breakthrough_travel_time'] = time_breakthrough
+        
+        # Add final concentration in well (at endpoint_id)
+        df_flowline.loc[df_flowline.endpoint_id == endpoint_id,"concentration_in_well"] = C_final
 
         # return (adjusted) df_particle and df_flowline
         return df_particle, df_flowline, C_final

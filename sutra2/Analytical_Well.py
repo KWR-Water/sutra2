@@ -60,7 +60,7 @@ class HydroChemicalSchematisation:
         Choice of removal function for 'omp' or 'mbo'
     what_to_export: string
         Defines what paramters are exported, 'all' exports all paramters, 'omp' only those relevant to the OMP or
-        'pathogen' only exports paramters relevant for the microbial organsims (mbo)
+        'mbo' only exports parameters relevant for the microbial organisms (mbo)
     temp_correction_Koc, temp_correction_halflife:: Bool
         KOC and half-life values generally refer to a standard lab temperature (tREF = 20-25oC) and should
         therefore be corrected when field temperature is different. Default is True
@@ -1782,11 +1782,13 @@ class AnalyticalWell():
         self.schematisation.make_dictionary()
         df_flowline['endpoint_id'] = list(self.schematisation.endpoint_id.keys())[0] # AH_todo Nov. 9, this works now for a sinlge endpoint_id, if in the future there are multiple this needs to be adapted. Wedecide to leave for now.
 
+        # @Steven --> 'substance' vervangen door 'name'? 
         # AH which parameters for the 'pathogen' option? @MartinvdS or @steven
         if what_to_export == 'all' or what_to_export== 'omp':
 
             df_flowline['well_discharge'] = abs(self.schematisation.well_discharge)
-            df_flowline['substance'] = self.schematisation.substance
+            # df_flowline['substance'] = self.schematisation.substance
+            # df_flowline['name'] = self.schematisation.substance
             df_flowline['particle_release_day'] = self.schematisation.particle_release_day
             df_flowline['removal_function'] = self.schematisation.removal_function
 
@@ -1795,7 +1797,8 @@ class AnalyticalWell():
             #AH_todo when we have the other options sorted out ('pathogen') then 
             # adjust this.
             df_flowline['well_discharge'] = abs(self.schematisation.well_discharge)
-            df_flowline['substance'] = self.schematisation.substance
+            # df_flowline['substance'] = self.schematisation.substance
+            # df_flowline['name'] = self.schematisation.substance
             df_flowline['particle_release_day'] = self.schematisation.particle_release_day
             df_flowline['removal_function'] = self.schematisation.removal_function
 
