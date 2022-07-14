@@ -235,7 +235,8 @@ must be reloaded with the new input.
                                                 dissociation_constant=1,
                                                 halflife_suboxic=12, 
                                                 halflife_anoxic=420, 
-                                                halflife_deeply_anoxic=6000)
+                                                halflife_deeply_anoxic=6000,
+                                                removal_function = 'omp')
 
 If you have specified values for the substance (e.g. half-life, pKa, log_Koc),
 the default value is overriden and used in the calculation of the removal. You can
