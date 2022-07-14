@@ -58,7 +58,6 @@ Now, let’s try some examples. First we import the necessary python packages
     from sutra2.Substance_Transport import *
 
 
-
 Step 1: Define the HydroChemicalSchematisation
 ==============================================
 The first step is to define the hydrogeochemistry of the system using the HydroChemicalSchematisation class.
