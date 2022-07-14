@@ -2,7 +2,10 @@
 About
 ========
 
-Sutra2 is developed by KWR Water Research Institute. The code is based on the original `Excel-based TRANSATOMIC program by Pieter Stuyfzand <https://library.kwrwater.nl/publication/59205490/>`_.
+Sutra2 is developed by KWR Water Research Institute. The code for omp removal 
+is based on the original `Excel-based TRANSATOMIC program by Pieter Stuyfzand <https://library.kwrwater.nl/publication/59205490/>`_.
+The code for microbial organism removal is based on the equations given in chapter 6.7 of 
+BTO 2012.015 "Gezondheidsrisico's van fecale verontreiniging" [in Dutch], pp 71-74.
 
 ..
   #AH @MartinK - some kind of link to TRANSATOMIC KWR report? e.g. https://library.kwrwater.nl/publication/59205490/

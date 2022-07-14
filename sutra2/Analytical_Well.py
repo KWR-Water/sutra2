@@ -149,26 +149,23 @@ class HydroChemicalSchematisation:
     distance_point_contamination_from_well, depth_point_contamination, discharge_point_contamination: float
         Distance [m] from the well, depth [mASL] and discharge [m3/d] of the point source contamination.
 
-    @Steven, @MartinvdS Check these definitions...
     source_area_radius: float
         Radius of the source area, [m].
 
     number_of_spreading_distance: float
-        @Steven, what is this?
+        the higher the number of spreading distance between well and boundary, the smaller any boundary effects will be. (Ignored in this version)
     model_radius, model_width: float
         Radius and width of the model, [m].
-    relative_position_starting_points_radial, relative_position_starting_points_in_basin, relative_position_starting_points_outside_basin: list of floats -
-        @Steven, what are these?
     ncols_filterscreen, ncols_gravelpack, ncols_near_well, ncols_far_well: int
         Number of model columns in the filterscreen, gravelpack, near and far from the well.
     delr_filterscreen, delr_gravelpack, delr_near_well, delr_far_well: float
-        delr (double) is the column spacing in the row direction for each of the filerscreen, gravelpak, near and far from the well.
+        delr is the column spacing in the row direction for each of the filerscreen, gravelpak, near and far from the well.
     delc: list of floats
-        @Steven, what is this? -> delc (double) is the row spacing in the column direction.
+        delc is the row spacing in the column direction.
     nlayer_shallow_aquifer, nlayer_target_aquifer:
         The number of layers in the model grid for the shallow and target aquifers.
-    delz_fixed_head: string
-        @Steven, what is this?
+    relative_position_starting_points_radial, relative_position_starting_points_in_basin, relative_position_starting_points_outside_basin: list of floats -
+        not yet included functionality for relative positions starting points flowlines
 
     BAR specific parameters: #AH_todo, will define later
         basin_length: float m
@@ -1845,7 +1842,6 @@ class AnalyticalWell():
 
         Returns
         -------
-        @MartinK -> these are all "returned" as attributed of the funciton.. so include or not?
         head: array
             Hydraulic head for each point in the given distance array, [mASL].
         cumulative_fraction_abstracted_water: array
@@ -1895,6 +1891,7 @@ class AnalyticalWell():
             Column 'fraction_organic_carbon': float
             Column 'solid_density': float
         '''
+        # @MartinK -> the above are all "returned" as attributed of the funciton.. so include or not?
         # travel time unsaturated now calculated in the HydrochemicalSchematisation class
         # because Modflow schematisation also needs the unsaturated zone travel times
 
@@ -2054,7 +2051,6 @@ class AnalyticalWell():
 
         Returns
         -------
-        @MartinK -> these are all "returned" as attributed of the funciton.. so include or not?
         head: array
             Hydraulic head for each point in the given distance array, [mASL].
         cumulative_fraction_abstracted_water: array
@@ -2105,7 +2101,8 @@ class AnalyticalWell():
             Column 'solid_density': float
 
         '''
-
+        #AH @MartinK -> the above are all "returned" as attributed of the funciton.. so include or not?
+        
         if distance is None:
             self.schematisation._calculate_travel_time_unsaturated_zone()
             self.radial_distance = self.schematisation.radial_distance
