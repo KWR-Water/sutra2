@@ -27,8 +27,7 @@ The model has been expanded to include Modflow solutions, in addition to the ana
 solutions and to include microbial organisms ('mbo') in addition to OMP.
 
 Steps
------
-
+------
 Operating the analytical module typically involves 5 steps:
 
 #. Define the hydrogeochemical system using the HydroChemicalSchematisation class. 
