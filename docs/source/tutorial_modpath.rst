@@ -43,7 +43,6 @@ Now, let’s try some examples. First we import the necessary python packages
 
     import pandas as pd
     from pathlib import Path
-
     import matplotlib.pyplot as plt
     import numpy as np
     import pandas as pd
@@ -53,11 +52,10 @@ Now, let’s try some examples. First we import the necessary python packages
     import math
     from scipy.special import kn as besselk
     from pathlib import Path
-
     import sutra2.Analytical_Well as AW
     import sutra2.ModPath_functions as MP
     import sutra2.Substance_Transport as ST
-
+    path = Path(__file__).parent #path of working directory
 
 
 Step 1: Define the HydroChemicalSchematisation
@@ -176,7 +174,9 @@ The data files will be stored in location workspace using a given modelname.
 
     modpath_phrea = MP.ModPathWell(phreatic_schematisation,
                                 workspace = "phreatic_test",
-                                modelname = "phreatic")
+                                modelname = "phreatic",
+                                mf_exe = path / "mf2005.exe",
+                                mp_exe = path / "mpath7.exe")
 
 Now we run the Modpath model, which numerically calculates the flow in the subsurface using the 
 'schematisation' dictionary stored in the HydroChemicalSchematisation object. By default the model will
