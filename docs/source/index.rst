@@ -14,7 +14,6 @@ Fields (PSWFs)
 
     getting-started.rst
     Tutorial - Analytical approach <tutorial_analytical.rst>
-    Tutorial - Numerical approach <tutorial_modpath.rst>
     faq.rst
     glossary.rst
     api_reference.rst 
@@ -22,3 +21,4 @@ Fields (PSWFs)
     known_issues.rst
 .. example.rst very large snippet
     API reference <api/modules.rst>
+    Tutorial - Numerical approach <tutorial_modpath.rst>
