@@ -1346,10 +1346,8 @@ class SubstanceTransport():
                 Column 'total_travel_time': float
                 Column 'porosity': float
                 Column 'porewater_velocity': float
-                # Column 'lamda'
 
             df_flowline: pandas.DataFrame
-            
                 Column 'flowline_id': int or str
                     Identifier of pathline
                 Column 'flowline_type': str
