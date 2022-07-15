@@ -175,7 +175,11 @@ The data files will be stored in location workspace using a given modelname.
                                 workspace = "phreatic_test",
                                 modelname = "phreatic",
                                 mf_exe = "..//mf2005.exe",
-                                mp_exe = "..//mpath7.exe")
+                                mp_exe = "..//mpath7.exe"
+                                )
+
+.. mf_exe = "..//mf2005.exe",
+.. mp_exe = "..//mpath7.exe")
 
 Now we run the Modpath model, which numerically calculates the flow in the subsurface using the 
 'schematisation' dictionary stored in the HydroChemicalSchematisation object. By default the model will
