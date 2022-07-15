@@ -268,65 +268,68 @@ contribution of the flowline to the concentration in the well
 
     phreatic_concentration.df_flowline.loc[:,['breakthrough_concentration', 'total_breakthrough_travel_time']].head(5)
 
-.. Plot the breakthrough curve at the well over time:
+Plot the breakthrough curve at the well over time:
 
-.. .. ipython:: python
+.. ipython:: python
 
-..     benzene_plot = phreatic_concentration.plot_concentration(ylim=[0,10 ])
+    benzene_plot = phreatic_concentration.plot_concentration(ylim=[0,10 ])
 
-.. .. image:: https://github.com/KWR-Water/sutra2/blob/main/docs/_images/benzene_plot.png?raw=true
-..   :width: 600
-..   :alt: benzene_plot.png
+.. image:: https://github.com/KWR-Water/sutra2/blob/main/docs/_images/benzene_plot.png?raw=true
+  :width: 600
+  :alt: benzene_plot.png
 
-.. You can also compute the removal for a different OMP of interest:
+You can also compute the removal for a different OMP of interest:
 
-.. * OMP-X: a ficticous OMP with no degradation or sorption
-.. * AMPA
-.. * benzo(a)pyrene
+* OMP-X: a ficticous OMP with no degradation or sorption
+* AMPA
+* benzo(a)pyrene
 
-.. To do so you can use the original schematisation, but specify a different OMP when you create
-.. the SubstanceTransport object.
+To do so you can use the original schematisation, but specify a different OMP when you create
+the SubstanceTransport object.
 
-.. .. ipython:: python
+.. ipython:: python
+    :okwarning:
 
-..     phreatic_well = AnalyticalWell(phreatic_schematisation)
-..     phreatic_well.phreatic() 
-..     phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'OMP-X')
-..     phreatic_concentration.compute_omp_removal()
-..     omp_x_plot = phreatic_concentration.plot_concentration(ylim=[0,100 ])
+    phreatic_well = AnalyticalWell(phreatic_schematisation)
+    phreatic_well.phreatic() 
+    phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'OMP-X')
+    phreatic_concentration.compute_omp_removal()
+    omp_x_plot = phreatic_concentration.plot_concentration(ylim=[0,100 ])
 
-.. .. image:: https://github.com/KWR-Water/sutra2/blob/main/docs/_images/omp_x_plot.png?raw=true
-..   :width: 600
-..   :alt: omp_x_plot.png
+.. image:: https://github.com/KWR-Water/sutra2/blob/main/docs/_images/omp_x_plot.png?raw=true
+  :width: 600
+  :alt: omp_x_plot.png
 
-.. .. ipython:: python
+.. ipython:: python
+    :okwarning:
 
-..     phreatic_well = AnalyticalWell(phreatic_schematisation)
-..     phreatic_well.phreatic() 
-..     phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzo(a)pyrene')
-..     phreatic_concentration.compute_omp_removal()
-..     benzo_plot = phreatic_concentration.plot_concentration(ylim=[0,1])
+    phreatic_well = AnalyticalWell(phreatic_schematisation)
+    phreatic_well.phreatic() 
+    phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzo(a)pyrene')
+    phreatic_concentration.compute_omp_removal()
+    benzo_plot = phreatic_concentration.plot_concentration(ylim=[0,1])
 
-.. .. image:: https://github.com/KWR-Water/sutra2/blob/main/docs/_images/benzo_plot.png?raw=true
-..   :width: 600
-..   :alt: benzo_plot.png
+.. image:: https://github.com/KWR-Water/sutra2/blob/main/docs/_images/benzo_plot.png?raw=true
+  :width: 600
+  :alt: benzo_plot.png
 
-.. .. ipython:: python
+.. ipython:: python
+    :okwarning:
 
-..     phreatic_well = AnalyticalWell(phreatic_schematisation)
-..     phreatic_well.phreatic() 
-..     phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'AMPA')
-..     phreatic_concentration.compute_omp_removal()
-..     ampa_plot = phreatic_concentration.plot_concentration( ylim=[0,1])
+    phreatic_well = AnalyticalWell(phreatic_schematisation)
+    phreatic_well.phreatic() 
+    phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'AMPA')
+    phreatic_concentration.compute_omp_removal()
+    ampa_plot = phreatic_concentration.plot_concentration( ylim=[0,1])
 
-.. .. image:: https://github.com/KWR-Water/sutra2/blob/main/docs/_images/ampa_plot.png?raw=true
-..   :width: 600
-..   :alt: ampa_plot.png
+.. image:: https://github.com/KWR-Water/sutra2/blob/main/docs/_images/ampa_plot.png?raw=true
+  :width: 600
+  :alt: ampa_plot.png
 
-.. Other examples in the Bas_tutorial.py file are:
+Other examples in the Bas_tutorial.py file are:
 
-.. * diffuse/point source example for phreatic 
-.. * semiconfined example
+* diffuse/point source example for phreatic 
+* semiconfined example
 
 
 
