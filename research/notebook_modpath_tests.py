@@ -1131,7 +1131,7 @@ phreatic_concentration = ST.SubstanceTransport(modpath_phrea, substance = 'OMP-X
 phreatic_concentration.compute_omp_removal()
 omp_x_plot = phreatic_concentration.plot_concentration(ylim=[0,100 ])
 
-# image:: omp_x_plot.png
+# image:: omp_x_plot.png 
 
 phreatic_concentration = ST.SubstanceTransport(modpath_phrea, substance = 'benzo(a)pyrene')
 phreatic_concentration.compute_omp_removal()
