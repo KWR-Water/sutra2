@@ -257,16 +257,16 @@ phreatic_concentration.compute_omp_removal()
 Once the removal has been calculated, you can view the steady-state concentration
 and breakthrough time per zone for the OMP in the df_particle:
 
-.. .. ipython:: python
+.. ipython:: python
 
-..     phreatic_concentration.df_particle.loc[:,['zone', 'steady_state_concentration', 'travel_time']]
+    phreatic_concentration.df_particle.loc[:,['zone', 'steady_state_concentration', 'travel_time']]
 
-.. View the steady-state concentration of the flowline or the steady-state
-.. contribution of the flowline to the concentration in the well
+View the steady-state concentration of the flowline or the steady-state
+contribution of the flowline to the concentration in the well
 
-.. .. ipython:: python
+.. ipython:: python
 
-..     phreatic_concentration.df_flowline.loc[:,['breakthrough_concentration', 'total_breakthrough_travel_time']].head(5)
+    phreatic_concentration.df_flowline.loc[:,['breakthrough_concentration', 'total_breakthrough_travel_time']].head(5)
 
 .. Plot the breakthrough curve at the well over time:
 
