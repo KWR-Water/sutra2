@@ -802,17 +802,11 @@ class SubstanceTransport():
         if 'steady_state_concentration' not in self.df_particle.columns:
             # Steady state concentration [-]
             self.df_particle.loc[:,'steady_state_concentration'] = None
+
         # First value of input_concentration/steady_state_concentration equals diffuse input concentration of pathline
-        for pid in self.df_flowline.index:
-            self.df_particle.loc[pid,"input_concentration"].iloc[0] = self.df_flowline.loc[pid,'input_concentration']
-            self.df_particle.loc[pid,"steady_state_concentration"].iloc[0] = self.df_flowline.loc[pid,'input_concentration']
+        self.df_particle.loc[self.df_particle.total_travel_time == 0.,"input_concentration"] = self.df_flowline.loc[:,'input_concentration'].values
+        self.df_particle.loc[self.df_particle.total_travel_time == 0.,"steady_state_concentration"] = self.df_flowline.loc[:,'input_concentration'].values
 
-        # self.df_flowline['input_concentration'] = self.well.schematisation.diffuse_input_concentration
-        # self.df_particle['input_concentration'] = None
-        # self.df_particle['steady_state_concentration'] = None
-
-        # self.df_particle.loc[self.df_particle.zone=='surface', 'input_concentration'] = self.well.schematisation.diffuse_input_concentration
-        # self.df_particle.loc[self.df_particle.zone=='surface', 'steady_state_concentration'] = self.well.schematisation.diffuse_input_concentration
 
         if self.well.schematisation.point_input_concentration:
             ''' point contamination '''
@@ -826,7 +820,7 @@ class SubstanceTransport():
             depth = self.well.schematisation.depth_point_contamination
             cumulative_fraction_abstracted_water = (math.pi * self.well.schematisation.recharge_rate
                                                         * distance ** 2)/abs(self.well.schematisation.well_discharge)
-            ind = self.df_particle.loc[:,"flowline_id"].iloc[-1]
+            ind = self.df_particle.flowline_id.iat[-1]
 
             if self.well.schematisation.schematisation_type == 'phreatic':
                 head = self.well.schematisation._calculate_hydraulic_head_phreatic(distance=distance)
@@ -851,9 +845,11 @@ class SubstanceTransport():
             df_particle_points.loc[:,'input_concentration'] = None
             df_particle_points.loc[:,'steady_state_concentration'] = None
 
-            for fid in df_particle_points.flowline_id.unique():
-                df_particle_points.loc[fid, 'input_concentration'].iloc[0] = df_flowline_points.at[fid,'input_concentration']
-                df_particle_points.loc[fid, 'steady_state_concentration'].iloc[0] = df_flowline_points.at[fid,'input_concentration']
+            # First value of input_concentration/steady_state_concentration equals point input concentration of pathline
+            # for fid in df_particle_points.flowline_id.unique():
+                
+            df_particle_points.loc[df_particle_points.total_travel_time == 0., 'input_concentration'] = df_flowline_points.loc[:,'input_concentration'].values
+            df_particle_points.loc[df_particle_points.total_travel_time == 0., 'steady_state_concentration'] = df_flowline_points.loc[:,'input_concentration'].values
 
             # Add flow/discharge data to point particle df's
             df_flowline_points.loc[:,'flowline_type'] = "point_source"
@@ -883,7 +879,7 @@ class SubstanceTransport():
 
         self._calculate_state_concentration_in_zone()
 
-        self.df_particle['breakthrough_travel_time'] = self.df_particle.retardation * self.df_particle.total_travel_time
+        self.df_particle.loc[:,'breakthrough_travel_time'] = self.df_particle.loc[:,"retardation"].values * self.df_particle.loc[:,"total_travel_time"].values
 
         self._calculate_total_breakthrough_travel_time()
 
@@ -903,9 +899,9 @@ class SubstanceTransport():
 
         self.compute_date = self.compute_contamination_for_date - self.start_date
         self.back_compute_date = self.start_date - self.back_date_start
-        
+
         # add the particle release date
-        self.df_flowline['particle_release_day'] = (self.start_date - start_date_contamination).days
+        self.df_flowline.loc[:,'particle_release_day'] = (self.start_date - start_date_contamination).days
 
 
     def compute_concentration_in_well_at_date(self):
