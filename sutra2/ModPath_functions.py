@@ -2753,7 +2753,7 @@ class ModPathWell:
 
         # Column names in df_flowline
         colnames_df_flowline = ["flowline_type","flowline_discharge","particle_release_day","endpoint_id",
-                        "well_discharge", "substance", "removal_function","starting_concentration"]
+                        "well_discharge", "substance", "removal_function","input_concentration"]
 
         df_flowline = pd.DataFrame(index = flowline_id, columns = colnames_df_flowline)
         # Change df_flowline index name
@@ -2796,7 +2796,7 @@ class ModPathWell:
             df_flowline.loc[fid,"flowline_type"] = self.flowline_type[fid]
 
             # Starting concentration of particles
-            df_flowline.loc[fid,"starting_concentration"] = self.inputconc_particle[fid]
+            df_flowline.loc[fid,"input_concentration"] = self.inputconc_particle[fid]
 
 
 

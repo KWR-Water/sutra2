@@ -248,9 +248,12 @@ view the updated removal parameters ('substance dictionary') from the concentrat
 Then we can compute the removal by running the 'compute_omp_removal' function:
 phreatic_concentration.compute_omp_removal()
 
-.. .. ipython:: python
+.. ipython:: python
     
-..     phreatic_concentration.compute_omp_removal()
+    phreatic_concentration.compute_omp_removal()
+
+
+
 
 .. Once the removal has been calculated, you can view the steady-state concentration
 .. and breakthrough time per zone for the OMP in the df_particle:

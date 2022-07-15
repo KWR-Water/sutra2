@@ -1330,7 +1330,7 @@ class SubstanceTransport():
             For more information about the advective microbial removal calculation: 
                 BTO2012.015: Ch 6.7 (page 71-74)
 
-            #SR_todo: remove df_flowline 'substance', 'removal_function', 'starting_concentration' [species independent vars]
+            #SR_todo: remove df_flowline 'substance', 'removal_function', 'input_concentration' [species independent vars]
             #SR todo: remove df_particle 'lamda' 
             # --> not input, but output (replace 'substance' by 'name' of OMP or MBO)
             
@@ -1425,9 +1425,9 @@ class SubstanceTransport():
                 Column "removal_function": str
                     filled with 'mbo' -> removal function for microbial organisms
                     other option -> 'omp' -> for removal of organic micropollutants
-                Column "starting_concentration": float
+                Column "input_concentration": float
                     Starting concentration of OMP or mbo of interest [N/L]
-                Column "starting_concentration_gw": float
+                Column "input_concentration_gw": float
                     Starting concentration in ambient groundwater [N/L]
                 Column "breakthrough_concentration": float
                     Breakthrough_concentration oer flowline (after reaching endpoint_id) [N/L]
@@ -1490,13 +1490,13 @@ class SubstanceTransport():
 
         # Starting concentration [-]
         df_flowline = self._df_fillna(df_flowline,
-                                df_column = 'starting_concentration',
+                                df_column = 'input_concentration',
                                 value = conc_start,
                                 dtype_ = 'float')
 
         # Original concentration in groundwater [-]
         df_flowline = self._df_fillna(df_flowline,
-                                df_column = 'starting_concentration_gw',
+                                df_column = 'input_concentration_gw',
                                 value = conc_gw,
                                 dtype_ = 'float')
 
@@ -1517,7 +1517,7 @@ class SubstanceTransport():
             df_particle['steady_state_concentration'] = None
         
         for pid in df_flowline.index:
-            df_particle.loc[pid,"steady_state_concentration"].iloc[0] = df_flowline.loc[pid,"starting_concentration"]
+            df_particle.loc[pid,"steady_state_concentration"].iloc[0] = df_flowline.loc[pid,"input_concentration"]
 
         # Start dictionaries for relative and steady-state concentrations
         conc_rel = {}
@@ -1528,13 +1528,13 @@ class SubstanceTransport():
             exp_arg = -((df_particle.loc[pid,"lamda"].values/df_particle.loc[pid,"porewater_velocity"].values) *
                                 df_particle.loc[pid,'relative_distance'].values).astype('float')
 
-            conc_rel[pid] = df_flowline.loc[pid,"starting_concentration_gw"] + \
-                            (df_flowline.loc[pid,"starting_concentration"] - df_flowline.loc[pid,"starting_concentration_gw"]) * \
+            conc_rel[pid] = df_flowline.loc[pid,"input_concentration_gw"] + \
+                            (df_flowline.loc[pid,"input_concentration"] - df_flowline.loc[pid,"input_concentration_gw"]) * \
                                 np.exp(exp_arg)
 
             if trackingdirection == 'forward':
-                conc_steady[pid] = (conc_rel[pid]/df_flowline.loc[pid,"starting_concentration"]).cumprod() * \
-                                    df_flowline.loc[pid,"starting_concentration"]
+                conc_steady[pid] = (conc_rel[pid]/df_flowline.loc[pid,"input_concentration"]).cumprod() * \
+                                    df_flowline.loc[pid,"input_concentration"]
                 # Replace 'nan'-values by 0.
                 conc_steady[pid]  = np.nan_to_num(conc_steady[pid],0.)
                 
@@ -1542,8 +1542,8 @@ class SubstanceTransport():
                 idx_final = -1
                                 
             elif trackingdirection == 'backward':
-                conc_steady[pid] = (conc_rel[pid][::-1]/df_flowline.loc[pid,"starting_concentration"]).cumprod() * \
-                                    df_flowline.loc[pid,"starting_concentration"]
+                conc_steady[pid] = (conc_rel[pid][::-1]/df_flowline.loc[pid,"input_concentration"]).cumprod() * \
+                                    df_flowline.loc[pid,"input_concentration"]
                 # Replace 'nan'-values by 0.
                 conc_steady[pid]  = np.nan_to_num(conc_steady[pid],0.)
                 # First value represents concentration of endpoint and v.v.
@@ -1770,9 +1770,9 @@ class SubstanceTransport():
             # Concentration along pathlines
             conc_points = df_particle.loc[fid, "steady_state_concentration"].values
             # Starting concentration of pathline
-            starting_concentration = df_flowline.loc[fid,"starting_concentration"]
+            input_concentration = df_flowline.loc[fid,"input_concentration"]
             # Concentration relative to input
-            relative_conc = conc_points / starting_concentration
+            relative_conc = conc_points / input_concentration
 
             # Plot every 'line_dist' number of meters one line
             if trackingdirection == "forward":
