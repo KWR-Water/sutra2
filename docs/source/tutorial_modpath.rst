@@ -153,15 +153,15 @@ To view the created dictionary use the following snippet of code.
     schematisation_dict
 
 The schematisation dict contains the following data:
-..* simulation_parameters: simulation data such as schematisation_type and computation_method
-..* endpoint_id: object location to compute final concentration for after removal like 'well1'
-..* mesh_refinement: optional additional grid refinement parameters
-..* geo_parameters: chemical/material data for creating geological layers [porosity,hydraulic conductivity,foc,DOC, pH, etc,]
-..* ibound_parameters: boundary conditions for flow
-..* recharge_parameters: groundwater recharge [unit: m] in a specified region
-..* well_parameters: collection of well locations and discharge to simulate.
-..* point_parameters: (starting) point source contamination(s) to calculate removal for
-..* concentration_boundary_parameters: diffuse contamination(s) to calculate removal for
+.. * simulation_parameters: simulation data such as schematisation_type and computation_method
+.. * endpoint_id: object location to compute final concentration for after removal like 'well1'
+.. * mesh_refinement: optional additional grid refinement parameters
+.. * geo_parameters: chemical/material data for creating geological layers [porosity,hydraulic conductivity,foc,DOC, pH, etc,]
+.. * ibound_parameters: boundary conditions for flow
+.. * recharge_parameters: groundwater recharge [unit: m] in a specified region
+.. * well_parameters: collection of well locations and discharge to simulate.
+.. * point_parameters: (starting) point source contamination(s) to calculate removal for
+.. * concentration_boundary_parameters: diffuse contamination(s) to calculate removal for
 
 
 Step 2: Run the ModpathWell class
@@ -169,24 +169,24 @@ Step 2: Run the ModpathWell class
 Next we create an ModpathWell object for the HydroChemicalSchematisation object we just made.
 The data files will be stored in location workspace using a given modelname.
 
-.. .. ipython:: python
+.. ipython:: python
 
-..     modpath_phrea = MP.ModPathWell(phreatic_schematisation,
-..                                 workspace = "phreatic_test",
-..                                 modelname = "phreatic",
-..                                 mf_exe = "mf2005.exe",
-..                                 mp_exe = "mpath7.exe")
+    modpath_phrea = MP.ModPathWell(phreatic_schematisation,
+                                workspace = "phreatic_test",
+                                modelname = "phreatic",
+                                mf_exe = "..//mf2005.exe",
+                                mp_exe = "..//mpath7.exe")
 
-.. Now we run the Modpath model, which numerically calculates the flow in the subsurface using the 
-.. 'schematisation' dictionary stored in the HydroChemicalSchematisation object. By default the model will
-.. calculate both the hydraulic head distribution (using modflow: 'run_mfmodel' = True) and
-.. the particle pathlines [X,Y,Z,T-data] (using modpath: 'run_mpmodel' = True) with which OMP removal
-.. or microbial organism ('mbo') removal is later calculated.
+Now we run the Modpath model, which numerically calculates the flow in the subsurface using the 
+'schematisation' dictionary stored in the HydroChemicalSchematisation object. By default the model will
+calculate both the hydraulic head distribution (using modflow: 'run_mfmodel' = True) and
+the particle pathlines [X,Y,Z,T-data] (using modpath: 'run_mpmodel' = True) with which OMP removal
+or microbial organism ('mbo') removal is later calculated.
 
-.. .. ipython:: python
+.. ipython:: python
 
-..     modpath_phrea.run_model(run_mfmodel = True,
-..                         run_mpmodel = True)
+    modpath_phrea.run_model(run_mfmodel = True,
+                        run_mpmodel = True)
 
 .. The traveltime distribution can be plotted as cross-section using either a linear or logarithmic distribution,
 .. with lognorm = True: logarithmic distribution, using for example a 'viridis_r' (viridis reversed) color map.
