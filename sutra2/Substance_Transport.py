@@ -863,11 +863,11 @@ class SubstanceTransport():
 
             # Add point particles to self.df_particle and self.df_flowline & reindex based on flowline_id
             self.df_particle = self.df_particle.append(df_particle_points)
-            self.df_particle.index = self.df_particle.flowline_id
+            self.df_particle.index = self.df_particle.loc[:,"flowline_id"].values
             # self.df_particle.reset_index(drop=True, inplace=True)
 
             self.df_flowline = self.df_flowline.append(df_flowline_points)
-            self.df_flowline.index = self.df_flowline.flowline_id
+            self.df_flowline.index = self.df_flowline.loc[:,"flowline_id"].values
             # self.df_flowline.reset_index(drop=True, inplace=True)
 
             # Add substance name
