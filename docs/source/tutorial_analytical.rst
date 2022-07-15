@@ -249,6 +249,7 @@ Then we can compute the removal by running the 'compute_omp_removal' function:
 phreatic_concentration.compute_omp_removal()
 
 .. ipython:: python
+    :okwarning:
     
     phreatic_concentration.compute_omp_removal()
 
