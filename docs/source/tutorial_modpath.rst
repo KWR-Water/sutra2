@@ -174,7 +174,7 @@ The data files will be stored in location workspace using a given modelname.
     modpath_phrea = MP.ModPathWell(phreatic_schematisation,
                                 workspace = "phreatic_test",
                                 modelname = "phreatic",
-                                mf_exe = "mf2005.exe",
+                                mf_exe = "https://github.com/KWR-Water/sutra2/blob/b9f93141c74a7da4a4c08a13f1239acb2f10966d/mf2005.exe?raw=true",
                                 mp_exe = "mpath7.exe"
                                 )
 
