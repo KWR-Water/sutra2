@@ -1571,8 +1571,6 @@ class SubstanceTransport():
         # add the particle release date
         self.df_flowline['particle_release_day'] = (self.start_date - start_date_contamination).days
 
-
-
         # return (adjusted) df_particle and df_flowline
         return df_particle, df_flowline, C_final
 
