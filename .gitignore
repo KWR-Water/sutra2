@@ -140,8 +140,6 @@ research/test_ws/phreatic.oc
 research/test_ws/phreatic.pcg
 research/test_ws/phreatic.rch
 research/test_ws/phreatic.wel
-greta/mf2005.exe
-greta/mpath7.exe
 test_ws/phreatic.bas
 test_ws/phreatic.dis
 test_ws/phreatic.lpf
@@ -154,8 +152,6 @@ testing/mpath7.exe
 test_ws/phreatic.cbc
 test_ws/phreatic.hds
 test_ws/phreatic.list
-mf2005.exe
-mpath7.exe
 greta/ModPath_functions.py
 test_ws/phreatic_mp.mpbas
 test_ws/phreatic_mp.mpend

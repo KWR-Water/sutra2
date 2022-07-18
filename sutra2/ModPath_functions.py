@@ -2706,7 +2706,7 @@ class ModPathWell:
 
         # y-coordinate equals 0.5 * self.delc[0] in axisymmetric or 2D model
         if self.model_type in ["axisymmetric","2D"]:
-            df_particle["ycoord"] = 0.5 * self.delc[0]
+            df_particle.loc[:,"ycoord"] = 0.5 * self.delc[0]
 
         # remove duplicate records from df_particle
         df_particle = df_particle.drop_duplicates(
