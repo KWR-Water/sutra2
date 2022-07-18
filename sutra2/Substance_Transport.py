@@ -573,7 +573,6 @@ class SubstanceTransport():
         # # make sure that user doesn't call one substance in the hydrochemicalschematisation class and another in the concentration class
         # # probably only a problem for ourselves, this should be written into a larger "run" class for the model which could avoid this
 
-
     def _init_omp(self):
         ''' 
         Initialisation if the Substance is an OMP
@@ -600,6 +599,28 @@ class SubstanceTransport():
             self.df_particle['organism_diam'] = self.removal_parameters['organism_diam']
 
         self.micro_organism_initialized = True
+
+    #@Steven_todo, @MartinK: include in a function (used for both omp_removal as well as mbo removal)     
+    def _contamination_date_vs_well_abstraction(self):
+        # reduce the amount of text per line by extracting the following parameters
+        self.compute_contamination_for_date = self.well.schematisation.compute_contamination_for_date
+        start_date_well = self.well.schematisation.start_date_well
+        start_date_contamination = self.well.schematisation.start_date_contamination
+        self.end_date_contamination = self.well.schematisation.end_date_contamination
+
+        if start_date_well > start_date_contamination:
+            self.start_date = start_date_well
+            self.back_date_start = start_date_contamination
+
+        elif start_date_well <= start_date_contamination:
+            self.start_date = start_date_contamination
+            self.back_date_start = start_date_well
+
+        self.compute_date = self.compute_contamination_for_date - self.start_date
+        self.back_compute_date = self.start_date - self.back_date_start
+    
+        # Particle release day
+        self.particle_release_day = (self.start_date - start_date_contamination).days
 
 
     def _calculate_retardation(self):
@@ -883,25 +904,11 @@ class SubstanceTransport():
 
         self._calculate_total_breakthrough_travel_time()
 
-        # reduce the amount of text per line by extracting the following parameters
-        self.compute_contamination_for_date = self.well.schematisation.compute_contamination_for_date
-        start_date_well = self.well.schematisation.start_date_well
-        start_date_contamination = self.well.schematisation.start_date_contamination
-        self.end_date_contamination = self.well.schematisation.end_date_contamination
-
-        if start_date_well > start_date_contamination:
-            self.start_date = start_date_well
-            self.back_date_start = start_date_contamination
-
-        elif start_date_well <= start_date_contamination:
-            self.start_date = start_date_contamination
-            self.back_date_start = start_date_well
-
-        self.compute_date = self.compute_contamination_for_date - self.start_date
-        self.back_compute_date = self.start_date - self.back_date_start
+        # Calculate contamination relationship to well abstraction date
+        self._contamination_date_vs_well_abstraction()
 
         # add the particle release date
-        self.df_flowline.loc[:,'particle_release_day'] = (self.start_date - start_date_contamination).days
+        self.df_flowline.loc[:,'particle_release_day'] = self.particle_release_day
 
 
     def compute_concentration_in_well_at_date(self):
@@ -1549,27 +1556,13 @@ class SubstanceTransport():
         # Add final concentration in well (at endpoint_id)
         df_flowline.loc[df_flowline.endpoint_id == endpoint_id,"concentration_in_well"] = C_final
 
-        self._calculate_total_breakthrough_travel_time()
+        # SR_todo: @MartinvdS required to calc total_breakthrough_travel_time mbo?
+        # self._calculate_total_breakthrough_travel_time()
 
-        # reduce the amount of text per line by extracting the following parameters
-        self.compute_contamination_for_date = self.well.schematisation.compute_contamination_for_date
-        start_date_well = self.well.schematisation.start_date_well
-        start_date_contamination = self.well.schematisation.start_date_contamination
-        self.end_date_contamination = self.well.schematisation.end_date_contamination
-
-        if start_date_well > start_date_contamination:
-            self.start_date = start_date_well
-            self.back_date_start = start_date_contamination
-
-        elif start_date_well <= start_date_contamination:
-            self.start_date = start_date_contamination
-            self.back_date_start = start_date_well
-
-        self.compute_date = self.compute_contamination_for_date - self.start_date
-        self.back_compute_date = self.start_date - self.back_date_start
+        self._contamination_date_vs_well_abstraction()
         
         # add the particle release date
-        self.df_flowline['particle_release_day'] = (self.start_date - start_date_contamination).days
+        self.df_flowline['particle_release_day'] = self.particle_release_day # (self.start_date - start_date_contamination).days
 
         # return (adjusted) df_particle and df_flowline
         return df_particle, df_flowline, C_final
