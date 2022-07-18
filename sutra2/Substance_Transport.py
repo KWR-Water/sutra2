@@ -1421,9 +1421,9 @@ class SubstanceTransport():
                 Column "input_concentration_gw": float
                     Starting concentration in ambient groundwater [N/L]
                 Column "breakthrough_concentration": float
-                    Breakthrough_concentration oer flowline (after reaching endpoint_id) [N/L]
+                    Breakthrough_concentration over flowline (after reaching endpoint_id) [N/L]
                 Column "breakthrough_travel_time": float
-                    Cumulative traeltime per flowline from start to endpoint [days]
+                    Cumulative traveltime per flowline from start to endpoint [days]
                 Column "concentration_in_well": float
                     Steady-state concentration in well for endpoint_id
                     (assuming all flowlines were contaminated a traveltime duration ago)
