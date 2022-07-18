@@ -167,19 +167,19 @@ The schematisation dict contains the following data:
 
     print(os.getcwd())
 
-.. Step 2: Run the ModpathWell class
-.. =====================================
-.. Next we create an ModpathWell object for the HydroChemicalSchematisation object we just made.
-.. The data files will be stored in location workspace using a given modelname.
+Step 2: Run the ModpathWell class
+=====================================
+Next we create an ModpathWell object for the HydroChemicalSchematisation object we just made.
+The data files will be stored in location workspace using a given modelname.
 
-.. .. ipython:: python
+.. ipython:: python
 
-..     modpath_phrea = MP.ModPathWell(phreatic_schematisation,
-..                                 workspace = "phreatic_test",
-..                                 modelname = "phreatic",
-..                                 mf_exe = "docs//mf2005.exe",
-..                                 mp_exe = "docs//mpath7.exe"
-..                                 )
+    modpath_phrea = MP.ModPathWell(phreatic_schematisation,
+                                workspace = "phreatic_test",
+                                modelname = "phreatic",
+                                mf_exe = "docs//mf2005.exe",
+                                mp_exe = "docs//mpath7.exe"
+                                )
 
 .. .. mf_exe = "..//mf2005.exe",
 .. .. mp_exe = "..//mpath7.exe")

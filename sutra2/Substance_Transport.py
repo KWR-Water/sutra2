@@ -676,7 +676,7 @@ class SubstanceTransport():
         # if log_Koc is zero, assign value of zero
         self.df_particle.loc[self.df_particle.log_Koc == 0,'Koc_temperature_correction'] = 0
 
-    def _calculate_state_concentration_in_zone(self):
+    def _calculate_steady_state_concentration_in_zone_omp(self):
         '''
         Calculates the steady state concentration in the well for each flowline.
         Add column to 'df_particle' with the steady state concentration
@@ -877,7 +877,7 @@ class SubstanceTransport():
 
         self._calculate_retardation()
 
-        self._calculate_state_concentration_in_zone()
+        self._calculate_steady_state_concentration_in_zone_omp()
 
         self.df_particle.loc[:,'breakthrough_travel_time'] = self.df_particle.loc[:,"retardation"].values * self.df_particle.loc[:,"total_travel_time"].values
 
@@ -1449,28 +1449,10 @@ class SubstanceTransport():
         # Organism/Species name
         self.df_flowline['name'] = organism_name
 
-        # reduce the amount of text per line by extracting the following parameters
-        self.compute_contamination_for_date = self.well.schematisation.compute_contamination_for_date
-        start_date_well = self.well.schematisation.start_date_well
-        start_date_contamination = self.well.schematisation.start_date_contamination
-        self.end_date_contamination = self.well.schematisation.end_date_contamination
-
-        if start_date_well > start_date_contamination:
-            self.start_date = start_date_well
-            self.back_date_start = start_date_contamination
-
-        elif start_date_well <= start_date_contamination:
-            self.start_date = start_date_contamination
-            self.back_date_start = start_date_well
-
-        self.compute_date = self.compute_contamination_for_date - self.start_date
-        self.back_compute_date = self.start_date - self.back_date_start
-        
-        # add the particle release date
-        self.df_flowline['particle_release_day'] = (self.start_date - start_date_contamination).days
-
         # Initialize mbo-parameters
         self._init_micro_organism()
+
+
 
         # Calculate removal coefficient 'lamda' [/day].
         df_particle, df_flowline = self.calc_lambda(df_particle, df_flowline,
@@ -1566,6 +1548,30 @@ class SubstanceTransport():
         
         # Add final concentration in well (at endpoint_id)
         df_flowline.loc[df_flowline.endpoint_id == endpoint_id,"concentration_in_well"] = C_final
+
+        self._calculate_total_breakthrough_travel_time()
+
+        # reduce the amount of text per line by extracting the following parameters
+        self.compute_contamination_for_date = self.well.schematisation.compute_contamination_for_date
+        start_date_well = self.well.schematisation.start_date_well
+        start_date_contamination = self.well.schematisation.start_date_contamination
+        self.end_date_contamination = self.well.schematisation.end_date_contamination
+
+        if start_date_well > start_date_contamination:
+            self.start_date = start_date_well
+            self.back_date_start = start_date_contamination
+
+        elif start_date_well <= start_date_contamination:
+            self.start_date = start_date_contamination
+            self.back_date_start = start_date_well
+
+        self.compute_date = self.compute_contamination_for_date - self.start_date
+        self.back_compute_date = self.start_date - self.back_date_start
+        
+        # add the particle release date
+        self.df_flowline['particle_release_day'] = (self.start_date - start_date_contamination).days
+
+
 
         # return (adjusted) df_particle and df_flowline
         return df_particle, df_flowline, C_final
