@@ -184,16 +184,16 @@ The data files will be stored in location workspace using a given modelname.
 .. .. mf_exe = "..//mf2005.exe",
 .. .. mp_exe = "..//mpath7.exe")
 
-.. Now we run the Modpath model, which numerically calculates the flow in the subsurface using the 
-.. 'schematisation' dictionary stored in the HydroChemicalSchematisation object. By default the model will
-.. calculate both the hydraulic head distribution (using modflow: 'run_mfmodel' = True) and
-.. the particle pathlines [X,Y,Z,T-data] (using modpath: 'run_mpmodel' = True) with which OMP removal
-.. or microbial organism ('mbo') removal is later calculated.
+Now we run the Modpath model, which numerically calculates the flow in the subsurface using the 
+'schematisation' dictionary stored in the HydroChemicalSchematisation object. By default the model will
+calculate both the hydraulic head distribution (using modflow: 'run_mfmodel' = True) and
+the particle pathlines [X,Y,Z,T-data] (using modpath: 'run_mpmodel' = True) with which OMP removal
+or microbial organism ('mbo') removal is later calculated.
 
-.. .. ipython:: python
+.. ipython:: python
 
-..     modpath_phrea.run_model(run_mfmodel = True,
-..                         run_mpmodel = True)
+    modpath_phrea.run_model(run_mfmodel = True,
+                        run_mpmodel = True)
 
 .. The traveltime distribution can be plotted as cross-section using either a linear or logarithmic distribution,
 .. with lognorm = True: logarithmic distribution, using for example a 'viridis_r' (viridis reversed) color map.
