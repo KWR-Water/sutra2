@@ -385,14 +385,14 @@ class ModPathWell:
                     # minimum bound
                     val_min = schematisation[iDict][iDict_sub][bound_min]
                 except KeyError as e:
-                    print(e,f"missing {iDict} {iDict_sub}. Continue")
+                    # print(e,f"missing {iDict} {iDict_sub}. Continue")
                     continue
 
                 try:
                     # maximum bound
                     val_max = schematisation[iDict][iDict_sub][bound_max]
                 except KeyError as e:
-                    print(e,f"missing {iDict} {iDict_sub}. Continue")
+                    # print(e,f"missing {iDict} {iDict_sub}. Continue")
                     continue
 
                 try:
@@ -563,13 +563,13 @@ class ModPathWell:
         try:
             top = schematisation[iDict][iDict_sub][self.bound_top]
         except KeyError:
-            print("set top of", iDict, iDict_sub, "to 0.")
+            # print("set top of", iDict, iDict_sub, "to 0.")
             top = self.top
         # CHECK FOR ERRORS IF KEYWORD "bot" is not given
         try: 
             bot = schematisation[iDict][iDict_sub][self.bound_bot]
         except KeyError:
-            print("set bottom of", iDict, iDict_sub, "to model bottom.")
+            # print("set bottom of", iDict, iDict_sub, "to model bottom.")
             bot = min(self.bot)
 
         if not self.model_type == "axisymmetric":
@@ -580,7 +580,8 @@ class ModPathWell:
                 rowidx_min = int(np.argwhere((self.ymid < north) & (self.ymid >= south))[0])
                 rowidx_max = int(np.argwhere((self.ymid < north) & (self.ymid >= south))[-1]) + 1
             except KeyError as e:
-                print(e,f"missing {iDict} {iDict_sub}. Continue")
+                # print(e,f"missing {iDict} {iDict_sub}. Continue")
+                pass
         else:
             north,south,rowidx_min,rowidx_max = None, None,0,1
         try:
@@ -589,8 +590,8 @@ class ModPathWell:
             layidx_max = int(np.argwhere((top >= self.zmid) & (bot < self.zmid))[-1]) + 1
         
         except IndexError as e:
-            print(e, iDict,iDict_sub,top,bot, "(top,bot)")
-            print("Set layidx_min and layidx_max to None.")
+            # print(e, iDict,iDict_sub,top,bot, "(top,bot)")
+            # print("Set layidx_min and layidx_max to None.")
             layidx_min, layidx_max = None, None
 
         try:
@@ -600,7 +601,7 @@ class ModPathWell:
             # np.where((self.xmid < right) & (self.xmid > left))    
         except IndexError as e:
             print(e, iDict,iDict_sub,left,right, "(left,right)")
-            print("Set colidx_min and colidx_max to None.")
+            # print("Set colidx_min and colidx_max to None.")
             colidx_min, colidx_max = None, None
 
         return layidx_min,layidx_max,rowidx_min,rowidx_max,colidx_min,colidx_max
@@ -634,7 +635,7 @@ class ModPathWell:
                                                 dict_subkey = iDict_sub,
                                                 model_type = self.model_type)
                 except Exception as e:
-                    print(e,"Continue.")
+                    # print(e,"Continue.")
                     continue
                 # Fill grid with parameter value 'parm_val'
                 if not None in [layidx_min,layidx_max,colidx_min,colidx_max]:
@@ -1486,13 +1487,13 @@ class ModPathWell:
         # Run modflow model
         try:
             self.run_modflowmod()
+            # Model run completed succesfully
+            print("Model run", self.workspace, self.modelname, "completed without errors:", self.success_mf)
+
         except Exception as e:
             self.success_mf = False
             print(e, self.success_mf)
         # print(self.success_mf, self.buff)
-
-        # Model run completed succesfully
-        print("Model run", self.workspace, self.modelname, "completed without errors:", self.success_mf)
 
     def particle_data(self, partlocs=None, structured=True, particleids=[0],
                                  localx=None, localy=0.5, localz=None,
@@ -1512,10 +1513,10 @@ class ModPathWell:
         self.localz = localz
         # Particle id [part group, particle id] - zero based integers
         if not hasattr(self, "pids"):
-            print("Create a new particle id dataset dict.")
+            # print("Create a new particle id dataset dict.")
             self.pids = {}
         if not hasattr(self, "pg"):
-            print("Create a new particle group dataset dict.")
+            # print("Create a new particle group dataset dict.")
             self.pg = {}
             
         self.pids[pgname] = particleids
@@ -1716,25 +1717,25 @@ class ModPathWell:
 
         # Particle id [part group, particle id] - zero based integers
         if not hasattr(self, "pids"):
-            print("Create a new particle id dataset dict.")
+            # print("Create a new particle id dataset dict.")
             self.pids = {}
         if not hasattr(self, "pg"):
-            print("Create a new particle group dataset dict.")
+            # print("Create a new particle group dataset dict.")
             self.pg = {}
         # Particle group nodes
         if not hasattr(self, "pg_nodes"):
-            print("Create a new particle group nodes dataset dict.")
+            # print("Create a new particle group nodes dataset dict.")
             self.pg_nodes = {}
 
         # Particle data objects
         if not hasattr(self, "pd"):
-            print("Create a new particle dataset dict.")
+            # print("Create a new particle dataset dict.")
             self.pd = {}
 
 
         # Particle counter
         if not hasattr(self, "pcount"):
-            print("Create a new particle counter.")
+            # print("Create a new particle counter.")
             self.pcount = -1
             
         for iPG in pgroups:
@@ -1789,7 +1790,7 @@ class ModPathWell:
                     (self.xmid - 0.5 * self.delr <= self.pg_xmax[iPG]))[-1])
                 # np.where((self.xmid < right) & (self.xmid > left))    
             except IndexError as e:
-                print(e,"Set colidx_min and colidx_max to None.")
+                # print(e,"Set colidx_min and colidx_max to None.")
                 colidx_min, colidx_max = None, None            
 
             try:
@@ -1800,7 +1801,7 @@ class ModPathWell:
                     (self.ymid - 0.5 * self.delc <= self.pg_ymax[iPG]))[-1])
                 # np.where((self.xmid < right) & (self.xmid > left))    
             except IndexError as e:
-                print(e,"Set rowidx_min and rowidx_max to None.")
+                # print(e,"Set rowidx_min and rowidx_max to 0.")
                 rowidx_min, rowidx_max = 0, 0            
 
             try:
@@ -1811,7 +1812,7 @@ class ModPathWell:
                     (self.zmid - 0.5 * self.delv <= self.pg_zmax[iPG]))[-1])  # deepest layer
                 # np.where((self.xmid < right) & (self.xmid > left))    
             except IndexError as e:
-                print(e,"Set layidx_min and layidx_max to 0.")
+                # print(e,"Set layidx_min and layidx_max to 0.")
                 layidx_min, layidx_max = 0, 0            
 
             # Particles ids (use counter)
@@ -2017,25 +2018,25 @@ class ModPathWell:
 
         # Particle id [part group, particle id] - zero based integers
         if not hasattr(self, "pids"):
-            print("Create a new particle id dataset dict.")
+            # print("Create a new particle id dataset dict.")
             self.pids = {}
         if not hasattr(self, "pg"):
-            print("Create a new particle group dataset dict.")
+            # print("Create a new particle group dataset dict.")
             self.pg = {}
         # Particle group nodes
         if not hasattr(self, "pg_nodes"):
-            print("Create a new particle group nodes dataset dict.")
+            # print("Create a new particle group nodes dataset dict.")
             self.pg_nodes = {}
 
         # Particle data objects
         if not hasattr(self, "pd"):
-            print("Create a new particle dataset dict.")
+            # print("Create a new particle dataset dict.")
             self.pd = {}
 
 
         # Particle counter
         if not hasattr(self, "pcount"):
-            print("Create a new particle counter.")
+            # print("Create a new particle counter.")
             self.pcount = -1
             
         for iPG in pgroups:
@@ -2064,21 +2065,21 @@ class ModPathWell:
                 # Determine particle column idx
                 p_col = np.argmin(abs(self.xmid - self.x_start_particle[iPG]))
             except IndexError as e:
-                print(e,"Set p_col to 0")
+                # print(e,"Set p_col to 0")
                 p_col = 0  
 
             try:   
                 # Determine particle row idx  
                 p_row = np.argmin(abs(self.ymid - self.y_start_particle[iPG]))
             except IndexError as e:
-                print(e,"Set p_row to 0")
+                # print(e,"Set p_row to 0")
                 p_row = 0    
 
             try:
                 # Determine particle layer idx
                 p_lay = np.argmin(abs(self.zmid - self.z_start_particle[iPG]))
             except IndexError as e:
-                print(e,"Set p_lay to 0")
+                # print(e,"Set p_lay to 0")
                 p_lay = 0  
 
             # Particles ids (use counter)
@@ -2230,7 +2231,7 @@ class ModPathWell:
         # Copy mfmodel to modpath section
         if mf_namfile is None:  
             if hasattr(self, "mf"):
-                print("Modflow model 'mf' already exists in object.")
+                # print("Modflow model 'mf' already exists in object.")
                 pass
             else:
                 # Load mfmodel assuming namfile exists in same folder
@@ -2301,7 +2302,7 @@ class ModPathWell:
             return frf, flf, fff.'''
             
         cbcobj = bf.CellBudgetFile(fname)
-        print(cbcobj.list_records())
+        # print(cbcobj.list_records())
         try:
             frf = cbcobj.get_data(text='FLOW RIGHT FACE')[0]
             flf = cbcobj.get_data(text='FLOW LOWER FACE')[0]
@@ -2376,8 +2377,8 @@ class ModPathWell:
         else:  # requires check if all indices occur in 'xyz_nodes'
             particle_nodes = [idx for idx in particle_list if idx in xyz_nodes.keys()]
             if len(particle_nodes) < particle_list:
-                print("Warning: particles do not match 'xyz_nodes' indices.\n",
-                "Function uses all 'xyz_nodes' keys instead (=default).")
+                # print("Warning: particles do not match 'xyz_nodes' indices.\n",
+                # "Function uses all 'xyz_nodes' keys instead (=default).")
                 particle_nodes = list(xyz_nodes.keys())
 
         # Create dict for Layer, row, column indices per particle
@@ -3356,7 +3357,7 @@ class ModPathWell:
 
             # Export output data to particle_df and flowline_df
             self._export_to_df(mppth = self.mppth)
-            print("Post-processing modpathrun of type", self.schematisation_type, "completed.")
+            print("Post-processing modpathrun completed.")
 
 
 
