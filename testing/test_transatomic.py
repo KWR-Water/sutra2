@@ -68,12 +68,12 @@ def test_travel_time_distribution_phreatic():
     assert_frame_equal(output, output_phreatic,check_dtype=False)
 
 
-def test_retardation_temp_koc_correction(substance = 'benzene', schematisation_type='phreatic'):
+def test_retardation_temp_koc_correction(pollutant = 'benzene', schematisation_type='phreatic'):
     """ Compares the calculated retardation coefficient for each redox zone against a known case from TRANSATOMIC excel """
     test_ = AW.HydroChemicalSchematisation(schematisation_type=schematisation_type,
                                         computation_method= 'analytical',
                                         what_to_export='omp',
-                                        name = substance,
+                                        name = pollutant,
                                       well_discharge=-319.4*24,
                                       hor_permeability_shallow_aquifer = 0.02,
                                       porosity_vadose_zone=0.38,
@@ -111,7 +111,11 @@ def test_retardation_temp_koc_correction(substance = 'benzene', schematisation_t
         well1.phreatic()
     elif  schematisation_type=='semiconfined':
         well1.semiconfined()
-    conc1 = TR.Transport(well1, substance = substance) #, df_particle, df_flowline)
+
+    # substance object to retrieve removal parameters for
+    substance = TR.Substance(substance_name = pollutant)
+
+    conc1 = TR.Transport(well1, pollutant = substance) #, df_particle, df_flowline)
     conc1.compute_omp_removal()
 
     retardation = {
@@ -131,9 +135,9 @@ def test_retardation_temp_koc_correction(substance = 'benzene', schematisation_t
             'target_aquifer': 1.0000000004342615,
         },
     }
-    retardation_array = np.array([retardation[substance]['vadose_zone'],
-                    retardation[substance]['shallow_aquifer'],
-                    retardation[substance]['target_aquifer']])
+    retardation_array = np.array([retardation[pollutant]['vadose_zone'],
+                    retardation[pollutant]['shallow_aquifer'],
+                    retardation[pollutant]['target_aquifer']])
 
     test_array = np.array(conc1.df_particle.retardation.loc[1:3], dtype='float')
 
@@ -148,14 +152,14 @@ def test_retardation_temp_koc_correction(substance = 'benzene', schematisation_t
     else:
         print("Success, no error in retardation!")
 
-def test_steady_concentration_temp_koc_correction_phreatic(substance='benzene'):
+def test_steady_concentration_temp_koc_correction_phreatic(pollutant='benzene'):
     """ Compares the calculated steady state concentration for a specific radial distance
     for each redox zone against a known case from TRANSATOMIC excel """
 
     test_ = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                         computation_method= 'analytical',
                                         what_to_export='omp',
-                                        name = substance,
+                                        name = pollutant,
                                       well_discharge=-319.4*24,
                                     #   vertical_resistance_shallow_aquifer=500,
                                       hor_permeability_shallow_aquifer = 0.02,
@@ -191,8 +195,11 @@ def test_steady_concentration_temp_koc_correction_phreatic(substance='benzene'):
                                     )
     well1 = AW.AnalyticalWell(test_)
     well1.phreatic()
-    # substance = 'benzene'
-    conc1 = TR.Transport(well1, substance = substance) #, df_particle, df_flowline)
+    # pollutant = 'benzene'
+    # substance object to retrieve removal parameters for
+    substance = TR.Substance(substance_name = pollutant)
+
+    conc1 = TR.Transport(well1, pollutant = substance) #, df_particle, df_flowline)
     conc1.compute_omp_removal()
 
     steady_state_concentration = {
@@ -212,9 +219,9 @@ def test_steady_concentration_temp_koc_correction_phreatic(substance='benzene'):
             'target_aquifer': 1.850450098e-10, #1.8504500983690007e-10,
         },
     }
-    concentration_array = np.array([steady_state_concentration[substance]['vadose_zone'],
-                    steady_state_concentration[substance]['shallow_aquifer'],
-                    steady_state_concentration[substance]['target_aquifer']])
+    concentration_array = np.array([steady_state_concentration[pollutant]['vadose_zone'],
+                    steady_state_concentration[pollutant]['shallow_aquifer'],
+                    steady_state_concentration[pollutant]['target_aquifer']])
 
     test_array = np.array(conc1.df_particle.steady_state_concentration.loc[1:3], dtype=float)
 
@@ -282,13 +289,13 @@ def test_travel_time_distribution_semiconfined():
     #     print("Success, no error in TTD!")
 
 
-def test_steady_concentration_temp_koc_correction_semiconfined(substance='benzene'):
+def test_steady_concentration_temp_koc_correction_semiconfined(pollutant='benzene'):
     """ Compares the calculated retardation coefficient for each redox zone against a known case from TRANSATOMIC excel """
 
     test_ = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
                                         computation_method= 'analytical',
                                         what_to_export='omp',
-                                        name = substance,
+                                        name = pollutant,
                                       well_discharge=-319.4*24,
                                       hor_permeability_shallow_aquifer = 0.02,
                                       porosity_vadose_zone=0.38,
@@ -323,8 +330,11 @@ def test_steady_concentration_temp_koc_correction_semiconfined(substance='benzen
                                     )
     well1 = AW.AnalyticalWell(test_)
     well1.semiconfined()
-    # substance = 'benzene'
-    conc1 = TR.Transport(well1, substance = substance) #, df_particle, df_flowline)
+
+    # substance object to retrieve removal parameters for
+    substance = TR.Substance(substance_name = pollutant)
+
+    conc1 = TR.Transport(well1, pollutant = substance) #, df_particle, df_flowline)
     conc1.compute_omp_removal()
 
     steady_state_concentration = {
@@ -344,9 +354,9 @@ def test_steady_concentration_temp_koc_correction_semiconfined(substance='benzen
             'target_aquifer':0.008232593,
         },
     }
-    concentration_array = np.array([steady_state_concentration[substance]['vadose_zone'],
-                    steady_state_concentration[substance]['shallow_aquifer'],
-                    steady_state_concentration[substance]['target_aquifer']])
+    concentration_array = np.array([steady_state_concentration[pollutant]['vadose_zone'],
+                    steady_state_concentration[pollutant]['shallow_aquifer'],
+                    steady_state_concentration[pollutant]['target_aquifer']])
 
     test_array = np.array(conc1.df_particle.steady_state_concentration.loc[1:3], dtype=float)
 
@@ -498,7 +508,11 @@ def test_phreatic_diffuse_point_source():
                                       )
     phreatic_well = AW.AnalyticalWell(phreatic_scheme)
     phreatic_well.phreatic()
-    phreatic_conc = TR.Transport(phreatic_well, substance = 'OMP-X')
+
+    # substance object to retrieve removal parameters for
+    substance = TR.Substance(substance_name = 'OMP-X')
+
+    phreatic_conc = TR.Transport(phreatic_well, pollutant = substance)
     phreatic_conc.compute_omp_removal()
     df_well_concentration = phreatic_conc.compute_concentration_in_well_at_date()
     df_well_concentration = df_well_concentration.astype({'time': 'int32', 'date': 'datetime64[ns]', 'total_concentration_in_well': 'float64'})
@@ -563,7 +577,11 @@ def test_phreatic_diffuse_only_source():
                                     )
     phreatic_well = AW.AnalyticalWell(phreatic_scheme)
     phreatic_well.phreatic()
-    phreatic_conc = TR.Transport(phreatic_well, substance = 'OMP-X')
+
+    # substance object to retrieve removal parameters for
+    substance = TR.Substance(substance_name = 'OMP-X')
+
+    phreatic_conc = TR.Transport(phreatic_well, pollutant = substance)
     phreatic_conc.compute_omp_removal()
     df_well_concentration = phreatic_conc.compute_concentration_in_well_at_date()
 
@@ -632,7 +650,11 @@ def test_phreatic_point_only_source():
                                     )
     phreatic_well = AW.AnalyticalWell(phreatic_scheme)
     phreatic_well.phreatic()
-    phreatic_conc = TR.Transport(phreatic_well, substance = 'OMP-X')
+
+    # substance object to retrieve removal parameters for
+    substance = TR.Substance(substance_name='OMP-X')
+
+    phreatic_conc = TR.Transport(phreatic_well, pollutant = substance)
     phreatic_conc.compute_omp_removal()
     df_well_concentration = phreatic_conc.compute_concentration_in_well_at_date()
 

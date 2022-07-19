@@ -48,9 +48,9 @@ from pathlib import Path
 
 # Import schematisation functions
 try:
-    from sutra2.ModPath_functions import ModPathWell   
+    from sutra2.ModPath_Well import ModPathWell   
     from sutra2.Analytical_Well import * 
-    from sutra2.Substance_Transport import *
+    from sutra2.Transport_Removal import *
 except ModuleNotFoundError as e:
     print(e, ": second try.")
     module_path = os.path.join("..","sutra2")

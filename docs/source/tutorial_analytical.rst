@@ -186,7 +186,7 @@ In this example we use benzene. First we create the object and view the substanc
 
 .. ipython:: python
 
-    phreatic_concentration = TR.Transport(well = phreatic_well, substance = 'benzene')
+    phreatic_concentration = TR.Transport(well = phreatic_well, pollutant = test_substance)
     phreatic_concentration.removal_parameters
     # or via 'substance.substance_dict' ('default database parameters only', if available)
     phreatic_concentration.substance.substance_dict
@@ -220,7 +220,7 @@ In this example we use benzene. First we create the object and view the substanc
 ..                                                             )
 ..     phreatic_well = AW.AnalyticalWell(phreatic_schematisation)
 ..     phreatic_well.phreatic() 
-..     phreatic_concentration = TR.Transport(phreatic_well, substance = 'benzene')
+..     phreatic_concentration = TR.Transport(phreatic_well, pollutant = test_substance)
     
 Optional: You may specify a different value for the substance parameters, for example
 a different half-life for the anoxic redox zone. This can be input in the Transport
@@ -229,13 +229,16 @@ must be reloaded with the new input.
 
 .. ipython:: python
 
-    phreatic_concentration = TR.Transport(well = phreatic_well, substance = 'benzene',
-                                                partition_coefficient_water_organic_carbon=2,
-                                                dissociation_constant=1,
-                                                halflife_suboxic=12, 
-                                                halflife_anoxic=420, 
-                                                halflife_deeply_anoxic=6000,
-                                                removal_function = 'omp')
+    # Define removal parameters of pollutant
+    substance_benzene = TR.Substance(substance_name = 'benzene',
+                                    partition_coefficient_water_organic_carbon=2,
+                                    molar_mass = 78.1,
+                                    dissociation_constant=1,
+                                    halflife_suboxic=12, 
+                                    halflife_anoxic=420, 
+                                    halflife_deeply_anoxic=6000)
+
+    phreatic_concentration = TR.Transport(well = phreatic_well, pollutant = substance_benzene)
 
 If you have specified values for the substance (e.g. half-life, pKa, log_Koc),
 the default value is overriden and used in the calculation of the removal. You can
@@ -292,7 +295,11 @@ the Transport object.
 
     phreatic_well = AW.AnalyticalWell(phreatic_schematisation)
     phreatic_well.phreatic() 
-    phreatic_concentration = TR.Transport(phreatic_well, substance = 'OMP-X')
+
+    # removal parameters OMP-X (default)
+    substance_ompx = TR.Substance(substance_name = "OMP-X")
+
+    phreatic_concentration = TR.Transport(phreatic_well, pollutant = substance_ompx)
     phreatic_concentration.compute_omp_removal()
     omp_x_plot = phreatic_concentration.plot_concentration(ylim=[0,100 ])
 
@@ -305,7 +312,10 @@ the Transport object.
 
     phreatic_well = AW.AnalyticalWell(phreatic_schematisation)
     phreatic_well.phreatic() 
-    phreatic_concentration = TR.Transport(phreatic_well, substance = 'benzo(a)pyrene')
+    # removal parameters benzo(a)pyrene (default)
+    substance_benzpy = TR.Substance(substance_name = "benzo(a)pyrene")
+
+    phreatic_concentration = TR.Transport(phreatic_well, pollutant = substance_benzpy)
     phreatic_concentration.compute_omp_removal()
     benzo_plot = phreatic_concentration.plot_concentration(ylim=[0,1])
 
@@ -318,7 +328,10 @@ the Transport object.
 
     phreatic_well = AW.AnalyticalWell(phreatic_schematisation)
     phreatic_well.phreatic() 
-    phreatic_concentration = TR.Transport(phreatic_well, substance = 'AMPA')
+    # removal parameters AMPA (default)
+    substance_ampa = TR.Substance(substance_name = "AMPA")
+
+    phreatic_concentration = TR.Transport(phreatic_well, pollutant = substance_ampa)
     phreatic_concentration.compute_omp_removal()
     ampa_plot = phreatic_concentration.plot_concentration( ylim=[0,1])
 

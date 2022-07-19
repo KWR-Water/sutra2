@@ -52,7 +52,7 @@ Now, let’s try some examples. First we import the necessary python packages
     from scipy.special import kn as besselk
     from pathlib import Path
     import sutra2.Analytical_Well as AW
-    import sutra2.ModPath_functions as MP
+    import sutra2.ModPath_Well as mpw
     import sutra2.Transport_Removal as TR
     # path = Path(__file__).parent # path of working directory
 
@@ -231,7 +231,7 @@ in the SubstanceTransport class. The data are stored in a dictionary
 
 .. ipython:: python
     
-    test_substance = ST.Substance(substance_name='benzene')
+    test_substance = TR.Substance(substance_name='benzene')
     test_substance.substance_dict
 
 Step 3b: View the Organism class (Optional)
@@ -241,7 +241,7 @@ in the SubstanceTransport class. The data are stored in a dictionary
 
 .. ipython:: python
     
-    test_organism = ST.Organism(organism_name='MS2')
+    test_organism = TR.MicrobialOrganism(organism_name='MS2')
     test_organism.organism_dict
 
 Step 4: Run the SubstanceTransport class
@@ -256,8 +256,10 @@ In this example we use solani, which is a plant pathogen. First we create the ob
 
 .. ipython:: python
 
-    phreatic_concentration = ST.SubstanceTransport(modpath_phrea, organism = 'solani',
-                                                removal_function = 'mbo')
+    # Define removal parameters of microbial organism
+    organism_solani = TR.MicrobialOrganism(organism_name='solani')
+    # Connect to Transport class
+    phreatic_concentration = TR.Transport(modpath_phrea, pollutant = organism_solani)
     phreatic_concentration.removal_parameters 
 
 Optional: You may specify a different value for the removal_parameters, for example

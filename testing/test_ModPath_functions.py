@@ -106,9 +106,12 @@ mp_exe = os.path.join(path, "mpath7.exe")
 #     modpath_phrea.run_model(run_mfmodel = True,
 #                         run_mpmodel = True)
 
-#     # Calculate advective microbial removal
-#     modpath_removal = ST.SubstanceTransport(modpath_phrea,
-#                                             organism = organism_name)
+    # # Pollutant to define removal parameters for
+    # organism = TR.MicrobialOrganism(organism_name = organism_name)
+
+    # # Calculate advective microbial removal
+    # modpath_removal = TR.Transport(modpath_phrea,
+    #                                         pollutant = organism)
  
 #     # Calculate advective microbial removal
 #     # Final concentration per endpoint_id
@@ -273,10 +276,8 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
         modpath_hor.run_model(run_mfmodel = True,
                             run_mpmodel = True)
 
-
-        # Calculate advective microbial removal
-        modpath_removal = TR.Transport(modpath_hor,
-                                organism = organism_name,
+        # Pollutant to define removal parameters for
+        organism = TR.MicrobialOrganism(organism_name = organism_name,
                                 alpha0_suboxic = rem_parms["alpha0"]["suboxic"],
                                 alpha0_anoxic = rem_parms["alpha0"]["anoxic"],
                                 alpha0_deeply_anoxic =rem_parms["alpha0"]["deeply_anoxic"],
@@ -288,6 +289,10 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
                                 mu1_deeply_anoxic = rem_parms["mu1"]["deeply_anoxic"],
                                 organism_diam = rem_parms["organism_diam"]
                                 )
+
+        # Calculate advective microbial removal
+        modpath_removal = TR.Transport(modpath_hor,
+                                pollutant = organism)
     
         # Calculate advective microbial removal
         # Final concentration per endpoint_id
@@ -467,20 +472,11 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
 #     # Removal parameters organism
 #     rem_parms = removal_parameters[organism_name]
 
-#     # Calculate advective microbial removal
-#     modpath_removal = ST.SubstanceTransport(modpath_hor,
-#                             organism = organism_name,
-#                             alpha0_suboxic = rem_parms["alpha0"]["suboxic"],
-#                             alpha0_anoxic = rem_parms["alpha0"]["anoxic"],
-#                             alpha0_deeply_anoxic =rem_parms["alpha0"]["deeply_anoxic"],
-#                             pH0_suboxic =rem_parms["pH0"]["suboxic"],
-#                             pH0_anoxic =rem_parms["pH0"]["anoxic"],
-#                             pH0_deeply_anoxic =rem_parms["pH0"]["deeply_anoxic"],
-#                             mu1_suboxic = rem_parms["mu1"]["suboxic"],
-#                             mu1_anoxic = rem_parms["mu1"]["anoxic"],
-#                             mu1_deeply_anoxic = rem_parms["mu1"]["deeply_anoxic"],
-#                             organism_diam = rem_parms["organism_diam"]
-#                             )
+    # Pollutant to define removal parameters for
+    organism = TR.MicrobialOrganism(organism_name=organism_name)
+    # Calculate advective microbial removal
+    modpath_removal = TR.Transport(modpath_hor,
+                                    pollutant = organism)
  
 #     # Calculate advective microbial removal
 #     # Final concentration per endpoint_id
@@ -732,20 +728,12 @@ def test_modpath_run_phreatic_withgravelpack_removal(organism_name = "MS2"):
     # Removal parameters organism
     rem_parms = removal_parameters[organism_name]
 
+    # Pollutant to define removal parameters for
+    organism = TR.MicrobialOrganism(organism_name=organism_name)
+
     # Calculate advective microbial removal
     modpath_removal = TR.Transport(modpath_phrea,
-                            organism = organism_name,
-                            alpha0_suboxic = rem_parms["alpha0"]["suboxic"],
-                            alpha0_anoxic = rem_parms["alpha0"]["anoxic"],
-                            alpha0_deeply_anoxic =rem_parms["alpha0"]["deeply_anoxic"],
-                            pH0_suboxic =rem_parms["pH0"]["suboxic"],
-                            pH0_anoxic =rem_parms["pH0"]["anoxic"],
-                            pH0_deeply_anoxic =rem_parms["pH0"]["deeply_anoxic"],
-                            mu1_suboxic = rem_parms["mu1"]["suboxic"],
-                            mu1_anoxic = rem_parms["mu1"]["anoxic"],
-                            mu1_deeply_anoxic = rem_parms["mu1"]["deeply_anoxic"],
-                            organism_diam = rem_parms["organism_diam"]
-                            )
+                            pollutant = organism)
  
     # Calculate advective microbial removal
     # Final concentration per endpoint_id
@@ -879,9 +867,12 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
     modpath_semiconf.run_model(run_mfmodel = True,
                         run_mpmodel = True)
 
+    # Pollutant to define removal parameters for
+    organism = TR.MicrobialOrganism(organism_name=organism_name)
+
     # Calculate advective microbial removal
     modpath_removal = TR.Transport(modpath_semiconf,
-                                            organism = organism_name,
+                                            pollutant = organism,
                                             )
     # modpath_removal.compute_omp_removal()
     # Final concentration per endpoint_id
@@ -1256,9 +1247,12 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
     # Save df_particle 
     summary_traveltimes_mp.to_csv(summary_fname_mp)
 
+    # Pollutant to define removal parameters for
+    organism = TR.MicrobialOrganism(organism_name=organism_name)
+
     # Create traveltime distribution plot using Substance Transport class
     modpath_removal = TR.Transport(well1_mp,
-                            organism = organism_name)
+                            pollutant = organism)
 
     modpath_removal.plot_travel_time_distribution(modpath_removal.df_particle, times_col = "total_travel_time",
                                       distance_col = "xcoord", index_col = "flowline_id",
@@ -1491,20 +1485,23 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
 #     # Removal parameters organism
 #     rem_parms = removal_parameters[organism_name]
 
-#     # Calculate advective microbial removal
-#     modpath_removal = ST.SubstanceTransport(modpath_phrea,
-#                             organism = organism_name,
-#                             alpha0_suboxic = rem_parms["alpha0"]["suboxic"],
-#                             alpha0_anoxic = rem_parms["alpha0"]["anoxic"],
-#                             alpha0_deeply_anoxic =rem_parms["alpha0"]["deeply_anoxic"],
-#                             pH0_suboxic =rem_parms["pH0"]["suboxic"],
-#                             pH0_anoxic =rem_parms["pH0"]["anoxic"],
-#                             pH0_deeply_anoxic =rem_parms["pH0"]["deeply_anoxic"],
-#                             mu1_suboxic = rem_parms["mu1"]["suboxic"],
-#                             mu1_anoxic = rem_parms["mu1"]["anoxic"],
-#                             mu1_deeply_anoxic = rem_parms["mu1"]["deeply_anoxic"],
-#                             organism_diam = rem_parms["organism_diam"]
-#                             )
+    # # Pollutant to define removal parameters for
+    # organism = TR.MicrobialOrganism(organism_name=organism_name,
+    #                         alpha0_suboxic = rem_parms["alpha0"]["suboxic"],
+    #                         alpha0_anoxic = rem_parms["alpha0"]["anoxic"],
+    #                         alpha0_deeply_anoxic =rem_parms["alpha0"]["deeply_anoxic"],
+    #                         pH0_suboxic =rem_parms["pH0"]["suboxic"],
+    #                         pH0_anoxic =rem_parms["pH0"]["anoxic"],
+    #                         pH0_deeply_anoxic =rem_parms["pH0"]["deeply_anoxic"],
+    #                         mu1_suboxic = rem_parms["mu1"]["suboxic"],
+    #                         mu1_anoxic = rem_parms["mu1"]["anoxic"],
+    #                         mu1_deeply_anoxic = rem_parms["mu1"]["deeply_anoxic"],
+    #                         organism_diam = rem_parms["organism_diam"]
+    # )
+
+    # # Calculate advective microbial removal
+    # modpath_removal = TR.SubstanceTransport(modpath_phrea,
+    #                         pollutant = organism)
  
 #     # Calculate advective microbial removal
 #     # Final concentration per endpoint_id
@@ -1648,10 +1645,8 @@ def test_omp_removal_analyticalwell_input(substance_name = 'AMPA'):
     # the OMP (or pathogen) of interest.
 
     # In this example we use benzene. First we create the object and view the substance properties:
-    phreatic_concentration = TR.Transport(well = phreatic_well, substance = substance_name)
+    phreatic_concentration = TR.Transport(well = phreatic_well, pollutant = test_substance)
     phreatic_concentration.removal_parameters
-    # or via 'substance.substance_dict' ('default database parameters only', if available)
-    phreatic_concentration.substance.substance_dict
 
     # .. Optional: You may specify a different value for the substance parameters, for example
     # .. a different half-life for the anoxic redox zone. This can be input in the HydroChemicalSchematisation
@@ -1662,12 +1657,16 @@ def test_omp_removal_analyticalwell_input(substance_name = 'AMPA'):
     # a different half-life for the anoxic redox zone. This can be input in the SubstanceTransport
     # and this will be used in the calculation for the removal for the OMP. The SubstanceTransportclass
     # must be reloaded with the new input.
-    phreatic_concentration = TR.Transport(well = phreatic_well, substance = 'benzene',
+    test_substance2 = TR.Substance(substance_name='benzene',
                                                 partition_coefficient_water_organic_carbon=2,
+                                                molar_mass = 78.1,
                                                 dissociation_constant=1,
                                                 halflife_suboxic=12, 
                                                 halflife_anoxic=420, 
                                                 halflife_deeply_anoxic=6000)
+    
+    phreatic_concentration = TR.Transport(well = phreatic_well, 
+                                            pollutant = test_substance2)
 
     # If you have specified values for the substance (e.g. half-life, pKa, log_Koc),
     # the default value is overriden and used in the calculation of the removal. You can
@@ -1759,16 +1758,16 @@ def test_omp_removal_modpath_input(substance_name = 'AMPA'):
 
     # substance (AMPA)
     substance_name = 'AMPA'
+    substance_default = TR.Substance(substance_name=substance_name,
+                                    partition_coefficient_water_organic_carbon=None,
+                                    molar_mass = None,
+                                    dissociation_constant=None,
+                                    halflife_suboxic=None,
+                                    halflife_anoxic=None,
+                                    halflife_deeply_anoxic=None)
     # Calculate removal of organic micro-pollutants (removal_function = 'omp')
     modpath_removal = TR.Transport(well = modpath_phrea,
-                            substance = substance_name,
-                            partition_coefficient_water_organic_carbon=None,
-                            dissociation_constant=None,
-                            halflife_suboxic=None,
-                            halflife_anoxic=None,
-                            halflife_deeply_anoxic=None,
-                            removal_function = 'omp',
-                            )
+                                    pollutant = substance_default)
 
     # View the updated removal_parameters dictionary from the SubstanceTransport object
     modpath_removal.removal_parameters

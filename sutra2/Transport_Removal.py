@@ -331,7 +331,7 @@ class Substance:
             self.substance_dict = substances_dict[self.substance_name]
 
         else: # return default values if substance not in database
-            self.substance_dict = {self.substance_name:
+            self.substance_dict = \
                 {"substance_name": self.substance_name,
                 "log_Koc": 0,
                 "molar_mass": 10,
@@ -342,7 +342,7 @@ class Substance:
                     "deeply_anoxic": 1e99
                     }
                 }
-            }
+            
         
         # add/overwrite parameters 'if values are not None'
         if partition_coefficient_water_organic_carbon is not None:
@@ -452,7 +452,7 @@ class Transport():
 
     def __init__(self,
                 well: AnalyticalWell or ModPathWell,
-                pollutant: Substance or MicrobialOrganism = 'benzo(a)pyrene',
+                pollutant: Substance or MicrobialOrganism,
                 ):
 
 
@@ -485,7 +485,7 @@ class Transport():
         # pollutant properties (Substance or MicrobialOrganism)
         self.pollutant = pollutant
         # removal_function ('omp' or 'mbo')
-        removal_function = self.pollutant.removal_function
+        self.removal_function = self.pollutant.removal_function
 
         # Run init of 'omp'
         if self.removal_function == 'omp':
@@ -497,18 +497,16 @@ class Transport():
             self.omp_initialized = True
             self.micro_organism_initialized = False
        
-        if pollutant == Substance:
+        if type(self.pollutant) == Substance:
             # Substance
-            pollutant_name = self.pollutant.substance_name
-            self.removal_parameters = {pollutant_name:
-                                        self.pollutant.substance_dict}
+            self.pollutant_name = self.pollutant.substance_name
+            self.removal_parameters = self.pollutant.substance_dict
 
 
-        elif pollutant == MicrobialOrganism:
+        elif type(self.pollutant) == MicrobialOrganism:
             # Microbial Organism
-            pollutant_name = self.pollutant.organism_name
-            self.removal_parameters = {pollutant_name:
-                                        self.pollutant.organism_dict}
+            self.pollutant_name = self.pollutant.organism_name
+            self.removal_parameters = self.pollutant.organism_dict
 
 
     def _init_omp(self):
@@ -826,7 +824,7 @@ class Transport():
             # self.df_flowline.reset_index(drop=True, inplace=True)
 
             # Add substance name
-            self.df_flowline.loc[:,'name'] = self.removal_parameters['substance_name']
+            self.df_flowline.loc[:,'name'] = self.pollutant_name
 
         self._init_omp()
 
@@ -956,7 +954,7 @@ class Transport():
 
         fig = plt.figure(figsize=[10, 5])
         if x_axis == 'Date':
-            plt.plot(df_well_concentration.date, df_well_concentration.total_concentration_in_well, 'b', label =str(self.substance.substance_name))
+            plt.plot(df_well_concentration.date, df_well_concentration.total_concentration_in_well, 'b', label =str(self.pollutant_name))
             plt.axvline(x=start_date_well, color= 'k', label = 'Start date well')
             plt.axvline(x=start_date_contamination, color= 'r', label = 'Start date contamination')
             if end_date_contamination is None:
@@ -970,7 +968,7 @@ class Transport():
             else: plt.xlim(xlim)
 
         elif x_axis == 'Time':
-            plt.plot(df_well_concentration.time/365.24, df_well_concentration.total_concentration_in_well,  'b', label =str(self.substance.substance_name))
+            plt.plot(df_well_concentration.time/365.24, df_well_concentration.total_concentration_in_well,  'b', label =str(self.pollutant_name))
             plt.axvline(x=(start_date_well-start_date).days/365.24, color= 'k', label = 'Start date well')
             plt.axvline(x=(start_date_contamination-start_date).days/365.24, color= 'r', label = 'Start date contamination')
             if end_date_contamination is None:
@@ -991,7 +989,7 @@ class Transport():
         plt.title('Aquifer type: ' + schematisation_type)
         plt.grid()
         plt.legend()
-        # plt.savefig('well_concentration_over_time_'+str(self.substance.substance_name)+'_'+schematisation_type+'.png', dpi=300, bbox_inches='tight')
+        # plt.savefig('well_concentration_over_time_'+str(self.pollutant_name)+'_'+schematisation_type+'.png', dpi=300, bbox_inches='tight')
         return fig
 
     # Check for parameters in df_flowline #
@@ -1389,7 +1387,7 @@ class Transport():
 
         '''
         if organism_name is None:
-            organism_name = self.organism_name
+            organism_name = self.pollutant_name
         
         # Organism/Species name
         self.df_flowline['name'] = organism_name
