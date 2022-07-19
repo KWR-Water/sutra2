@@ -119,7 +119,7 @@ class MicrobialOrganism:
         # Dict    # Acties Steven 25-1-22
 
         # Naming convention organism: Uppercamelcase species
-        micro_organism_dict = {
+        self.micro_organism_database = {
             "solani": 
                 {"organism_name": "solani",
                     "alpha0": {
@@ -180,8 +180,8 @@ class MicrobialOrganism:
             }
 
         # Microbial Organism in db (default values)
-        if self.organism_name in micro_organism_dict.keys():
-            self.organism_dict = micro_organism_dict[self.organism_name]
+        if self.organism_name in self.micro_organism_database.keys():
+            self.organism_dict = self.micro_organism_database[self.organism_name]
         else: # return default values if microbial organism not in database
             self.organism_dict = \
                 {"organism_name": self.organism_name,
@@ -279,7 +279,7 @@ class Substance:
         self.removal_function = 'omp'
 
         # Substance dict here as placeholder for the actual database
-        substances_dict = {
+        self.substance_database = {
             'benzene': {
                 'substance_name': 'benzene',
                 'log_Koc': 1.92,
@@ -327,8 +327,8 @@ class Substance:
             }
 
         # Substance in db (default values)
-        if self.substance_name in substances_dict.keys():
-            self.substance_dict = substances_dict[self.substance_name]
+        if self.substance_name in self.substance_database.keys():
+            self.substance_dict = self.substance_database[self.substance_name]
 
         else: # return default values if substance not in database
             self.substance_dict = \
