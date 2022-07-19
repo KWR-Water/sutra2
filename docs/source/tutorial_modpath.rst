@@ -51,6 +51,7 @@ Now, let’s try some examples. First we import the necessary python packages
     import math
     from scipy.special import kn as besselk
     from pathlib import Path
+    import sutra2
     import sutra2.Analytical_Well as AW
     import sutra2.ModPath_Well as mpw
     import sutra2.Transport_Removal as TR
@@ -174,12 +175,12 @@ The data files will be stored in location workspace using a given modelname.
 
 .. ipython:: python
 
-    package_folder = os.get_package_directory('sutra2')
+    package_folder = sutra2.__file__
     mf_exe = os.path.join(package_folder,"mf2005.exe")
     mp_exe = os.path.join(package_folder,"mpath7.exe")
 
     print(package_folder)
-    
+
     modpath_phrea = mpw.ModPathWell(phreatic_schematisation,
                                 workspace = "phreatic_test",
                                 modelname = "phreatic",
