@@ -270,17 +270,18 @@ the removal for the mbo.
 
 .. ipython:: python
 
-    phreatic_concentration = ST.SubstanceTransport(modpath_phrea, organism = 'MS2',
-                                                removal_function = 'mbo',
-                                                alpha0_suboxic=None,
-                                                alpha0_anoxic=1.e-4,
-                                                alpha0_deeply_anoxic=None,
-                                                pH0_suboxic=None,
-                                                pH0_anoxic=7.5,
-                                                pH0_deeply_anoxic=None,
-                                                mu1_suboxic=None,
-                                                mu1_anoxic=0.01,
-                                                mu1_deeply_anoxic=None)
+    organism_solani_anox = ST.MicrobialOrganism(organism_name = 'solani',
+                                        alpha0_suboxic=None,
+                                        alpha0_anoxic=1.e-4,
+                                        alpha0_deeply_anoxic=None,
+                                        pH0_suboxic=None,
+                                        pH0_anoxic=7.5,
+                                        pH0_deeply_anoxic=None,
+                                        mu1_suboxic=None,
+                                        mu1_anoxic=0.01,
+                                        mu1_deeply_anoxic=None,)
+
+    phreatic_concentration = ST.Transport(modpath_phrea,pollutant = organism_solani_anox)
 
 Step 4a: Calculate the removal of a (non-default) microbial organism ('mbo')
 =============================================================================
@@ -302,20 +303,23 @@ SubstanceTransport object.
     organism_diam =  2.33e-8
     # inactivation coefficient [1/day]
     mu1 = {"suboxic": 0.149,"anoxic": 0.023,"deeply_anoxic": 0.023}
+
+    # removal parameters for MS2 (manual input MicrobialOrganism)
+    organism_ms2 = TR.MicrobialOrganism(organism_name = organism_name,
+                                        alpha0_suboxic = alpha0["suboxic"],
+                                        alpha0_anoxic = alpha0["anoxic"],
+                                        alpha0_deeply_anoxic = alpha0["deeply_anoxic"],
+                                        pH0_suboxic = pH0["suboxic"],
+                                        pH0_anoxic = pH0["anoxic"],
+                                        pH0_deeply_anoxic = pH0["deeply_anoxic"],
+                                        mu1_suboxic = mu1["suboxic"],
+                                        mu1_anoxic = mu1["anoxic"],
+                                        mu1_deeply_anoxic = mu1["deeply_anoxic"],
+                                        organism_diam = organism_diam)
+
     # Calculate advective microbial removal
-    modpath_removal = ST.SubstanceTransport(modpath_phrea,
-                            organism = organism_name,
-                            alpha0_suboxic = alpha0["suboxic"],
-                            alpha0_anoxic = alpha0["anoxic"],
-                            alpha0_deeply_anoxic = alpha0["deeply_anoxic"],
-                            pH0_suboxic = pH0["suboxic"],
-                            pH0_anoxic = pH0["anoxic"],
-                            pH0_deeply_anoxic = pH0["deeply_anoxic"],
-                            mu1_suboxic = mu1["suboxic"],
-                            mu1_anoxic = mu1["anoxic"],
-                            mu1_deeply_anoxic = mu1["deeply_anoxic"],
-                            organism_diam = organism_diam
-                            )
+    modpath_removal = TR.Transport(modpath_phrea,
+                            pollutant = organism_ms2)
     # Removal parameters organism
     modpath_removal.removal_parameters
 
@@ -364,16 +368,20 @@ removal_function == 'omp'
 
     # substance (AMPA)
     substance_name = 'AMPA'
+
+    # Load default removal parameters of AMPA
+    substance_ampa_default = TR.Substance(substance_name = substance_name,
+                                        partition_coefficient_water_organic_carbon=None,
+                                        dissociation_constant=None,
+                                        molar_mass = None,
+                                        halflife_suboxic=None,
+                                        halflife_anoxic=None,
+                                        halflife_deeply_anoxic=None
+                                        )
     # Calculate removal of organic micro-pollutants (removal_function = 'omp')
-    modpath_removal = ST.SubstanceTransport(well = modpath_phrea,
-                            substance = substance_name,
-                            partition_coefficient_water_organic_carbon=None,
-                            dissociation_constant=None,
-                            halflife_suboxic=None,
-                            halflife_anoxic=None,
-                            halflife_deeply_anoxic=None,
-                            removal_function = 'omp',
-                            )
+    modpath_removal = TR.Transport(well = modpath_phrea,
+                                    pollutant = substance_ampa_default
+                                    )
 
 View the updated removal_parameters dictionary from the SubstanceTransport object
 
@@ -425,7 +433,7 @@ the SubstanceTransport object.
 
 .. ipython:: python
 
-    phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'OMP-X')
+    phreatic_concentration = TR.Transport(phreatic_well, substance = 'OMP-X')
     phreatic_concentration.compute_omp_removal()
     omp_x_plot = phreatic_concentration.plot_concentration(ylim=[0,100 ])
 
@@ -433,7 +441,7 @@ the SubstanceTransport object.
 
 .. ipython:: python
 
-    phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzo(a)pyrene')
+    phreatic_concentration = TR.Transport(phreatic_well, substance = 'benzo(a)pyrene')
     phreatic_concentration.compute_omp_removal()
     benzo_plot = phreatic_concentration.plot_concentration(ylim=[0,1])
 
@@ -441,7 +449,7 @@ the SubstanceTransport object.
 
 .. ipython:: python
 
-    phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'AMPA')
+    phreatic_concentration = TR.Transport(phreatic_well, substance = 'AMPA')
     phreatic_concentration.compute_omp_removal()
     ampa_plot = phreatic_concentration.plot_concentration( ylim=[0,1])
 
