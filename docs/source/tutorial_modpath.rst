@@ -177,8 +177,8 @@ The data files will be stored in location workspace using a given modelname.
 
     package_folder = Path(sutra2.__file__).parent
     
-    mf_exe = str(package_folder / "mf2005.exe")
-    mp_exe = str(package_folder / "mpath7.exe")
+    mf_exe = os.path.join(package_folder,"mf2005.exe")
+    mp_exe = os.path.join(package_folder,"mpath7.exe")
 
     p = Path(package_folder).glob('**/*')
     files = [x for x in p if x.is_file()]
@@ -187,9 +187,13 @@ The data files will be stored in location workspace using a given modelname.
     print(mf_exe)
     print(mp_exe)
     print(files)
-    print(mf_exe in files)
 
 
+.. mf_exe = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2/mf2005.exe"
+.. mp_exe = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2/mpath7.exe"
+    
+.. ipython:: python
+    
     modpath_phrea = mpw.ModPathWell(phreatic_schematisation,
                                 workspace = "phreatic_test",
                                 modelname = "phreatic",
@@ -206,10 +210,10 @@ The data files will be stored in location workspace using a given modelname.
 .. the particle pathlines [X,Y,Z,T-data] (using modpath: 'run_mpmodel' = True) with which OMP removal
 .. or microbial organism ('mbo') removal is later calculated.
 
-.. .. ipython:: python
+.. ipython:: python
 
-..     modpath_phrea.run_model(run_mfmodel = True,
-..                         run_mpmodel = True)
+    modpath_phrea.run_model(run_mfmodel = True,
+                        run_mpmodel = True)
 
 .. The traveltime distribution can be plotted as cross-section using either a linear or logarithmic distribution,
 .. with lognorm = True: logarithmic distribution, using for example a 'viridis_r' (viridis reversed) color map.
