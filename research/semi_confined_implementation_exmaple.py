@@ -36,7 +36,7 @@ except ModuleNotFoundError:
     from project_path import module_path
 
 from sutra2.Analytical_Well import *
-from sutra2.Substance_Transport import *
+from sutra2.Transport_Removal import *
 from testing.test_transatomic import *
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
@@ -81,7 +81,7 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
  
 semiconfined_well = AnalyticalWell(semiconfined_scheme) #.semiconfined()
 semiconfined_well.semiconfined()   
-semiconfined_conc = SubstanceTransport(semiconfined_well, substance = 'OMP-X')
+semiconfined_conc = Transport(semiconfined_well, substance = 'OMP-X')
 
 semiconfined_conc.compute_omp_removal()
 semiconfined_conc.plot_concentration(xlim=[0, 500], ylim=[0,1 ])

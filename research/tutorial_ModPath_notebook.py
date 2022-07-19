@@ -32,8 +32,8 @@ import matplotlib.colors as colors
 
 # sutra2 modules    
 import sutra2.Analytical_Well as AW
-import sutra2.ModPath_functions as MP
-import sutra2.Substance_Transport as ST
+import sutra2.ModPath_Well as mpw
+import sutra2.Transport_Removal as TR
 
 # get directory of this file
 path = Path(__file__).parent
@@ -92,7 +92,7 @@ phreatic_schematisation.make_dictionary()
 # The data files will be stored in location workspace using a given modelname.
 
 #<codecell>
-modpath_phrea = MP.ModPathWell(phreatic_schematisation,
+modpath_phrea = mpw.ModPathWell(phreatic_schematisation,
                             workspace = os.path.join(path,"test7_omp_removal"),
                             modelname = "phreatic")
 
@@ -117,7 +117,7 @@ modpath_phrea.run_model(run_mfmodel = True,
 # in the SubstanceTransport class. The data are stored in a dictionary
 
 # <codecell>
-test_substance = ST.Substance(substance_name='benzene')
+test_substance = TR.Substance(substance_name='benzene')
 test_substance.substance_dict
 
 #<markdowncell>
@@ -142,7 +142,7 @@ test_substance.substance_dict
 # substance (AMPA)
 substance_name = 'AMPA'
 # Calculate removal of organic micro-pollutants (removal_function = 'omp')
-modpath_removal = ST.SubstanceTransport(well = modpath_phrea,
+modpath_removal = TR.Transport(well = modpath_phrea,
                         substance = substance_name,
                         partition_coefficient_water_organic_carbon=None,
                         dissociation_constant=None,

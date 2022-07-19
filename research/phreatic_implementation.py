@@ -34,7 +34,7 @@ except ModuleNotFoundError:
     from project_path import module_path
 
 from sutra2.Analytical_Well import *
-from sutra2.Substance_Transport import *
+from sutra2.Transport_Removal import *
 from testing.test_transatomic import *
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
@@ -98,7 +98,7 @@ crosssection_plot = phreatic_well.plot_depth_aquifers()
 crosssection_plot.savefig('phreatic_aquifer_cross-section.png', dpi=300, bbox_inches='tight')  # save_results_to + '/
 
 #%%
-phreatic_conc = SubstanceTransport(phreatic_well, substance = 'OMP-X')
+phreatic_conc = Transport(phreatic_well, substance = 'OMP-X')
 # phreatic_conc = SubstanceTransport(phreatic_well, substance = 'benzene')
 
 # phreatic_conc = SubstanceTransport(phreatic_well, substance = 'benzo(a)pyrene')

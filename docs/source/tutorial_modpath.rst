@@ -53,7 +53,7 @@ Now, let’s try some examples. First we import the necessary python packages
     from pathlib import Path
     import sutra2.Analytical_Well as AW
     import sutra2.ModPath_functions as MP
-    import sutra2.Substance_Transport as ST
+    import sutra2.Transport_Removal as TR
     # path = Path(__file__).parent # path of working directory
 
 
@@ -174,7 +174,7 @@ The data files will be stored in location workspace using a given modelname.
 
 .. ipython:: python
 
-    modpath_phrea = MP.ModPathWell(phreatic_schematisation,
+    modpath_phrea = mpw.ModPathWell(phreatic_schematisation,
                                 workspace = "phreatic_test",
                                 modelname = "phreatic",
                                 mf_exe = "..//mf2005.exe",

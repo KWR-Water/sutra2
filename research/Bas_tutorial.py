@@ -35,7 +35,7 @@ except ModuleNotFoundError:
     from project_path import module_path
 
 from sutra2.Analytical_Well import *
-from sutra2.Substance_Transport import *
+from sutra2.Transport_Removal import *
 # from testing.test_transatomic import *
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
@@ -135,7 +135,7 @@ test_substance.substance_dict
 # the OMP (or pathogen) of interest.
 
 # In this example we use benzene. First we create the object and view the substance properties:
-phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzene')
+phreatic_concentration = Transport(phreatic_well, substance = 'benzene')
 phreatic_concentration.substance.substance_dict
 
 # Optional: You may specify a different value for the substance parameters, for example
@@ -145,7 +145,7 @@ phreatic_concentration.substance.substance_dict
 
 phreatic_well = AnalyticalWell(phreatic_schematisation)
 phreatic_well.phreatic() 
-phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzene',
+phreatic_concentration = Transport(phreatic_well, substance = 'benzene',
                                             partition_coefficient_water_organic_carbon=2,
                                             dissociation_constant=1,
                                             halflife_suboxic=12, 
@@ -178,7 +178,7 @@ beznene_plot.savefig('benzene_plot.png', dpi=300, bbox_inches='tight')
 #%%
 phreatic_well = AnalyticalWell(phreatic_schematisation)
 phreatic_well.phreatic() 
-phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'OMP-X')
+phreatic_concentration = Transport(phreatic_well, substance = 'OMP-X')
 phreatic_concentration.compute_omp_removal()
 omp_x_plot = phreatic_concentration.plot_concentration(ylim=[0,100 ])
 omp_x_plot.savefig('omp_x_plot.png', dpi=300, bbox_inches='tight')
@@ -186,7 +186,7 @@ omp_x_plot.savefig('omp_x_plot.png', dpi=300, bbox_inches='tight')
 
 phreatic_well = AnalyticalWell(phreatic_schematisation)
 phreatic_well.phreatic() 
-phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzo(a)pyrene')
+phreatic_concentration = Transport(phreatic_well, substance = 'benzo(a)pyrene')
 phreatic_concentration.compute_omp_removal()
 benzo_plot = phreatic_concentration.plot_concentration(ylim=[0,1])
 benzo_plot.savefig('benzo_plot.png', dpi=300, bbox_inches='tight')
@@ -194,7 +194,7 @@ benzo_plot.savefig('benzo_plot.png', dpi=300, bbox_inches='tight')
 
 phreatic_well = AnalyticalWell(phreatic_schematisation)
 phreatic_well.phreatic() 
-phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'AMPA')
+phreatic_concentration = Transport(phreatic_well, substance = 'AMPA')
 phreatic_concentration.compute_omp_removal()
 ampa_plot = phreatic_concentration.plot_concentration( ylim=[0,1])
 ampa_plot.savefig('ampa_plot.png', dpi=300, bbox_inches='tight')
@@ -254,7 +254,7 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
 
 phreatic_well = AnalyticalWell(phreatic_scheme)
 phreatic_well.phreatic() 
-phreatic_conc = SubstanceTransport(phreatic_well, substance = 'OMP-X')
+phreatic_conc = Transport(phreatic_well, substance = 'OMP-X')
 # phreatic_conc = SubstanceTransport(phreatic_well, substance = 'benzene')
 # phreatic_conc = SubstanceTransport(phreatic_well, substance = 'benzo(a)pyrene')
 # phreatic_conc = SubstanceTransport(phreatic_well, substance = 'AMPA')
@@ -315,7 +315,7 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
 
 phreatic_well = AnalyticalWell(phreatic_scheme)
 phreatic_well.phreatic() 
-phreatic_conc = SubstanceTransport(phreatic_well, substance = 'OMP-X')
+phreatic_conc = Transport(phreatic_well, substance = 'OMP-X')
 # phreatic_conc = SubstanceTransport(phreatic_well, substance = 'benzene')
 # phreatic_conc = SubstanceTransport(phreatic_well, substance = 'benzo(a)pyrene')
 # phreatic_conc = SubstanceTransport(phreatic_well, substance = 'AMPA')
@@ -381,7 +381,7 @@ semiconfined_well.semiconfined()
 semiconfined_well.df_flowline
 semi_plot1 = semiconfined_well.plot_travel_time_versus_radial_distance(xlim=[0, 4000], ylim=[1e3, 1e6])
 # semi_plot2 = semiconfined_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 4000], ylim=[1e3, 1e10])
-semiconfined_conc = SubstanceTransport(semiconfined_well, substance = 'OMP-X')
+semiconfined_conc = Transport(semiconfined_well, substance = 'OMP-X')
 semiconfined_conc.compute_omp_removal()
 
 # Plot the concentration by the start dates or by time since start (year = 0)

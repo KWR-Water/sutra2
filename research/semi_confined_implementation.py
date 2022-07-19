@@ -37,7 +37,7 @@ except ModuleNotFoundError:
     from project_path import module_path
 
 from sutra2.Analytical_Well import *
-from sutra2.Substance_Transport import *
+from sutra2.Transport_Removal import *
 # if change classes to seperate files, then import them seperately here AH
 
 from testing.test_transatomic import *
@@ -114,7 +114,7 @@ semiconfined_well.df_flowline
 semiconfined_well.plot_travel_time_versus_radial_distance(xlim=[0, 4000], ylim=[1e3, 1e6])
 semiconfined_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
 
-semiconfined_conc = SubstanceTransport(semiconfined_well, substance = 'OMP-X')
+semiconfined_conc = Transport(semiconfined_well, substance = 'OMP-X')
 
 semiconfined_conc.compute_omp_removal()
 

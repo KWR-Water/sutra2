@@ -34,7 +34,7 @@ Operating the analytical module typically involves 5 steps:
 #. Define the hydrogeochemical system using the HydroChemicalSchematisation class. 
 #. Run the AnalyticalWell class to calculate the travel time distribution in the different aquifer zones
 #. Run the Substance class to retrieve the substance (removal) parameters
-#. Run the SubstanceTransport class to calculate the removal and concentration in each zone and in the well
+#. Run the Transport class to calculate the removal and concentration in each zone and in the well
 #. Plot the desired functions
 
 Now, let’s try some examples. First we import the necessary python packages
@@ -54,8 +54,8 @@ Now, let’s try some examples. First we import the necessary python packages
     from scipy.special import kn as besselk
     from pathlib import Path
 
-    from sutra2.Analytical_Well import *
-    from sutra2.Substance_Transport import *
+    import sutra2.Analytical_Well as AW
+    import sutra2.Transport_Removal as TR
 
 
 Step 1: Define the HydroChemicalSchematisation
@@ -95,7 +95,7 @@ Lets start with a simple example defining a HydroChemicalSchematisation object f
 
 .. ipython:: python
 
-    phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
+    phreatic_schematisation = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                                         computation_method='analytical',
                                                         removal_function = 'omp',
                                                         well_discharge=-7500, #m3/day
@@ -135,7 +135,7 @@ Next we create an AnalyticalWell object for the HydroChemicalSchematisation obje
 
 .. ipython:: python
 
-    phreatic_well = AnalyticalWell(phreatic_schematisation)
+    phreatic_well = AW.AnalyticalWell(phreatic_schematisation)
 
 Then we calculate the travel time for each of the zones unsaturated, shallow aquifer and target aquifer zones
 by running the .phreatic() function for the well object. 
@@ -168,25 +168,25 @@ From the AnalyticalWell class two other important outputs are:
 Step 3: View the Substance class (Optional)
 ===========================================
 You can retrieve the default substance parameters used to calculate the removal in the
-SubstanceTransport class. The data are stored in a dictionary
+Transport class. The data are stored in a dictionary
 
 .. ipython:: python
     
-    test_substance = Substance(substance_name='benzene')
+    test_substance = TR.Substance(substance_name='benzene')
     test_substance.substance_dict
 
 
-Step 4: Run the SubstanceTransport class
+Step 4: Run the Transport class
 ========================================
 To calculate the removal and the steady-state concentration in each zone, create a concentration
-object by running the SubstanceTransport class with the phreatic_well object and specifying
+object by running the Transport class with the phreatic_well object and specifying
 the OMP (or pathogen) of interest.
 
 In this example we use benzene. First we create the object and view the substance properties:
 
 .. ipython:: python
 
-    phreatic_concentration = SubstanceTransport(well = phreatic_well, substance = 'benzene')
+    phreatic_concentration = TR.Transport(well = phreatic_well, substance = 'benzene')
     phreatic_concentration.removal_parameters
     # or via 'substance.substance_dict' ('default database parameters only', if available)
     phreatic_concentration.substance.substance_dict
@@ -198,7 +198,7 @@ In this example we use benzene. First we create the object and view the substanc
 
 .. .. ipython:: python
 
-..     phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phreatic',
+..     phreatic_schematisation = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
 ..                                                             well_discharge=-7500, #m3/day
 ..                                                             recharge_rate=0.0008, #m/day
 ..                                                             thickness_vadose_zone_at_boundary=5,
@@ -218,18 +218,18 @@ In this example we use benzene. First we create the object and view the substanc
 ..                                                             halflife_anoxic=420, 
 ..                                                             halflife_deeply_anoxic=6000,
 ..                                                             )
-..     phreatic_well = AnalyticalWell(phreatic_schematisation)
+..     phreatic_well = AW.AnalyticalWell(phreatic_schematisation)
 ..     phreatic_well.phreatic() 
-..     phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzene')
+..     phreatic_concentration = TR.Transport(phreatic_well, substance = 'benzene')
     
 Optional: You may specify a different value for the substance parameters, for example
-a different half-life for the anoxic redox zone. This can be input in the SubstanceTransport
-and this will be used in the calculation for the removal for the OMP. The SubstanceTransportclass
+a different half-life for the anoxic redox zone. This can be input in the Transport
+and this will be used in the calculation for the removal for the OMP. The Transportclass
 must be reloaded with the new input.
 
 .. ipython:: python
 
-    phreatic_concentration = SubstanceTransport(well = phreatic_well, substance = 'benzene',
+    phreatic_concentration = TR.Transport(well = phreatic_well, substance = 'benzene',
                                                 partition_coefficient_water_organic_carbon=2,
                                                 dissociation_constant=1,
                                                 halflife_suboxic=12, 
@@ -285,14 +285,14 @@ You can also compute the removal for a different OMP of interest:
 * benzo(a)pyrene
 
 To do so you can use the original schematisation, but specify a different OMP when you create
-the SubstanceTransport object.
+the Transport object.
 
 .. ipython:: python
     :okwarning:
 
-    phreatic_well = AnalyticalWell(phreatic_schematisation)
+    phreatic_well = AW.AnalyticalWell(phreatic_schematisation)
     phreatic_well.phreatic() 
-    phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'OMP-X')
+    phreatic_concentration = TR.Transport(phreatic_well, substance = 'OMP-X')
     phreatic_concentration.compute_omp_removal()
     omp_x_plot = phreatic_concentration.plot_concentration(ylim=[0,100 ])
 
@@ -303,9 +303,9 @@ the SubstanceTransport object.
 .. ipython:: python
     :okwarning:
 
-    phreatic_well = AnalyticalWell(phreatic_schematisation)
+    phreatic_well = AW.AnalyticalWell(phreatic_schematisation)
     phreatic_well.phreatic() 
-    phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzo(a)pyrene')
+    phreatic_concentration = TR.Transport(phreatic_well, substance = 'benzo(a)pyrene')
     phreatic_concentration.compute_omp_removal()
     benzo_plot = phreatic_concentration.plot_concentration(ylim=[0,1])
 
@@ -316,9 +316,9 @@ the SubstanceTransport object.
 .. ipython:: python
     :okwarning:
 
-    phreatic_well = AnalyticalWell(phreatic_schematisation)
+    phreatic_well = AW.AnalyticalWell(phreatic_schematisation)
     phreatic_well.phreatic() 
-    phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'AMPA')
+    phreatic_concentration = TR.Transport(phreatic_well, substance = 'AMPA')
     phreatic_concentration.compute_omp_removal()
     ampa_plot = phreatic_concentration.plot_concentration( ylim=[0,1])
 

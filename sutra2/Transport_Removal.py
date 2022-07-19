@@ -44,7 +44,7 @@ from datetime import timedelta
 #     sys.path.insert(0,module_path)
 
 from sutra2.Analytical_Well import AnalyticalWell 
-from sutra2.ModPath_functions import ModPathWell
+from sutra2.ModPath_Well import ModPathWell
 
 # from Analytical_Well import AnalyticalWell
 # from ModPath_functions import ModPathWell
@@ -54,38 +54,47 @@ from sutra2.ModPath_functions import ModPathWell
 
 path = os.getcwd()  # path of working directory
 
-class Organism:
+class MicrobialOrganism:
     ''' 
     Placeholder class which will later be replaced by the QSAR functionality of AquaPriori ?!
 
     For removal of microbial organisms ('mbo') / pathogen 
     
+    Return
+    -------
     microbial_species_dict: dict
-    Attributes
-    ---------
-    organism_name: str
-        species_name of the substance
-        
-    'alpha0': float
-        reference_collision_efficiency [-]
-        per redox zone ('suboxic', 'anoxic', deeply_anoxic')
-    'pH0': float
-        reference pH for calculating collision efficiency [-]
-        per redox zone ('suboxic', 'anoxic', deeply_anoxic')
-    'organism_diam': float
-        diameter of pathogen/species [m]
-    'mu1': float
-        inactivation coefficient [1/day]
-        per redox zone ('suboxic', 'anoxic', deeply_anoxic')
-    '''  
-    def __init__(self, organism_name, 
-                    removal_function = 'mbo'):
+    removal_function = 'mbo'
+    '''
+
+    def __init__(self, organism_name,
+                alpha0_suboxic: int or float = None,
+                alpha0_anoxic: int or float = None,
+                alpha0_deeply_anoxic: int or float = None,
+                pH0_suboxic: int or float = None,
+                pH0_anoxic: int or float = None,
+                pH0_deeply_anoxic: int or float = None,
+                mu1_suboxic: int or float = None,
+                mu1_anoxic: int or float = None,
+                mu1_deeply_anoxic: int or float = None,
+                organism_diam: int or float = None
+                ):
         """
         Parameters
         ----------
-        organism: str
+        organism_name: str
             name of the organism (for now limited dictionary to 
             'solani','carotovorum', 'solanacearum')
+        alpha0_suboxic, alpha0_anoxic, alpha0_deeply_anoxic: float
+            reference_collision_efficiency [-]
+            per redox zone ('suboxic', 'anoxic', deeply_anoxic')
+        pH0_suboxic, pH0_anoxic, pH0_deeply_anoxic: float
+            reference pH for calculating collision efficiency [-]
+            per redox zone ('suboxic', 'anoxic', deeply_anoxic')
+        mu1_suboxic, mu1_anoxic, mu1_deeply_anoxic: float
+            inactivation coefficient [1/day]
+            per redox zone ('suboxic', 'anoxic', deeply_anoxic')
+        organism_diam: float
+            diameter of pathogen/species [m]
 
         Returns
         -------
@@ -102,9 +111,10 @@ class Organism:
                 inactivation coefficient [1/day]
                 per redox zone ('suboxic', 'anoxic', deeply_anoxic')
 
-        @SR (21-1-2022): Adjust documentation for microbial organisms (mbo)        
         """
         self.organism_name = organism_name
+        # (default removal function)
+        self.removal_function = 'mbo'
 
         # Dict    # Acties Steven 25-1-22
 
@@ -169,63 +179,85 @@ class Organism:
                 },
             }
 
+        # Microbial Organism in db (default values)
         if self.organism_name in micro_organism_dict.keys():
             self.organism_dict = micro_organism_dict[self.organism_name]
-        else: # return empty dict
+        else: # return default values if microbial organism not in database
             self.organism_dict = \
                 {"organism_name": self.organism_name,
                  "alpha0": {
-                    "suboxic": None, 
-                    "anoxic": None, 
-                    "deeply_anoxic": None
+                    "suboxic": 1.e-2, 
+                    "anoxic": 1.e-3, 
+                    "deeply_anoxic": 1.e-4
                     },
                  "pH0": {
-                    "suboxic": None, 
-                    "anoxic": None, 
-                    "deeply_anoxic": None
+                    "suboxic": 7.5, 
+                    "anoxic": 7.5, 
+                    "deeply_anoxic": 7.5
                     },
-                 "organism_diam": None,
+                 "organism_diam": 1.e-6,
                  "mu1": {
-                    "suboxic": None, 
-                    "anoxic": None, 
-                    "deeply_anoxic": None
+                    "suboxic": 1., 
+                    "anoxic": 0.1, 
+                    "deeply_anoxic": 0.1
                      }
                 }
+
+        # add/overwrite parameters 'if values are not None'
+        if alpha0_suboxic is not None:
+            self.organism_dict["alpha0"]["suboxic"] = alpha0_suboxic
+        if alpha0_anoxic is not None:
+            self.organism_dict["alpha0"]["anoxic"] = alpha0_anoxic
+        if alpha0_deeply_anoxic is not None:
+            self.organism_dict["alpha0"]["deeply_anoxic"] = alpha0_deeply_anoxic
+        if pH0_suboxic is not None:
+            self.organism_dict["pH0"]["suboxic"] = pH0_suboxic
+        if pH0_anoxic is not None:
+            self.organism_dict["pH0"]["anoxic"] = pH0_anoxic
+        if pH0_deeply_anoxic is not None:
+            self.organism_dict["pH0"]["deeply_anoxic"] = pH0_deeply_anoxic
+        if organism_diam is not None:
+            self.organism_dict["organism_diam"] = organism_diam
+        if mu1_suboxic is not None:
+            self.organism_dict["mu1"]["suboxic"] = mu1_suboxic
+        if mu1_anoxic is not None:
+            self.organism_dict["mu1"]["anoxic"] = mu1_anoxic
+        if mu1_deeply_anoxic is not None:
+            self.organism_dict["mu1"]["deeply_anoxic"] = mu1_deeply_anoxic
+
         
 class Substance:
     ''' 
     Placeholder class which will later be replaced by the QSAR functionality of AquaPriori.
 
     For removal of organic micro pollutants (omp)
-    substances_dict: dict
-
-    Attributes
-    ---------
-    substance_name: String,
-        substance_name of the substance (for now limited dictionary to 'benzene', 'AMPA', 'benzo(a)pyrene'
-    substance_dict: dictionary
-        Nested dictionary with the following keys per substance.
-
     
-    substance_name: String,
-        substance_name of the substance (for now limited dictionary to 'benzene', 'AMPA', 'benzo(a)pyrene')
-    log Koc: float
-        distribution coefficient of organic carbon and water, [-]
-    molar_mass: float
-        molar mass of substance, [g/mol]
-    pKa: float
-        disassociation constant for acid H-OMP, [-]
-    omp_half_life: float
-        per redox zone ('suboxic', 'anoxic', deeply_anoxic'), [days]
-
+    Return
+    -------
+    microbial_species_dict: dict
+    removal_function = 'omp'
     '''
-    def __init__(self, substance_name, 
-                    removal_function = 'omp'):
-        """
+    
+    def __init__(self, substance_name,
+                molar_mass: int or float = None,
+                partition_coefficient_water_organic_carbon: int or float = None,
+                dissociation_constant: int or float = None,
+                halflife_suboxic: int or float = None,
+                halflife_anoxic: int or float = None,
+                halflife_deeply_anoxic: int or float = None):
+        '''
         Parameters
-        ----------
+        -----------
         substance_name: String,
             substance_name of the substance (for now limited dictionary to 'benzene', 'AMPA', 'benzo(a)pyrene'
+        molar_mass: float or int
+            Molar mass of the substance [g/mol]
+        partition_coefficient_water_organic_carbon: float
+            Distribution coefficient of OMP between organic carbon and water, dimensionless.
+        dissociation_constant: float
+            Dissociation equilibirum constant of the OMP, dimensionless.
+        halflife_suboxic, halflife_anoxic, halflife_deeply_anoxic: float
+            Time required to reduce the concentration of the OMP by half, from any concentration point in time [days].
 
         Returns
         -------
@@ -239,8 +271,12 @@ class Substance:
             omp_half_life: float
                 per redox zone, [days])
      
-        """
+        '''
+
+        # substance name
         self.substance_name = substance_name
+        # (default removal function)
+        self.removal_function = 'omp'
 
         # Substance dict here as placeholder for the actual database
         substances_dict = {
@@ -289,26 +325,45 @@ class Substance:
                     },
                 },
             }
+
+        # Substance in db (default values)
         if self.substance_name in substances_dict.keys():
             self.substance_dict = substances_dict[self.substance_name]
-        else: # return empty dict
-            self.substance_dict = \
+
+        else: # return default values if substance not in database
+            self.substance_dict = {self.substance_name:
                 {"substance_name": self.substance_name,
-                 "log_Koc": 0,
-                 "molar_mass": 0,
-                 'pKa': None,
-                 "omp_half_life": {
-                    "suboxic": None, 
-                    "anoxic": None, 
-                    "deeply_anoxic": None
-                     }
+                "log_Koc": 0,
+                "molar_mass": 10,
+                'pKa': 99,
+                "omp_half_life": {
+                    "suboxic": 1e99, 
+                    "anoxic": 1e99, 
+                    "deeply_anoxic": 1e99
+                    }
                 }
+            }
+        
+        # add/overwrite parameters 'if values are not None'
+        if partition_coefficient_water_organic_carbon is not None:
+            self.substance_dict["log_Koc"] = partition_coefficient_water_organic_carbon
+        if molar_mass is not None:
+            self.substance_dict["molar_mass"] = molar_mass
+        if dissociation_constant is not None:
+            self.substance_dict["pKa"] = dissociation_constant
+        if halflife_suboxic is not None:
+            self.substance_dict["omp_half_life"]["suboxic"] = halflife_suboxic
+        if halflife_anoxic is not None:
+            self.substance_dict["omp_half_life"]["anoxic"] = halflife_anoxic
+        if halflife_deeply_anoxic is not None:
+            self.substance_dict["omp_half_life"]["deeply_anoxic"] = halflife_deeply_anoxic
+
 
 #ah_todo @MartinK, MartinvdS -> let the user specify the chemical in the Substance transport file instead of schematisation?
 # also let them feed it a dictionary with their own substance?
 
 
-class SubstanceTransport():
+class Transport():
     """ 
 
     # @Steven --> verander in 'Transport'
@@ -397,33 +452,11 @@ class SubstanceTransport():
 
     def __init__(self,
                 well: AnalyticalWell or ModPathWell,
-                substance: Substance = 'benzo(a)pyrene',
-                organism: Organism = 'solani',
-                partition_coefficient_water_organic_carbon=None,
-                dissociation_constant=None,
-                halflife_suboxic=None,
-                halflife_anoxic=None,
-                halflife_deeply_anoxic=None,
-                alpha0_suboxic=None,
-                alpha0_anoxic=None,
-                alpha0_deeply_anoxic=None,
-                pH0_suboxic=None,
-                pH0_anoxic=None,
-                pH0_deeply_anoxic=None,
-                mu1_suboxic=None,
-                mu1_anoxic=None,
-                mu1_deeply_anoxic=None,
-                organism_diam=None,
-                # Add 'removal_function'=None?
-                removal_function=None
+                pollutant: Substance or MicrobialOrganism = 'benzo(a)pyrene',
                 ):
 
 
         '''
-        #@ Steven
-        well
-        removal_function
-
         removal_parameters: 
 
         Initialization of the SubstanceTransport class. Checks for either user-defined OMP substance parameters (removal_function == 'omp')
@@ -437,64 +470,22 @@ class SubstanceTransport():
             The Substance object with the OMP of interest.
         organism: object
             The Organism object with microbial organism (MBO) of interest
-        partition_coefficient_water_organic_carbon: float
-            Distribution coefficient of OMP between organic carbon and water, dimensionless.
-        dissociation_constant: float
-            Dissociation equilibirum constant of the OMP, dimensionless.
-        halflife_suboxic, halflife_anoxic, halflife_deeply_anoxic: float
-            Time required to reduce the concentration of the OMP by half, from any concentration point in time [days].
-        alpha0_suboxic, alpha0_anoxic, alpha0_deeply_anoxic: float
-            reference_collision_efficiency [-]
-            per redox zone ('suboxic', 'anoxic', deeply_anoxic')
-        pH0_suboxic, pH0_anoxic, pH0_deeply_anoxic: float
-            reference pH for calculating collision efficiency [-]
-            per redox zone ('suboxic', 'anoxic', deeply_anoxic')
-        mu1_suboxic, mu1_anoxic, mu1_deeply_anoxic: float
-            inactivation coefficient [1/day]
-            per redox zone ('suboxic', 'anoxic', deeply_anoxic')
-        organism_diam: float
-            diameter of pathogen/species [m]
-        removal_function: str 
+
+        removal_function (inherited from Substance ('omp') or MicrobialOrganism ('mbo')): str 
             removal_function: ['omp' or 'mbo']
             Calculate removal of either organic micro pollutants ('omp') or microbial organisms ('mbo')
         '''
+        
+        # well: AnalyticalWell or Modpath_Well object
         self.well = well
+        # Load input dataframes
         self.df_particle = well.df_particle
         self.df_flowline = well.df_flowline
 
-        # Substance
-        self.substance_name = substance
-        self.partition_coefficient_water_organic_carbon = partition_coefficient_water_organic_carbon
-        self.dissociation_constant = dissociation_constant
-        self.halflife_suboxic = halflife_suboxic
-        self.halflife_anoxic = halflife_anoxic
-        self.halflife_deeply_anoxic = halflife_deeply_anoxic
-        
-        # Organism
-        self.organism_name = organism
-        self.alpha0_suboxic=alpha0_suboxic
-        self.alpha0_anoxic=alpha0_anoxic
-        self.alpha0_deeply_anoxic=alpha0_deeply_anoxic
-        self.pH0_suboxic=pH0_suboxic
-        self.pH0_anoxic=pH0_anoxic
-        self.pH0_deeply_anoxic=pH0_deeply_anoxic
-        self.mu1_suboxic=mu1_suboxic
-        self.mu1_anoxic=mu1_anoxic
-        self.mu1_deeply_anoxic=mu1_deeply_anoxic
-        self.organism_diam=organism_diam        
-
-        # Removal function
-        if removal_function is not None:
-            self.removal_function = removal_function
-        else:
-            self.removal_function = well.schematisation.removal_function    
-
-        # Load substance data
-        self.substance = Substance(substance_name = substance, 
-                                removal_function = self.removal_function)
-        # Load microbial organism data
-        self.organism = Organism(organism_name = organism, 
-                                removal_function = self.removal_function)
+        # pollutant properties (Substance or MicrobialOrganism)
+        self.pollutant = pollutant
+        # removal_function ('omp' or 'mbo')
+        removal_function = self.pollutant.removal_function
 
         # Run init of 'omp'
         if self.removal_function == 'omp':
@@ -505,82 +496,20 @@ class SubstanceTransport():
         elif self.removal_function == 'mbo':
             self.omp_initialized = True
             self.micro_organism_initialized = False
+       
+        if pollutant == Substance:
+            # Substance
+            pollutant_name = self.pollutant.substance_name
+            self.removal_parameters = {pollutant_name:
+                                        self.pollutant.substance_dict}
 
-        # Create user dict with 'removal_parameters' from input
-        # if self.removal_function == 'omp':
-        user_removal_parameters = {
-            self.substance_name:
-                {'substance_name': self.substance_name,
-                'log_Koc': self.partition_coefficient_water_organic_carbon,
-                'pKa': self.dissociation_constant,
-                'omp_half_life': {
-                    'suboxic': self.halflife_suboxic,
-                    'anoxic': self.halflife_anoxic,
-                    'deeply_anoxic': self.halflife_deeply_anoxic,
-                    }
-                },
-            self.organism_name:
-                {"organism_name": self.organism_name,
-                    "alpha0": {
-                        "suboxic": self.alpha0_suboxic, 
-                        "anoxic": self.alpha0_anoxic, 
-                        "deeply_anoxic": self.alpha0_deeply_anoxic
-                        },
-                    "pH0": {
-                        "suboxic": self.pH0_suboxic, 
-                        "anoxic": self.pH0_anoxic, 
-                        "deeply_anoxic": self.pH0_deeply_anoxic
-                        },
-                    "organism_diam": self.organism_diam,
-                    "mu1": {
-                        "suboxic": self.mu1_suboxic, 
-                        "anoxic": self.mu1_anoxic, 
-                        "deeply_anoxic": self.mu1_deeply_anoxic
-                        }
-                    },
-                }
 
-        # Compare the removal_parameters dictionaries and override the default values if the user inputs a value
-        
-        if self.removal_function == 'omp':
-            # User defined removal parameters [omp]
-            user_removal_parameters = user_removal_parameters[self.substance_name]
-            # assumes that default dict contains the substance input by the user (we only have three right now though!)
-            default_removal_parameters = self.substance.substance_dict
-        elif self.removal_function == 'mbo':
-            # User defined removal parameters [omp]
-            user_removal_parameters = user_removal_parameters[self.organism_name]
-            # assumes that default dict contains microbial organism input 
-            # (for now limited dictionary to 'solani','carotovorum', 'solanacearum')
-            default_removal_parameters = self.organism.organism_dict
+        elif pollutant == MicrobialOrganism:
+            # Microbial Organism
+            pollutant_name = self.pollutant.organism_name
+            self.removal_parameters = {pollutant_name:
+                                        self.pollutant.organism_dict}
 
-        # iterate through the dictionary keys
-        # @Steven: check of over user_removal_parameters moet worden geïtereerd?! --> ipv over default_parameters
-        for key, value in user_removal_parameters.items():
-            if type(value) is dict:
-                for tkey, cvalue in value.items():
-                    if cvalue is None: #reassign the value from the default dict if not input by the user
-                        user_removal_parameters[key][tkey] = default_removal_parameters[key][tkey]
-                    elif type(cvalue) is dict:
-                        for subkey, subval in cvalue.items():
-                            if subval is None:
-                                user_removal_parameters[key][tkey][subkey] = default_removal_parameters[key][tkey][subkey]
-                    # else: no assignment from default dict required...
-            else:
-                if value is None:
-                    user_removal_parameters[key] = default_removal_parameters[key]
-            
-        #assign updated dict as attribute of the class to be able to access later
-        self.removal_parameters = user_removal_parameters 
-
-        # microbial organism init
-        # @SR : init of microbial organisms (pathogen)
-
-        # Check if ModPathWell (Class) can be used instead of 'AnalyticalWell'
-        
-        # # AH need to make sure here that the substance passed is the same, e.g. comapre the dictionaries BUT ALSO
-        # # make sure that user doesn't call one substance in the hydrochemicalschematisation class and another in the concentration class
-        # # probably only a problem for ourselves, this should be written into a larger "run" class for the model which could avoid this
 
     def _init_omp(self):
         ''' 

@@ -36,7 +36,7 @@ except ModuleNotFoundError:
     from project_path import module_path
 
 from sutra2.Analytical_Well import *
-from sutra2.Substance_Transport import *
+from sutra2.Transport_Removal import *
 from testing.test_transatomic import *
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
@@ -92,7 +92,7 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                     )
 phreatic_well = AnalyticalWell(phreatic_scheme)
 phreatic_well.phreatic()
-phreatic_conc = SubstanceTransport(phreatic_well, substance = 'OMP-X')
+phreatic_conc = Transport(phreatic_well, substance = 'OMP-X')
 phreatic_conc.compute_omp_removal()
 df_well_concentration = phreatic_conc.compute_concentration_in_well_at_date()
 
@@ -130,7 +130,7 @@ cumulative_plot = phreatic_well.plot_travel_time_versus_cumulative_abstracted_wa
 
 # test_substance = Substance(substance_name='benzene')
 
-phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'OMP-X')
+phreatic_concentration = Transport(phreatic_well, substance = 'OMP-X')
 phreatic_concentration.compute_omp_removal()
 phreatic_concentration.plot_concentration(ylim=[0,100 ])
 
@@ -138,13 +138,13 @@ phreatic_concentration.plot_concentration(ylim=[0,100 ])
 
 phreatic_well = AnalyticalWell(phreatic_schematisation)
 phreatic_well.phreatic() 
-phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'benzene')
+phreatic_concentration = Transport(phreatic_well, substance = 'benzene')
 phreatic_concentration.compute_omp_removal()
 phreatic_concentration.plot_concentration(ylim=[0,10 ])
 
 phreatic_well = AnalyticalWell(phreatic_schematisation)
 phreatic_well.phreatic() 
-phreatic_concentration = SubstanceTransport(phreatic_well, substance = 'AMPA')
+phreatic_concentration = Transport(phreatic_well, substance = 'AMPA')
 phreatic_concentration.compute_omp_removal()
 phreatic_concentration.plot_concentration( ylim=[0,1 ])
 # %%

@@ -1,6 +1,8 @@
 
 #%%
 import pytest
+import numpy as np
+import datetime as dt
 from pandas import read_csv
 import pandas as pd
 import os
@@ -15,8 +17,8 @@ from pathlib import Path
 #     from project_path import module_path
 
 
-from sutra2.Analytical_Well import *
-from sutra2.Substance_Transport import *
+import sutra2.Analytical_Well as AW
+import sutra2.Transport_Removal as TR
 from pandas.testing import assert_frame_equal
 import warnings
 
@@ -30,7 +32,7 @@ def test_travel_time_distribution_phreatic():
     output_phreatic = pd.read_csv(path / 'phreatic_test.csv')
     output_phreatic = output_phreatic.round(7) #round to 7 digits (or any digit), keep same as for the output for the model to compare
 
-    test_ = HydroChemicalSchematisation(schematisation_type='phreatic',
+    test_ = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                         computation_method= 'analytical',
                                         what_to_export='omp', # @alex: what_to_export sounds very cryptic and ad-hoc. maybe we can think of something better
                                         well_discharge=-319.4*24,
@@ -55,7 +57,7 @@ def test_travel_time_distribution_phreatic():
                                         diameter_borehole = 0.75,
                                         )
 
-    well1 = AnalyticalWell(test_)
+    well1 = AW.AnalyticalWell(test_)
     well1.phreatic()
     output = well1.df_output
     output = output[["total_travel_time", "travel_time_unsaturated",
@@ -68,7 +70,7 @@ def test_travel_time_distribution_phreatic():
 
 def test_retardation_temp_koc_correction(substance = 'benzene', schematisation_type='phreatic'):
     """ Compares the calculated retardation coefficient for each redox zone against a known case from TRANSATOMIC excel """
-    test_ = HydroChemicalSchematisation(schematisation_type=schematisation_type,
+    test_ = AW.HydroChemicalSchematisation(schematisation_type=schematisation_type,
                                         computation_method= 'analytical',
                                         what_to_export='omp',
                                         name = substance,
@@ -104,12 +106,12 @@ def test_retardation_temp_koc_correction(substance = 'benzene', schematisation_t
                                       solid_density_target_aquifer= 2.650,
                                       diameter_borehole = 0.75,
                                     )
-    well1 = AnalyticalWell(test_)
+    well1 = AW.AnalyticalWell(test_)
     if schematisation_type=='phreatic':
         well1.phreatic()
     elif  schematisation_type=='semiconfined':
         well1.semiconfined()
-    conc1 = SubstanceTransport(well1, substance = substance) #, df_particle, df_flowline)
+    conc1 = TR.Transport(well1, substance = substance) #, df_particle, df_flowline)
     conc1.compute_omp_removal()
 
     retardation = {
@@ -150,7 +152,7 @@ def test_steady_concentration_temp_koc_correction_phreatic(substance='benzene'):
     """ Compares the calculated steady state concentration for a specific radial distance
     for each redox zone against a known case from TRANSATOMIC excel """
 
-    test_ = HydroChemicalSchematisation(schematisation_type='phreatic',
+    test_ = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                         computation_method= 'analytical',
                                         what_to_export='omp',
                                         name = substance,
@@ -187,10 +189,10 @@ def test_steady_concentration_temp_koc_correction_phreatic(substance='benzene'):
                                       solid_density_target_aquifer= 2.650,
                                       diameter_borehole = 0.75,
                                     )
-    well1 = AnalyticalWell(test_)
+    well1 = AW.AnalyticalWell(test_)
     well1.phreatic()
     # substance = 'benzene'
-    conc1 = SubstanceTransport(well1, substance = substance) #, df_particle, df_flowline)
+    conc1 = TR.Transport(well1, substance = substance) #, df_particle, df_flowline)
     conc1.compute_omp_removal()
 
     steady_state_concentration = {
@@ -238,7 +240,7 @@ def test_travel_time_distribution_semiconfined():
     output_semiconfined = pd.read_csv(path / 'semiconfined_test_fixed_TTD.csv')
 
     output_semiconfined = output_semiconfined.round(7)
-    test_ = HydroChemicalSchematisation(schematisation_type='semiconfined',
+    test_ = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
                                         computation_method= 'analytical',
                                         what_to_export='omp',
                                         well_discharge=-319.4*24,
@@ -261,7 +263,7 @@ def test_travel_time_distribution_semiconfined():
                                         solid_density_shallow_aquifer= 2.650,
                                         solid_density_target_aquifer= 2.650,
                                         diameter_borehole = 0.75,)
-    well1 = AnalyticalWell(test_)
+    well1 = AW.AnalyticalWell(test_)
     well1.semiconfined()
     output = well1.df_output
     # output = output_dict['df_output']
@@ -283,7 +285,7 @@ def test_travel_time_distribution_semiconfined():
 def test_steady_concentration_temp_koc_correction_semiconfined(substance='benzene'):
     """ Compares the calculated retardation coefficient for each redox zone against a known case from TRANSATOMIC excel """
 
-    test_ = HydroChemicalSchematisation(schematisation_type='semiconfined',
+    test_ = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
                                         computation_method= 'analytical',
                                         what_to_export='omp',
                                         name = substance,
@@ -319,10 +321,10 @@ def test_steady_concentration_temp_koc_correction_semiconfined(substance='benzen
                                       solid_density_target_aquifer= 2.650,
                                       diameter_borehole = 0.75,
                                     )
-    well1 = AnalyticalWell(test_)
+    well1 = AW.AnalyticalWell(test_)
     well1.semiconfined()
     # substance = 'benzene'
-    conc1 = SubstanceTransport(well1, substance = substance) #, df_particle, df_flowline)
+    conc1 = TR.Transport(well1, substance = substance) #, df_particle, df_flowline)
     conc1.compute_omp_removal()
 
     steady_state_concentration = {
@@ -366,7 +368,7 @@ def test_start_end_dates_contamination():
     ''' Tests whether the correct exception is raised when the 'end_date_contamiantion' is before 'start_date_contamination' '''
 
     with pytest.raises(ValueError) as exc:
-        phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+        phreatic_scheme = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                                     computation_method= 'analytical',
                                                     what_to_export='omp',
                                                     well_discharge=-319.4*24, #m3/day
@@ -381,7 +383,7 @@ def test_compute_for_date_start_dates_contamination():
     ''' Tests whether the correct exception is raised when the 'computer_contamiantion_for_date' is before 'start_date_contamination' '''
 
     with pytest.raises(ValueError) as exc:
-        phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+        phreatic_scheme = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                                     computation_method= 'analytical',
                                       what_to_export='omp',
                                       well_discharge=-319.4*24, #m3/day
@@ -398,7 +400,7 @@ def test_compute_for_date_start_date_well():
     'computer_contamiantion_for_date' is before 'start_date_contamination' '''
 
     with pytest.raises(ValueError) as exc:
-        phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+        phreatic_scheme = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                                     computation_method= 'analytical',
                                       what_to_export='omp',
                                       well_discharge=-319.4*24, #m3/day
@@ -416,7 +418,7 @@ def test_incorrect_date_input_format():
     'computer_contamiantion_for_date' is before 'start_date_contamination' '''
 
     with pytest.raises(TypeError) as exc:
-        phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+        phreatic_scheme = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                                     computation_method= 'analytical',
                                       what_to_export='omp',
                                       well_discharge=-319.4*24, #m3/day
@@ -430,7 +432,7 @@ def test_redox_options():
     ''' Tests whether the correct exception is raised when one of the redox zones
      is not one of'suboxic', 'anoxic', 'deeply_anoxic' '''
     with pytest.raises(ValueError) as exc:
-        phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+        phreatic_scheme = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                                     computation_method= 'analytical',
                                 what_to_export='omp',
                                 well_discharge=-319.4*24, #m3/day
@@ -447,7 +449,7 @@ def test_phreatic_diffuse_point_source():
     ''' Test for phreatic case with both a diffuse and point source contamination, 
     Checks if the concentration over time matches a known case'''
 
-    phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+    phreatic_scheme = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                       computation_method= 'analytical',
                                       removal_function = 'omp',
                                       what_to_export='omp',
@@ -494,9 +496,9 @@ def test_phreatic_diffuse_point_source():
                                       end_date_contamination=dt.datetime.strptime('1990-01-01',"%Y-%m-%d"),
 
                                       )
-    phreatic_well = AnalyticalWell(phreatic_scheme)
+    phreatic_well = AW.AnalyticalWell(phreatic_scheme)
     phreatic_well.phreatic()
-    phreatic_conc = SubstanceTransport(phreatic_well, substance = 'OMP-X')
+    phreatic_conc = TR.Transport(phreatic_well, substance = 'OMP-X')
     phreatic_conc.compute_omp_removal()
     df_well_concentration = phreatic_conc.compute_concentration_in_well_at_date()
     df_well_concentration = df_well_concentration.astype({'time': 'int32', 'date': 'datetime64[ns]', 'total_concentration_in_well': 'float64'})
@@ -518,7 +520,7 @@ def test_phreatic_diffuse_only_source():
     ''' Test for phreatic case with only a diffuse source contamination
     Checks if the concentration over time matches a known case'''
 
-    phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+    phreatic_scheme = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                     computation_method= 'analytical',
                                     removal_function = 'omp',
                                     what_to_export='omp',
@@ -559,9 +561,9 @@ def test_phreatic_diffuse_only_source():
                                     compute_contamination_for_date=dt.datetime.strptime('2050-01-01',"%Y-%m-%d"),
                                     end_date_contamination=dt.datetime.strptime('1990-01-01',"%Y-%m-%d"),
                                     )
-    phreatic_well = AnalyticalWell(phreatic_scheme)
+    phreatic_well = AW.AnalyticalWell(phreatic_scheme)
     phreatic_well.phreatic()
-    phreatic_conc = SubstanceTransport(phreatic_well, substance = 'OMP-X')
+    phreatic_conc = TR.Transport(phreatic_well, substance = 'OMP-X')
     phreatic_conc.compute_omp_removal()
     df_well_concentration = phreatic_conc.compute_concentration_in_well_at_date()
 
@@ -581,7 +583,7 @@ def test_phreatic_point_only_source():
     ''' Test for phreatic case with only a diffuse source contamination,
     Checks if the concentration over time matches a known case'''
 
-    phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+    phreatic_scheme = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                     computation_method= 'analytical',
                                     removal_function = 'omp',
                                     what_to_export='omp',
@@ -628,9 +630,9 @@ def test_phreatic_point_only_source():
                                     end_date_contamination=dt.datetime.strptime('1990-01-01', "%Y-%m-%d"),
 
                                     )
-    phreatic_well = AnalyticalWell(phreatic_scheme)
+    phreatic_well = AW.AnalyticalWell(phreatic_scheme)
     phreatic_well.phreatic()
-    phreatic_conc = SubstanceTransport(phreatic_well, substance = 'OMP-X')
+    phreatic_conc = TR.Transport(phreatic_well, substance = 'OMP-X')
     phreatic_conc.compute_omp_removal()
     df_well_concentration = phreatic_conc.compute_concentration_in_well_at_date()
 
@@ -650,7 +652,7 @@ def test_drawdown_lower_than_target_aquifer():
     ''' Tests whether the correct exception is raised when the drawdown of the 
     well is lower than the bottom of the target aquifer' '''
     with pytest.raises(ValueError) as exc:
-        phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+        phreatic_scheme = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                         computation_method= 'analytical',
                                         what_to_export='omp', # @alex: what_to_export sounds very cryptic and ad-hoc. maybe we can think of something better
                                         well_discharge=-319.4*24,
@@ -663,7 +665,7 @@ def test_drawdown_lower_than_target_aquifer():
                                         moisture_content_vadose_zone=0.15,
                                         ground_surface = 22,)
 
-        phreatic_well = AnalyticalWell(phreatic_scheme)
+        phreatic_well = AW.AnalyticalWell(phreatic_scheme)
 
         phreatic_well.phreatic()                                         
     assert "The drawdown at the well is lower than the bottom of the target aquifer. Please select a different schematisation." in str(exc.value)
@@ -674,7 +676,7 @@ def test_drawdown_lower_than_target_aquifer():
 #     ''' Tests whether a warning is issued when the head drawdown reaches the target aquifer' '''
 #     @MartinK how to raise a warning here?
 #     with AnalyticalWell.assertWarns(Warning) as exc:
-#         phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
+#         phreatic_scheme = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
 #                                         computation_method= 'analytical',
 #                                         what_to_export='omp', # @alex: what_to_export sounds very cryptic and ad-hoc. maybe we can think of something better
 #                                         well_discharge=-319.4*24,

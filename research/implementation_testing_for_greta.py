@@ -40,7 +40,7 @@ except ModuleNotFoundError:
     from project_path import module_path
 
 from sutra2.Analytical_Well import *
-from sutra2.Substance_Transport import *
+from sutra2.Transport_Removal import *
 from testing.test_transatomic import *
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
@@ -101,7 +101,7 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       )
 phreatic_well = AnalyticalWell(phreatic_scheme)
 phreatic_well.phreatic()
-phreatic_conc = SubstanceTransport(phreatic_well, substance = 'OMP-X')
+phreatic_conc = Transport(phreatic_well, substance = 'OMP-X')
 phreatic_conc.compute_omp_removal()
 phreatic_conc.compute_concentration_in_well_at_date()
 

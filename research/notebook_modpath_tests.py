@@ -32,8 +32,8 @@ import matplotlib.colors as colors
 
 # sutra2 modules    
 import sutra2.Analytical_Well as AW
-import sutra2.ModPath_functions as MP
-import sutra2.Substance_Transport as ST
+import sutra2.ModPath_Well as mpw
+import sutra2.Transport_Removal as TR
 
 # get directory of this file
 path = Path(__file__).parent
@@ -111,7 +111,7 @@ test_phrea.make_dictionary()
 test_phrea.point_parameters = {}
 
 # print(test_phrea.__dict__)
-modpath_phrea = MP.ModPathWell(test_phrea,
+modpath_phrea = mpw.ModPathWell(test_phrea,
                         workspace = os.path.join(path,"test2_phrea_nogp"),
                         modelname = "phreatic",
                         bound_left = "xmin",
@@ -122,7 +122,7 @@ modpath_phrea.run_model(run_mfmodel = True,
                     run_mpmodel = True)
 
 # Calculate advective microbial removal
-modpath_removal = ST.SubstanceTransport(modpath_phrea,
+modpath_removal = TR.Transport(modpath_phrea,
                                         organism = organism_name)
 
 # Calculate advective microbial removal
@@ -259,7 +259,7 @@ startpoint_id = ["outer_boundary_target_aquifer"]
 
 
 # ModPath well
-modpath_hor = MP.ModPathWell(test_conf_hor, #test_phrea,
+modpath_hor = mpw.ModPathWell(test_conf_hor, #test_phrea,
                         workspace = "test4_conf_hor_diffuse",
                         modelname = "confined_hor",
                         bound_left = "xmin",
@@ -288,7 +288,7 @@ removal_parameters = {organism_name:
 rem_parms = removal_parameters[organism_name]
 
 # Calculate advective microbial removal
-modpath_removal = ST.SubstanceTransport(modpath_hor,
+modpath_removal = TR.Transport(modpath_hor,
                         organism = organism_name,
                         alpha0_suboxic = rem_parms["alpha0"]["suboxic"],
                         alpha0_anoxic = rem_parms["alpha0"]["anoxic"],
@@ -426,7 +426,7 @@ test_phrea_gp.make_dictionary()
 test_phrea_gp.point_parameters = {}
 
 # print(test_phrea.__dict__)
-modpath_phrea = MP.ModPathWell(test_phrea_gp, #test_phrea,
+modpath_phrea = mpw.ModPathWell(test_phrea_gp, #test_phrea,
                         workspace = "test5_phrea_gp",
                         modelname = "phreatic",
                         bound_left = "xmin",
@@ -525,7 +525,7 @@ test_phrea_gp.make_dictionary()
 test_phrea_gp.point_parameters = {}
 
 # print(test_phrea.__dict__)
-modpath_phrea = MP.ModPathWell(test_phrea_gp, #test_phrea,
+modpath_phrea = mpw.ModPathWell(test_phrea_gp, #test_phrea,
                         workspace = os.path.join(path,"test6_phrea_gp_removal"),
                         modelname = "phreatic",
                         bound_left = "xmin",
@@ -554,7 +554,7 @@ removal_parameters = {organism_name:
 rem_parms = removal_parameters[organism_name]
 
 # Calculate advective microbial removal
-modpath_removal = ST.SubstanceTransport(modpath_phrea,
+modpath_removal = TR.Transport(modpath_phrea,
                         organism = organism_name,
                         alpha0_suboxic = rem_parms["alpha0"]["suboxic"],
                         alpha0_anoxic = rem_parms["alpha0"]["anoxic"],
@@ -687,7 +687,7 @@ concentration_boundary_parameters = test_semiconf.recharge_parameters
 # Remove/empty point_parameters
 test_semiconf.point_parameters = {}
 
-modpath_semiconf = MP.ModPathWell(test_semiconf, # semiconf_dict_1, #test_phrea,
+modpath_semiconf = mpw.ModPathWell(test_semiconf, # semiconf_dict_1, #test_phrea,
                         workspace = os.path.join(path,"test7_semiconf_nogp"),
                         modelname = "semi_conf_nogp",
                         bound_left = "xmin",
@@ -698,7 +698,7 @@ modpath_semiconf.run_model(run_mfmodel = True,
                     run_mpmodel = True)
 
 # Calculate advective microbial removal
-modpath_removal = ST.SubstanceTransport(modpath_semiconf,
+modpath_removal = TR.Transport(modpath_semiconf,
                                         organism = organism_name,
                                         )
 # modpath_removal.compute_omp_removal()
@@ -799,7 +799,7 @@ df_particle_an = well1_an.df_particle
 df_particle_an = df_particle_an.round(7)
 
 # ModPath well object
-well1_mp = MP.ModPathWell(test_phrea, #test_phrea,
+well1_mp = mpw.ModPathWell(test_phrea, #test_phrea,
                         workspace = os.path.join(path,"test11_phrea"),
                         modelname = "phreatic",
                         bound_left = "xmin",
@@ -894,7 +894,7 @@ summary_fname_mp = os.path.join(well1_mp.dstroot,well1_mp.schematisation_type + 
 summary_traveltimes_mp.to_csv(summary_fname_mp)
 
 # Create traveltime distribution plot using Substance Transport class
-modpath_removal = ST.SubstanceTransport(well1_mp,
+modpath_removal = TR.Transport(well1_mp,
                         organism = organism_name)
 
 modpath_removal.plot_travel_time_distribution(modpath_removal.df_particle, times_col = "total_travel_time",
@@ -1019,7 +1019,7 @@ phreatic_schematisation.make_dictionary()
 # The data files will be stored in location workspace using a given modelname.
 
 #<codecell>
-modpath_phrea = MP.ModPathWell(phreatic_schematisation,
+modpath_phrea = mpw.ModPathWell(phreatic_schematisation,
                             workspace = os.path.join(path,"test7_omp_removal"),
                             modelname = "phreatic")
 
@@ -1044,7 +1044,7 @@ modpath_phrea.run_model(run_mfmodel = True,
 # in the SubstanceTransport class. The data are stored in a dictionary
 
 #<codecell>
-test_substance = ST.Substance(substance_name='benzene')
+test_substance = TR.Substance(substance_name='benzene')
 test_substance.substance_dict
 
 # ## Step 4: Run the SubstanceTransport class
@@ -1073,7 +1073,7 @@ substance_name = 'AMPA'
 # Calculate removal of organic micro-pollutants (removal_function = 'omp')
 
 #<codecell>
-modpath_removal = ST.SubstanceTransport(well = modpath_phrea,
+modpath_removal = TR.Transport(well = modpath_phrea,
                         substance = substance_name,
                         partition_coefficient_water_organic_carbon=None,
                         dissociation_constant=None,
@@ -1127,19 +1127,19 @@ benzene_plot = modpath_removal.plot_concentration(ylim=[0,10 ])
 # the SubstanceTransport object.
 
 #<codecell>
-phreatic_concentration = ST.SubstanceTransport(modpath_phrea, substance = 'OMP-X')
+phreatic_concentration = TR.Transport(modpath_phrea, substance = 'OMP-X')
 phreatic_concentration.compute_omp_removal()
 omp_x_plot = phreatic_concentration.plot_concentration(ylim=[0,100 ])
 
 # image:: omp_x_plot.png 
 
-phreatic_concentration = ST.SubstanceTransport(modpath_phrea, substance = 'benzo(a)pyrene')
+phreatic_concentration = TR.Transport(modpath_phrea, substance = 'benzo(a)pyrene')
 phreatic_concentration.compute_omp_removal()
 benzo_plot = phreatic_concentration.plot_concentration(ylim=[0,1])
 
 # image:: benzo_plot.png
 
-phreatic_concentration = ST.SubstanceTransport(modpath_phrea, substance = 'AMPA')
+phreatic_concentration = TR.Transport(modpath_phrea, substance = 'AMPA')
 phreatic_concentration.compute_omp_removal()
 ampa_plot = phreatic_concentration.plot_concentration( ylim=[0,1])
 
