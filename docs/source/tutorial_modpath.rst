@@ -184,8 +184,11 @@ The data files will be stored in location workspace using a given modelname.
     files = [x for x in p if x.is_file()]
 
     print(package_folder)
-
+    print(mf_exe)
+    print(mp_exe)
     print(files)
+    print(mf_exe in files)
+
 
     modpath_phrea = mpw.ModPathWell(phreatic_schematisation,
                                 workspace = "phreatic_test",
