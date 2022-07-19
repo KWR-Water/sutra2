@@ -13,6 +13,7 @@ Fields (PSWFs)
     :glob:
 
     getting-started.rst
+    Tutorial <tutorial_combined.rst>
     Tutorial - Analytical approach <tutorial_analytical.rst>
     Tutorial - Numerical approach <tutorial_modpath.rst>
     Appendix - Microbial organism removal functions <background_mbo_removal.rst>
