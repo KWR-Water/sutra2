@@ -188,8 +188,6 @@ In this example we use benzene. First we create the object and view the substanc
 
     phreatic_concentration = TR.Transport(well = phreatic_well, pollutant = test_substance)
     phreatic_concentration.removal_parameters
-    # or via 'substance.substance_dict' ('default database parameters only', if available)
-    phreatic_concentration.substance.substance_dict
 
 .. Optional: You may specify a different value for the substance parameters, for example
 .. a different half-life for the anoxic redox zone. This can be input in the HydroChemicalSchematisation

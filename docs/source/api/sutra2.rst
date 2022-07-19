@@ -8,8 +8,8 @@ Submodules
    :maxdepth: 2
 
    sutra2.Analytical_Well
-   sutra2.ModPath_functions
-   sutra2.Substance_Transport
+   sutra2.ModPath_Well
+   sutra2.Transport_Removal
    sutra2.project_path
 
 Module contents

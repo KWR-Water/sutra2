@@ -270,7 +270,7 @@ the removal for the mbo.
 
 .. ipython:: python
 
-    organism_solani_anox = ST.MicrobialOrganism(organism_name = 'solani',
+    organism_solani_anox = TR.MicrobialOrganism(organism_name = 'solani',
                                         alpha0_suboxic=None,
                                         alpha0_anoxic=1.e-4,
                                         alpha0_deeply_anoxic=None,
@@ -281,7 +281,7 @@ the removal for the mbo.
                                         mu1_anoxic=0.01,
                                         mu1_deeply_anoxic=None,)
 
-    phreatic_concentration = ST.Transport(modpath_phrea,pollutant = organism_solani_anox)
+    phreatic_concentration = TR.Transport(modpath_phrea,pollutant = organism_solani_anox)
 
 Step 4a: Calculate the removal of a (non-default) microbial organism ('mbo')
 =============================================================================
@@ -420,7 +420,9 @@ Plot the breakthrough curve at the well over time:
 
     benzene_plot = phreatic_concentration.plot_concentration(ylim=[0,10 ])
 
-.. image:: benzene_plot.png
+.. image:: https://github.com/KWR-Water/sutra2/blob/main/docs/_images/benzene_plot.png?raw=true
+  :width: 600
+  :alt: benzene_plot.png
 
 You can also compute the removal for a different OMP of interest:
 
@@ -433,27 +435,40 @@ the SubstanceTransport object.
 
 .. ipython:: python
 
-    phreatic_concentration = TR.Transport(phreatic_well, substance = 'OMP-X')
+    # removal parameters OMP-X (default)
+    substance_ompx = TR.Substance(substance_name = "OMP-X")
+
+    phreatic_concentration = TR.Transport(modpath_phrea, pollutant = substance_ompx)
     phreatic_concentration.compute_omp_removal()
     omp_x_plot = phreatic_concentration.plot_concentration(ylim=[0,100 ])
 
-.. image:: omp_x_plot.png
+.. image:: https://github.com/KWR-Water/sutra2/blob/main/docs/_images/omp_x_plot.png?raw=true
+  :width: 600
+  :alt: omp_x_plot.png
 
 .. ipython:: python
 
-    phreatic_concentration = TR.Transport(phreatic_well, substance = 'benzo(a)pyrene')
+    # removal parameters benzo(a)pyrene (default)
+    substance_benzpy = TR.Substance(substance_name = "benzo(a)pyrene")
+    phreatic_concentration = TR.Transport(modpath_phrea, pollutant = substance_benzpy)
     phreatic_concentration.compute_omp_removal()
     benzo_plot = phreatic_concentration.plot_concentration(ylim=[0,1])
 
-.. image:: benzo_plot.png
+.. image:: https://github.com/KWR-Water/sutra2/blob/main/docs/_images/benzo_plot.png?raw=true
+  :width: 600
+  :alt: benzo_plot.png
 
 .. ipython:: python
 
-    phreatic_concentration = TR.Transport(phreatic_well, substance = 'AMPA')
+    # removal parameters AMPA (default)
+    substance_ampa = TR.Substance(substance_name = "AMPA")
+    phreatic_concentration = TR.Transport(modpath_phrea, pollutant = substance_ampa)
     phreatic_concentration.compute_omp_removal()
     ampa_plot = phreatic_concentration.plot_concentration( ylim=[0,1])
 
-.. image:: ampa_plot.png
+.. image:: https://github.com/KWR-Water/sutra2/blob/main/docs/_images/ampa_plot.png?raw=true
+  :width: 600
+  :alt: ampa_plot.png
 
 .. Other examples in the Bas_tutorial.py file are:
 

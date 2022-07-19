@@ -1,7 +1,7 @@
-sutra2.ModPath\_functions module
+sutra2.Transport\_Removal module
 ================================
 
-.. automodule:: sutra2.ModPath_functions
+.. automodule:: sutra2.Transport_Removal
    :members:
    :undoc-members:
    :show-inheritance:

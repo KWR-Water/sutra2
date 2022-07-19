@@ -508,6 +508,8 @@ class Transport():
             self.pollutant_name = self.pollutant.organism_name
             self.removal_parameters = self.pollutant.organism_dict
 
+        # Relative dates of well abstraction and pollutant contamination date
+        self._contamination_date_vs_well_abstraction()
 
     def _init_omp(self):
         ''' 
