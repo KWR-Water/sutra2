@@ -174,11 +174,17 @@ The data files will be stored in location workspace using a given modelname.
 
 .. ipython:: python
 
+    package_folder = os.get_package_directory('sutra2')
+    mf_exe = os.path.join(package_folder,"mf2005.exe")
+    mp_exe = os.path.join(package_folder,"mpath7.exe")
+
+    print(package_folder)
+    
     modpath_phrea = mpw.ModPathWell(phreatic_schematisation,
                                 workspace = "phreatic_test",
                                 modelname = "phreatic",
-                                mf_exe = "..//mf2005.exe",
-                                mp_exe = "..//mpath7.exe"
+                                mf_exe = mf_exe,
+                                mp_exe = mp_exe
                                 )
 
 .. .. mf_exe = "..//mf2005.exe",
