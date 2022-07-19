@@ -175,9 +175,10 @@ The data files will be stored in location workspace using a given modelname.
 
 .. ipython:: python
 
-    package_folder = sutra2.__file__
-    mf_exe = os.path.join(package_folder,"mf2005.exe")
-    mp_exe = os.path.join(package_folder,"mpath7.exe")
+    package_folder = Path(sutra2.__file__).parent
+    
+    mf_exe = str(package_folder / "mf2005.exe")
+    mp_exe = str(package_folder / "mpath7.exe")
 
     print(package_folder)
 
