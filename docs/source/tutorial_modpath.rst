@@ -188,7 +188,6 @@ The schematisation dict contains the following data:
     print(os.path.exists(mf_exe))
     print(os.path.exists(mp_exe))
 
-    print(os.path.exists(os.path.join(my_path, "phreatic_test")))
 
 Step 2: Run the ModpathWell class
 =====================================
