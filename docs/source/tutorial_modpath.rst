@@ -209,6 +209,7 @@ The data files will be stored in location workspace using a given modelname.
 
     print(os.path.exists(mf_exe_rtd))
     print(os.path.exists(mf_exe))
+    print(os.path.exists(mp_exe))
     print(os.path.exists(mf_exe_git))
 
     package_folder_rtd = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2"
@@ -219,8 +220,8 @@ The data files will be stored in location workspace using a given modelname.
     ## print(files)
 
 
-    mf_exe = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2/mf2005.exe"
-    mp_exe = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2/mpath7.exe"
+    ## mf_exe = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2/mf2005.exe"
+    ## mp_exe = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2/mpath7.exe"
     
 
 .. ipython:: python
@@ -228,8 +229,8 @@ The data files will be stored in location workspace using a given modelname.
     modpath_phrea = mpw.ModPathWell(phreatic_schematisation,
                                 workspace = "phreatic_test",
                                 modelname = "phreatic",
-                                mf_exe = "mf2005.exe",
-                                mp_exe = "mpath7.exe"
+                                mf_exe = mf_exe, #"mf2005.exe",
+                                mp_exe = mp_exe, #"mpath7.exe"
                                 )
 
 .. .. mf_exe = "..//mf2005.exe",
