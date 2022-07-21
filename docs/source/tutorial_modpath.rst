@@ -188,8 +188,10 @@ The data files will be stored in location workspace using a given modelname.
     print(mp_exe)
     print(files)
 
-    mf_exe_git = r'https://github.com/KWR-Water/sutra2/blob/main/sutra2/mf2005.exe?raw=true'
-    mp_exe_git = r'https://github.com/KWR-Water/sutra2/blob/main/sutra2/mpath7.exe?raw=true'
+    print(os.environ.get('READTHEDOCS'))
+
+    mf_exe_git = r"https://github.com/KWR-Water/sutra2/blob/main/sutra2/mf2005.exe?raw=true"
+    mp_exe_git = r'https://github.com/KWR-Water/sutra2/blob/main/sutra2/mpath7.exe'
 
     mf_exe = r"\\home\\docs\\checkouts\\readthedocs.org\\user_builds\\sutra2\\checkouts\\latest\\sutra2\\mf2005.exe"
     mp_exe = r"\\home\\docs\\checkouts\\readthedocs.org\\user_builds\\sutra2\\checkouts\\latest\\sutra2\\mpath7.exe"
@@ -199,8 +201,8 @@ The data files will be stored in location workspace using a given modelname.
     modpath_phrea = mpw.ModPathWell(phreatic_schematisation,
                                 workspace = "phreatic_test",
                                 modelname = "phreatic",
-                                mf_exe = "mf2005", #mf_exe_git,
-                                mp_exe = "mpath7", # mp_exe_git
+                                mf_exe = mf_exe_git,
+                                mp_exe = mp_exe_git
                                 )
 
 .. .. mf_exe = "..//mf2005.exe",
@@ -212,10 +214,10 @@ The data files will be stored in location workspace using a given modelname.
 .. the particle pathlines [X,Y,Z,T-data] (using modpath: 'run_mpmodel' = True) with which OMP removal
 .. or microbial organism ('mbo') removal is later calculated.
 
-.. ipython:: python
+.. .. ipython:: python
 
-    modpath_phrea.run_model(run_mfmodel = True,
-                        run_mpmodel = True)
+..     modpath_phrea.run_model(run_mfmodel = True,
+..                         run_mpmodel = True)
 
 .. The traveltime distribution can be plotted as cross-section using either a linear or logarithmic distribution,
 .. with lognorm = True: logarithmic distribution, using for example a 'viridis_r' (viridis reversed) color map.
