@@ -277,7 +277,7 @@ The data files will be stored in location workspace using a given modelname.
 
 .. ipython:: python
 
-    modpath_phrea.run_model(run_mfmodel = False,
+    modpath_phrea.run_model(run_mfmodel = True,
                         run_mpmodel = False)
     print(modpath_phrea.dstroot)
     modpath_phrea.dstroot
