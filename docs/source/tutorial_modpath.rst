@@ -194,10 +194,10 @@ The data files will be stored in location workspace using a given modelname.
     # environment variables
     print("User's Environment variable:")
 
-    .. pwd = os.environ.get("PWD")
-    .. p = Path(pwd).glob('**/*')
-    .. files = [x for x in p if x.is_file()]
-    .. print(files)
+    # pwd = os.environ.get("PWD")
+    # p = Path(pwd).glob('**/*')
+    # files = [x for x in p if x.is_file()]
+    # print(files)
 
     rtd_venv = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/envs/latest"
     mf_exe_rtd = os.path.join(rtd_venv, "sutra2","mf2005.exe")
