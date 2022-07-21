@@ -194,6 +194,7 @@ The data files will be stored in location workspace using a given modelname.
     mf_exe_pos = package_folder / "mf2005.exe" 
     print(os.path.exists(mf_exe_pos))
     print(mf_exe_pos)
+    mf_exe_pos
 
     env_var = os.environ
     import pprint
