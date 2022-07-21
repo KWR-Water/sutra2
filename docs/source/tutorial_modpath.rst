@@ -188,6 +188,13 @@ The data files will be stored in location workspace using a given modelname.
     print(mp_exe)
     print(files)
 
+    env_var = os.environ
+    import pprint
+    # Print the list of user's
+    # environment variables
+    print("User's Environment variable:")
+    pprint.pprint(dict(env_var), width = 1)
+    
     print(os.environ.get('READTHEDOCS'))
 
     mf_exe_git = r"https://github.com/KWR-Water/sutra2/blob/main/sutra2/mf2005.exe?raw=true"
