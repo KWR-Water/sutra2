@@ -179,16 +179,16 @@ The schematisation dict contains the following data:
     
     type(my_path)
 
-    # p = Path(my_path).glob('**/*')
-    # files = [x for x in p if x.is_file()]
-    # print(files)
+    p = Path(os.path.join(my_path, "phreatic_test")).glob('**/*')
+    files = [x for x in p if x.is_file()]
+    print(files)
 
     mf_exe = os.path.join(my_path, "mf2005.exe")
     mp_exe = os.path.join(my_path, "mpath7.exe")
     print(os.path.exists(mf_exe))
     print(os.path.exists(mp_exe))
 
-    print(os.path.join(my_path, "phreatic_test"))
+    print(os.path.exists(os.path.join(my_path, "phreatic_test")))
 
 Step 2: Run the ModpathWell class
 =====================================
