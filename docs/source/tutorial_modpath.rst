@@ -191,6 +191,9 @@ The data files will be stored in location workspace using a given modelname.
     print(mp_exe)
     print(files)
 
+    mf_exe_pos = package_folder / "mf2005.exe" 
+    print(os.path.exists(mf_exe_pos))
+
     env_var = os.environ
     import pprint
     # Print the list of user's
@@ -225,8 +228,8 @@ The data files will be stored in location workspace using a given modelname.
     ## mf_exe = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2/mf2005.exe"
     ## mp_exe = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2/mpath7.exe"
 
-    mf_exe = "../../sutra2/mf2005.exe"
-    mp_exe = "../../sutra2/mpath7.exe"
+    mf_exe = "../mf2005.exe"
+    mp_exe = "../mpath7.exe"
 
 .. ipython:: python
     
