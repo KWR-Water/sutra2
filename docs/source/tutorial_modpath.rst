@@ -163,9 +163,6 @@ The schematisation dict contains the following data:
 .. * point_parameters: (starting) point source contamination(s) to calculate removal for
 .. * concentration_boundary_parameters: diffuse contamination(s) to calculate removal for
 
-.. ipython:: python
-
-    print(os.getcwd())
 
 Step 2: Run the ModpathWell class
 =====================================
@@ -177,8 +174,8 @@ The data files will be stored in location workspace using a given modelname.
     modpath_phrea = mpw.ModPathWell(phreatic_schematisation,
                                 workspace = "phreatic_test",
                                 modelname = "phreatic",
-                                mf_exe = "..//mf2005.exe",
-                                mp_exe = "..//mpath7.exe"
+                                mf_exe = "mf2005.exe",
+                                mp_exe = "mpath7.exe"
                                 )
 
 .. .. mf_exe = "..//mf2005.exe",
