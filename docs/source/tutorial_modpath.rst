@@ -243,6 +243,8 @@ The data files will be stored in location workspace using a given modelname.
                                 mf_exe = mf_exe, #"mf2005.exe",
                                 mp_exe = mp_exe, #"mpath7.exe"
                                 )
+    print(modpath_phrea.model_ws)
+    modpath_phrea.model_ws
 
 .. .. mf_exe = "..//mf2005.exe",
 .. .. mp_exe = "..//mpath7.exe")
@@ -255,8 +257,8 @@ The data files will be stored in location workspace using a given modelname.
 
 .. ipython:: python
 
-    modpath_phrea.run_model(run_mfmodel = True,
-                        run_mpmodel = True)
+    .. modpath_phrea.run_model(run_mfmodel = True,
+                        .. run_mpmodel = True)
 
 .. The traveltime distribution can be plotted as cross-section using either a linear or logarithmic distribution,
 .. with lognorm = True: logarithmic distribution, using for example a 'viridis_r' (viridis reversed) color map.
