@@ -167,6 +167,17 @@ The schematisation dict contains the following data:
 .. ipython:: python
 
     print(os.getcwd())
+    import pathlib
+ 
+    path_cur = pathlib.Path('.')
+    
+    full_path = path_cur.absolute()
+    
+    my_path = full_path.as_posix()
+    
+    print(my_path)
+    
+    type(my_path)
 
 Step 2: Run the ModpathWell class
 =====================================
@@ -232,8 +243,8 @@ The data files will be stored in location workspace using a given modelname.
 
     # mf_exe = "../mf2005.exe"
     # mp_exe = "../mpath7.exe"
-    mf_exe = r"d:\Sutra2_tool\sutra2\sutra2\mf2005.exe"
-    mp_exe = r"d:\Sutra2_tool\sutra2\sutra2\mpath7.exe"
+    mf_exe = "mf2005"  # r"d:\Sutra2_tool\sutra2\sutra2\mf2005.exe"
+    mp_exe = "mpath7"  #r"d:\Sutra2_tool\sutra2\sutra2\mpath7.exe"
 
 .. ipython:: python
     
@@ -243,8 +254,8 @@ The data files will be stored in location workspace using a given modelname.
                                 mf_exe = mf_exe, #"mf2005.exe",
                                 mp_exe = mp_exe, #"mpath7.exe"
                                 )
-    print(modpath_phrea.model_ws)
-    modpath_phrea.model_ws
+
+
 
 .. .. mf_exe = "..//mf2005.exe",
 .. .. mp_exe = "..//mpath7.exe")
@@ -255,10 +266,12 @@ The data files will be stored in location workspace using a given modelname.
 .. the particle pathlines [X,Y,Z,T-data] (using modpath: 'run_mpmodel' = True) with which OMP removal
 .. or microbial organism ('mbo') removal is later calculated.
 
-.. .. ipython:: python
+.. ipython:: python
 
-..     modpath_phrea.run_model(run_mfmodel = True,
-..                         run_mpmodel = True)
+    modpath_phrea.run_model(run_mfmodel = False,
+                        run_mpmodel = False)
+    print(modpath_phrea.dstroot)
+    modpath_phrea.dstroot
 
 .. The traveltime distribution can be plotted as cross-section using either a linear or logarithmic distribution,
 .. with lognorm = True: logarithmic distribution, using for example a 'viridis_r' (viridis reversed) color map.
