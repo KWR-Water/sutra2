@@ -179,6 +179,11 @@ The schematisation dict contains the following data:
     
     type(my_path)
 
+    p = Path(my_path).glob('**/*')
+    files = [x for x in p if x.is_file()]
+
+    print(files)
+
 Step 2: Run the ModpathWell class
 =====================================
 Next we create an ModpathWell object for the HydroChemicalSchematisation object we just made.
