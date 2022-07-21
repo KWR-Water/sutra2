@@ -224,7 +224,9 @@ The data files will be stored in location workspace using a given modelname.
 
     ## mf_exe = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2/mf2005.exe"
     ## mp_exe = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2/mpath7.exe"
-    
+
+    mf_exe = "../../sutra2/mf2005.exe"
+    mp_exe = "../../sutra2/mpath7.exe"
 
 .. ipython:: python
     
@@ -244,10 +246,10 @@ The data files will be stored in location workspace using a given modelname.
 .. the particle pathlines [X,Y,Z,T-data] (using modpath: 'run_mpmodel' = True) with which OMP removal
 .. or microbial organism ('mbo') removal is later calculated.
 
-.. .. ipython:: python
+.. ipython:: python
 
-..     modpath_phrea.run_model(run_mfmodel = True,
-..                         run_mpmodel = True)
+    modpath_phrea.run_model(run_mfmodel = True,
+                        run_mpmodel = True)
 
 .. The traveltime distribution can be plotted as cross-section using either a linear or logarithmic distribution,
 .. with lognorm = True: logarithmic distribution, using for example a 'viridis_r' (viridis reversed) color map.
