@@ -193,9 +193,12 @@ The data files will be stored in location workspace using a given modelname.
     # Print the list of user's
     # environment variables
     print("User's Environment variable:")
-    pprint.pprint(dict(env_var), width = 1)
     
-    print(os.environ.get('READTHEDOCS'))
+    pwd = os.environ.get("PWD")
+    p = Path(pwd).glob('**/*')
+    files = [x for x in p if x.is_file()]
+    print(files)
+
 
     mf_exe_git = r"https://github.com/KWR-Water/sutra2/blob/main/sutra2/mf2005.exe?raw=true"
     mp_exe_git = r'https://github.com/KWR-Water/sutra2/blob/main/sutra2/mpath7.exe'
@@ -208,8 +211,8 @@ The data files will be stored in location workspace using a given modelname.
     modpath_phrea = mpw.ModPathWell(phreatic_schematisation,
                                 workspace = "phreatic_test",
                                 modelname = "phreatic",
-                                mf_exe = mf_exe_git,
-                                mp_exe = mp_exe_git
+                                mf_exe = "mf2005.exe",
+                                mp_exe = "mpath7.exe"
                                 )
 
 .. .. mf_exe = "..//mf2005.exe",
