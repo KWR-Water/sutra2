@@ -179,77 +179,81 @@ The schematisation dict contains the following data:
     
     type(my_path)
 
-    p = Path(my_path).glob('**/*')
-    files = [x for x in p if x.is_file()]
+    # p = Path(my_path).glob('**/*')
+    # files = [x for x in p if x.is_file()]
+    # print(files)
 
-    print(files)
+    mf_exe = os.path.join(my_path, "mf2005.exe")
+    mp_exe = os.path.join(my_path, "mpath7.exe")
+    print(os.path.exists(mf_exe))
+    print(os.path.exists(mp_exe))
 
 Step 2: Run the ModpathWell class
 =====================================
 Next we create an ModpathWell object for the HydroChemicalSchematisation object we just made.
 The data files will be stored in location workspace using a given modelname.
 
-.. ipython:: python
+.. .. ipython:: python
 
-    package_folder = Path(sutra2.__file__).parent
+..     package_folder = Path(sutra2.__file__).parent
     
-    mf_exe = os.path.join(package_folder,"mf2005.exe")
-    mp_exe = os.path.join(package_folder,"mpath7.exe")
+..     mf_exe = os.path.join(package_folder,"mf2005.exe")
+..     mp_exe = os.path.join(package_folder,"mpath7.exe")
 
-    p = Path(package_folder).glob('**/*')
-    files = [x for x in p if x.is_file()]
+..     p = Path(package_folder).glob('**/*')
+..     files = [x for x in p if x.is_file()]
 
-    package_folder
-    print(package_folder)
-    mf_exe
-    print(mf_exe)
-    mp_exe
-    print(mp_exe)
-    print(files)
+..     package_folder
+..     print(package_folder)
+..     mf_exe
+..     print(mf_exe)
+..     mp_exe
+..     print(mp_exe)
+..     print(files)
 
-    mf_exe_pos = package_folder / "mf2005.exe" 
-    print(os.path.exists(mf_exe_pos))
-    print(mf_exe_pos)
-    mf_exe_pos
+..     mf_exe_pos = package_folder / "mf2005.exe" 
+..     print(os.path.exists(mf_exe_pos))
+..     print(mf_exe_pos)
+..     mf_exe_pos
 
-    env_var = os.environ
-    import pprint
-    # Print the list of user's
-    # environment variables
-    print("User's Environment variable:")
+..     env_var = os.environ
+..     import pprint
+..     # Print the list of user's
+..     # environment variables
+..     print("User's Environment variable:")
 
-    # pwd = os.environ.get("PWD")
-    # p = Path(pwd).glob('**/*')
-    # files = [x for x in p if x.is_file()]
-    # print(files)
+..     # pwd = os.environ.get("PWD")
+..     # p = Path(pwd).glob('**/*')
+..     # files = [x for x in p if x.is_file()]
+..     # print(files)
 
-    rtd_venv = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/envs/latest"
-    mf_exe_rtd = os.path.join(rtd_venv, "sutra2","mf2005.exe")
-    mp_exe_rtd = os.path.join(rtd_venv, "sutra2","mpath7.exe")
+..     rtd_venv = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/envs/latest"
+..     mf_exe_rtd = os.path.join(rtd_venv, "sutra2","mf2005.exe")
+..     mp_exe_rtd = os.path.join(rtd_venv, "sutra2","mpath7.exe")
 
-    mf_exe_git = r"https://github.com/KWR-Water/sutra2/blob/main/sutra2/mf2005.exe"
-    mp_exe_git = r'https://github.com/KWR-Water/sutra2/blob/main/sutra2/mpath7.exe'
+..     mf_exe_git = r"https://github.com/KWR-Water/sutra2/blob/main/sutra2/mf2005.exe"
+..     mp_exe_git = r'https://github.com/KWR-Water/sutra2/blob/main/sutra2/mpath7.exe'
 
-    print(os.path.exists(mf_exe_rtd))
-    print(os.path.exists(mf_exe))
-    print(os.path.exists(mp_exe))
-    print(os.path.exists(mf_exe_git))
+..     print(os.path.exists(mf_exe_rtd))
+..     print(os.path.exists(mf_exe))
+..     print(os.path.exists(mp_exe))
+..     print(os.path.exists(mf_exe_git))
 
-    package_folder_rtd = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2"
-    print(os.path.exists(package_folder_rtd))
+..     package_folder_rtd = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2"
+..     print(os.path.exists(package_folder_rtd))
 
-    ## p = Path(package_folder_rtd).glob('**/*')
-    ## files = [x for x in p if x.is_file()]
-    ## print(files)
+..     ## p = Path(package_folder_rtd).glob('**/*')
+..     ## files = [x for x in p if x.is_file()]
+..     ## print(files)
 
 
-    ## mf_exe = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2/mf2005.exe"
-    ## mp_exe = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2/mpath7.exe"
+..     ## mf_exe = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2/mf2005.exe"
+..     ## mp_exe = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2/mpath7.exe"
 
-    # mf_exe = "../mf2005.exe"
-    # mp_exe = "../mpath7.exe"
-    mf_exe = "mf2005"  # r"d:\Sutra2_tool\sutra2\sutra2\mf2005.exe"
-    mp_exe = "mpath7"  #r"d:\Sutra2_tool\sutra2\sutra2\mpath7.exe"
+..     # mf_exe = "../mf2005.exe"
+..     # mp_exe = "../mpath7.exe"
+..     mf_exe = "mf2005"  # r"d:\Sutra2_tool\sutra2\sutra2\mf2005.exe"
+..     mp_exe = "mpath7"  #r"d:\Sutra2_tool\sutra2\sutra2\mpath7.exe"
 
 .. ipython:: python
     
