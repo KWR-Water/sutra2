@@ -188,17 +188,19 @@ The data files will be stored in location workspace using a given modelname.
     print(mp_exe)
     print(files)
 
+    mf_exe_git = r'https://github.com/KWR-Water/sutra2/blob/main/sutra2/mf2005.exe?raw=true'
+    mp_exe_git = r'https://github.com/KWR-Water/sutra2/blob/main/sutra2/mpath7.exe?raw=true'
 
-.. mf_exe = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2/mf2005.exe"
-.. mp_exe = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2/mpath7.exe"
+    mf_exe = r"\\home\\docs\\checkouts\\readthedocs.org\\user_builds\\sutra2\\checkouts\\latest\\sutra2\\mf2005.exe"
+    mp_exe = r"\\home\\docs\\checkouts\\readthedocs.org\\user_builds\\sutra2\\checkouts\\latest\\sutra2\\mpath7.exe"
     
 .. ipython:: python
     
     modpath_phrea = mpw.ModPathWell(phreatic_schematisation,
                                 workspace = "phreatic_test",
                                 modelname = "phreatic",
-                                mf_exe = mf_exe,
-                                mp_exe = mp_exe
+                                mf_exe = "mf2005", #mf_exe_git,
+                                mp_exe = "mpath7", # mp_exe_git
                                 )
 
 .. .. mf_exe = "..//mf2005.exe",
