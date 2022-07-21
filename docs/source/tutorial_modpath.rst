@@ -183,6 +183,7 @@ The data files will be stored in location workspace using a given modelname.
     p = Path(package_folder).glob('**/*')
     files = [x for x in p if x.is_file()]
 
+    package_folder
     print(package_folder)
     print(mf_exe)
     print(mp_exe)
@@ -209,6 +210,14 @@ The data files will be stored in location workspace using a given modelname.
     print(os.path.exists(mf_exe_rtd))
     print(os.path.exists(mf_exe))
     print(os.path.exists(mf_exe_git))
+
+    package_folder_rtd = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2"
+    print(os.path.exists(package_folder_rtd))
+
+    p = Path(package_folder_rtd).glob('**/*')
+    files = [x for x in p if x.is_file()]
+    print(files)
+
 
     mf_exe = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2/mf2005.exe"
     mp_exe = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2/mpath7.exe"
