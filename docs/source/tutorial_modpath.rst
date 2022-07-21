@@ -214,9 +214,9 @@ The data files will be stored in location workspace using a given modelname.
     package_folder_rtd = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2"
     print(os.path.exists(package_folder_rtd))
 
-    p = Path(package_folder_rtd).glob('**/*')
-    files = [x for x in p if x.is_file()]
-    print(files)
+    ## p = Path(package_folder_rtd).glob('**/*')
+    ## files = [x for x in p if x.is_file()]
+    ## print(files)
 
 
     mf_exe = r"/home/docs/checkouts/readthedocs.org/user_builds/sutra2/checkouts/latest/sutra2/mf2005.exe"
