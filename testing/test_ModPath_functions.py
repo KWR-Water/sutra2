@@ -1638,7 +1638,7 @@ def test_omp_removal_analyticalwell_input(substance_name = 'AMPA'):
     test_substance.substance_dict
 
 
-    # Step 4: Run the SubstanceTransport class
+    # Step 4: Run the Transport class
     # ========================================
     # To calculate the removal and the steady-state concentration in each zone, create a concentration
     # object by running the SubstanceTransport class with the phreatic_well object and specifying
@@ -1739,7 +1739,7 @@ def test_omp_removal_modpath_input(substance_name = 'AMPA'):
     test_substance = TR.Substance(substance_name='benzene')
     test_substance.substance_dict
 
-    # Step 4: Run the SubstanceTransport class
+    # Step 4: Run the Transport class
     # ========================================
     # To calculate the removal and the steady-state concentration in each zone (analytical solution) or per particle node (modpath), create a concentration
     # object by running the SubstanceTransport class with the phreatic_well object and specifying
@@ -1783,6 +1783,94 @@ def test_omp_removal_modpath_input(substance_name = 'AMPA'):
     # View the steady-state concentration of the flowline or the steady-state
     # contribution of the flowline to the concentration in the well
     modpath_removal.df_flowline.loc[:,['breakthrough_concentration', 'total_breakthrough_travel_time']].head(5)
+
+# %%
+
+def test_mbo_removal_analyticalwell_input(organism_name = 'solani'):
+    ''' calculate the removal of a default substance using AnalyticalWell class.'''
+
+    # Lets start with a simple example defining a HydroChemicalSchematisation object for a phreatic aquifer:
+
+    phreatic_schematisation = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
+                                                        computation_method='analytical',
+                                                        well_discharge=-7500, #m3/day
+                                                        recharge_rate=0.0008, #m/day
+                                                        thickness_vadose_zone_at_boundary=5, #m
+                                                        thickness_shallow_aquifer=10,  #m
+                                                        thickness_target_aquifer=40, #m
+                                                        hor_permeability_target_aquifer=35, #m/day
+                                                        redox_vadose_zone='anoxic',
+                                                        redox_shallow_aquifer='anoxic',
+                                                        redox_target_aquifer='deeply_anoxic',
+                                                        pH_target_aquifer=7.,
+                                                        temp_water=11.,
+                                                        diffuse_input_concentration = 100, #ug/L
+                                                        )
+
+
+    # Step 2: Run the AnalyticalWell class
+    # =====================================
+    # Next we create an AnalyticalWell object for the HydroChemicalSchematisation object we just made.
+    phreatic_well = AW.AnalyticalWell(phreatic_schematisation)
+
+    # Then we calculate the travel time for each of the zones unsaturated, shallow aquifer and target aquifer zones
+    # by running the .phreatic() function for the well object. 
+    phreatic_well.phreatic()
+
+    # The total travel time can be plotted as a function of radial distance from the well, or as a function
+    # of the cumulative fraction of abstracted water: 
+    radial_plot = phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 2000], ylim=[1e3, 1e6])
+    cumulative_plot = phreatic_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
+
+    # Step 3: Collect removal parameters for the mbo (MicrobialOrganism)
+    # -------------------------------------------------------------------
+
+    # You can retrieve the default removal parameters used to calculate the removal of microbial organisms [mbo] 
+    # in the Transport class. The data are stored in a dictionary. In the example plant pathogen 'solani' is used.
+
+    test_organism = TR.MicrobialOrganism(organism_name=organism_name)
+    test_organism.organism_dict
+
+    # Step 4: Run the Transport class
+    # ========================================
+    # To calculate the removal and the steady-state concentration in each zone, create a concentration
+    # object by running the SubstanceTransport class with the phreatic_well object and specifying
+    # the OMP (or pathogen) of interest.
+
+    # In this example we use benzene. First we create the object and view the substance properties:
+    phreatic_transport = TR.Transport(well = phreatic_well, pollutant = test_organism)
+    phreatic_transport.removal_parameters
+
+
+    # If you have specified values for the substance (e.g. half-life, pKa, log_Koc),
+    # the default value is overriden and used in the calculation of the removal. You can
+    # view the updated removal parameters ('substance dictionary') from the concentration object:
+    phreatic_transport.removal_parameters
+
+    # list endpoint ids
+    endpoint_ids = phreatic_transport.well.df_flowline.loc[:,"endpoint_id"].unique()
+    print(f"endpoint_id list: {endpoint_ids}")
+
+    # keep track of final cocnentration per endpoint_id
+    C_final = {}
+    # Update df_flowline and df_particle. Calculate final concentration at endpoint_id(s)
+    for endpoint_id in endpoint_ids:
+        df_particle, df_flowline, C_final[endpoint_id] = phreatic_transport.calc_advective_microbial_removal(
+                                                    phreatic_transport.df_particle, phreatic_transport.df_flowline, 
+                                                    endpoint_id = endpoint_id,
+                                                    conc_start = 1., conc_gw = 0.)
+        print(f"Final concentration {endpoint_id}: {C_final[endpoint_id]}")
+        print(df_particle.iloc[:4,:])
+
+    # Once the removal has been calculated, you can view the steady-state concentration
+    # and breakthrough time per zone for the OMP in the df_particle:
+    df_particle[['flowline_id', 'zone', 'steady_state_concentration', 'travel_time']].head(4)
+
+    # View the steady-state concentration of the flowline or the steady-state
+    # contribution of the flowline to the concentration in the well
+    df_flowline[['flowline_id', 'breakthrough_concentration', 'breakthrough_travel_time']].head(5)
+
+
 
 #=======
 

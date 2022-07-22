@@ -1756,8 +1756,9 @@ class AnalyticalWell():
                                 total_travel_time= total_travel_time[i])
 
             df_particle = df_particle.append(df, ignore_index=True)
-            df_particle['redox'] = df_particle['redox'].fillna('').astype(str)
-            df_particle['flowline_id'] = df_particle['flowline_id'].astype(int)
+            df_particle.loc[:,'redox'] = df_particle.loc[:,'redox'].fillna('').astype(str)
+            df_particle.loc[:,'flowline_id'] = df_particle.loc[:,'flowline_id'].astype(int)
+            
 
         # Make df_flowline
         df_flowline = pd.DataFrame(columns=['flowline_id',
@@ -1814,9 +1815,9 @@ class AnalyticalWell():
             # df_flowline['dz_well'] = self.schematisation.dz_well
 
         # change df_particle index to 'flowline_id'
-        df_particle.index = df_particle["flowline_id"].values
+        df_particle.index = df_particle.loc[:,"flowline_id"].values
         # change df_flowline index to 'flowline_id'
-        df_flowline.index = df_flowline["flowline_id"].values
+        df_flowline.index = df_flowline.loc[:,"flowline_id"].values
         
         return df_flowline, df_particle
 

@@ -1435,7 +1435,7 @@ class Transport():
             df_particle['steady_state_concentration'] = None
         
         for pid in df_flowline.index:
-            df_particle.loc[pid,"steady_state_concentration"].iloc[0] = df_flowline.loc[pid,"input_concentration"]
+            df_particle.loc[pid,"steady_state_concentration"].iloc[0] = df_flowline.at[pid,"input_concentration"]
 
         # Start dictionaries for relative and steady-state concentrations
         conc_rel = {}
