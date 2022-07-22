@@ -3330,7 +3330,7 @@ class ModPathWell:
 
         ## NOTE to programmer: for additional schematisation_types add to functionality here (elif)...
 
-        elif self.schematisation_type in ["BAR"]:
+        elif self.schematisation_type in ["BAR", "RBF"]:
             self.model_type = "2D"
             print("Run 2D model")
             self._check_schematisation_input()
