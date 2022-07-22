@@ -1658,16 +1658,16 @@ class AnalyticalWell():
                         0,
                         distance,
                         self.schematisation.model_width,
-                         self.schematisation.ground_surface,
-                         self.schematisation.redox_vadose_zone, # None
-                         self.schematisation.temp_water,
-                         0.,
-                         self.schematisation.porosity_vadose_zone,
-                         self.schematisation.dissolved_organic_carbon_vadose_zone,
-                         self.schematisation.pH_vadose_zone,
-                         self.schematisation.fraction_organic_carbon_vadose_zone,
-                         self.schematisation.solid_density_vadose_zone,
-                         ]
+                        self.schematisation.ground_surface,
+                        self.schematisation.redox_vadose_zone, # None
+                        self.schematisation.temp_water,
+                        0.,
+                        self.schematisation.porosity_vadose_zone,
+                        self.schematisation.dissolved_organic_carbon_vadose_zone,
+                        self.schematisation.pH_vadose_zone,
+                        self.schematisation.fraction_organic_carbon_vadose_zone,
+                        self.schematisation.solid_density_vadose_zone,
+                        ]
 
             df.loc[1] = [flowline_id,
                          "vadose_zone",
