@@ -1096,7 +1096,7 @@ class Transport():
         '''
 
         # Boltzmann coefficient [J K-1]
-        const_BM = 1.38e-23    
+        const_BM = 1.38e-23 
 
         # Create empty column 'relative_distance' in df_particle
         df_particle['relative_distance'] = None  
@@ -1393,6 +1393,11 @@ class Transport():
         if organism_name is None:
             organism_name = self.pollutant_name
         
+        if df_particle is not None:
+            self.df_particle = df_particle
+        if df_flowline is not None:
+            self.df_flowline = df_flowline
+
         # Organism/Species name
         self.df_flowline['name'] = organism_name
 
@@ -1400,59 +1405,59 @@ class Transport():
         self._init_micro_organism()
 
         # Calculate removal coefficient 'lamda' [/day].
-        df_particle, df_flowline = self.calc_lambda(df_particle, df_flowline,
+        self.df_particle, self.df_flowline = self.calc_lambda(self.df_particle, self.df_flowline,
                                                     redox = redox, mu1 = mu1, por_eff = por_eff,
                                                     grainsize = grainsize, alpha0 = alpha0, 
                                                     pH = pH, pH0 = pH0, temp_water = temp_water, 
                                                     rho_water = rho_water, organism_diam = organism_diam)
 
         # Starting concentration [-]
-        df_flowline = self._df_fillna(df_flowline,
+        self.df_flowline = self._df_fillna(self.df_flowline,
                                 df_column = 'input_concentration',
                                 value = conc_start,
                                 dtype_ = 'float')
 
         # Original concentration in groundwater [-]
-        df_flowline = self._df_fillna(df_flowline,
+        self.df_flowline = self._df_fillna(self.df_flowline,
                                 df_column = 'input_concentration_gw',
                                 value = conc_gw,
                                 dtype_ = 'float')
 
-        if 'breakthrough_concentration' not in df_flowline.columns:
+        if 'breakthrough_concentration' not in self.df_flowline.columns:
             # breakthrough concentration for particles along a certain flowline
-            df_flowline['breakthrough_concentration'] = None
+            self.df_flowline['breakthrough_concentration'] = None
 
-        if 'breakthrough_traveltime' not in df_flowline.columns:
+        if 'breakthrough_traveltime' not in self.df_flowline.columns:
             # breakthrough traveltime for particles along a certain flowline
-            df_flowline['breakthrough_travel_time'] = None
+            self.df_flowline['breakthrough_travel_time'] = None
 
-        if 'concentration_in_well' not in df_particle.columns:
+        if 'concentration_in_well' not in self.df_particle.columns:
             # Final (averaged) steady state concentration in well at endpoint_id [N/L]
-            df_particle['concentration_in_well'] = None
+            self.df_particle['concentration_in_well'] = None
 
-        if 'steady_state_concentration' not in df_particle.columns:
+        if 'steady_state_concentration' not in self.df_particle.columns:
             # steady-state concentration for particles along a certain flowline
-            df_particle['steady_state_concentration'] = None
+            self.df_particle['steady_state_concentration'] = None
         
-        for pid in df_flowline.index:
-            df_particle.loc[pid,"steady_state_concentration"].iloc[0] = df_flowline.at[pid,"input_concentration"]
+        for pid in self.df_flowline.index:
+            self.df_particle.loc[pid,"steady_state_concentration"].iloc[0] = self.df_flowline.at[pid,"input_concentration"]
 
         # Start dictionaries for relative and steady-state concentrations
         conc_rel = {}
         conc_steady = {}  # concentration corrected for initial concentration
-        for pid in df_flowline.index:
+        for pid in self.df_flowline.index:
             
             # Calculate the relative removal along pathlines
-            exp_arg = -((df_particle.loc[pid,"lamda"].values/df_particle.loc[pid,"porewater_velocity"].values) *
-                                df_particle.loc[pid,'relative_distance'].values).astype('float')
+            exp_arg = -((self.df_particle.loc[pid,"lamda"].values / self.df_particle.loc[pid,"porewater_velocity"].values) *
+                                self.df_particle.loc[pid,'relative_distance'].values).astype('float')
 
-            conc_rel[pid] = df_flowline.loc[pid,"input_concentration_gw"] + \
-                            (df_flowline.loc[pid,"input_concentration"] - df_flowline.loc[pid,"input_concentration_gw"]) * \
+            conc_rel[pid] = self.df_flowline.loc[pid,"input_concentration_gw"] + \
+                            (self.df_flowline.loc[pid,"input_concentration"] - self.df_flowline.loc[pid,"input_concentration_gw"]) * \
                                 np.exp(exp_arg)
 
             if trackingdirection == 'forward':
-                conc_steady[pid] = (conc_rel[pid]/df_flowline.loc[pid,"input_concentration"]).cumprod() * \
-                                    df_flowline.loc[pid,"input_concentration"]
+                conc_steady[pid] = (conc_rel[pid]/self.df_flowline.loc[pid,"input_concentration"]).cumprod() * \
+                                    self.df_flowline.loc[pid,"input_concentration"]
                 # Replace 'nan'-values by 0.
                 conc_steady[pid]  = np.nan_to_num(conc_steady[pid],0.)
                 
@@ -1460,8 +1465,8 @@ class Transport():
                 idx_final = -1
                                 
             elif trackingdirection == 'backward':
-                conc_steady[pid] = (conc_rel[pid][::-1]/df_flowline.loc[pid,"input_concentration"]).cumprod() * \
-                                    df_flowline.loc[pid,"input_concentration"]
+                conc_steady[pid] = (conc_rel[pid][::-1]/self.df_flowline.loc[pid,"input_concentration"]).cumprod() * \
+                                    self.df_flowline.loc[pid,"input_concentration"]
                 # Replace 'nan'-values by 0.
                 conc_steady[pid]  = np.nan_to_num(conc_steady[pid],0.)
                 # First value represents concentration of endpoint and v.v.
@@ -1471,39 +1476,43 @@ class Transport():
                 idx_final = 0
 
             # Add steady_state_concentration to df_particle
-            df_particle.loc[pid,'steady_state_concentration'] = conc_steady[pid]
+            self.df_particle.loc[pid,'steady_state_concentration'] = conc_steady[pid]
 
         # Calculate average final concentration
         C_final = 0.
-        for pid in df_flowline.index:
-            if df_flowline.loc[pid,"endpoint_id"] == endpoint_id:
+        for pid in self.df_flowline.index:
+            if self.df_flowline.loc[pid,"endpoint_id"] == endpoint_id:
                 # Steady-state concentration after breakthrough
                 C_breakthrough = conc_steady[pid][idx_final]
                 # Traveltime from contamination to endpoint location [days]
-                time_breakthrough = df_particle.loc[pid,"total_travel_time"].iloc[-1]
+                time_breakthrough = self.df_particle.loc[pid,"total_travel_time"].iloc[-1]
 
                 # Steady-state final concentration
-                C_final += (C_breakthrough * df_flowline.loc[pid,"flowline_discharge"]) / \
-                            df_flowline.loc[pid,"well_discharge"]
+                C_final += (C_breakthrough * self.df_flowline.loc[pid,"flowline_discharge"]) / \
+                            self.df_flowline.loc[pid,"well_discharge"]
 
                 # Add breakthrough_concentration to df_flowline
-                df_flowline.loc[pid,'breakthrough_concentration'] = C_breakthrough
+                self.df_flowline.loc[pid,'breakthrough_concentration'] = C_breakthrough
                 # Add breakthrough_traveltime to df_flowline
-                df_flowline.loc[pid,'breakthrough_travel_time'] = time_breakthrough
+                self.df_flowline.loc[pid,'breakthrough_travel_time'] = time_breakthrough
         
         # Add final concentration in well (at endpoint_id)
-        df_flowline.loc[df_flowline.endpoint_id == endpoint_id,"concentration_in_well"] = C_final
+        self.df_flowline.loc[self.df_flowline.endpoint_id == endpoint_id,"concentration_in_well"] = C_final
+
+        # No retardation included with mbo removal
+        self.df_particle['retardation'] = 1.       
+        self.df_particle.loc[:,'breakthrough_travel_time'] = self.df_particle.loc[:,"retardation"].values * self.df_particle.loc[:,"total_travel_time"].values
 
         # SR_todo: @MartinvdS required to calc total_breakthrough_travel_time mbo?
-        # self._calculate_total_breakthrough_travel_time()
+        self._calculate_total_breakthrough_travel_time()
 
         self._contamination_date_vs_well_abstraction()
-        
+
         # add the particle release date
         self.df_flowline['particle_release_day'] = self.particle_release_day # (self.start_date - start_date_contamination).days
 
         # return (adjusted) df_particle and df_flowline
-        return df_particle, df_flowline, C_final
+        return self.df_particle, self.df_flowline, C_final
 
     # Plot the distribution of traveltimes from the well to model radius
     def plot_travel_time_distribution(self, df_particle, times_col = "total_travel_time",

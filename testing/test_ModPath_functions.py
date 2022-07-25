@@ -1918,6 +1918,7 @@ def test_mbo_removal_analyticalwell_input(organism_name = 'solani'):
     df_particle.to_csv(particle_fname)
     df_flowline.to_csv(flowline_fname)
 
+    conc_plot = phreatic_transport.plot_concentration(ylim=[0,10 ])
 #=======
 
 #%%
