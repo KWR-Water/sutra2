@@ -1571,7 +1571,7 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
 
 #     assert modpath_phrea.success_mp
 
-def test_omp_removal_analyticalwell_input(substance_name = 'AMPA'):
+def test_omp_removal_analyticalwell_input(substance_name = 'benzene'):
     ''' calculate the removal of a default substance using AnalyticalWell class.'''
 
     # Lets start with a simple example defining a HydroChemicalSchematisation object for a phreatic aquifer:
@@ -1590,7 +1590,6 @@ def test_omp_removal_analyticalwell_input(substance_name = 'AMPA'):
                                                         redox_target_aquifer='deeply_anoxic',
                                                         pH_target_aquifer=7.,
                                                         temp_water=11.,
-                                                        name='benzene',
                                                         diffuse_input_concentration = 100, #ug/L
                                                         )
 
@@ -1666,7 +1665,7 @@ def test_omp_removal_analyticalwell_input(substance_name = 'AMPA'):
                                                 halflife_deeply_anoxic=6000)
     
     phreatic_concentration = TR.Transport(well = phreatic_well, 
-                                            pollutant = test_substance2)
+                                            pollutant = test_substance)
 
     # If you have specified values for the substance (e.g. half-life, pKa, log_Koc),
     # the default value is overriden and used in the calculation of the removal. You can
@@ -1685,7 +1684,24 @@ def test_omp_removal_analyticalwell_input(substance_name = 'AMPA'):
     # contribution of the flowline to the concentration in the well
     phreatic_concentration.df_flowline[['flowline_id', 'breakthrough_concentration', 'total_breakthrough_travel_time']].head(5)
 
-def test_omp_removal_modpath_input(substance_name = 'AMPA'):
+    # workspace
+    workspace = os.path.join(path, "AW_ompremoval")
+    if not os.path.exists(workspace):
+        os.makedirs(workspace)
+
+    # df_particle filename
+    particle_fname = os.path.join(workspace,"df_particle_AW_omp_removal.csv")
+    # df_flowline filename
+    flowline_fname = os.path.join(workspace,"df_flowline_AW_omp_removal.csv")
+    
+    # Save dataframes
+    phreatic_concentration.df_particle.to_csv(particle_fname)
+    phreatic_concentration.df_flowline.to_csv(flowline_fname)
+
+
+
+
+def test_omp_removal_modpath_input(substance_name = 'benzene'):
     ''' calculate the removal of a default substance using ModPathWell class.'''
 
     # Lets start with a simple example defining a HydroChemicalSchematisation object for a phreatic aquifer:
@@ -1704,7 +1720,6 @@ def test_omp_removal_modpath_input(substance_name = 'AMPA'):
                                                         redox_target_aquifer='deeply_anoxic',
                                                         pH_target_aquifer=7.,
                                                         temp_water=11.,
-                                                        name='benzene',
                                                         diffuse_input_concentration = 100, #ug/L
                                                         )
 
@@ -1736,7 +1751,7 @@ def test_omp_removal_modpath_input(substance_name = 'AMPA'):
     # ============================================
     # You can retrieve the default removal parameters used to calculate the removal of organic micropollutants [OMP] 
     # in the SubstanceTransport class. The data are stored in a dictionary
-    test_substance = TR.Substance(substance_name='benzene')
+    test_substance = TR.Substance(substance_name=substance_name)
     test_substance.substance_dict
 
     # Step 4: Run the Transport class
@@ -1749,15 +1764,15 @@ def test_omp_removal_modpath_input(substance_name = 'AMPA'):
 
     # Step 4b: Calculate the OMP removal
     # ========================================
-    # As example, we take the default removal parameters for the substances 'AMPA'.
+    # As example, we take the default removal parameters for the substances 'benzene'.
     # Note: For OMP you will have to specify values relevant for substances (e.g. half-life, pKa, log_Koc).
     # Any/all default values will be stored and used in the calculation of the removal. 
     # Note that by default the class expects the removal of microbial organisms copied from removal_function 
     # entered in modpath_phrea. We have to explicitly enter the removal_function below for removal op substances.
     # removal_function == 'omp'
 
-    # substance (AMPA)
-    substance_name = 'AMPA'
+    # substance (benzene)
+    substance_name = 'benzene'
     substance_default = TR.Substance(substance_name=substance_name,
                                     partition_coefficient_water_organic_carbon=None,
                                     molar_mass = None,
@@ -1765,9 +1780,11 @@ def test_omp_removal_modpath_input(substance_name = 'AMPA'):
                                     halflife_suboxic=None,
                                     halflife_anoxic=None,
                                     halflife_deeply_anoxic=None)
+    
+    
     # Calculate removal of organic micro-pollutants (removal_function = 'omp')
     modpath_removal = TR.Transport(well = modpath_phrea,
-                                    pollutant = substance_default)
+                                    pollutant = test_substance)
 
     # View the updated removal_parameters dictionary from the SubstanceTransport object
     modpath_removal.removal_parameters
@@ -1783,6 +1800,23 @@ def test_omp_removal_modpath_input(substance_name = 'AMPA'):
     # View the steady-state concentration of the flowline or the steady-state
     # contribution of the flowline to the concentration in the well
     modpath_removal.df_flowline.loc[:,['breakthrough_concentration', 'total_breakthrough_travel_time']].head(5)
+
+    # workspace
+    workspace = os.path.join(path, "mpw_ompremoval")
+    if not os.path.exists(workspace):
+        os.makedirs(workspace)
+
+    # df_particle filename
+    particle_fname = os.path.join(workspace,"df_particle_mpw_omp_removal.csv")
+    # df_flowline filename
+    flowline_fname = os.path.join(workspace,"df_flowline_mpw_omp_removal.csv")
+    
+    # Save dataframes
+    modpath_removal.df_particle.to_csv(particle_fname)
+    modpath_removal.df_flowline.to_csv(flowline_fname)
+
+
+
 
 # %%
 
@@ -1801,7 +1835,7 @@ def test_mbo_removal_analyticalwell_input(organism_name = 'solani'):
                                                         hor_permeability_target_aquifer=35, #m/day
                                                         redox_vadose_zone='anoxic',
                                                         redox_shallow_aquifer='anoxic',
-                                                        redox_target_aquifer='deeply_anoxic',
+                                                        redox_target_aquifer='anoxic',
                                                         pH_target_aquifer=7.,
                                                         temp_water=11.,
                                                         diffuse_input_concentration = 100, #ug/L
@@ -1817,10 +1851,10 @@ def test_mbo_removal_analyticalwell_input(organism_name = 'solani'):
     # by running the .phreatic() function for the well object. 
     phreatic_well.phreatic()
 
-    # The total travel time can be plotted as a function of radial distance from the well, or as a function
-    # of the cumulative fraction of abstracted water: 
-    radial_plot = phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 2000], ylim=[1e3, 1e6])
-    cumulative_plot = phreatic_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
+    # # The total travel time can be plotted as a function of radial distance from the well, or as a function
+    # # of the cumulative fraction of abstracted water: 
+    # radial_plot = phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 2000], ylim=[1e3, 1e6])
+    # cumulative_plot = phreatic_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
 
     # Step 3: Collect removal parameters for the mbo (MicrobialOrganism)
     # -------------------------------------------------------------------
@@ -1851,6 +1885,11 @@ def test_mbo_removal_analyticalwell_input(organism_name = 'solani'):
     endpoint_ids = phreatic_transport.well.df_flowline.loc[:,"endpoint_id"].unique()
     print(f"endpoint_id list: {endpoint_ids}")
 
+    # workspace
+    workspace = os.path.join(path, "AW_mboremoval")
+    if not os.path.exists(workspace):
+        os.makedirs(workspace)
+
     # keep track of final cocnentration per endpoint_id
     C_final = {}
     # Update df_flowline and df_particle. Calculate final concentration at endpoint_id(s)
@@ -1859,8 +1898,8 @@ def test_mbo_removal_analyticalwell_input(organism_name = 'solani'):
                                                     phreatic_transport.df_particle, phreatic_transport.df_flowline, 
                                                     endpoint_id = endpoint_id,
                                                     conc_start = 1., conc_gw = 0.)
-        print(f"Final concentration {endpoint_id}: {C_final[endpoint_id]}")
-        print(df_particle.iloc[:4,:])
+        # print(f"Final concentration {endpoint_id}: {C_final[endpoint_id]}")
+        # print(df_particle.iloc[:4,:])
 
     # Once the removal has been calculated, you can view the steady-state concentration
     # and breakthrough time per zone for the OMP in the df_particle:
@@ -1870,7 +1909,14 @@ def test_mbo_removal_analyticalwell_input(organism_name = 'solani'):
     # contribution of the flowline to the concentration in the well
     df_flowline[['flowline_id', 'breakthrough_concentration', 'breakthrough_travel_time']].head(5)
 
-
+    # df_particle filename
+    particle_fname = os.path.join(workspace,"df_particle_AW_microbial_removal.csv")
+    # df_flowline filename
+    flowline_fname = os.path.join(workspace,"df_flowline_AW_microbial_removal.csv")
+    
+    # Save dataframes
+    df_particle.to_csv(particle_fname)
+    df_flowline.to_csv(flowline_fname)
 
 #=======
 

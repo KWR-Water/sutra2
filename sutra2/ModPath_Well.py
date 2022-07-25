@@ -879,8 +879,8 @@ class ModPathWell:
         self.geoparm_names = {"moisture_content": [["geo_parameters"],"float",0.35],
                         "hk": [["geo_parameters"],"float",999.],
                         "vani": [["geo_parameters"],"float",999.],
-                        "porosity": [["geo_parameters"],"float",1.],
-                        "solid_density": [["geo_parameters"],"float",2.5],
+                        "porosity": [["geo_parameters"],"float",0.35],
+                        "solid_density": [["geo_parameters"],"float",2.65],
                         "fraction_organic_carbon": [["geo_parameters"],"float",0.001],
                         "redox": [["geo_parameters"],"object","anoxic"],
                         "dissolved_organic_carbon": [["geo_parameters"],"float",1],
@@ -3242,7 +3242,7 @@ class ModPathWell:
                 self.df_particle.loc[pid,"total_travel_time"] = self.df_particle.loc[pid,"total_travel_time"] + self.travel_time_unsaturated[iRow] 
 
             # Fill arrays to add to df_particle
-            df_phreatic.loc[df_index,"porosity"] = np.array([vadose_parameters[dict_key]['moisture_content']] * len(flowline_id))
+            df_phreatic.loc[df_index,"porosity"] = np.array([vadose_parameters[dict_key]['porosity']] * len(flowline_id))
             df_phreatic.loc[df_index,"solid_density"] = np.array([vadose_parameters[dict_key]['solid_density']] * len(flowline_id))
             df_phreatic.loc[df_index,"fraction_organic_carbon"] = np.array([vadose_parameters[dict_key]['fraction_organic_carbon']] * len(flowline_id))
             df_phreatic.loc[df_index,"redox"] = np.array([vadose_parameters[dict_key]['redox']] * len(flowline_id))

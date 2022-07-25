@@ -534,7 +534,8 @@ class Transport():
             self.df_particle['mu1'] = self.df_particle['redox'].map(self.removal_parameters['mu1'])
             self.df_particle['alpha0'] = self.df_particle['redox'].map(self.removal_parameters['alpha0'])
             self.df_particle['pH0'] = self.df_particle['redox'].map(self.removal_parameters['pH0'])
-            self.df_particle['organism_diam'] = self.removal_parameters['organism_diam']
+            # Add "organism_diam" to df_flowline (is independent of node)
+            self.df_flowline['organism_diam'] = self.removal_parameters['organism_diam']
 
         self.micro_organism_initialized = True
 
@@ -1200,6 +1201,7 @@ class Transport():
             # number of nodes
             n_nodes = len(df_particle.loc[pid,:])            
 
+
         # Create empty dicts and keys to keep track of arrays per particle id
         k_coll, gamma, As_happ, mu = {}, {}, {}, {}
         D_BM, k_diff, k_att, lamda = {}, {}, {}, {}
@@ -1396,8 +1398,6 @@ class Transport():
 
         # Initialize mbo-parameters
         self._init_micro_organism()
-
-
 
         # Calculate removal coefficient 'lamda' [/day].
         df_particle, df_flowline = self.calc_lambda(df_particle, df_flowline,
