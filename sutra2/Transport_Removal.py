@@ -1250,8 +1250,9 @@ class Transport():
         # return (adjusted) df_particle and df_flowline
         return df_particle, df_flowline
         
-    def calc_advective_microbial_removal(self,df_particle,df_flowline, 
-                                        endpoint_id, trackingdirection = "forward",
+    def calc_advective_microbial_removal(self,df_particle: pd.DataFrame =None, 
+                                        df_flowline: pd.DataFrame =None, 
+                                        endpoint_id: str = "well1", trackingdirection = "forward",
                                         grainsize = 0.00025,
                                         temp_water = 11., rho_water = 999.703,
                                         redox = 'anoxic', por_eff = 0.33,
