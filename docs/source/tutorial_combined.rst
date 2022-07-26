@@ -22,10 +22,10 @@ characteristics.
 
 This python version for OMP removal is based on the Lite+ version of the OMP transport model 'TRANSATOMIC'
 (acronym: TRANS Aquifer Transport Of MicroContaminants, developed by P.Stuyfzand)
-in which concentration changes are calculated with analytical solutions set in Excel spreadsheet: `Excel-based TRANSATOMIC program by Pieter Stuyfzand <https://library.kwrwater.nl/publication/59205490/>`_.
+in which concentration changes are calculated with analytical solutions set in `Excel-based TRANSATOMIC program by Pieter Stuyfzand <https://library.kwrwater.nl/publication/59205490/>`_.
 
 The code for microbial organism removal is based on the equations given in chapter 6.7 of 
-BTO 2012.015 "Gezondheidsrisico's van fecale verontreiniging" [in Dutch], pp 71-74. The main mbo-removal equations are added `here <background_mbo_removal.rst>`_.
+BTO 2012.015 "Gezondheidsrisico's van fecale verontreiniging" [in Dutch], pp 71-74. The main mbo-removal equations are added to the `Appendix <background_mbo_removal.html>`_.
 
 ----------
 Workflow
