@@ -25,7 +25,7 @@ This python version for OMP removal is based on the Lite+ version of the OMP tra
 in which concentration changes are calculated with analytical solutions set in `Excel-based TRANSATOMIC program by Pieter Stuyfzand <https://library.kwrwater.nl/publication/59205490/>`_.
 
 The code for microbial organism removal is based on the equations given in chapter 6.7 of 
-BTO 2012.015 "Gezondheidsrisico's van fecale verontreiniging" [in Dutch], pp 71-74. The main mbo-removal equations are added to the `Appendix <background_mbo_removal.html>`_.
+BTO 2012.015 "Gezondheidsrisico's van fecale verontreiniging" [in Dutch], pp 71-74. The main mbo-removal equations are added to the `Appendix <https://sutra2.readthedocs.io/en/latest/background_mbo_removal.html#tutorial-microbial-organism-removal-mbo-removal>`_.
 
 ----------
 Workflow
