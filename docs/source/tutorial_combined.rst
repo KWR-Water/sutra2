@@ -65,6 +65,7 @@ Now, let’s try some examples. The initial solution will be supplied with addit
 #. Travel time calculation using AnalyticalWell class, combined with 'mbo removal' `AW_mbo_removal <https://github.com/KWR-Water/sutra2/blob/main/research/Tutorial_AW_mbo_removal.ipynb>`_
 #. Travel time calculation using ModPathWell class, combined with 'omp removal' `MPW_omp_removal <https://github.com/KWR-Water/sutra2/blob/main/research/Tutorial_MPW_omp_removal.ipynb>`_
 #. Travel time calculation using ModPathWell class, combined with 'mbo removal' `MPW_mbo_removal <https://github.com/KWR-Water/sutra2/blob/main/research/Tutorial_MPW_mbo_removal.ipynb>`_
+
 .. #. Travel time calculation using ModPathWell class, combined with 'mbo removal' (default removal_parameters)
 .. #. Travel time calculation using ModPathWell class, combined with 'mbo removal' (manual input removal_parameters)
 
