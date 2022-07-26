@@ -950,7 +950,7 @@ class Transport():
 
         # as fraction of the input concentration
         if as_fraction_input:
-            df_well_concentration[:] = [x / input_concentration for x in df_well_concentration]
+            df_well_concentration.loc[:,"total_concentration_in_well"] = df_well_concentration.loc[:,"total_concentration_in_well"].values / input_concentration
             ylabel = 'Fraction of input concentration'
         else:
             ylabel = 'Concentration (ug/L)'
