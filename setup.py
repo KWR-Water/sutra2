@@ -7,7 +7,7 @@ def read(fname):
 
 setup(
     name='sutra2',
-    version='0.4',
+    version='0.5',
     packages=find_packages(exclude=['tests*']),
     license='MIT',
     description='A python package for correction, validation and analysis of ground water quality samples',
