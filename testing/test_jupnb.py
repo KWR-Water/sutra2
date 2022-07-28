@@ -1812,9 +1812,9 @@ def test_mpw_mbo_removal(organism_name = 'solani'):
     phreatic_transport.removal_parameters
 
 
-    # If you have specified values for the substance (e.g. half-life, pKa, log_Koc),
-    # the default value is overriden and used in the calculation of the removal. You can
-    # view the updated removal parameters ('substance dictionary') from the concentration object:
+    # If you have specified values for the mbo (e.g. alpha0, pH0, mu1),
+    # the default value is overwritten and used in the calculation of the removal. You can
+    # view the updated organism removal parameters from the concentration object
     phreatic_transport.removal_parameters
 
     # list endpoint ids
