@@ -46,7 +46,7 @@ import math
 import re # regular expressions
 from scipy.special import kn as besselk
 
-from sutra2.Analytical_Well import AnalyticalWell
+from sutra2.Analytical_Well import AnalyticalWell, HydroChemicalSchematisation
 
 # try:
 #     from sutra2.Analytical_Well import * 
@@ -152,7 +152,7 @@ rmax -> diameter_filterscreen
 class ModPathWell:
 
     """ Compute travel time distribution using MODFLOW and MODPATH.""" 
-    def __init__(self, schematisation: AnalyticalWell,
+    def __init__(self, schematisation: HydroChemicalSchematisation,
                        workspace: str or None = None, modelname: str or None = None,
                        mf_exe = "mf2005.exe", mp_exe = "mpath7.exe",
                        bound_left: str = "xmin", bound_right: str = "xmax",
@@ -600,7 +600,7 @@ class ModPathWell:
             colidx_max = int(np.argwhere((left <= self.xmid) & (right > self.xmid))[-1]) + 1
             # np.where((self.xmid < right) & (self.xmid > left))    
         except IndexError as e:
-            print(e, iDict,iDict_sub,left,right, "(left,right)")
+            # print(e, iDict,iDict_sub,left,right, "(left,right)")
             # print("Set colidx_min and colidx_max to None.")
             colidx_min, colidx_max = None, None
 
@@ -881,11 +881,11 @@ class ModPathWell:
                         "vani": [["geo_parameters"],"float",999.],
                         "porosity": [["geo_parameters"],"float",0.35],
                         "solid_density": [["geo_parameters"],"float",2.65],
-                        "fraction_organic_carbon": [["geo_parameters"],"float",0.001],
-                        "redox": [["geo_parameters"],"object","anoxic"],
-                        "dissolved_organic_carbon": [["geo_parameters"],"float",1],
-                        "pH": [["geo_parameters"],"float",7],
-                        "temp_water": [["geo_parameters"],"float",11],
+                        "fraction_organic_carbon": [["geo_parameters"],"float",self.schematisation.fraction_organic_carbon_target_aquifer],
+                        "redox": [["geo_parameters"],"object",self.schematisation.redox_target_aquifer],
+                        "dissolved_organic_carbon": [["geo_parameters"],"float",self.schematisation.dissolved_organic_carbon_target_aquifer],
+                        "pH": [["geo_parameters"],"float",self.schematisation.pH_target_aquifer],
+                        "temp_water": [["geo_parameters"],"float",self.schematisation.temp_water],
                         "grainsize": [["geo_parameters"],"float",0.00025]
                         }
                       
@@ -1433,8 +1433,16 @@ class ModPathWell:
        
         # Create radial distance array with particle locations
         # self._create_radial_distance_array() # Analytische fluxverdeling
-        self._create_diffuse_particles(recharge_parameters = 'concentration_boundary_parameters',
+        # self._create_diffuse_particles(recharge_parameters = 'concentration_boundary_parameters',
+        #                                 nparticles_cell = 1,
+        #                                 localy=0.5, localx=0.5,
+        #                                 timeoffset=0.0, drape=0,
+        #                                 trackingdirection = self.trackingdirection,
+        #                                 releasedata=0.0, gw_level_release = True,
+        #                                 gw_level = None) # self.head_mf[0,:,:] --> only works if ibound[0,..,..] == 1)  
+        self._create_diffuse_particles_volfraction(recharge_parameters = 'concentration_boundary_parameters',
                                         nparticles_cell = 1,
+                                        # fraction_flux = None,
                                         localy=0.5, localx=0.5,
                                         timeoffset=0.0, drape=0,
                                         trackingdirection = self.trackingdirection,
@@ -1462,14 +1470,13 @@ class ModPathWell:
         self.particlegroups = []
         for iPG in self.pg:
             self.particlegroups.append(self.pg[iPG])
-        # Only for unstruct grids:
-        #- Load modpath unstructured grid
-        #- Load modpath time discretization
-        
+
+        # @MvdS: Steven_todo: stoptime duration based on contamination start and enddate?
+
         # Write modpath simulation File:
         self.modpath_simulation(mp_model = None,# trackingdirection = None,
-                           simulationtype = 'combined', stoptimeoption = 'extend',
-                           particlegroups = self.particlegroups) 
+                           simulationtype = 'combined', stoptimeoption = 'specified',
+                           particlegroups = self.particlegroups, stoptime = 100000.) 
 
 
     def run_modflowmod(self):         
@@ -1661,6 +1668,365 @@ class ModPathWell:
         
         # nparticles_cell: n number of particles defaults to 1
         nparticles_cell = 1
+
+        if recharge_parameters is None:
+            recharge_parameters = self.schematisation_dict.get('recharge_parameters')
+        else:
+            recharge_parameters = self.schematisation_dict.get(recharge_parameters)
+        ## Particle group data ##
+        if recharge_parameters is None:
+            pgroups = []
+        else:
+            pgroups = list(recharge_parameters.keys())
+
+        # xmin and xmax per pg
+        if not hasattr(self, "pg_xmin"):
+            self.pg_xmin = {}
+        if not hasattr(self, "pg_xmax"):
+            self.pg_xmax = {}
+        # ymin and ymax per pg
+        if not hasattr(self, "pg_ymin"):
+            self.pg_ymin = {}
+        if not hasattr(self, "pg_ymax"):
+            self.pg_ymax = {}
+        # zmin and zmax per pg
+        if not hasattr(self, "pg_zmin"):
+            self.pg_zmin = {}
+        if not hasattr(self, "pg_zmax"):
+            self.pg_zmax = {}
+
+        # particle group filenames
+        if not hasattr(self, "pg_filenames"):
+            self.pg_filenames = {}
+        for iPG in pgroups:
+            self.pg_filenames[iPG] = iPG + ".sloc"
+
+    	# flowline_type: point_source (or diffuse_source)
+        if not hasattr(self, "flowline_type"):
+            self.flowline_type = {}
+        if not hasattr(self, "point_discharge"):
+            self.point_discharge = {}    
+        # Particle starting concentration   
+        if not hasattr(self, "inputconc_particle"):
+            self.inputconc_particle = {}    
+
+        # particle starting locations [(lay,row,col),(k,i,j),...]
+        if not hasattr(self, "part_locs"):
+            self.part_locs = {}  
+        # Relative location within grid cells (per particle group)
+        if not hasattr(self, "localx"):
+            self.localx = {}  
+        if not hasattr(self, "localy"):
+            self.localy = {}  
+        if not hasattr(self, "localz"):
+            self.localz = {}  
+     
+
+        # Particle id [part group, particle id] - zero based integers
+        if not hasattr(self, "pids"):
+            # print("Create a new particle id dataset dict.")
+            self.pids = {}
+        if not hasattr(self, "pg"):
+            # print("Create a new particle group dataset dict.")
+            self.pg = {}
+        # Particle group nodes
+        if not hasattr(self, "pg_nodes"):
+            # print("Create a new particle group nodes dataset dict.")
+            self.pg_nodes = {}
+
+        # Particle data objects
+        if not hasattr(self, "pd"):
+            # print("Create a new particle dataset dict.")
+            self.pd = {}
+
+
+        # Particle counter
+        if not hasattr(self, "pcount"):
+            # print("Create a new particle counter.")
+            self.pcount = -1
+            
+        for iPG in pgroups:
+
+            if len(iPG) == 0:
+                # Particle group not entering via recharge
+                continue
+
+            # xmin
+            self.pg_xmin[iPG] = recharge_parameters.get(iPG).get("xmin")
+            # xmax
+            self.pg_xmax[iPG] = recharge_parameters.get(iPG).get("xmax")
+
+            # Only if both ymin and ymax are given
+            if ("ymin" in recharge_parameters.get(iPG)) & \
+                ("ymax" in recharge_parameters.get(iPG)):
+
+                # ymin
+                self.pg_ymin[iPG] = recharge_parameters.get(iPG).get("ymin")
+                # ymax
+                self.pg_ymax[iPG] = recharge_parameters.get(iPG).get("ymax")
+            else:
+                # ymin
+                self.pg_ymin[iPG] = self.ymid[0]
+                # ymax
+                self.pg_ymax[iPG] = self.ymid[0]
+
+
+
+            # zmin
+            if "zmin" in recharge_parameters.get(iPG):
+                self.pg_zmin[iPG] = recharge_parameters.get(iPG).get("zmin")
+            else:
+                if "zmax" in recharge_parameters.get(iPG):
+                    self.pg_zmin[iPG] = recharge_parameters.get(iPG).get("zmax")
+                else:
+                    self.pg_zmin[iPG] = self.top
+            # zmax
+            if "zmax" in recharge_parameters.get(iPG):
+                self.pg_zmax[iPG] = recharge_parameters.get(iPG).get("zmax")
+            else:
+                if "zmin" in recharge_parameters.get(iPG):
+                    self.pg_zmax[iPG] = recharge_parameters.get(iPG).get("zmin")
+                else:
+                    self.pg_zmax[iPG] = self.pg_zmin[iPG]
+
+            try:
+                # Determine column indices
+                colidx_min = int(np.argwhere((self.xmid + 0.5 * self.delr >= self.pg_xmin[iPG]) & \
+                    (self.xmid - 0.5 * self.delr <= self.pg_xmax[iPG]))[0])
+                colidx_max = int(np.argwhere((self.xmid + 0.5 * self.delr >= self.pg_xmin[iPG]) & \
+                    (self.xmid - 0.5 * self.delr <= self.pg_xmax[iPG]))[-1])
+                # np.where((self.xmid < right) & (self.xmid > left))    
+            except IndexError as e:
+                # print(e,"Set colidx_min and colidx_max to None.")
+                colidx_min, colidx_max = None, None            
+
+            try:
+                # Determine row indices
+                rowidx_min = int(np.argwhere((self.ymid + 0.5 * self.delc >= self.pg_ymin[iPG]) & \
+                    (self.ymid - 0.5 * self.delc <= self.pg_ymax[iPG]))[0])
+                rowidx_max = int(np.argwhere((self.ymid + 0.5 * self.delc >= self.pg_ymin[iPG]) & \
+                    (self.ymid - 0.5 * self.delc <= self.pg_ymax[iPG]))[-1])
+                # np.where((self.xmid < right) & (self.xmid > left))    
+            except IndexError as e:
+                # print(e,"Set rowidx_min and rowidx_max to 0.")
+                rowidx_min, rowidx_max = 0, 0            
+
+            try:
+                # Determine layer indices
+                layidx_min = int(np.argwhere((self.zmid + 0.5 * self.delv >= self.pg_zmin[iPG]) & \
+                    (self.zmid - 0.5 * self.delv <= self.pg_zmax[iPG]))[0]) # shallow layer
+                layidx_max = int(np.argwhere((self.zmid + 0.5 * self.delv >= self.pg_zmin[iPG]) & \
+                    (self.zmid - 0.5 * self.delv <= self.pg_zmax[iPG]))[-1])  # deepest layer
+                # np.where((self.xmid < right) & (self.xmid > left))    
+            except IndexError as e:
+                # print(e,"Set layidx_min and layidx_max to 0.")
+                layidx_min, layidx_max = 0, 0            
+
+            # Particles ids (use counter)
+            self.pids[iPG] = []
+            # Particle location list per particle group
+            self.part_locs[iPG] = []
+            # Relative location within grid cells (per particle group)
+            self.localx[iPG] = []
+            self.localy[iPG] = []
+            self.localz[iPG] = []
+            # Particle group nodes
+            self.pg_nodes[iPG] = []
+
+            # If particles are to be released at gwlevel
+            if gw_level_release:
+                if gw_level is None:
+                    try:
+                        # Steven_todo: separate function for get_gwlevel()
+
+                        # groundwater level array (initially assume starting points at model top)
+                        self.gw_level = np.zeros((self.nrow,self.ncol), dtype = 'float') + self.top
+                        for iRow in range(self.nrow):
+                            for iCol in range(self.ncol):
+                                for iLay in range(self.nlay):
+                                    # Check for active cells
+                                    if self.ibound[iLay,iRow,iCol] == 0:
+                                        continue
+
+                                    # Check for uppermost active and wetted cell
+                                    elif abs(self.head_mf[iLay,iRow,iCol]) > 0.9 * abs(self.head_dry):
+                                        continue
+                                    else:
+                                        # Check if layer is confined
+                                        if self.laytyp[iLay] == 0:
+                                            # Gw level equals top of this cell
+                                            if iLay == 0:
+                                                self.gw_level[iRow,iCol] = self.top
+                                            else:
+                                                self.gw_level[iRow,iCol] = self.bot[iLay-1]
+                                        else:
+                                            # Check for gw_level value above bottom of active cell (for non-dry unconfined cells)
+                                            if self.head_mf[iLay,iRow,iCol] < self.bot[iLay]:
+                                                # gwlevel equals top of active (confined) cell
+                                                if iLay == 0:
+                                                    self.gw_level[iRow,iCol] = self.top
+                                                else:
+                                                    self.gw_level[iRow,iCol] = self.bot[iLay-1]
+                                            elif (iLay == 0) & (self.head_mf[iLay,iRow,iCol] > self.top):
+                                                # Set gwlevel to model top (top of confining layer)
+                                                self.gw_level[iRow,iCol] = self.top
+                                            elif (iLay > 0) & (self.head_mf[iLay,iRow,iCol] > self.bot[iLay-1]):
+                                                # Set max gw level to top of confining layer)
+                                                self.gw_level[iRow,iCol] = self.bot[iLay-1]
+                                            else:
+                                                # gw level equals head in active cell
+                                                    self.gw_level[iRow,iCol] = self.head_mf[iLay,iRow,iCol]
+
+                                        # go to next row, col combination
+                                        break
+                    except:
+                        self.gw_level = np.zeros((self.nrow,self.ncol), dtype = 'float') + self.top
+                else:
+                    self.gw_level = gw_level
+                # # Set max gw level to top of first active layer
+
+                # self.gw_level[self.gw_level > self.bot[0]] = self.bot[0]
+                # self.gw_level[self.gw_level > self.top] = self.top
+
+                # layers in which particles are being released
+                layers = []
+                for iRow in range(rowidx_min,rowidx_max+1):
+                    for iCol in range(colidx_min,colidx_max+1):
+                        xyz_point = (self.xmid[iCol],self.ymid[iRow],self.gw_level[iRow,iCol])
+                        layers.append(self.xyz_to_layrowcol(xyz_point = xyz_point, decimals = 5)[0])
+                # localz = (gw_level-bot)/(top-bot)
+                localz_release = []
+                idx_count = -1
+                for iRow in range(rowidx_min,rowidx_max+1):
+                    for iCol in range(colidx_min,colidx_max+1):
+                        idx_count += 1
+                        if layers[idx_count] == 0:
+                            localz_release.append((self.gw_level[iRow,iCol] - self.bot[0]) / \
+                                            (self.top - self.bot[0]))
+                        else:
+                            localz_release.append((self.gw_level[iRow,iCol] - self.bot[layers[idx_count]]) / \
+                                            (self.bot[layers[idx_count]-1] - self.bot[layers[idx_count]]))
+
+            idx_count = -1
+            for iRow in range(rowidx_min,rowidx_max+1):
+                for iCol in range(colidx_min,colidx_max+1):   
+                                    
+                    # Keep track of index
+                    idx_count += 1   
+                    
+                    # Particle row
+                    p_row = iRow
+                    # Particle layer
+                    p_lay = layers[idx_count]
+                    # Particle column
+                    p_col = iCol
+
+                    # check for active cell
+                    if self.ibound[p_lay,p_row,p_col] == 0:
+                        continue 
+                    
+                    # locations for reading output in modpath model
+                    self.pg_nodes[iPG].append((p_lay,p_row,p_col))
+                    # for iPart_cell in range(nparticles_cell):
+                    
+                    # Add particle locations (lay,row,col)
+                    self.part_locs[iPG].append((p_lay,p_row,p_col))                    
+                    # Relative location of the particles in the cells
+                    self.localx[iPG].append(localx) #(iPart_cell + 0.5)/(float(nparticles_cell)))
+                    self.localy[iPG].append(localy)
+                    self.localz[iPG].append(localz_release[idx_count])
+                    # particle count
+                    self.pcount += 1 
+                    self.pids[iPG].append(self.pcount)
+
+                    # flowline_type: diffuse_source (or point_source)
+                    self.flowline_type[self.pcount] = 'diffuse_source'  
+
+                    # Particle starting concentration   
+                    self.inputconc_particle[self.pcount] = recharge_parameters.get(iPG).get("input_concentration")     
+
+            # Particle distribution package - particle allocation
+            #modpath.mp7particledata.Part...
+            self.pd[iPG] = flopy.modpath.ParticleData(partlocs = self.part_locs[iPG], structured=True,
+                                                drape=drape, localx= self.localx[iPG], 
+                                                localy= self.localy[iPG], localz= self.localz[iPG],
+                                                timeoffset = timeoffset, 
+                                                particleids = self.pids[iPG])
+
+
+            # particle group object
+            # modpath.mp7particlegroup.Part.......
+            self.pg[iPG] = flopy.modpath.ParticleGroup(particlegroupname=iPG,
+                                                                filename=self.pg_filenames[iPG],
+                                                                releasedata=releasedata,
+                                                                particledata=self.pd[iPG])
+            ''' ParticleGroup class to create MODPATH 7 particle group data for
+                location input style 1.  '''
+            self.trackingdirection = trackingdirection
+
+    # Here are functions to calculate the travel time through vadose zone, shared functions for
+    # Analytical and Modflow models
+    def _create_radial_distance_array(self):
+
+        ''' Create array of radial distances from the well to a maximum value, radial distance recharge, which
+        is the distance from the well needed to recharge the well to meet the pumping demand. '''
+        # ah_todo change this to single array of 0.001 to 100
+        # right now we have this set up to directly compare with P. Stuyfzand's results
+        # in the 'final' version of the model can be a more fine mesh
+        # but need to think about how we change the testing
+        fraction_flux = np.array([0.00001, 0.0001, 0.001, 0.005])
+        fraction_flux = np.append(fraction_flux, np.arange(0.01, 1, 0.01))
+        self.fraction_flux = np.append(fraction_flux, [0.995, 0.9999])
+
+        # # spreading distance
+        # self.spreading_distance = math.sqrt(self.schematisation.vertical_resistance_shallow_aquifer * self.schematisation.KD)
+
+        # self.radial_distance_recharge =  math.sqrt(abs(self.schematisation.well_discharge
+        #                                             / (math.pi * self.schematisation.recharge_rate )))
+        # radial distane array
+        # radial_distance = self.radial_distance_recharge * \
+        #     np.sqrt(self.fraction_flux)
+
+        # if self.schematisation_type == 'semiconfined':
+
+        #     radial_distance = np.append(radial_distance,
+        #                             [(radial_distance[-1] + ((self.spreading_distance * 3) - radial_distance[-1]) / 3),
+        #                             (radial_distance[-1] + 2 *
+        #                             ((self.spreading_distance * 3) - radial_distance[-1]) / 3),
+        #                                 (self.spreading_distance * 3)])
+
+        # self.radial_distance = radial_distance
+
+        # particles released based on volume fraction
+        self.radial_distance = self.schematisation.model_radius * np.sqrt(self.fraction_flux)
+
+
+
+    def _create_diffuse_particles_volfraction(self, recharge_parameters = None,
+                                                   nparticles_cell: int = 1,
+                                                #    fraction_flux = None,
+                                                   localy=0.5, localx=0.5,
+                                                   timeoffset=0.0, drape=0,
+                                                   trackingdirection = 'forward',
+                                                   releasedata=0.0,
+                                                   gw_level_release = True,
+                                                   gw_level = None):
+        ''' Class to create the most basic particle data type (starting location
+        input style 1). Input style 1 is the most general input style and provides
+        the highest flexibility in customizing starting locations, see flopy docs.
+        ###########################################################################
+        Create array of radial distances from the well to a maximum value, radial distance recharge, which
+        is the distance from the well needed to recharge the well to meet the pumping demand.
+        '''
+        # SUGGESTION SR: --> add term to dictionary 'recharge_parameters' as 'nparticles_cell'
+        
+        # nparticles_cell: n number of particles defaults to 1
+        nparticles_cell = 1
+
+        ''' Create array of radial distances from the well to a maximum value, radial distance recharge, which
+        is the distance from the well needed to recharge the well to meet the pumping demand. '''
+        self._create_radial_distance_array()
+        # creates 'self.fraction_flux' and 'self.radial_distance'
 
         if recharge_parameters is None:
             recharge_parameters = self.schematisation_dict.get('recharge_parameters')
@@ -1955,6 +2321,8 @@ class ModPathWell:
                 location input style 1.  '''
             self.trackingdirection = trackingdirection
 
+
+
     def _create_point_particles(self, point_parameters = None,
                                                    localx = 0.5, 
                                                    localy = 0.5, 
@@ -2061,26 +2429,32 @@ class ModPathWell:
             else:
                 self.z_start_particle[iPG] = self.zmid[0]
 
+            # Cell boundary locations
+            left_arr, right_arr = self.xmid - 0.5 * self.delr, self.xmid + 0.5 * self.delr
+            south_arr, north_arr = self.ymid - 0.5 * self.delc, self.ymid + 0.5 * self.delc  # front --> north; back --> southwards
+            bot_arr, top_arr    = self.zmid - 0.5 * self.delv, self.zmid + 0.5 * self.delv
+
             try:
                 # Determine particle column idx
-                p_col = np.argmin(abs(self.xmid - self.x_start_particle[iPG]))
+                p_col = np.argwhere((left_arr <= self.x_start_particle[iPG]) & (right_arr > self.x_start_particle[iPG]))[0]
             except IndexError as e:
                 # print(e,"Set p_col to 0")
                 p_col = 0  
 
             try:   
                 # Determine particle row idx  
-                p_row = np.argmin(abs(self.ymid - self.y_start_particle[iPG]))
+                p_row = np.argwhere((north_arr >= self.y_start_particle[iPG]) & (south_arr < self.y_start_particle[iPG]))[0]
             except IndexError as e:
                 # print(e,"Set p_row to 0")
                 p_row = 0    
 
             try:
                 # Determine particle layer idx
-                p_lay = np.argmin(abs(self.zmid - self.z_start_particle[iPG]))
+                p_lay = np.argwhere((top_arr >= self.z_start_particle[iPG]) & (bot_arr < self.z_start_particle[iPG]))[0]
             except IndexError as e:
                 # print(e,"Set p_lay to 0")
                 p_lay = 0  
+
 
             # Particles ids (use counter)
             self.pids[iPG] = []
@@ -2093,56 +2467,52 @@ class ModPathWell:
             # Particle group nodes
             self.pg_nodes[iPG] = []
 
-            # Cell boundary locations
-            left, right = self.xmid[p_col] - 0.5 * self.delr[p_col], self.xmid[p_col] + 0.5 * self.delr[p_col]
-            back, front = self.ymid[p_row] - 0.5 * self.delc[p_row], self.ymid[p_row] + 0.5 * self.delc[p_row]
-            bot, top = self.zmid[p_lay] - 0.5 * self.delv[p_lay], self.zmid[p_lay] + 0.5 * self.delv[p_lay]
-
             # Calculate localx, localy, localz using cell boundary locations
-            localx = (self.x_start_particle[iPG] - left) / (right - left)
-            localy = (self.y_start_particle[iPG] - back) / (front - back)
-            localz = (self.z_start_particle[iPG] - bot) / (top - bot)
+            localx = (self.x_start_particle[iPG] - left_arr[p_col]) / (right_arr[p_col] - left_arr[p_col])
+            localy = (self.y_start_particle[iPG] - south_arr[p_row]) / (north_arr[p_row] - south_arr[p_row])
+            localz = (self.z_start_particle[iPG] - bot_arr[p_lay]) / (top_arr[p_lay] - bot_arr[p_lay])
 
-            if self.ibound[p_lay,p_row,p_col] != 0:
-                # locations for reading output in modpath model
-                self.pg_nodes[iPG].append((p_lay,p_row,p_col))
-                # Add particle locations (lay,row,col)
-                self.part_locs[iPG].append((p_lay,p_row,p_col))                    
-                # Relative location of the particles in the cells
-                self.localx[iPG].append(localx)
-                self.localy[iPG].append(localy)
-                self.localz[iPG].append(localz)
-                # particle count
-                self.pcount += 1 
-                self.pids[iPG].append(self.pcount)
+            if self.ibound[p_lay,p_row,p_col] == 0:
+                continue
 
-                # flowline_type: diffuse_source or point_source
-                self.flowline_type[self.pcount] = 'point_source'
-                # Add point_discharge
-                self.point_discharge[self.pcount] = point_parameters.get(iPG).get("discharge") 
+            # locations for reading output in modpath model
+            self.pg_nodes[iPG].append((p_lay,p_row,p_col))
+            # Add particle locations (lay,row,col)
+            self.part_locs[iPG].append((p_lay,p_row,p_col))                    
+            # Relative location of the particles in the cells
+            self.localx[iPG].append(localx)
+            self.localy[iPG].append(localy)
+            self.localz[iPG].append(localz)
+            # particle count
+            self.pcount += 1 
+            self.pids[iPG].append(self.pcount)
 
-                # Starting concentration of particles
-                self.inputconc_particle[self.pcount] = point_parameters.get(iPG).get("input_conentration")
+            # flowline_type: diffuse_source or point_source
+            self.flowline_type[self.pcount] = 'point_source'
+            # Add point_discharge
+            self.point_discharge[self.pcount] = point_parameters.get(iPG).get("discharge") 
 
-                # Particle distribution package - particle allocation
-                #modpath.mp7particledata.Part...
-                self.pd[iPG] = flopy.modpath.ParticleData(partlocs = self.part_locs[iPG], structured=True,
-                                                    drape=drape, localx= self.localx[iPG], 
-                                                    localy= self.localy[iPG], localz= self.localz[iPG],
-                                                    timeoffset = timeoffset, 
-                                                    particleids = self.pids[iPG])
+            # Starting concentration of particles
+            self.inputconc_particle[self.pcount] = point_parameters.get(iPG)["input_concentration"]
 
+            # Particle distribution package - particle allocation
+            #modpath.mp7particledata.Part...
+            self.pd[iPG] = flopy.modpath.ParticleData(partlocs = self.part_locs[iPG], structured=True,
+                                                drape=drape, localx= self.localx[iPG], 
+                                                localy= self.localy[iPG], localz= self.localz[iPG],
+                                                timeoffset = timeoffset, 
+                                                particleids = self.pids[iPG])
 
-                # particle group object
-                # modpath.mp7particlegroup.Part.......
-                self.pg[iPG] = flopy.modpath.ParticleGroup(particlegroupname=iPG,
-                                                                    filename= self.pg_filenames[iPG],
-                                                                    releasedata=releasedata,
-                                                                    particledata=self.pd[iPG])
-                ''' ParticleGroup class to create MODPATH 7 particle group data for
-                    location input style 1.  '''
+            # particle group object
+            # modpath.mp7particlegroup.Part.......
+            self.pg[iPG] = flopy.modpath.ParticleGroup(particlegroupname=iPG,
+                                                                filename= self.pg_filenames[iPG],
+                                                                releasedata=releasedata,
+                                                                particledata=self.pd[iPG])
+            ''' ParticleGroup class to create MODPATH 7 particle group data for
+                location input style 1.  '''
             self.trackingdirection = trackingdirection
-
+            # Steven_todo: line can be left out?
 
     ####################################
     ### ModPath 7 input and analyses ###
@@ -2181,8 +2551,8 @@ class ModPathWell:
                                                       defaultiface = self.defaultiface)
 
     def modpath_simulation(self,mp_model = None, trackingdirection = 'backward',
-                           simulationtype = 'combined', stoptimeoption = 'extend',
-                           particlegroups = None, zones = None):        
+                           simulationtype = 'combined', stoptimeoption = 'specified',
+                           particlegroups = None, stoptime = 100000., zones = None):        
         ''' input MODPATH Simulation File Package Class, see flopy docs. '''
         if mp_model is not None:
             self.mp7 = mp_model
@@ -2205,7 +2575,7 @@ class ModPathWell:
                                          weaksinkoption='stop_at', weaksourceoption='pass_through',
                                          budgetoutputoption='summary', traceparticledata=None, #[0,0], #self.pid, 
                                          budgetcellnumbers=None, referencetime=0.,
-                                         stoptimeoption = stoptimeoption, stoptime=None,
+                                         stoptimeoption = stoptimeoption, stoptime=stoptime, #None,
                                          timepointdata=None, zonedataoption='off',  # timepointdata=[100*24,1/24.]
                                          stopzone='off', zones=self.zones, retardationfactoroption='off',
                                          retardation=1.0, particlegroups=particlegroups,
@@ -2602,98 +2972,109 @@ class ModPathWell:
         # list the particle_data dataframes
         df_particle_list = []
 
+        # List all unique nodes:
+        nodes_list = []
+
         for iPG in particle_group:  # use endpoint_id dict or list
 
             # Node indices to retrieve particle data
             nodes = self.get_node_ID(pg_nodes.get(iPG))
 
-            # Nodes to retrieve
-            for id_,iNode in enumerate(nodes):
-                # print(id_,iNode)
-                # try:
+            for iNode in nodes:
+                nodes_list.append(iNode)
+
+        # Unique nodes
+        nodes_unique = list(np.unique(nodes_list))
 
 
-                # nodes_rel[ = flopy.utils.ra_slice(m.wel.stress_period_data[0], ['k', 'i', 'j'])
-                #     nodes_well = prf.get_nodes(locs = wel_locs, nrow = nrow, ncol = ncol) # m.dis.get_node(wel_locs.tolist())
 
-                # Read pathline data
-                time_nodes, xyz_nodes, dist_data,  \
-                time_diff, dist_tot,   \
-                time_tot, pth_data =  \
-                            self.read_pathlinedata(fpth = mppth,
-                                                nodes = iNode)
+        # Nodes to retrieve
+        for id_,iNode in enumerate(nodes_unique):
+            # print(id_,iNode)
+            # try:
+
+
+            # nodes_rel[ = flopy.utils.ra_slice(m.wel.stress_period_data[0], ['k', 'i', 'j'])
+            #     nodes_well = prf.get_nodes(locs = wel_locs, nrow = nrow, ncol = ncol) # m.dis.get_node(wel_locs.tolist())
+
+            # Read pathline data
+            time_nodes, xyz_nodes, dist_data,  \
+            time_diff, dist_tot,   \
+            time_tot, pth_data =  \
+                        self.read_pathlinedata(fpth = mppth,
+                                            nodes = iNode)
+            
+            '''                             
+            xyz_points, \    # XYZ data 
+            dist_data,  \    # Distance array between nodes
+            time_diff,  \    # Save flow duration (time_diff) of pathlines: array
+            dist_tot,   \    # Total distance covered per particle
+            time_tot,   \    # Total time covered per particle
+            pth_data =  \    # Raw pathline data
+            '''
+
+            # Check, if axisymmetric or 2D --> y should be self.ymid[0]
+            if (self.model_type == "axisymmetric") | (self.model_type == "2D"):
+            
+                for iKey in xyz_nodes.keys():
+                    xyz_nodes[iKey] = np.array([(round(idx_[0],4),
+                                                round(self.ymid[0],4),
+                                                round(idx_[2],4)) for idx_ in xyz_nodes[iKey]])
                 
-                '''                             
-                xyz_points, \    # XYZ data 
-                dist_data,  \    # Distance array between nodes
-                time_diff,  \    # Save flow duration (time_diff) of pathlines: array
-                dist_tot,   \    # Total distance covered per particle
-                time_tot,   \    # Total time covered per particle
-                pth_data =  \    # Raw pathline data
-                '''
+            # col, lay, row index
+            node_indices = self.get_node_indices(xyz_nodes = xyz_nodes)
+            # Particle indices
+            part_idx = [iPart for iPart in xyz_nodes]
+            # Test array travel times (days)
+            tot_time_arr = {iPart: time_diff[iPart].sum() for iPart in part_idx}
 
-                # Check, if axisymmetric or 2D --> y should be self.ymid[0]
-                if (self.model_type == "axisymmetric") | (self.model_type == "2D"):
-                
-                    for iKey in xyz_nodes.keys():
-                        xyz_nodes[iKey] = np.array([(round(idx_[0],4),
-                                                    round(self.ymid[0],4),
-                                                    round(idx_[2],4)) for idx_ in xyz_nodes[iKey]])
-                    
-                # col, lay, row index
-                node_indices = self.get_node_indices(xyz_nodes = xyz_nodes)
-                # Particle indices
-                part_idx = [iPart for iPart in xyz_nodes]
-                # Test array travel times (days)
-                tot_time_arr = {iPart: time_diff[iPart].sum() for iPart in part_idx}
+            for iPart in part_idx:
+                # Loop through converted rec.arrays of pth_data using part_idx 
+                # Fill recarray using pathline_data
+                particle_data[f"{iNode}-{iPart}"] = copy.deepcopy(pth_data[iPart][:]) # [:-1]
+                # Export rec.arrays as pd dataframe
+                df_particle_data[f"{iNode}-{iPart}"] = pd.DataFrame.from_records(data = particle_data[f"{iNode}-{iPart}"],
+                                                                            index = "particleid",
+                                                                            exclude = ["k"]).iloc[:,:]
+                # Drop duplicates                                                            
+                df_particle_data[f"{iNode}-{iPart}"] = df_particle_data[f"{iNode}-{iPart}"].drop_duplicates(
+                    subset=["x","y","z","time"], keep = 'first') 
 
-                for iPart in part_idx:
-                    # Loop through converted rec.arrays of pth_data using part_idx 
-                    # Fill recarray using pathline_data
-                    particle_data[f"{iPG}-{iNode}-{iPart}"] = copy.deepcopy(pth_data[iPart][:]) # [:-1]
-                    # Export rec.arrays as pd dataframe
-                    df_particle_data[f"{iPG}-{iNode}-{iPart}"] = pd.DataFrame.from_records(data = particle_data[f"{iPG}-{iNode}-{iPart}"],
-                                                                                index = "particleid",
-                                                                                exclude = ["k"]).iloc[:,:]
-                    # Drop duplicates                                                            
-                    df_particle_data[f"{iPG}-{iNode}-{iPart}"] = df_particle_data[f"{iPG}-{iNode}-{iPart}"].drop_duplicates(
-                        subset=["x","y","z","time"], keep = 'first') 
+                for iParm in parm_list:
 
-                    for iParm in parm_list:
-
-                        # Material property array
-                        material_property_arr = getattr(self,iParm)
-                        # dtype of array
-                        mat_dtype = material_property_arr.dtype
-                        # if mat_dtype == 'object':
-                        #     dtype_ = '|S20'
-                        # else:
-                        dtype_ = mat_dtype
-                            
-                        # Numpy array values
-                        # Use parm values for the first row in both 2D and axisymmetric models
-                        if self.model_type in ["axisymmetric","2D"]:
-                            parm_values = np.array([material_property_arr[idx[0],0,idx[2]] for idx in node_indices[iPart]])
-                        else: # else: Use pathline data columns
-                            parm_values = np.array([material_property_arr[idx[0],idx[1],idx[2]] for idx in node_indices[iPart]])
+                    # Material property array
+                    material_property_arr = getattr(self,iParm)
+                    # dtype of array
+                    mat_dtype = material_property_arr.dtype
+                    # if mat_dtype == 'object':
+                    #     dtype_ = '|S20'
+                    # else:
+                    dtype_ = mat_dtype
+                        
+                    # Numpy array values
+                    # Use parm values for the first row in both 2D and axisymmetric models
+                    if self.model_type in ["axisymmetric","2D"]:
+                        parm_values = np.array([material_property_arr[idx[0],0,idx[2]] for idx in node_indices[iPart]])
+                    else: # else: Use pathline data columns
+                        parm_values = np.array([material_property_arr[idx[0],idx[1],idx[2]] for idx in node_indices[iPart]])
 
 
-                        # Append recarray to particle_data (dict of dicts of np.recarray)
-                        df_particle_data[f"{iPG}-{iNode}-{iPart}"].loc[:,iParm] = parm_values
+                    # Append recarray to particle_data (dict of dicts of np.recarray)
+                    df_particle_data[f"{iNode}-{iPart}"].loc[:,iParm] = parm_values
 
-                    # Change index name of df_particle                                                           
-                    df_particle_data[f"{iPG}-{iNode}-{iPart}"].index.name = "flowline_id"
-                    # Pseudonyms for df_particle column names
-                    colnames_df_particle = {"x": "xcoord","y":"ycoord","z":"zcoord","time":"total_travel_time","prsity_uncorr":"porosity",
-                                "solid_density": "solid_density", "fraction_organic_carbon": "fraction_organic_carbon", "redox": "redox", 
-                                "dissolved_organic_carbon":	"dissolved_organic_carbon", "pH": "pH",	"temp_water": "temp_water",
-                                "grainsize": "grainsize", "material": "zone"}
-                    df_particle_data[f"{iPG}-{iNode}-{iPart}"].rename(columns = colnames_df_particle, 
-                                                                                    inplace = True, errors = "raise")
-                    df_particle_data[f"{iPG}-{iNode}-{iPart}"] = df_particle_data[f"{iPG}-{iNode}-{iPart}"].drop_duplicates(subset=["xcoord","ycoord","zcoord","total_travel_time"], keep = 'first')                                                                
+                # Change index name of df_particle                                                           
+                df_particle_data[f"{iNode}-{iPart}"].index.name = "flowline_id"
+                # Pseudonyms for df_particle column names
+                colnames_df_particle = {"x": "xcoord","y":"ycoord","z":"zcoord","time":"total_travel_time","prsity_uncorr":"porosity",
+                            "solid_density": "solid_density", "fraction_organic_carbon": "fraction_organic_carbon", "redox": "redox", 
+                            "dissolved_organic_carbon":	"dissolved_organic_carbon", "pH": "pH",	"temp_water": "temp_water",
+                            "grainsize": "grainsize", "material": "zone"}
+                df_particle_data[f"{iNode}-{iPart}"].rename(columns = colnames_df_particle, 
+                                                                                inplace = True, errors = "raise")
+                df_particle_data[f"{iNode}-{iPart}"] = df_particle_data[f"{iNode}-{iPart}"].drop_duplicates(subset=["xcoord","ycoord","zcoord","total_travel_time"], keep = 'first')                                                                
 
-                    # Append dataframes
-                    df_particle_list.append(df_particle_data[f"{iPG}-{iNode}-{iPart}"])
+                # Append dataframes
+                df_particle_list.append(df_particle_data[f"{iNode}-{iPart}"])
 
         # Concatenate df_particle dataframes ('combined')
         if len(df_particle_list) > 0:
@@ -2744,6 +3125,7 @@ class ModPathWell:
             Column 'removal_function': string
 
         '''
+        # Steven_todo: remove 'substance'
 
         # Default value for model_cbc
         if model_cbc is None:
@@ -2808,20 +3190,20 @@ class ModPathWell:
                     # starting point is used to calculate flux of pathline (flux_pathline)
                     flux_pathline[fid] = round(self.calc_flux_cell(frf,flf,fff, loc = node_start[fid]) / \
                                         count_startpoints[node_start[fid]],4)
-
+                # Steven_todo check mass and volume balance @MvdS: concept working to add points wihout modflow 'volume'?
                 elif df_flowline.loc[fid,"flowline_type"] in ["point_source",]:
                     flux_pathline[fid] = self.point_discharge[fid]
 
             elif self.trackingdirection == "backward":
 
-                if df_flowline.loc[fid,"flowline_type"] in ["diffuse_source"]:
+                if df_flowline.loc[fid,"flowline_type"] in ["diffuse_source",]:
                     # endpoint is used to calculate flux of pathline
                     flux_pathline[fid] = round(self.calc_flux_cell(frf,flf,fff, loc = node_end[fid]) / \
                                             count_endpoints[node_end[fid]],4)
                 elif df_flowline.loc[fid,"flowline_type"] in ["point_source",]:
                     flux_pathline[fid] = self.point_discharge[fid]
 
-          # endpoint id
+            # endpoint id
             endpoint_id[fid] = self.material[node_end[fid][0],node_end[fid][1],node_end[fid][2]]
 
         # fill flowline_df

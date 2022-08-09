@@ -308,8 +308,11 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
                                                 conc_start = conc_start, conc_gw = 0.)
 
             # print("Final concentration at " + str(iDist) + " m is: " + str(round(C_final[endpoint_id],4)))
-            # Add final concentration to summary dataframe
-            df_conc.loc[iDist,"Final_concentration"] = C_final[endpoint_id]
+            # Add Breakthrough concentration to summary dataframe (avg concentration along flowlines)
+            C_breakthrough_values = df_flowline[iDist].loc[df_flowline[iDist].endpoint_id == endpoint_id,"breakthrough_concentration"].values
+            flowline_discharge_values = df_flowline[iDist].loc[df_flowline[iDist].endpoint_id == endpoint_id,"flowline_discharge"].values
+            C_breakthrough = sum(C_breakthrough_values * flowline_discharge_values) / sum(flowline_discharge_values)
+            df_conc.loc[iDist,"Final_concentration"] = C_breakthrough # C_final[endpoint_id]
 
         # df_particle file name 
         particle_fname = os.path.join(modpath_hor.dstroot,modpath_hor.schematisation_type + "_df_particle_microbial_removal" + str(iDist) + "m.csv")

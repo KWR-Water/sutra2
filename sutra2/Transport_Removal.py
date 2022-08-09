@@ -700,7 +700,7 @@ class Transport():
 
             # df = self.df_particle.loc[fid,:]
             # df.fillna(0)['breakthrough_travel_time']
-            self.df_flowline.at[fid, 'total_breakthrough_travel_time'] = sum(self.df_particle.loc[fid,:].fillna(0)['breakthrough_travel_time'])
+            self.df_flowline.at[fid, 'total_breakthrough_travel_time'] = sum(self.df_particle.loc[fid,:].fillna(0)['travel_time'])
             self.df_flowline.at[fid, 'breakthrough_concentration'] = self.df_particle.loc[fid,'steady_state_concentration'].iloc[-1]
 
     def compute_omp_removal(self):
@@ -1183,7 +1183,7 @@ class Transport():
             dist[pid] = np.sqrt(dist_)
             # Time difference array
             tdiff[pid] = np.nan_to_num(df_particle.loc[pid,"total_travel_time"].diff().values.astype('float'),0.001)
-
+            tdiff[pid][tdiff[pid] == 0.] = 0.001
             # Calculate porewater velocity [m/day] (do not include effective porosity)
             v_por[pid] = abs(dist[pid][1:]/tdiff[pid][1:])
             # correct "0" velocity values

@@ -654,6 +654,14 @@ class HydroChemicalSchematisation:
 
             # only top_boundary for semiconfined
             ibound_parameters = {
+                'top_boundary_well': {
+                    'head': self.bottom_vadose_zone_at_boundary,
+                    'top': self.bottom_vadose_zone_at_boundary, # OLD: 10 cm ficticous thickness to allow head boundary
+                    'bot': self.bottom_vadose_zone_at_boundary -0.1,  # NEW: ibound =-1 up to 10 cm below layer 1 top
+                    'xmin': 0.,
+                    'xmax': self.diameter_gravelpack/2.,
+                    'ibound': 0
+                    },
                 'top_boundary1': {
                     'head': self.bottom_vadose_zone_at_boundary,
                     'top': self.bottom_vadose_zone_at_boundary, # OLD: 10 cm ficticous thickness to allow head boundary
@@ -661,7 +669,7 @@ class HydroChemicalSchematisation:
                     'xmin': self.diameter_gravelpack/2.,
                     'xmax': self.model_radius_computed,
                     'ibound': -1,
-                        },
+                    },
                     'inner_boundary_shallow_aquifer': {
                     'top': self.bottom_vadose_zone_at_boundary,
                     'bot':self.bottom_shallow_aquifer,
@@ -669,7 +677,7 @@ class HydroChemicalSchematisation:
                     'xmax':self.diameter_filterscreen/2, #check this
                     'ibound':0,
                     }
-                    }
+                }
 
         # make dictionaries of each grouping of parameters
         simulation_parameters = {
@@ -842,15 +850,14 @@ class HydroChemicalSchematisation:
                 'recharge': self.recharge_rate,
                 'xmin': self.diameter_gravelpack/2 + 0.1,
                 'xmax': self.model_radius,
-                'zmin': self.bottom_vadose_zone_at_boundary,
-                'zmax': self.bottom_vadose_zone_at_boundary,
+                'zmin': self.bottom_vadose_zone_at_boundary - 0.1,
+                'zmax': self.bottom_vadose_zone_at_boundary - 0.1,
                 'dissolved_organic_carbon': self.dissolved_organic_carbon_infiltration_water,
                 'TOC': self.total_organic_carbon_infiltration_water,
                 'input_concentration': self.diffuse_input_concentration,
                 },
         # 'source2' :{}> surface water (BAR & RBF) #@MartinvdS come back to this when we start this module
         }
-
 
         # Create point diciontary if point source concentration specified,
         # otherwise pass empty dictionary
