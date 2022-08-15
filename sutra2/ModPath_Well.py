@@ -1440,15 +1440,22 @@ class ModPathWell:
         #                                 trackingdirection = self.trackingdirection,
         #                                 releasedata=0.0, gw_level_release = True,
         #                                 gw_level = None) # self.head_mf[0,:,:] --> only works if ibound[0,..,..] == 1)  
-        self._create_diffuse_particles_volfraction(recharge_parameters = 'concentration_boundary_parameters',
+        if self.schematisation_type in ["phreatic"]:
+            gw_level_release = True
+        else:
+            gw_level_release = False
+        
+        # Concentration boundary particles release
+        self._create_diffuse_particles(recharge_parameters = 'concentration_boundary_parameters',
                                         nparticles_cell = 1,
                                         # fraction_flux = None,
                                         localy=0.5, localx=0.5,
                                         timeoffset=0.0, drape=0,
                                         trackingdirection = self.trackingdirection,
-                                        releasedata=0.0, gw_level_release = True,
-                                        gw_level = None) # self.head_mf[0,:,:] --> only works if ibound[0,..,..] == 1)  
-
+                                        releasedata=0.0, gw_level_release = gw_level_release,
+                                        gw_level = None)
+        
+        # Point parameters release of particles
         self._create_point_particles(point_parameters = "point_parameters",
                                         localx = 0.5, 
                                         localy = 0.5, 
@@ -1888,12 +1895,14 @@ class ModPathWell:
                 # self.gw_level[self.gw_level > self.bot[0]] = self.bot[0]
                 # self.gw_level[self.gw_level > self.top] = self.top
 
+            
                 # layers in which particles are being released
                 layers = []
                 for iRow in range(rowidx_min,rowidx_max+1):
                     for iCol in range(colidx_min,colidx_max+1):
                         xyz_point = (self.xmid[iCol],self.ymid[iRow],self.gw_level[iRow,iCol])
                         layers.append(self.xyz_to_layrowcol(xyz_point = xyz_point, decimals = 5)[0])
+
                 # localz = (gw_level-bot)/(top-bot)
                 localz_release = []
                 idx_count = -1
@@ -1906,6 +1915,29 @@ class ModPathWell:
                         else:
                             localz_release.append((self.gw_level[iRow,iCol] - self.bot[layers[idx_count]]) / \
                                             (self.bot[layers[idx_count]-1] - self.bot[layers[idx_count]]))
+
+            else:
+                # release at level 'zmin' (not at gw_level)
+                # layers in which particles are being released
+                layers = []
+                for iRow in range(rowidx_min,rowidx_max+1):
+                    for iCol in range(colidx_min,colidx_max+1):
+                        xyz_point = (self.xmid[iCol],self.ymid[iRow],self.pg_zmin[iPG])
+                        layers.append(self.xyz_to_layrowcol(xyz_point = xyz_point, decimals = 5)[0])
+
+                # localz = (gw_level-bot)/(top-bot)
+                localz_release = []
+                idx_count = -1
+                for iRow in range(rowidx_min,rowidx_max+1):
+                    for iCol in range(colidx_min,colidx_max+1):
+                        idx_count += 1
+                        if layers[idx_count] == 0:
+                            localz_release.append((self.pg_zmin[iPG] - self.bot[0]) / \
+                                            (self.top - self.bot[0]))
+                        else:
+                            localz_release.append((self.pg_zmin[iPG] - self.bot[layers[idx_count]]) / \
+                                            (self.bot[layers[idx_count]-1] - self.bot[layers[idx_count]]))
+            
 
             idx_count = -1
             for iRow in range(rowidx_min,rowidx_max+1):
@@ -2765,7 +2797,7 @@ class ModPathWell:
                 
         return node_indices
 
-    def calc_flux_cell(self, frf,flf,fff, loc):
+    def calc_flux_cell(self, frf,flf,fff, loc, flux_direction = 'total'):
         ''' Calculate the total volume flux along the cell boundary, using
         frf, flf and fff.
 
@@ -2783,33 +2815,50 @@ class ModPathWell:
         
         loc: tuple
             cell location (lay,row,col)
+        flux_direction: str
+            cell flux along direction
+            ['total','west','east','north','south','top','bottom']
         '''
 
+        # flux dict
+        flux_dict = {}
         # fluxes along x-direction
-        flux_east = max(0,frf[loc[0],loc[1],loc[2]])
+        flux_dict['east'] = frf[loc[0],loc[1],loc[2]]
         if loc[2]-1 >= 0:
-            flux_west = max(0,-frf[loc[0],loc[1],loc[2]-1])
+            flux_dict['west'] = frf[loc[0],loc[1],loc[2]-1]
         else:
-            flux_west = 0.
+            flux_dict['west'] = flux_dict['east']
+
+        # flux west to east
+        flux_westeast = (flux_dict['east'] + flux_dict['west']) / 2.
+
         
         # fluxes along y-direction
-        flux_south = max(0,fff[loc[0],loc[1],loc[2]])
+        flux_dict['south'] = fff[loc[0],loc[1],loc[2]]
         if loc[1]-1 >= 0:
-            flux_north = max(0,-fff[loc[0],loc[1]-1,loc[2]])
+            flux_dict['north'] = fff[loc[0],loc[1]-1,loc[2]]
         else:
-            flux_north = 0.
+            flux_dict['north'] = flux_dict['south']
+
+        # flux north to south
+        flux_northsouth = (flux_dict['north'] + flux_dict['south']) / 2.
+
             
         # fluxes along z-direction
-        flux_lower = max(0, flf[loc[0],loc[1],loc[2]])
+        flux_dict['bottom'] = flf[loc[0],loc[1],loc[2]]
         if loc[0]-1 >= 0:
-            flux_upper = max(0,-flf[loc[0],loc[1],loc[2]])
+            flux_dict['top'] = flf[loc[0]-1,loc[1],loc[2]]
         else:
-            flux_upper = 0.
+            flux_dict['top'] = flux_dict['bottom']
+
+        # flux top to bottom
+        flux_topbottom = (flux_dict['top'] + flux_dict['bottom']) / 2.
+
         
         # Total flux in all directions
-        flux_total = flux_east + flux_west + flux_north + flux_south + flux_upper + flux_lower
+        flux_dict['total'] = abs(flux_westeast) +  abs(flux_northsouth) + abs(flux_topbottom)
 
-        return flux_total
+        return flux_dict[flux_direction]
 
     def read_pathlinedata(self,fpth, nodes):
         ''' Read pathlinedata from file fpth (extension: '.mppth'),
@@ -3184,24 +3233,26 @@ class ModPathWell:
 
 
         for fid in flowline_id:
+            # Recharge flux from top to bottom
             if self.trackingdirection == "forward":
 
-                if df_flowline.loc[fid,"flowline_type"] in ["diffuse_source",]:
+                if df_flowline.loc[fid,"flowline_type"] in ["diffuse_source","point_source"]:
+                    # Steven_todo: add 'flux_direction' as input to modPath_Well class to calc total flux accurately  
                     # starting point is used to calculate flux of pathline (flux_pathline)
-                    flux_pathline[fid] = round(self.calc_flux_cell(frf,flf,fff, loc = node_start[fid]) / \
+                    flux_pathline[fid] = round(self.calc_flux_cell(frf,flf,fff, loc = node_start[fid], flux_direction = 'bottom') / \
                                         count_startpoints[node_start[fid]],4)
-                # Steven_todo check mass and volume balance @MvdS: concept working to add points wihout modflow 'volume'?
-                elif df_flowline.loc[fid,"flowline_type"] in ["point_source",]:
-                    flux_pathline[fid] = self.point_discharge[fid]
+                # # Steven_todo check mass and volume balance @MvdS: concept working to add points wihout modflow 'volume'?
+                # elif df_flowline.loc[fid,"flowline_type"] in ["point_source",]:
+                #     flux_pathline[fid] = self.point_discharge[fid]
 
             elif self.trackingdirection == "backward":
 
-                if df_flowline.loc[fid,"flowline_type"] in ["diffuse_source",]:
+                if df_flowline.loc[fid,"flowline_type"] in ["diffuse_source","point_source"]:
                     # endpoint is used to calculate flux of pathline
-                    flux_pathline[fid] = round(self.calc_flux_cell(frf,flf,fff, loc = node_end[fid]) / \
+                    flux_pathline[fid] = round(self.calc_flux_cell(frf,flf,fff, loc = node_end[fid], flux_direction = 'east') / \
                                             count_endpoints[node_end[fid]],4)
-                elif df_flowline.loc[fid,"flowline_type"] in ["point_source",]:
-                    flux_pathline[fid] = self.point_discharge[fid]
+                # elif df_flowline.loc[fid,"flowline_type"] in ["point_source",]:
+                #     flux_pathline[fid] = self.point_discharge[fid]
 
             # endpoint id
             endpoint_id[fid] = self.material[node_end[fid][0],node_end[fid][1],node_end[fid][2]]

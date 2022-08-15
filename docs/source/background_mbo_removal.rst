@@ -7,7 +7,7 @@ Tutorial microbial organism removal (mbo-removal)
 Overview
 ========
 
-Sutra includes the functionailty to calculate the advective removal of microbial organisms 
+Sutra includes the functionality to calculate the advective removal of microbial organisms 
 (also called 'pathogens') from source to end_point.
 
 Main features:
