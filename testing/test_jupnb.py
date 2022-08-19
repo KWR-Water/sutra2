@@ -2666,7 +2666,7 @@ def test_phreatic_defecation_withgravelpack_noleak_diffuse_boundary_sensitivity(
 
 
         # workspace
-        workspace = os.path.join(path, "test_mpw_mbo_defecation_human_noleak_diffuse_sensitivity")
+        workspace = os.path.join(path, "test_mpw_mbo_defecation_human_noleak_diffuse_sensitivity_cellWB")
         if not os.path.exists(workspace):
             os.makedirs(workspace)
 

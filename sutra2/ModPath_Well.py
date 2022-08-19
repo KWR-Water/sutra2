@@ -3242,7 +3242,7 @@ class ModPathWell:
                 if df_flowline.loc[fid,"flowline_type"] in ["diffuse_source",]:
                     # Steven_todo: add 'flux_direction' as input to modPath_Well class to calc total flux accurately  
                     # starting point is used to calculate flux of pathline (flux_pathline)
-                    flux_pathline[fid] = round(self.calc_flux_cell(frf,flf,fff, loc = node_start[fid], flux_direction = 'bottom') / \
+                    flux_pathline[fid] = round(self.calc_flux_cell(frf,flf,fff, loc = node_start[fid], flux_direction = 'total') / \
                                         count_startpoints[node_start[fid]],4)
                 # # Steven_todo check mass and volume balance @MvdS: concept working to add points wihout modflow 'volume'?
                 elif df_flowline.loc[fid,"flowline_type"] in ["point_source",]:
@@ -3252,7 +3252,7 @@ class ModPathWell:
 
                 if df_flowline.loc[fid,"flowline_type"] in ["diffuse_source","point_source"]:
                     # endpoint is used to calculate flux of pathline
-                    flux_pathline[fid] = round(self.calc_flux_cell(frf,flf,fff, loc = node_end[fid], flux_direction = 'east') / \
+                    flux_pathline[fid] = round(self.calc_flux_cell(frf,flf,fff, loc = node_end[fid], flux_direction = 'total') / \
                                             count_endpoints[node_end[fid]],4)
                 elif df_flowline.loc[fid,"flowline_type"] in ["point_source",]:
                     flux_pathline[fid] = self.point_discharge[fid]
