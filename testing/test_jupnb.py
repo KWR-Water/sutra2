@@ -2349,8 +2349,8 @@ def test_phreatic_defecation_withgravelpack_noleak_diffuse_boundary(organism_nam
 
                                 compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
                                 # Modpath grid parms
-                                ncols_near_well = 80,
-                                ncols_far_well = 50,
+                                ncols_near_well = 240,
+                                ncols_far_well = 150,
                                 nlayers_shallow_aquifer = 20,
                                 nlayers_target_aquifer = 20,
                                 model_radius = model_radius
@@ -2502,12 +2502,12 @@ def test_phreatic_defecation_withgravelpack_noleak_diffuse_boundary(organism_nam
         #         cmap = 'viridis_r')    
 
     # df_particle file name 
-    particle_fname = os.path.join(modpath_phrea.dstroot,"df_particle_microbial_removal.csv")
+    particle_fname = os.path.join(modpath_phrea.dstroot,"df_particle_microbial_removal_220819.csv")
     # Save df_particle 
     df_particle.to_csv(particle_fname)
     
     # df_flowline file name
-    flowline_fname = os.path.join(modpath_phrea.dstroot,"df_flowline_microbial_removal.csv")
+    flowline_fname = os.path.join(modpath_phrea.dstroot,"df_flowline_microbial_removal_220819.csv")
     # Save df_flowline
     df_flowline.to_csv(flowline_fname)      
 
@@ -2723,15 +2723,15 @@ def test_phreatic_defecation_withgravelpack_noleak_diffuse_boundary_sensitivity(
         output_fname = os.path.join(modpath_phrea.dstroot,f"df_output_scen{iScen}.csv")
         df_output.to_csv(output_fname)
 
-        # # df_particle file name 
-        # particle_fname = os.path.join(modpath_phrea.dstroot,"df_particle_{ncols_near_well}_{ncols_far_well}_{nlayers_shallow_aquifer}_{nlayers_target_aquifer}.csv")
-        # # Save df_particle 
-        # df_particle.to_csv(particle_fname)
+        # df_particle file name 
+        particle_fname = os.path.join(modpath_phrea.dstroot,f"df_particle_{ncols_near_well}_{ncols_far_well}_{nlayers_shallow_aquifer}_{nlayers_target_aquifer}.csv")
+        # Save df_particle 
+        df_particle.to_csv(particle_fname)
         
-        # # df_flowline file name
-        # flowline_fname = os.path.join(modpath_phrea.dstroot,f"df_flowline_{ncols_near_well}_{ncols_far_well}_{nlayers_shallow_aquifer}_{nlayers_target_aquifer}.csv")
-        # # Save df_flowline
-        # df_flowline.to_csv(flowline_fname)      
+        # df_flowline file name
+        flowline_fname = os.path.join(modpath_phrea.dstroot,f"df_flowline_{ncols_near_well}_{ncols_far_well}_{nlayers_shallow_aquifer}_{nlayers_target_aquifer}.csv")
+        # Save df_flowline
+        df_flowline.to_csv(flowline_fname)      
 
     assert modpath_phrea.success_mp
 

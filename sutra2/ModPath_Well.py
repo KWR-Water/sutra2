@@ -2829,8 +2829,8 @@ class ModPathWell:
         else:
             flux_dict['west'] = 0.
 
-        # flux cell IN (direction: west to east)  (Note: flux is positive to the right)
-        flux_westeast = flux_dict['west'] - flux_dict['east']
+        # flux cell OUT (direction: west <--> east)  (Note: flux is positive to the right)
+        flux_westeast = flux_dict['west'] + flux_dict['east']
 
         
         # fluxes along y-direction
@@ -2840,8 +2840,8 @@ class ModPathWell:
         else:
             flux_dict['north'] = 0.
 
-        # flux cell IN (direction: north to south)  (Note: flux is positive to the south)
-        flux_northsouth = flux_dict['north'] - flux_dict['south']
+        # flux cell OUT (direction: north <--> south)  (Note: flux is positive to the south)
+        flux_northsouth = flux_dict['north'] + flux_dict['south']
 
             
         # fluxes along z-direction
@@ -2851,8 +2851,8 @@ class ModPathWell:
         else:
             flux_dict['top'] = 0.
 
-        # flux cell IN (direction: top to bottom)  (Note: flux is positive to the bottom)
-        flux_topbottom = flux_dict['top'] - flux_dict['bottom']
+        # flux cell OUT (direction: top <--> bottom)  (Note: flux is positive to the bottom)
+        flux_topbottom = flux_dict['top'] + flux_dict['bottom']
 
         
         # Total flux IN from all directions
@@ -2860,6 +2860,8 @@ class ModPathWell:
         #                         flux_dict['north'] - flux_dict['south'] + \
         #                         flux_dict['top'] - flux_dict['bottom'])
         flux_dict['total'] = flux_westeast + flux_northsouth + flux_topbottom
+        # Alternatief flux totaal
+        # flux_dict['total'] = abs(flux_dict['bottom']) - abs(flux_westeast)
 
         return flux_dict[flux_direction]
 
@@ -3241,9 +3243,9 @@ class ModPathWell:
 
                 if df_flowline.loc[fid,"flowline_type"] in ["diffuse_source",]:
                     # Steven_todo: add 'flux_direction' as input to modPath_Well class to calc total flux accurately  
-                    # starting point is used to calculate flux of pathline (flux_pathline)
-                    flux_pathline[fid] = round(self.calc_flux_cell(frf,flf,fff, loc = node_start[fid], flux_direction = 'total') / \
-                                        count_startpoints[node_start[fid]],4)
+                    # starting point is used to calculate flux of pathline (flux_pathline) # 'bottom'
+                    flux_pathline[fid] = abs(round(self.calc_flux_cell(frf,flf,fff, loc = node_start[fid], flux_direction = 'total') / \
+                                        count_startpoints[node_start[fid]],4))
                 # # Steven_todo check mass and volume balance @MvdS: concept working to add points wihout modflow 'volume'?
                 elif df_flowline.loc[fid,"flowline_type"] in ["point_source",]:
                     flux_pathline[fid] = self.point_discharge[fid]
@@ -3251,9 +3253,9 @@ class ModPathWell:
             elif self.trackingdirection == "backward":
 
                 if df_flowline.loc[fid,"flowline_type"] in ["diffuse_source","point_source"]:
-                    # endpoint is used to calculate flux of pathline
-                    flux_pathline[fid] = round(self.calc_flux_cell(frf,flf,fff, loc = node_end[fid], flux_direction = 'total') / \
-                                            count_endpoints[node_end[fid]],4)
+                    # endpoint is used to calculate flux of pathline   # 'East'
+                    flux_pathline[fid] = abs(round(self.calc_flux_cell(frf,flf,fff, loc = node_end[fid], flux_direction = 'east') / \
+                                            count_endpoints[node_end[fid]],4))
                 elif df_flowline.loc[fid,"flowline_type"] in ["point_source",]:
                     flux_pathline[fid] = self.point_discharge[fid]
 
