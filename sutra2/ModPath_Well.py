@@ -2816,52 +2816,71 @@ class ModPathWell:
             cell location (lay,row,col)
         flux_direction: str
             cell flux along boundary 
-            ['total','west','east','north','south','top','bottom']
-            (NB 'total': out of cell is positive)
+            ['total','west','east','north','south','top','bottom',
+            'vertical', 'horizontal']
+            (NB 'total': 'magnitude' of flow in cell)
+            NB2: 'vertical --> corrected for additional inflow horizontally
+            NB3: 'vertical --> corrected for additional inflow vertically
         '''
 
         # flux dict
         flux_dict = {}
-        # fluxes along x-direction
+        # fluxes along x-direction (positive to east)
         flux_dict['east'] = frf[loc[0],loc[1],loc[2]]
         if loc[2]-1 >= 0:
-            flux_dict['west'] = -frf[loc[0],loc[1],loc[2]-1]
+            flux_dict['west'] = frf[loc[0],loc[1],loc[2]-1]
         else:
             flux_dict['west'] = 0.
 
-        # flux cell OUT (direction: west <--> east)  (Note: flux is positive to the right)
-        flux_westeast = flux_dict['west'] + flux_dict['east']
+        # flux cell (direction: west <--> east)  (Note: flux is positive to the right)
+        flux_westeast = (flux_dict['west'] + flux_dict['east']) / 2.
 
         
-        # fluxes along y-direction
+        # fluxes along y-direction (positive to south)
         flux_dict['south'] = fff[loc[0],loc[1],loc[2]]
         if loc[1]-1 >= 0:
-            flux_dict['north'] = -fff[loc[0],loc[1]-1,loc[2]]
+            flux_dict['north'] = fff[loc[0],loc[1]-1,loc[2]]
         else:
             flux_dict['north'] = 0.
 
-        # flux cell OUT (direction: north <--> south)  (Note: flux is positive to the south)
-        flux_northsouth = flux_dict['north'] + flux_dict['south']
+        # flux cell (direction: north <--> south)  (Note: flux is positive to the south)
+        flux_northsouth = (flux_dict['north'] + flux_dict['south'])  / 2.
 
             
-        # fluxes along z-direction
+        # fluxes along z-direction (positive to bottom)
         flux_dict['bottom'] = flf[loc[0],loc[1],loc[2]]
         if loc[0]-1 >= 0:
-            flux_dict['top'] = -flf[loc[0]-1,loc[1],loc[2]]
+            flux_dict['top'] = flf[loc[0]-1,loc[1],loc[2]]
         else:
             flux_dict['top'] = 0.
 
-        # flux cell OUT (direction: top <--> bottom)  (Note: flux is positive to the bottom)
-        flux_topbottom = flux_dict['top'] + flux_dict['bottom']
+        # flux cell (direction: top <--> bottom)  (Note: flux is positive to the bottom)
+        flux_topbottom = (flux_dict['top'] + flux_dict['bottom']) / 2.
 
         
         # Total flux IN from all directions
         # flux_dict['total'] = -(flux_dict['west'] - flux_dict['east'] + \
         #                         flux_dict['north'] - flux_dict['south'] + \
         #                         flux_dict['top'] - flux_dict['bottom'])
-        flux_dict['total'] = flux_westeast + flux_northsouth + flux_topbottom
-        # Alternatief flux totaal
-        # flux_dict['total'] = abs(flux_dict['bottom']) - abs(flux_westeast)
+        
+        # total flux (summed over boundaries) 
+        flux_dict['total'] = abs(flux_westeast) + abs(flux_northsouth) + abs(flux_topbottom)
+        
+        # Alternative total flux - corrected for vertical influx
+        flux_dict['vertical'] = abs(flux_dict['bottom']) - flux_dict['east'] + flux_dict['west']
+
+        # Alternative total flux - corrected for horizontal influx
+        flux_dict['horizontal'] = abs(flux_dict['west']) - flux_dict['bottom'] + flux_dict['top']
+
+        # Area corrected volume flux
+
+        # q_tot = math.sqrt((flux_westeast / (self.delv[loc[0]] * self.delc[loc[1]]))**2 + \
+        #                     (flux_northsouth / (self.delv[loc[0]] * self.delr[loc[2]]))**2 + \
+        #                         (flux_topbottom / (self.delc[loc[1]] * self.delr[loc[2]]))**2)
+        # # Total flux (area normalized)
+        # flux_dict['total'] = q_tot * (self.delc[loc[1]] * self.delr[loc[2]])
+
+
 
         return flux_dict[flux_direction]
 
@@ -3241,23 +3260,23 @@ class ModPathWell:
             # Recharge flux from top to bottom
             if self.trackingdirection == "forward":
 
-                if df_flowline.loc[fid,"flowline_type"] in ["diffuse_source",]:
+                if df_flowline.loc[fid,"flowline_type"] in ["diffuse_source","point_source"]:
                     # Steven_todo: add 'flux_direction' as input to modPath_Well class to calc total flux accurately  
                     # starting point is used to calculate flux of pathline (flux_pathline) # 'bottom'
-                    flux_pathline[fid] = abs(round(self.calc_flux_cell(frf,flf,fff, loc = node_start[fid], flux_direction = 'total') / \
+                    flux_pathline[fid] = abs(round(self.calc_flux_cell(frf,flf,fff, loc = node_start[fid], flux_direction = 'vertical') / \
                                         count_startpoints[node_start[fid]],4))
-                # # Steven_todo check mass and volume balance @MvdS: concept working to add points wihout modflow 'volume'?
-                elif df_flowline.loc[fid,"flowline_type"] in ["point_source",]:
-                    flux_pathline[fid] = self.point_discharge[fid]
+                # # # Steven_todo check mass and volume balance @MvdS: concept working to add points wihout modflow 'volume'?
+                # elif df_flowline.loc[fid,"flowline_type"] in ["point_source",]:
+                #     flux_pathline[fid] = self.point_discharge[fid]
 
             elif self.trackingdirection == "backward":
 
                 if df_flowline.loc[fid,"flowline_type"] in ["diffuse_source","point_source"]:
                     # endpoint is used to calculate flux of pathline   # 'East'
-                    flux_pathline[fid] = abs(round(self.calc_flux_cell(frf,flf,fff, loc = node_end[fid], flux_direction = 'east') / \
+                    flux_pathline[fid] = abs(round(self.calc_flux_cell(frf,flf,fff, loc = node_end[fid], flux_direction = 'horizontal') / \
                                             count_endpoints[node_end[fid]],4))
-                elif df_flowline.loc[fid,"flowline_type"] in ["point_source",]:
-                    flux_pathline[fid] = self.point_discharge[fid]
+                # elif df_flowline.loc[fid,"flowline_type"] in ["point_source",]:
+                #     flux_pathline[fid] = self.point_discharge[fid]
 
             # endpoint id
             endpoint_id[fid] = self.material[node_end[fid][0],node_end[fid][1],node_end[fid][2]]

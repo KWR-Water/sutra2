@@ -1,5 +1,5 @@
 ,Scen_nr,ncols_near_well,ncols_far_well,nlayers_shallow_aquifer,nlayers_target_aquifer,C_final
-0,1,40,40,15,10,7.184200661474861
+0,1,40,40,15,10,135.25341914512094
 1,2,5,40,15,10,
 2,3,10,40,15,10,
 3,4,20,40,15,10,

@@ -476,11 +476,11 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
 #     # Removal parameters organism
 #     rem_parms = removal_parameters[organism_name]
 
-    # Pollutant to define removal parameters for
-    organism = TR.MicrobialOrganism(organism_name=organism_name)
-    # Calculate advective microbial removal
-    modpath_removal = TR.Transport(modpath_hor,
-                                    pollutant = organism)
+    # # Pollutant to define removal parameters for
+    # organism = TR.MicrobialOrganism(organism_name=organism_name)
+    # # Calculate advective microbial removal
+    # modpath_removal = TR.Transport(modpath_hor,
+    #                                 pollutant = organism)
  
 #     # Calculate advective microbial removal
 #     # Final concentration per endpoint_id
