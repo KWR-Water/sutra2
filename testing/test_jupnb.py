@@ -1415,863 +1415,6 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
     assert modpath_phrea.success_mp
 
 
-def test_phreatic_defecation_withgravelpack_noleak_point_distribution(organism_name = "MS2"):
-    ''' Scenario with feces at surface level near pumping well.
-        Case: phreatic
-        organism_name: "MS2" 
-        Vadose zone: False
-        redox: anoxic
-        pH: neutral (7.5)
-        depth of a leak 'leak1' at 9.5 m depth
-        
-        ''' 
-    ''' Phreatic scheme with gravelpack: modpath run.'''
-    
-    # @ Steven 2022-7-11: tijdelijk niet invoegen --> eerst readthedocs werkend.
-    # well discharge
-    well_discharge = -1000.
-    # recharge_rate
-    recharge_rate = 0.001
-    # model radius [m]
-    model_radius = 564. 
-    # model_radius = math.sqrt(abs(well_discharge / (math.pi * recharge_rate)))
-
-    test_feces_contamination = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
-                                computation_method = 'modpath',
-                                what_to_export='all',
-                                removal_function = 'mbo',
-                                # biodegradation_sorbed_phase = False,
-                                well_discharge=well_discharge,
-                                # vertical_resistance_shallow_aquifer=500,
-                                porosity_vadose_zone=0.33,
-                                porosity_shallow_aquifer=0.33,
-                                porosity_target_aquifer=0.33,
-                                porosity_gravelpack=0.33,
-                                porosity_clayseal=0.33,
-                                recharge_rate=recharge_rate,
-                                moisture_content_vadose_zone=0.15,
-                                ground_surface = 0.0,
-                                thickness_vadose_zone_at_boundary=0.,
-                                thickness_shallow_aquifer=30.,
-                                thickness_target_aquifer=20.,
-                                hor_permeability_target_aquifer= 10.0,
-                                hor_permeability_shallow_aquifer = 10.,
-                                hor_permeability_gravelpack= 1000.,
-                                hor_permeability_clayseal= 0.005,
-                                vertical_anisotropy_shallow_aquifer = 5.,
-                                vertical_anisotropy_target_aquifer = 5.,
-                                vertical_anisotropy_gravelpack = 1.,
-                                vertical_anisotropy_clayseal = 1.,
-                                thickness_full_capillary_fringe=0.,
-                                grainsize_vadose_zone= 0.00025,
-                                grainsize_shallow_aquifer=0.00025,
-                                grainsize_target_aquifer=0.00025,
-                                redox_vadose_zone='anoxic', 
-                                redox_shallow_aquifer='anoxic',
-                                redox_target_aquifer='anoxic',
-                                pH_vadose_zone=7.5,
-                                pH_shallow_aquifer=7.5,
-                                pH_target_aquifer=7.5,
-                                temp_water=12.,
-                                solid_density_vadose_zone= 2.650, 
-                                solid_density_shallow_aquifer= 2.650, 
-                                solid_density_target_aquifer= 2.650, 
-                                diameter_borehole = 0.75,
-                                name = organism_name,
-                                diameter_filterscreen = 0.2,
-                                diameter_gravelpack = 0.75,
-                                diameter_clayseal = 0.75,
-                                point_input_concentration = 1.,
-                                diffuse_input_concentration=2.15E5,
-                                discharge_point_contamination = 100.,#made up value
-                                top_clayseal = 0,
-                                bottom_clayseal = -1.,
-                                top_gravelpack = -1.,
-                                grainsize_gravelpack=0.001,
-                                grainsize_clayseal=0.000001,
-
-                                compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
-                                # Modpath grid parms
-                                ncols_near_well = 240,
-                                ncols_far_well = 150,
-                                nlayers_shallow_aquifer = 20,
-                                nlayers_target_aquifer = 20,
-                                model_radius = model_radius
-                            )
-
-    test_feces_contamination.make_dictionary()
-
-
-    # Add points based on volume fraction of flux from source
-    fraction_flux = np.arange(1.e-7,1.e-6,1.e-8)
-    fraction_flux = np.append(fraction_flux,np.arange(1.e-6,1.e-5,1.e-7))
-    fraction_flux = np.append(fraction_flux,np.arange(1.e-5,1.e-4,1.e-6))
-    fraction_flux = np.append(fraction_flux,np.arange(1.e-4,1.e-3,1.e-5))
-    fraction_flux = np.append(fraction_flux,np.arange(1.e-3,1.e-2,1.e-4))
-    fraction_flux = np.append(fraction_flux,np.arange(1.e-2,1.e-1,1.e-3))
-    fraction_flux = np.append(fraction_flux,np.arange(1.e-1,1.,1.e-2))
-    fraction_flux = np.append(fraction_flux, [0.995,0.999,0.9995, 0.9999])
-
-    # # Add points based on volume fraction of flux from source
-    # fraction_flux = np.arange(1.e-7,1.e-6,1.e-8)
-    # fraction_flux = np.append(fraction_flux,np.arange(1.e-6,1.e-4,1.e-6))
-    # fraction_flux = np.append(fraction_flux,np.arange(1.e-4,1.e-2,1.e-4))
-    # fraction_flux = np.append(fraction_flux, np.arange(1.e-2,1.,1.e-2))
-    # fraction_flux = np.append(fraction_flux, [0.9995, 0.9999])
-
-    # Create point_parameters (i.e. starting points) from scratch
-    point_parameters = {}
-
-        # 
-    # concentration boundary parms
-    cbp = test_feces_contamination.concentration_boundary_parameters
-    for iSource in cbp:
-        # substance name
-        substance_name = cbp[iSource].get("substance_name")
-        # organism name
-        organism_name = cbp[iSource].get("organism_name")
-        # xmin
-        xmin = cbp[iSource].get("xmin", None)
-        # xmax
-        xmax = cbp[iSource].get("xmax", None)
-        # zmin
-        zmin = cbp[iSource].get("zmin", None)
-        # zmax
-        zmax = cbp[iSource].get("zmax", None)
-        # input_concentration
-        input_concentration = cbp[iSource].get("input_concentration", None)
-        # recharge rate
-        recharge_rate = cbp[iSource].get("recharge", None)
-
-        if (xmin < xmax) & (zmin == zmax):
-            # Determine total discharge
-            discharge_total = math.pi * (xmax**2 - xmin**2) * recharge_rate
-
-            # Determine discharge per fraction using fraction_flux
-            discharge_fraction = np.diff(np.array([0.] + list(fraction_flux))) * discharge_total
-            
-            # Determine start points (x)
-            x_bound_list = [xmin] + list(np.sqrt((np.cumsum(discharge_fraction) / (math.pi * recharge_rate)) + xmin**2))
-            x_start_arr = np.array([np.mean(x_bound_list[i-1:i+1]) for i in range(1,len(x_bound_list))])
-            # start points z direction
-            z_start_arr = np.array([zmin] * len(fraction_flux))
-
-        for pid,iFlux in enumerate(fraction_flux):
-
-            if (xmin < xmax) & (zmin == zmax):
-
-                # Determine x_start
-                x_start = x_start_arr[pid]
-                # Determine z_start
-                z_start = z_start_arr[pid]
-                # Discharge
-                point_discharge = discharge_fraction[pid]
-
-                point_parameters[f"{iSource}_pid{pid}"] = {
-                        'substance_name': substance_name,
-                        'organism_name': organism_name,
-                        'input_concentration': input_concentration,
-                        'x_start': round(x_start,4), 
-                        'z_start': round(z_start,4),
-                        'discharge': round(point_discharge,6)
-                        }
-
-    # Optioneel: verwijder grensvlak punten toevoegen
-    # echter: dan probleem met volumebalans als niet in iedere kolom een deeltje toegevoegd wordt
-        
-    # # Remove/empty concentration_boundary_parameters
-    # test_feces_contamination.concentration_boundary_parameters = {}
-
-    # Copy point_parameters input
-    test_feces_contamination.point_parameters = point_parameters
-
-    # semiconfined, but with recharge instead of constant head
-    recharge_parameters = {
-                        'source1': {
-                            'recharge': recharge_rate,
-                            'xmin': 0.375,
-                            'xmax': model_radius,
-                            'input_concentration': 2.15E5,
-                            },
-                        }
-    test_feces_contamination.recharge_parameters = recharge_parameters
-    test_feces_contamination.ibound_parameters.pop("top_boundary1")
-    # Add well as ibound
-    test_feces_contamination.ibound_parameters['well1'] = {'head': 0.0,
-                                                'top': -30.0,
-                                                'bot': -50.0,
-                                                'xmin': 0.0,
-                                                'xmax': 0.1,
-                                                'ibound': -1}
-
-
-    # workspace
-    workspace = os.path.join(path, "test_mpw_mbo_defecation_human_noleak_points_cellflux_corrected")
-    if not os.path.exists(workspace):
-        os.makedirs(workspace)
-
-    # print(test_phrea.__dict__)
-    modpath_phrea = mpw.ModPathWell(test_feces_contamination, #test_phrea,
-                            workspace = workspace,
-                            modelname = "semiconfined",
-                            bound_left = "xmin",
-                            bound_right = "xmax")
-    # print(modpath_phrea.__dict__)
-
-    # Run phreatic schematisation
-    modpath_phrea.run_model(run_mfmodel = True,
-                        run_mpmodel = True)
-
-
-    # microbial removal properties
-    # organism_name = 'MS2'
-    alpha0 = {"suboxic": 1.e-3, "anoxic": 1.e-5, "deeply_anoxic": 1.e-5}
-    pH0 = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8}
-    organism_diam =  2.33e-8
-    mu1 = {"suboxic": 0.039,"anoxic": 0.023,"deeply_anoxic": 0.023}
-
-    removal_parameters = {organism_name: 
-                            {"organism_name": organism_name,
-                                "alpha0": alpha0,
-                                "pH0": pH0,
-                                "organism_diam": organism_diam,
-                                "mu1": mu1
-                            }
-                        }
-    # Removal parameters organism
-    rem_parms = removal_parameters[organism_name]
-
-    # Pollutant to define removal parameters for
-    MS2_organism = TR.MicrobialOrganism(organism_name=organism_name,
-                                        alpha0_suboxic = alpha0["suboxic"],
-                                        alpha0_anoxic = alpha0["anoxic"],
-                                        alpha0_deeply_anoxic =alpha0["deeply_anoxic"],
-                                        pH0_suboxic =pH0["suboxic"],
-                                        pH0_anoxic =pH0["anoxic"],
-                                        pH0_deeply_anoxic = pH0["deeply_anoxic"],
-                                        mu1_suboxic = mu1["suboxic"],
-                                        mu1_anoxic = mu1["anoxic"],
-                                        mu1_deeply_anoxic = mu1["deeply_anoxic"],
-                                        organism_diam = organism_diam
-                                        )
-
-    # Removal parameters organism
-    rem_parms = MS2_organism.organism_dict
-
-    # Calculate advective microbial removal
-    modpath_transport = TR.Transport(modpath_phrea,
-                            pollutant = MS2_organism)
- 
-    # Calculate advective microbial removal
-    # Final concentration per endpoint_id
-    C_final = {}
-    # df_particle before advective removal
-    df_particle = modpath_transport.df_particle
-    df_flowline = modpath_transport.df_flowline
-
-    for endpoint_id in modpath_phrea.schematisation_dict.get("endpoint_id"):
-        df_particle, df_flowline, C_final[endpoint_id] = modpath_transport.calc_advective_microbial_removal(
-                                            df_particle = df_particle, df_flowline = df_flowline,
-                                            endpoint_id = endpoint_id,
-                                            trackingdirection = modpath_phrea.trackingdirection)
-
-    
-        # # Create travel time plots
-        # fpath_scatter_times_log = os.path.join(modpath_phrea.dstroot,"log_travel_times_" + endpoint_id + ".png")
-        # fpath_scatter_times = os.path.join(modpath_phrea.dstroot,"travel_times_" + endpoint_id + ".png")
-        # # # df particle
-        # # df_particle = modpath_removal.df_particle
-        # # time limits
-        # tmin, tmax = 0.1, 50000.
-        # # xcoord bounds
-        # xmin, xmax = 0., 25.
-
-        # # Create travel time plots (lognormal)
-        # modpath_transport.plot_age_distribution(df_particle=df_particle,
-        #         vmin = tmin,vmax = tmax,
-        #         fpathfig = fpath_scatter_times_log, figtext = None,x_text = 0,
-        #         y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
-        #         line_dist = 1, dpi = 192, trackingdirection = "forward",
-        #         cmap = 'viridis_r')
-
-        # # Create travel time plots (linear)
-        # modpath_transport.plot_age_distribution(df_particle=df_particle,
-        #         vmin = 0.,vmax = tmax,
-        #         fpathfig = fpath_scatter_times, figtext = None,x_text = 0,
-        #         y_text = 0, lognorm = False, xmin = xmin, xmax = xmax,
-        #         line_dist = 1, dpi = 192, trackingdirection = "forward",
-        #         cmap = 'viridis_r')
-
-        # # Create concentration plots
-        # fpath_scatter_removal_log = os.path.join(modpath_phrea.dstroot,"log_removal_" + endpoint_id + ".png")
-
-        # # relative conc limits
-        # cmin, cmax = 1.e-21, 1.
-        # # xcoord bounds
-        # xmin, xmax = 0., 25.
-
-        # # Create travel time plots (lognormal)
-        # modpath_transport.plot_logremoval(df_particle=df_particle,
-        #         df_flowline=df_flowline,
-        #         vmin = cmin,vmax = cmax,
-        #         fpathfig = fpath_scatter_removal_log, figtext = None,x_text = 0,
-        #         y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
-        #         line_dist = 1, dpi = 192, trackingdirection = "forward",
-        #         cmap = 'viridis_r')    
-
-    # df_particle file name 
-    particle_fname = os.path.join(modpath_phrea.dstroot,"df_particle_microbial_removal.csv")
-    # Save df_particle 
-    df_particle.to_csv(particle_fname)
-    
-    # df_flowline file name
-    flowline_fname = os.path.join(modpath_phrea.dstroot,"df_flowline_microbial_removal.csv")
-    # Save df_flowline
-    df_flowline.to_csv(flowline_fname)      
-
-    assert modpath_phrea.success_mp
-
-
-def test_phreatic_defecation_withgravelpack_noleak_points_sensitivity(organism_name = "MS2"):
-    ''' Scenario with feces at surface level near pumping well.
-        Case: phreatic
-        organism_name: "MS2" 
-        Vadose zone: False
-        redox: anoxic
-        pH: neutral (7.5)
-        depth of a leak 'leak1' at 9.5 m depth
-        
-        ''' 
-    ''' Phreatic scheme with gravelpack: modpath run.'''
-    
-    # @ Steven 2022-7-11: tijdelijk niet invoegen --> eerst readthedocs werkend.
-    # well discharge
-    well_discharge = -1000.
-    # recharge_rate
-    recharge_rate = 0.001
-    # model radius [m]
-    model_radius = 564. 
-    # model_radius = math.sqrt(abs(well_discharge / (math.pi * recharge_rate)))
-
-    # microbial removal properties
-    # organism_name = 'MS2'
-    alpha0 = {"suboxic": 1.e-3, "anoxic": 1.e-5, "deeply_anoxic": 1.e-5}
-    pH0 = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8}
-    organism_diam =  2.33e-8
-    mu1 = {"suboxic": 0.039,"anoxic": 0.023,"deeply_anoxic": 0.023}
-
-    removal_parameters = {organism_name: 
-                            {"organism_name": organism_name,
-                                "alpha0": alpha0,
-                                "pH0": pH0,
-                                "organism_diam": organism_diam,
-                                "mu1": mu1
-                            }
-                        }
-    # Removal parameters organism
-    rem_parms = removal_parameters[organism_name]
-
-    # Scenario runs
-    df_scen_path = os.path.join(path,"scenarios_diffuse_sensitivity_mpw_220811.xlsx")
-    df_scen = pd.read_excel(df_scen_path, sheet_name = "scenarios_diffuse_sensitivity")
-
-    # df_output
-    df_output = df_scen
-    df_output["C_final"] = None
-
-    # sensitivity scenario runs
-    for iScen in df_scen.Scen_nr.values:
-
-        if iScen != 1:
-            continue
-        # Vary number of columns and layers
-        ncols_near_well = df_scen.loc[df_scen.Scen_nr == iScen,"ncols_near_well"].values[0]
-        ncols_far_well = df_scen.loc[df_scen.Scen_nr == iScen,"ncols_far_well"].values[0]
-        nlayers_shallow_aquifer = df_scen.loc[df_scen.Scen_nr == iScen,"nlayers_shallow_aquifer"].values[0]
-        nlayers_target_aquifer = df_scen.loc[df_scen.Scen_nr == iScen,"nlayers_target_aquifer"].values[0]
-
-        test_feces_contamination = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
-                                    computation_method = 'modpath',
-                                    what_to_export='all',
-                                    removal_function = 'mbo',
-                                    # biodegradation_sorbed_phase = False,
-                                    well_discharge=well_discharge,
-                                    # vertical_resistance_shallow_aquifer=500,
-                                    porosity_vadose_zone=0.33,
-                                    porosity_shallow_aquifer=0.33,
-                                    porosity_target_aquifer=0.33,
-                                    porosity_gravelpack=0.33,
-                                    porosity_clayseal=0.33,
-                                    recharge_rate=recharge_rate,
-                                    moisture_content_vadose_zone=0.15,
-                                    ground_surface = 0.0,
-                                    thickness_vadose_zone_at_boundary=0.,
-                                    thickness_shallow_aquifer=30.,
-                                    thickness_target_aquifer=20.,
-                                    hor_permeability_target_aquifer= 10.0,
-                                    hor_permeability_shallow_aquifer = 10.,
-                                    hor_permeability_gravelpack= 1000.,
-                                    hor_permeability_clayseal= 0.005,
-                                    vertical_anisotropy_shallow_aquifer = 5.,
-                                    vertical_anisotropy_target_aquifer = 5.,
-                                    vertical_anisotropy_gravelpack = 1.,
-                                    vertical_anisotropy_clayseal = 1.,
-                                    thickness_full_capillary_fringe=0.,
-                                    grainsize_vadose_zone= 0.00025,
-                                    grainsize_shallow_aquifer=0.00025,
-                                    grainsize_target_aquifer=0.00025,
-                                    redox_vadose_zone='anoxic', 
-                                    redox_shallow_aquifer='anoxic',
-                                    redox_target_aquifer='anoxic',
-                                    pH_vadose_zone=7.5,
-                                    pH_shallow_aquifer=7.5,
-                                    pH_target_aquifer=7.5,
-                                    temp_water=12.,
-                                    solid_density_vadose_zone= 2.650, 
-                                    solid_density_shallow_aquifer= 2.650, 
-                                    solid_density_target_aquifer= 2.650, 
-                                    diameter_borehole = 0.75,
-                                    name = organism_name,
-                                    diameter_filterscreen = 0.2,
-                                    diameter_gravelpack = 0.75,
-                                    diameter_clayseal = 0.75,
-                                    point_input_concentration = 1.,
-                                    diffuse_input_concentration=2.15E5,
-                                    discharge_point_contamination = 100.,#made up value
-                                    top_clayseal = 0,
-                                    bottom_clayseal = -1.,
-                                    top_gravelpack = -1.,
-                                    grainsize_gravelpack=0.001,
-                                    grainsize_clayseal=0.000001,
-
-                                    compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
-                                    # Modpath grid parms
-                                    ncols_near_well = ncols_near_well,
-                                    ncols_far_well = ncols_far_well,
-                                    nlayers_shallow_aquifer = nlayers_shallow_aquifer,
-                                    nlayers_target_aquifer = nlayers_target_aquifer,
-                                    model_radius = model_radius
-                                )
-
-        test_feces_contamination.make_dictionary()
-
-        # Add points based on volume fraction of flux from source
-        fraction_flux = np.arange(1.e-7,1.e-6,1.e-8)
-        fraction_flux = np.append(fraction_flux,np.arange(1.e-6,1.e-4,1.e-6))
-        fraction_flux = np.append(fraction_flux,np.arange(1.e-4,1.e-2,1.e-4))
-        fraction_flux = np.append(fraction_flux, np.arange(1.e-2,1.,1.e-2))
-        fraction_flux = np.append(fraction_flux, [0.9995, 0.9999])
-
-        # Create point_parameters (i.e. starting points) from scratch
-        point_parameters = {}
-
-            # 
-        # concentration boundary parms
-        cbp = test_feces_contamination.concentration_boundary_parameters
-        for iSource in cbp:
-            # substance name
-            substance_name = cbp[iSource].get("substance_name")
-            # organism name
-            organism_name = cbp[iSource].get("organism_name")
-            # xmin
-            xmin = cbp[iSource].get("xmin", None)
-            # xmax
-            xmax = cbp[iSource].get("xmax", None)
-            # zmin
-            zmin = cbp[iSource].get("zmin", None)
-            # zmax
-            zmax = cbp[iSource].get("zmax", None)
-            # input_concentration
-            input_concentration = cbp[iSource].get("input_concentration", None)
-            # recharge rate
-            recharge_rate = cbp[iSource].get("recharge", None)
-
-            if (xmin < xmax) & (zmin == zmax):
-                # Determine total discharge
-                discharge_total = math.pi * (xmax**2 - xmin**2) * recharge_rate
-
-                # Determine discharge per fraction using fraction_flux
-                discharge_fraction = np.diff(np.array([0.] + list(fraction_flux))) * discharge_total
-                
-                # Determine start points (x)
-                x_bound_list = [xmin] + list(np.sqrt((np.cumsum(discharge_fraction) / (math.pi * recharge_rate)) + xmin**2))
-                x_start_arr = np.array([np.mean(x_bound_list[i-1:i+1]) for i in range(1,len(x_bound_list))])
-                # start points z direction
-                z_start_arr = np.array([zmin] * len(fraction_flux))
-
-            for pid,iFlux in enumerate(fraction_flux):
-
-                if (xmin < xmax) & (zmin == zmax):
-
-                    # Determine x_start
-                    x_start = x_start_arr[pid]
-                    # Determine z_start
-                    z_start = z_start_arr[pid]
-                    # Discharge
-                    point_discharge = discharge_fraction[pid]
-
-                    point_parameters[f"{iSource}_pid{pid}"] = {
-                            'substance_name': substance_name,
-                            'organism_name': organism_name,
-                            'input_concentration': input_concentration,
-                            'x_start': round(x_start,4), 
-                            'z_start': round(z_start,4),
-                            'discharge': round(point_discharge,6)
-                            }
-
-
-        # Remove/empty concentration_boundary_parameters
-        test_feces_contamination.concentration_boundary_parameters = {}
-        
-        # Copy point_parameters input
-        test_feces_contamination.point_parameters = point_parameters
-
-        # semiconfined, but with recharge instead of constant head
-        recharge_parameters = {
-                            'source1': {
-                                'recharge': recharge_rate,
-                                'xmin': 0.375,
-                                'xmax': model_radius,
-                                'input_concentration': 2.15E5,
-                                },
-                            }
-        test_feces_contamination.recharge_parameters = recharge_parameters
-        test_feces_contamination.ibound_parameters.pop("top_boundary1")
-        # Add well as ibound
-        test_feces_contamination.ibound_parameters['well1'] = {'head': 0.0,
-                                                    'top': -30.0,
-                                                    'bot': -50.0,
-                                                    'xmin': 0.0,
-                                                    'xmax': 0.1,
-                                                    'ibound': -1}
-
-
-        # workspace
-        workspace = os.path.join(path, "test_mpw_mbo_defecation_human_noleak_points_sensitivity_cellflux_discharge")
-        if not os.path.exists(workspace):
-            os.makedirs(workspace)
-
-        # print(test_phrea.__dict__)
-        modpath_phrea = mpw.ModPathWell(test_feces_contamination, #test_phrea,
-                                workspace = workspace,
-                                modelname = "semiconfined",
-                                bound_left = "xmin",
-                                bound_right = "xmax")
-        # print(modpath_phrea.__dict__)
-
-        # Run phreatic schematisation
-        modpath_phrea.run_model(run_mfmodel = True,
-                            run_mpmodel = True)
-
-
-        # Pollutant to define removal parameters for
-        MS2_organism = TR.MicrobialOrganism(organism_name=organism_name,
-                                            alpha0_suboxic = alpha0["suboxic"],
-                                            alpha0_anoxic = alpha0["anoxic"],
-                                            alpha0_deeply_anoxic =alpha0["deeply_anoxic"],
-                                            pH0_suboxic =pH0["suboxic"],
-                                            pH0_anoxic =pH0["anoxic"],
-                                            pH0_deeply_anoxic = pH0["deeply_anoxic"],
-                                            mu1_suboxic = mu1["suboxic"],
-                                            mu1_anoxic = mu1["anoxic"],
-                                            mu1_deeply_anoxic = mu1["deeply_anoxic"],
-                                            organism_diam = organism_diam
-                                            )
-
-        # Removal parameters organism
-        rem_parms = MS2_organism.organism_dict
-
-        # Calculate advective microbial removal
-        modpath_transport = TR.Transport(modpath_phrea,
-                                pollutant = MS2_organism)
-    
-        # Calculate advective microbial removal
-        # Final concentration per endpoint_id
-        C_final = {}
-        # df_particle before advective removal
-        df_particle = modpath_transport.df_particle
-        df_flowline = modpath_transport.df_flowline
-
-        for endpoint_id in ["well1"]: #modpath_phrea.schematisation_dict.get("endpoint_id"):
-            df_particle, df_flowline, C_final[endpoint_id] = modpath_transport.calc_advective_microbial_removal(
-                                                df_particle = df_particle, df_flowline = df_flowline,
-                                                endpoint_id = endpoint_id,
-                                                trackingdirection = modpath_phrea.trackingdirection)
-
-        # Add final conc to df_output
-        df_output.loc[df_output.Scen_nr == iScen,"C_final"] = C_final["well1"]
-        # df_output
-        output_fname = os.path.join(modpath_phrea.dstroot,f"df_output_scen{iScen}.csv")
-        df_output.to_csv(output_fname)
-
-        # # df_particle file name 
-        # particle_fname = os.path.join(modpath_phrea.dstroot,"df_particle_{ncols_near_well}_{ncols_far_well}_{nlayers_shallow_aquifer}_{nlayers_target_aquifer}.csv")
-        # # Save df_particle 
-        # df_particle.to_csv(particle_fname)
-        
-        # # df_flowline file name
-        # flowline_fname = os.path.join(modpath_phrea.dstroot,f"df_flowline_{ncols_near_well}_{ncols_far_well}_{nlayers_shallow_aquifer}_{nlayers_target_aquifer}.csv")
-        # # Save df_flowline
-        # df_flowline.to_csv(flowline_fname)      
-
-    assert modpath_phrea.success_mp
-
-# def test_phreatic_defecation_withgravelpack_noleak_diffuse_boundary_backward(organism_name = "MS2"):
-#     ''' Scenario with feces at surface level near pumping well.
-#         Case: phreatic
-#         organism_name: "MS2" 
-#         Vadose zone: False
-#         redox: anoxic
-#         pH: neutral (7.5)
-#         depth of a leak 'leak1' at 9.5 m depth
-        
-#         ''' 
-#     ''' Phreatic scheme with gravelpack: modpath run.'''
-    
-#     # @ Steven 2022-7-11: tijdelijk niet invoegen --> eerst readthedocs werkend.
-#     # well discharge
-#     well_discharge = -1000.
-#     # recharge_rate
-#     recharge_rate = 0.001
-#     # model radius [m]
-#     model_radius = 564. 
-#     # model_radius = math.sqrt(abs(well_discharge / (math.pi * recharge_rate)))
-
-#     test_feces_contamination = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
-#                                 computation_method = 'modpath',
-#                                 what_to_export='all',
-#                                 removal_function = 'mbo',
-#                                 # biodegradation_sorbed_phase = False,
-#                                 well_discharge=well_discharge,
-#                                 # vertical_resistance_shallow_aquifer=500,
-#                                 porosity_vadose_zone=0.33,
-#                                 porosity_shallow_aquifer=0.33,
-#                                 porosity_target_aquifer=0.33,
-#                                 porosity_gravelpack=0.33,
-#                                 porosity_clayseal=0.33,
-#                                 recharge_rate=recharge_rate,
-#                                 moisture_content_vadose_zone=0.15,
-#                                 ground_surface = 0.0,
-#                                 thickness_vadose_zone_at_boundary=0.,
-#                                 thickness_shallow_aquifer=30.,
-#                                 thickness_target_aquifer=20.,
-#                                 hor_permeability_target_aquifer= 10.0,
-#                                 hor_permeability_shallow_aquifer = 10.,
-#                                 hor_permeability_gravelpack= 1000.,
-#                                 hor_permeability_clayseal= 0.005,
-#                                 vertical_anisotropy_shallow_aquifer = 5.,
-#                                 vertical_anisotropy_target_aquifer = 5.,
-#                                 vertical_anisotropy_gravelpack = 1.,
-#                                 vertical_anisotropy_clayseal = 1.,
-#                                 thickness_full_capillary_fringe=0.,
-#                                 grainsize_vadose_zone= 0.00025,
-#                                 grainsize_shallow_aquifer=0.00025,
-#                                 grainsize_target_aquifer=0.00025,
-#                                 redox_vadose_zone='anoxic', 
-#                                 redox_shallow_aquifer='anoxic',
-#                                 redox_target_aquifer='anoxic',
-#                                 pH_vadose_zone=7.5,
-#                                 pH_shallow_aquifer=7.5,
-#                                 pH_target_aquifer=7.5,
-#                                 temp_water=12.,
-#                                 solid_density_vadose_zone= 2.650, 
-#                                 solid_density_shallow_aquifer= 2.650, 
-#                                 solid_density_target_aquifer= 2.650, 
-#                                 diameter_borehole = 0.75,
-#                                 name = organism_name,
-#                                 diameter_filterscreen = 0.2,
-#                                 diameter_gravelpack = 0.75,
-#                                 diameter_clayseal = 0.75,
-#                                 point_input_concentration = 1.,
-#                                 diffuse_input_concentration=2.15E5,
-#                                 discharge_point_contamination = 100.,#made up value
-#                                 top_clayseal = 0,
-#                                 bottom_clayseal = -1.,
-#                                 top_gravelpack = -1.,
-#                                 grainsize_gravelpack=0.001,
-#                                 grainsize_clayseal=0.000001,
-
-#                                 compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
-#                                 # Modpath grid parms
-#                                 ncols_near_well = 80,
-#                                 ncols_far_well = 50,
-#                                 nlayers_shallow_aquifer = 40,
-#                                 nlayers_target_aquifer = 40,
-#                                 model_radius = model_radius
-#                             )
-
-#     test_feces_contamination.make_dictionary()
-
-#     # Create point_parameters (i.e. starting points) from scratch
-#     point_parameters = {}
-#     # Copy point_parameters input
-#     test_feces_contamination.point_parameters = point_parameters
-
-#     # # Remove/empty concentration_boundary_parameters
-#     # test_feces_contamination.concentration_boundary_parameters = {}
-
-
-#     # semiconfined, but with recharge instead of constant head
-#     recharge_parameters = {
-#                         'source1': {
-#                             'recharge': recharge_rate,
-#                             'xmin': 0.375,
-#                             'xmax': model_radius,
-#                             'input_concentration': 2.15E5,
-#                             },
-#                         }
-#     test_feces_contamination.recharge_parameters = recharge_parameters
-#     test_feces_contamination.ibound_parameters.pop("top_boundary1")
-#     # Add well as ibound
-#     test_feces_contamination.ibound_parameters['well1'] = {'head': 0.0,
-#                                                 'top': -30.0,
-#                                                 'bot': -50.0,
-#                                                 'xmin': 0.0,
-#                                                 'xmax': 0.1,
-#                                                 'ibound': -1}
-
-#     # Define backward tracking concentration_boundary points
-#     test_feces_contamination.concentration_boundary_parameters = {}
-#     concentration_boundary_parameters = {'boundary_well1': 
-#                                             {'substance_name': None,
-#                                             'organism_name': 'MS2',
-#                                             'xmin': 0.375,
-#                                             'xmax': 0.375,
-#                                             'zmin': -50.,
-#                                             'zmax': -30.,
-#                                             'dissolved_organic_carbon': 0.0,
-#                                             'TOC': 0.0,}
-#                                             }
-
-#     test_feces_contamination.concentration_boundary_parameters = concentration_boundary_parameters
-
-#     # workspace
-#     workspace = os.path.join(path, "test_mpw_mbo_defecation_human_noleak_diffuse_backward")
-#     if not os.path.exists(workspace):
-#         os.makedirs(workspace)
-
-#     # print(test_phrea.__dict__)
-#     modpath_phrea = mpw.ModPathWell(test_feces_contamination, #test_phrea,
-#                             workspace = workspace,
-#                             modelname = "semiconfined",
-#                             bound_left = "xmin",
-#                             bound_right = "xmax",
-#                             trackingdirection= "backward")
-#     # print(modpath_phrea.__dict__)
-
-#     # Run phreatic schematisation
-#     modpath_phrea.run_model(run_mfmodel = True,
-#                         run_mpmodel = True)
-
-
-#     # microbial removal properties
-#     # organism_name = 'MS2'
-#     alpha0 = {"suboxic": 1.e-3, "anoxic": 1.e-5, "deeply_anoxic": 1.e-5}
-#     pH0 = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8}
-#     organism_diam =  2.33e-8
-#     mu1 = {"suboxic": 0.039,"anoxic": 0.023,"deeply_anoxic": 0.023}
-
-#     removal_parameters = {organism_name: 
-#                             {"organism_name": organism_name,
-#                                 "alpha0": alpha0,
-#                                 "pH0": pH0,
-#                                 "organism_diam": organism_diam,
-#                                 "mu1": mu1
-#                             }
-#                         }
-#     # Removal parameters organism
-#     rem_parms = removal_parameters[organism_name]
-
-#     # Pollutant to define removal parameters for
-#     MS2_organism = TR.MicrobialOrganism(organism_name=organism_name,
-#                                         alpha0_suboxic = alpha0["suboxic"],
-#                                         alpha0_anoxic = alpha0["anoxic"],
-#                                         alpha0_deeply_anoxic =alpha0["deeply_anoxic"],
-#                                         pH0_suboxic =pH0["suboxic"],
-#                                         pH0_anoxic =pH0["anoxic"],
-#                                         pH0_deeply_anoxic = pH0["deeply_anoxic"],
-#                                         mu1_suboxic = mu1["suboxic"],
-#                                         mu1_anoxic = mu1["anoxic"],
-#                                         mu1_deeply_anoxic = mu1["deeply_anoxic"],
-#                                         organism_diam = organism_diam
-#                                         )
-
-#     # Removal parameters organism
-#     rem_parms = MS2_organism.organism_dict
-
-#     # Calculate advective microbial removal
-#     modpath_transport = TR.Transport(modpath_phrea,
-#                             pollutant = MS2_organism)
- 
-#     # Calculate advective microbial removal
-#     # Final concentration per endpoint_id
-#     C_final = {}
-#     # df_particle before advective removal
-#     df_particle = modpath_transport.df_particle
-#     df_flowline = modpath_transport.df_flowline
-
-#     for endpoint_id in modpath_phrea.schematisation_dict.get("endpoint_id"):
-#         df_particle, df_flowline, C_final[endpoint_id] = modpath_transport.calc_advective_microbial_removal(
-#                                             df_particle = df_particle, df_flowline = df_flowline,
-#                                             endpoint_id = endpoint_id,
-#                                             trackingdirection = modpath_phrea.trackingdirection)
-
-    
-#         # # Create travel time plots
-#         # fpath_scatter_times_log = os.path.join(modpath_phrea.dstroot,"log_travel_times_" + endpoint_id + ".png")
-#         # fpath_scatter_times = os.path.join(modpath_phrea.dstroot,"travel_times_" + endpoint_id + ".png")
-#         # # # df particle
-#         # # df_particle = modpath_removal.df_particle
-#         # # time limits
-#         # tmin, tmax = 0.1, 50000.
-#         # # xcoord bounds
-#         # xmin, xmax = 0., 25.
-
-#         # # Create travel time plots (lognormal)
-#         # modpath_transport.plot_age_distribution(df_particle=df_particle,
-#         #         vmin = tmin,vmax = tmax,
-#         #         fpathfig = fpath_scatter_times_log, figtext = None,x_text = 0,
-#         #         y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
-#         #         line_dist = 1, dpi = 192, trackingdirection = "forward",
-#         #         cmap = 'viridis_r')
-
-#         # # Create travel time plots (linear)
-#         # modpath_transport.plot_age_distribution(df_particle=df_particle,
-#         #         vmin = 0.,vmax = tmax,
-#         #         fpathfig = fpath_scatter_times, figtext = None,x_text = 0,
-#         #         y_text = 0, lognorm = False, xmin = xmin, xmax = xmax,
-#         #         line_dist = 1, dpi = 192, trackingdirection = "forward",
-#         #         cmap = 'viridis_r')
-
-#         # # Create concentration plots
-#         # fpath_scatter_removal_log = os.path.join(modpath_phrea.dstroot,"log_removal_" + endpoint_id + ".png")
-
-#         # # relative conc limits
-#         # cmin, cmax = 1.e-21, 1.
-#         # # xcoord bounds
-#         # xmin, xmax = 0., 25.
-
-#         # # Create travel time plots (lognormal)
-#         # modpath_transport.plot_logremoval(df_particle=df_particle,
-#         #         df_flowline=df_flowline,
-#         #         vmin = cmin,vmax = cmax,
-#         #         fpathfig = fpath_scatter_removal_log, figtext = None,x_text = 0,
-#         #         y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
-#         #         line_dist = 1, dpi = 192, trackingdirection = "forward",
-#         #         cmap = 'viridis_r')    
-
-#     # df_particle file name 
-#     particle_fname = os.path.join(modpath_phrea.dstroot,"df_particle_microbial_removal.csv")
-#     # Save df_particle 
-#     df_particle.to_csv(particle_fname)
-    
-#     # df_flowline file name
-#     flowline_fname = os.path.join(modpath_phrea.dstroot,"df_flowline_microbial_removal.csv")
-#     # Save df_flowline
-#     df_flowline.to_csv(flowline_fname)      
-
-#     assert modpath_phrea.success_mp
-
 def test_phreatic_defecation_withgravelpack_noleak_diffuse_boundary(organism_name = "MS2"):
     ''' Scenario with feces at surface level near pumping well.
         Case: phreatic
@@ -2349,8 +1492,8 @@ def test_phreatic_defecation_withgravelpack_noleak_diffuse_boundary(organism_nam
                                 compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
 
                                 # Modpath grid parms
-                                ncols_near_well = 240,
-                                ncols_far_well = 150,
+                                ncols_near_well = 80,
+                                ncols_far_well = 50,
                                 nlayers_shallow_aquifer = 20,
                                 nlayers_target_aquifer = 20,
                                 model_radius = model_radius
@@ -2514,7 +1657,7 @@ def test_phreatic_defecation_withgravelpack_noleak_diffuse_boundary(organism_nam
     assert modpath_phrea.success_mp
 
 
-def test_phreatic_defecation_withgravelpack_noleak_diffuse_nogravelpack(organism_name = "MS2"):
+def test_phreatic_defecation_noleak_diffuse_nogravelpack(organism_name = "MS2"):
     ''' Scenario with feces at surface level near pumping well.
         Case: phreatic
         organism_name: "MS2" 
@@ -2591,8 +1734,8 @@ def test_phreatic_defecation_withgravelpack_noleak_diffuse_nogravelpack(organism
                                 compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
 
                                 # Modpath grid parms
-                                ncols_near_well = 240,
-                                ncols_far_well = 150,
+                                ncols_near_well = 80,
+                                ncols_far_well = 50,
                                 nlayers_shallow_aquifer = 20,
                                 nlayers_target_aquifer = 20,
                                 model_radius = model_radius
@@ -2757,227 +1900,229 @@ def test_phreatic_defecation_withgravelpack_noleak_diffuse_nogravelpack(organism
 
 
 
-def test_phreatic_defecation_withgravelpack_noleak_diffuse_boundary_sensitivity(organism_name = "MS2"):
-    ''' Scenario with feces at surface level near pumping well.
-        Case: phreatic
-        organism_name: "MS2" 
-        Vadose zone: False
-        redox: anoxic
-        pH: neutral (7.5)
-        depth of a leak 'leak1' at 9.5 m depth
+# def test_phreatic_defecation_withgravelpack_noleak_diffuse_boundary_sensitivity(organism_name = "MS2"):
+#     ''' Scenario with feces at surface level near pumping well.
+#         Case: phreatic
+#         organism_name: "MS2" 
+#         Vadose zone: False
+#         redox: anoxic
+#         pH: neutral (7.5)
+#         depth of a leak 'leak1' at 9.5 m depth
         
-        ''' 
-    ''' Phreatic scheme with gravelpack: modpath run.'''
+#         ''' 
+#     ''' Phreatic scheme with gravelpack: modpath run.'''
     
-    # @ Steven 2022-7-11: tijdelijk niet invoegen --> eerst readthedocs werkend.
-    # well discharge
-    well_discharge = -1000.
-    # recharge_rate
-    recharge_rate = 0.001
-    # model radius [m]
-    model_radius = 564. 
-    # model_radius = math.sqrt(abs(well_discharge / (math.pi * recharge_rate)))
+#     # @ Steven 2022-7-11: tijdelijk niet invoegen --> eerst readthedocs werkend.
+#     # well discharge
+#     well_discharge = -1000.
+#     # recharge_rate
+#     recharge_rate = 0.001
+#     # model radius [m]
+#     model_radius = 564. 
+#     # model_radius = math.sqrt(abs(well_discharge / (math.pi * recharge_rate)))
 
-    # microbial removal properties
-    # organism_name = 'MS2'
-    alpha0 = {"suboxic": 1.e-3, "anoxic": 1.e-5, "deeply_anoxic": 1.e-5}
-    pH0 = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8}
-    organism_diam =  2.33e-8
-    mu1 = {"suboxic": 0.039,"anoxic": 0.023,"deeply_anoxic": 0.023}
+#     # microbial removal properties
+#     # organism_name = 'MS2'
+#     alpha0 = {"suboxic": 1.e-3, "anoxic": 1.e-5, "deeply_anoxic": 1.e-5}
+#     pH0 = {"suboxic": 6.6, "anoxic": 6.8, "deeply_anoxic": 6.8}
+#     organism_diam =  2.33e-8
+#     mu1 = {"suboxic": 0.039,"anoxic": 0.023,"deeply_anoxic": 0.023}
 
-    removal_parameters = {organism_name: 
-                            {"organism_name": organism_name,
-                                "alpha0": alpha0,
-                                "pH0": pH0,
-                                "organism_diam": organism_diam,
-                                "mu1": mu1
-                            }
-                        }
-    # Removal parameters organism
-    rem_parms = removal_parameters[organism_name]
+#     removal_parameters = {organism_name: 
+#                             {"organism_name": organism_name,
+#                                 "alpha0": alpha0,
+#                                 "pH0": pH0,
+#                                 "organism_diam": organism_diam,
+#                                 "mu1": mu1
+#                             }
+#                         }
+#     # Removal parameters organism
+#     rem_parms = removal_parameters[organism_name]
 
-    # Scenario runs
-    df_scen_path = os.path.join(path,"scenarios_diffuse_sensitivity_mpw_220811.xlsx")
-    df_scen = pd.read_excel(df_scen_path, sheet_name = "scenarios_diffuse_sensitivity")
+#     # Scenario runs
+#     df_scen_path = os.path.join(path,"scenarios_diffuse_sensitivity_mpw_220811.xlsx")
+#     df_scen = pd.read_excel(df_scen_path, sheet_name = "scenarios_diffuse_sensitivity")
 
-    # df_output
-    df_output = df_scen
-    df_output["C_final"] = None
+#     # df_output
+#     df_output = df_scen
+#     df_output["C_final"] = None
 
-    # sensitivity scenario runs
-    for iScen in df_scen.Scen_nr.values:
+#     # sensitivity scenario runs
+#     for iScen in df_scen.Scen_nr.values:
 
-        if iScen != 1:
-            continue
-        # Vary number of columns and layers
-        ncols_near_well = df_scen.loc[df_scen.Scen_nr == iScen,"ncols_near_well"].values[0]
-        ncols_far_well = df_scen.loc[df_scen.Scen_nr == iScen,"ncols_far_well"].values[0]
-        nlayers_shallow_aquifer = df_scen.loc[df_scen.Scen_nr == iScen,"nlayers_shallow_aquifer"].values[0]
-        nlayers_target_aquifer = df_scen.loc[df_scen.Scen_nr == iScen,"nlayers_target_aquifer"].values[0]
+#         if iScen != 1:
+#             continue
+#         # Vary number of columns and layers
+#         ncols_near_well = df_scen.loc[df_scen.Scen_nr == iScen,"ncols_near_well"].values[0]
+#         ncols_far_well = df_scen.loc[df_scen.Scen_nr == iScen,"ncols_far_well"].values[0]
+#         nlayers_shallow_aquifer = df_scen.loc[df_scen.Scen_nr == iScen,"nlayers_shallow_aquifer"].values[0]
+#         nlayers_target_aquifer = df_scen.loc[df_scen.Scen_nr == iScen,"nlayers_target_aquifer"].values[0]
 
-        test_feces_contamination = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
-                                    computation_method = 'modpath',
-                                    what_to_export='all',
-                                    removal_function = 'mbo',
-                                    # biodegradation_sorbed_phase = False,
-                                    well_discharge=well_discharge,
-                                    # vertical_resistance_shallow_aquifer=500,
-                                    porosity_vadose_zone=0.33,
-                                    porosity_shallow_aquifer=0.33,
-                                    porosity_target_aquifer=0.33,
-                                    porosity_gravelpack=0.33,
-                                    porosity_clayseal=0.33,
-                                    recharge_rate=recharge_rate,
-                                    moisture_content_vadose_zone=0.15,
-                                    ground_surface = 0.0,
-                                    thickness_vadose_zone_at_boundary=0.,
-                                    thickness_shallow_aquifer=30.,
-                                    thickness_target_aquifer=20.,
-                                    hor_permeability_target_aquifer= 10.0,
-                                    hor_permeability_shallow_aquifer = 10.,
-                                    hor_permeability_gravelpack= 1000.,
-                                    hor_permeability_clayseal= 0.005,
-                                    vertical_anisotropy_shallow_aquifer = 5.,
-                                    vertical_anisotropy_target_aquifer = 5.,
-                                    vertical_anisotropy_gravelpack = 1.,
-                                    vertical_anisotropy_clayseal = 1.,
-                                    thickness_full_capillary_fringe=0.,
-                                    grainsize_vadose_zone= 0.00025,
-                                    grainsize_shallow_aquifer=0.00025,
-                                    grainsize_target_aquifer=0.00025,
-                                    redox_vadose_zone='anoxic', 
-                                    redox_shallow_aquifer='anoxic',
-                                    redox_target_aquifer='anoxic',
-                                    pH_vadose_zone=7.5,
-                                    pH_shallow_aquifer=7.5,
-                                    pH_target_aquifer=7.5,
-                                    temp_water=12.,
-                                    solid_density_vadose_zone= 2.650, 
-                                    solid_density_shallow_aquifer= 2.650, 
-                                    solid_density_target_aquifer= 2.650, 
-                                    diameter_borehole = 0.75,
-                                    name = organism_name,
-                                    diameter_filterscreen = 0.2,
-                                    diameter_gravelpack = 0.75,
-                                    diameter_clayseal = 0.75,
-                                    point_input_concentration = 1.,
-                                    diffuse_input_concentration=2.15E5,
-                                    discharge_point_contamination = 100.,#made up value
-                                    top_clayseal = 0,
-                                    bottom_clayseal = -1.,
-                                    top_gravelpack = -1.,
-                                    grainsize_gravelpack=0.001,
-                                    grainsize_clayseal=0.000001,
+#         test_feces_contamination = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
+#                                     computation_method = 'modpath',
+#                                     what_to_export='all',
+#                                     removal_function = 'mbo',
+#                                     # biodegradation_sorbed_phase = False,
+#                                     well_discharge=well_discharge,
+#                                     # vertical_resistance_shallow_aquifer=500,
+#                                     porosity_vadose_zone=0.33,
+#                                     porosity_shallow_aquifer=0.33,
+#                                     porosity_target_aquifer=0.33,
+#                                     porosity_gravelpack=0.33,
+#                                     porosity_clayseal=0.33,
+#                                     recharge_rate=recharge_rate,
+#                                     moisture_content_vadose_zone=0.15,
+#                                     ground_surface = 0.0,
+#                                     thickness_vadose_zone_at_boundary=0.,
+#                                     thickness_shallow_aquifer=30.,
+#                                     thickness_target_aquifer=20.,
+#                                     hor_permeability_target_aquifer= 10.0,
+#                                     hor_permeability_shallow_aquifer = 10.,
+#                                     hor_permeability_gravelpack= 1000.,
+#                                     hor_permeability_clayseal= 0.005,
+#                                     vertical_anisotropy_shallow_aquifer = 5.,
+#                                     vertical_anisotropy_target_aquifer = 5.,
+#                                     vertical_anisotropy_gravelpack = 1.,
+#                                     vertical_anisotropy_clayseal = 1.,
+#                                     thickness_full_capillary_fringe=0.,
+#                                     grainsize_vadose_zone= 0.00025,
+#                                     grainsize_shallow_aquifer=0.00025,
+#                                     grainsize_target_aquifer=0.00025,
+#                                     redox_vadose_zone='anoxic', 
+#                                     redox_shallow_aquifer='anoxic',
+#                                     redox_target_aquifer='anoxic',
+#                                     pH_vadose_zone=7.5,
+#                                     pH_shallow_aquifer=7.5,
+#                                     pH_target_aquifer=7.5,
+#                                     temp_water=12.,
+#                                     solid_density_vadose_zone= 2.650, 
+#                                     solid_density_shallow_aquifer= 2.650, 
+#                                     solid_density_target_aquifer= 2.650, 
+#                                     diameter_borehole = 0.75,
+#                                     name = organism_name,
+#                                     diameter_filterscreen = 0.2,
+#                                     diameter_gravelpack = 0.75,
+#                                     diameter_clayseal = 0.75,
+#                                     point_input_concentration = 1.,
+#                                     diffuse_input_concentration=2.15E5,
+#                                     discharge_point_contamination = 100.,#made up value
+#                                     top_clayseal = 0,
+#                                     bottom_clayseal = -1.,
+#                                     top_gravelpack = -1.,
+#                                     grainsize_gravelpack=0.001,
+#                                     grainsize_clayseal=0.000001,
 
-                                    compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
-                                    # Modpath grid parms
-                                    ncols_near_well = ncols_near_well, # 20,
-                                    ncols_far_well = ncols_far_well, # int(model_radius - 20)
-                                    nlayers_shallow_aquifer = nlayers_shallow_aquifer, # 30
-                                    nlayers_target_aquifer = nlayers_target_aquifer, # 20
-                                    model_radius = model_radius
-                                )
+#                                     compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
+#                                     # Modpath grid parms
+#                                     ncols_near_well = ncols_near_well, # 20,
+#                                     ncols_far_well = ncols_far_well, # int(model_radius - 20)
+#                                     nlayers_shallow_aquifer = nlayers_shallow_aquifer, # 30
+#                                     nlayers_target_aquifer = nlayers_target_aquifer, # 20
+#                                     model_radius = model_radius
+#                                 )
 
-        test_feces_contamination.make_dictionary()
+#         test_feces_contamination.make_dictionary()
 
-        # Create point_parameters (i.e. starting points) from scratch
-        point_parameters = {}
-        # Copy point_parameters input
-        test_feces_contamination.point_parameters = point_parameters
+#         # Create point_parameters (i.e. starting points) from scratch
+#         point_parameters = {}
+#         # Copy point_parameters input
+#         test_feces_contamination.point_parameters = point_parameters
 
-        # # Remove/empty concentration_boundary_parameters
-        # test_feces_contamination.concentration_boundary_parameters = {}
-
-
-        # semiconfined, but with recharge instead of constant head
-        recharge_parameters = {
-                            'source1': {
-                                'recharge': recharge_rate,
-                                'xmin': 0.375,
-                                'xmax': model_radius,
-                                'input_concentration': 2.15E5,
-                                },
-                            }
-        test_feces_contamination.recharge_parameters = recharge_parameters
-        test_feces_contamination.ibound_parameters.pop("top_boundary1")
-        # Add well as ibound
-        test_feces_contamination.ibound_parameters['well1'] = {'head': 0.0,
-                                                    'top': -30.0,
-                                                    'bot': -50.0,
-                                                    'xmin': 0.0,
-                                                    'xmax': 0.1,
-                                                    'ibound': -1}
+#         # # Remove/empty concentration_boundary_parameters
+#         # test_feces_contamination.concentration_boundary_parameters = {}
 
 
-        # workspace
-        workspace = os.path.join(path, "test_mpw_mbo_defecation_human_noleak_diffuse_sensitivity_vertical_corr")
-        if not os.path.exists(workspace):
-            os.makedirs(workspace)
+#         # semiconfined, but with recharge instead of constant head
+#         recharge_parameters = {
+#                             'source1': {
+#                                 'recharge': recharge_rate,
+#                                 'xmin': 0.375,
+#                                 'xmax': model_radius,
+#                                 'input_concentration': 2.15E5,
+#                                 },
+#                             }
+#         test_feces_contamination.recharge_parameters = recharge_parameters
+#         test_feces_contamination.ibound_parameters.pop("top_boundary1")
+#         # Add well as ibound
+#         test_feces_contamination.ibound_parameters['well1'] = {'head': 0.0,
+#                                                     'top': -30.0,
+#                                                     'bot': -50.0,
+#                                                     'xmin': 0.0,
+#                                                     'xmax': 0.1,
+#                                                     'ibound': -1}
 
-        # print(test_phrea.__dict__)
-        modpath_phrea = mpw.ModPathWell(test_feces_contamination, #test_phrea,
-                                workspace = workspace,
-                                modelname = "semiconfined",
-                                bound_left = "xmin",
-                                bound_right = "xmax")
-        # print(modpath_phrea.__dict__)
 
-        # Run phreatic schematisation
-        modpath_phrea.run_model(run_mfmodel = True,
-                            run_mpmodel = True)
+#         # workspace
+#         workspace = os.path.join(path, "test_mpw_mbo_defecation_human_noleak_diffuse_sensitivity_vertical_corr")
+#         if not os.path.exists(workspace):
+#             os.makedirs(workspace)
+
+#         # print(test_phrea.__dict__)
+#         modpath_phrea = mpw.ModPathWell(test_feces_contamination, #test_phrea,
+#                                 workspace = workspace,
+#                                 modelname = "semiconfined",
+#                                 bound_left = "xmin",
+#                                 bound_right = "xmax")
+#         # print(modpath_phrea.__dict__)
+
+#         # Run phreatic schematisation
+#         modpath_phrea.run_model(run_mfmodel = True,
+#                             run_mpmodel = True)
 
 
-        # Pollutant to define removal parameters for
-        MS2_organism = TR.MicrobialOrganism(organism_name=organism_name,
-                                            alpha0_suboxic = alpha0["suboxic"],
-                                            alpha0_anoxic = alpha0["anoxic"],
-                                            alpha0_deeply_anoxic =alpha0["deeply_anoxic"],
-                                            pH0_suboxic =pH0["suboxic"],
-                                            pH0_anoxic =pH0["anoxic"],
-                                            pH0_deeply_anoxic = pH0["deeply_anoxic"],
-                                            mu1_suboxic = mu1["suboxic"],
-                                            mu1_anoxic = mu1["anoxic"],
-                                            mu1_deeply_anoxic = mu1["deeply_anoxic"],
-                                            organism_diam = organism_diam
-                                            )
+#         # Pollutant to define removal parameters for
+#         MS2_organism = TR.MicrobialOrganism(organism_name=organism_name,
+#                                             alpha0_suboxic = alpha0["suboxic"],
+#                                             alpha0_anoxic = alpha0["anoxic"],
+#                                             alpha0_deeply_anoxic =alpha0["deeply_anoxic"],
+#                                             pH0_suboxic =pH0["suboxic"],
+#                                             pH0_anoxic =pH0["anoxic"],
+#                                             pH0_deeply_anoxic = pH0["deeply_anoxic"],
+#                                             mu1_suboxic = mu1["suboxic"],
+#                                             mu1_anoxic = mu1["anoxic"],
+#                                             mu1_deeply_anoxic = mu1["deeply_anoxic"],
+#                                             organism_diam = organism_diam
+#                                             )
 
-        # Removal parameters organism
-        rem_parms = MS2_organism.organism_dict
+#         # Removal parameters organism
+#         rem_parms = MS2_organism.organism_dict
 
-        # Calculate advective microbial removal
-        modpath_transport = TR.Transport(modpath_phrea,
-                                pollutant = MS2_organism)
+#         # Calculate advective microbial removal
+#         modpath_transport = TR.Transport(modpath_phrea,
+#                                 pollutant = MS2_organism)
     
-        # Calculate advective microbial removal
-        # Final concentration per endpoint_id
-        C_final = {}
-        # df_particle before advective removal
-        df_particle = modpath_transport.df_particle
-        df_flowline = modpath_transport.df_flowline
+#         # Calculate advective microbial removal
+#         # Final concentration per endpoint_id
+#         C_final = {}
+#         # df_particle before advective removal
+#         df_particle = modpath_transport.df_particle
+#         df_flowline = modpath_transport.df_flowline
 
-        for endpoint_id in ["well1"]: #modpath_phrea.schematisation_dict.get("endpoint_id"):
-            df_particle, df_flowline, C_final[endpoint_id] = modpath_transport.calc_advective_microbial_removal(
-                                                df_particle = df_particle, df_flowline = df_flowline,
-                                                endpoint_id = endpoint_id,
-                                                trackingdirection = modpath_phrea.trackingdirection)
+#         for endpoint_id in ["well1"]: #modpath_phrea.schematisation_dict.get("endpoint_id"):
+#             df_particle, df_flowline, C_final[endpoint_id] = modpath_transport.calc_advective_microbial_removal(
+#                                                 df_particle = df_particle, df_flowline = df_flowline,
+#                                                 endpoint_id = endpoint_id,
+#                                                 trackingdirection = modpath_phrea.trackingdirection)
 
-        # Add final conc to df_output
-        df_output.loc[df_output.Scen_nr == iScen,"C_final"] = C_final["well1"]
-        # df_output
-        output_fname = os.path.join(modpath_phrea.dstroot,f"df_output_scen{iScen}.csv")
-        df_output.to_csv(output_fname)
+#         # Add final conc to df_output
+#         df_output.loc[df_output.Scen_nr == iScen,"C_final"] = C_final["well1"]
+#         # df_output
+#         output_fname = os.path.join(modpath_phrea.dstroot,f"df_output_scen{iScen}.csv")
+#         df_output.to_csv(output_fname)
 
-        # df_particle file name 
-        particle_fname = os.path.join(modpath_phrea.dstroot,f"df_particle_{ncols_near_well}_{ncols_far_well}_{nlayers_shallow_aquifer}_{nlayers_target_aquifer}.csv")
-        # Save df_particle 
-        df_particle.to_csv(particle_fname)
+#         # df_particle file name 
+#         particle_fname = os.path.join(modpath_phrea.dstroot,f"df_particle_{ncols_near_well}_{ncols_far_well}_{nlayers_shallow_aquifer}_{nlayers_target_aquifer}.csv")
+#         # Save df_particle 
+#         df_particle.to_csv(particle_fname)
         
-        # df_flowline file name
-        flowline_fname = os.path.join(modpath_phrea.dstroot,f"df_flowline_{ncols_near_well}_{ncols_far_well}_{nlayers_shallow_aquifer}_{nlayers_target_aquifer}.csv")
-        # Save df_flowline
-        df_flowline.to_csv(flowline_fname)      
+#         # df_flowline file name
+#         flowline_fname = os.path.join(modpath_phrea.dstroot,f"df_flowline_{ncols_near_well}_{ncols_far_well}_{nlayers_shallow_aquifer}_{nlayers_target_aquifer}.csv")
+#         # Save df_flowline
+#         df_flowline.to_csv(flowline_fname)      
 
-    assert modpath_phrea.success_mp
+#     assert modpath_phrea.success_mp
+
+
 
 def test_analyticalwell_omp_removal(substance_name = 'benzene'):
     ''' calculate the removal of a default substance using AnalyticalWell class.'''
