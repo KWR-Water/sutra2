@@ -307,8 +307,8 @@ class HydroChemicalSchematisation:
                 #modpath params
                  ncols_near_well = 20,
                  ncols_far_well = 30,
-                 nlayers_shallow_aquifer = None,
-                 nlayers_target_aquifer = None,
+                 nlayers_shallow_aquifer = 10,
+                 nlayers_target_aquifer = 10,
                  ):
 
         ''' Assigns the parameters to be attributes of the class and sets the default values'''
@@ -1234,6 +1234,7 @@ class AnalyticalWell():
             travel_distance_shallow_aquifer = self.schematisation.thickness_shallow_aquifer - (self.schematisation.groundwater_level - head)
             travel_time_shallow_aquifer = ((travel_distance_shallow_aquifer)
                             * self.schematisation.porosity_shallow_aquifer / self.schematisation.recharge_rate)
+            
             
             #@MartinvdS -> under the default conditions, the travel time in the shallow aquifer is negative
             # should we alter the default values or do we do below?

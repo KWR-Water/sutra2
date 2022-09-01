@@ -1846,45 +1846,9 @@ class ModPathWell:
                         # Steven_todo: separate function for get_gwlevel()
 
                         # groundwater level array (initially assume starting points at model top)
-                        self.gw_level = np.zeros((self.nrow,self.ncol), dtype = 'float') + self.top
-                        for iRow in range(self.nrow):
-                            for iCol in range(self.ncol):
-                                for iLay in range(self.nlay):
-                                    # Check for active cells
-                                    if self.ibound[iLay,iRow,iCol] == 0:
-                                        continue
+                        # Load head data    
+                        self.gw_level, _ = self._get_gwlevel(model_hds = self.model_hds,time = -1)
 
-                                    # Check for uppermost active and wetted cell
-                                    elif abs(self.head_mf[iLay,iRow,iCol]) > 0.9 * abs(self.head_dry):
-                                        continue
-                                    else:
-                                        # Check if layer is confined
-                                        if self.laytyp[iLay] == 0:
-                                            # Gw level equals top of this cell
-                                            if iLay == 0:
-                                                self.gw_level[iRow,iCol] = self.top
-                                            else:
-                                                self.gw_level[iRow,iCol] = self.bot[iLay-1]
-                                        else:
-                                            # Check for gw_level value above bottom of active cell (for non-dry unconfined cells)
-                                            if self.head_mf[iLay,iRow,iCol] < self.bot[iLay]:
-                                                # gwlevel equals top of active (confined) cell
-                                                if iLay == 0:
-                                                    self.gw_level[iRow,iCol] = self.top
-                                                else:
-                                                    self.gw_level[iRow,iCol] = self.bot[iLay-1]
-                                            elif (iLay == 0) & (self.head_mf[iLay,iRow,iCol] > self.top):
-                                                # Set gwlevel to model top (top of confining layer)
-                                                self.gw_level[iRow,iCol] = self.top
-                                            elif (iLay > 0) & (self.head_mf[iLay,iRow,iCol] > self.bot[iLay-1]):
-                                                # Set max gw level to top of confining layer)
-                                                self.gw_level[iRow,iCol] = self.bot[iLay-1]
-                                            else:
-                                                # gw level equals head in active cell
-                                                    self.gw_level[iRow,iCol] = self.head_mf[iLay,iRow,iCol]
-
-                                        # go to next row, col combination
-                                        break
                     except:
                         self.gw_level = np.zeros((self.nrow,self.ncol), dtype = 'float') + self.top
                 else:
@@ -2229,45 +2193,9 @@ class ModPathWell:
                     try:
 
                         # groundwater level array (initially assume starting points at model top)
-                        self.gw_level = np.zeros((self.nrow,self.ncol), dtype = 'float') + self.top
-                        for iRow in range(self.nrow):
-                            for iCol in range(self.ncol):
-                                for iLay in range(self.nlay):
-                                    # Check for active cells
-                                    if self.ibound[iLay,iRow,iCol] == 0:
-                                        continue
+                        # Load head data    
+                        self.gw_level, _ = self._get_gwlevel(model_hds = self.model_hds,time = -1)
 
-                                    # Check for uppermost active and wetted cell
-                                    elif abs(self.head_mf[iLay,iRow,iCol]) > 0.9 * abs(self.head_dry):
-                                        continue
-                                    else:
-                                        # Check if layer is confined
-                                        if self.laytyp[iLay] == 0:
-                                            # Gw level equals top of this cell
-                                            if iLay == 0:
-                                                self.gw_level[iRow,iCol] = self.top
-                                            else:
-                                                self.gw_level[iRow,iCol] = self.bot[iLay-1]
-                                        else:
-                                            # Check for gw_level value above bottom of active cell (for non-dry unconfined cells)
-                                            if self.head_mf[iLay,iRow,iCol] < self.bot[iLay]:
-                                                # gwlevel equals top of active (confined) cell
-                                                if iLay == 0:
-                                                    self.gw_level[iRow,iCol] = self.top
-                                                else:
-                                                    self.gw_level[iRow,iCol] = self.bot[iLay-1]
-                                            elif (iLay == 0) & (self.head_mf[iLay,iRow,iCol] > self.top):
-                                                # Set gwlevel to model top (top of confining layer)
-                                                self.gw_level[iRow,iCol] = self.top
-                                            elif (iLay > 0) & (self.head_mf[iLay,iRow,iCol] > self.bot[iLay-1]):
-                                                # Set max gw level to top of confining layer)
-                                                self.gw_level[iRow,iCol] = self.bot[iLay-1]
-                                            else:
-                                                # gw level equals head in active cell
-                                                    self.gw_level[iRow,iCol] = self.head_mf[iLay,iRow,iCol]
-
-                                        # go to next row, col combination
-                                        break
                     except:
                         self.gw_level = np.zeros((self.nrow,self.ncol), dtype = 'float') + self.top
                 else:
@@ -2696,6 +2624,63 @@ class ModPathWell:
 
         return times, head_dat
 
+    def _get_gwlevel(self,model_hds, time = -1):
+        ''' function to obtain gwlevel based on model_hds output.'''
+        
+        # Load head data    
+        _, head_mf = self.read_hdsobj(fname = self.model_hds,time = time)
+
+        # groundwater level array (initially assume starting points at model top)
+        gw_level = np.zeros((self.nrow,self.ncol), dtype = 'float') + self.top
+        for iRow in range(self.nrow):
+            for iCol in range(self.ncol):
+                for iLay in range(self.nlay):
+                    # Check for active cells
+                    if self.ibound[iLay,iRow,iCol] == 0:
+                        continue
+
+                    # Check for uppermost active and wetted cell
+                    elif abs(head_mf[iLay,iRow,iCol]) > 0.9 * abs(self.head_dry):
+                        continue
+                    else:
+                        # Check if layer is confined
+                        if self.laytyp[iLay] == 0:
+                            # Gw level equals top of this cell
+                            if iLay == 0:
+                                gw_level[iRow,iCol] = self.top
+                            elif head_mf[iLay,iRow,iCol] > self.bot[iLay-1]:
+                                gw_level[iRow,iCol] = head_mf[iLay,iRow,iCol]
+                            else:
+                                gw_level[iRow,iCol] = self.bot[iLay-1]
+
+                        else:
+                            # Check for gw_level value above bottom of active cell (for non-dry unconfined cells)
+                            if head_mf[iLay,iRow,iCol] < self.bot[iLay]:
+                                # gwlevel equals top of active (confined) cell
+                                if iLay == 0:
+                                    gw_level[iRow,iCol] = self.top
+
+                                else:
+                                    gw_level[iRow,iCol] = self.bot[iLay-1]
+
+                            elif (iLay == 0) & (head_mf[iLay,iRow,iCol] > self.top):
+                                # Set gwlevel to model top (top of confining layer)
+                                gw_level[iRow,iCol] = self.top
+
+                            elif (iLay > 0) & (head_mf[iLay,iRow,iCol] > self.bot[iLay-1]):
+                                # Set max gw level to top of confining layer)
+                                gw_level[iRow,iCol] = self.bot[iLay-1]
+
+                            else:
+                                # gw level equals head in active cell
+                                gw_level[iRow,iCol] = head_mf[iLay,iRow,iCol]
+
+                        # go to next row,col iteration
+                        break
+
+        return gw_level, head_mf
+
+
     def read_binarycbc_flow(self, fname = None):
         ''' Read binary cell budget file (fname). 
             This is modflow output.
@@ -2879,8 +2864,6 @@ class ModPathWell:
         #                         (flux_topbottom / (self.delc[loc[1]] * self.delr[loc[2]]))**2)
         # # Total flux (area normalized)
         # flux_dict['total'] = q_tot * (self.delc[loc[1]] * self.delr[loc[2]])
-
-
 
         return flux_dict[flux_direction]
 
@@ -3391,12 +3374,12 @@ class ModPathWell:
         # Save df_flowline
         self.df_flowline.to_csv(flowline_fname)   
 
-    def plot_pathtimes(self,df_particle, 
-                  vmin = 0.,vmax = 1.,orientation = {'row': 0},
-                  fpathfig = None, figtext = None,x_text = 0,
-                  y_text = 0, lognorm = True, xmin = 0., xmax = None,
-                  line_dist = 1, dpi = 192, trackingdirection = "forward",
-                  cmap = 'viridis_r'):
+    def plot_age_distribution(self, df_particle: pd.DataFrame,
+                                vmin = 0.,vmax = 1.,orientation = {'row': 0},
+                                fpathfig = None, figtext = None,x_text = 0,
+                                y_text = 0, lognorm = True, xmin = 0., xmax = None,
+                                line_dist = 1, dpi = 192, trackingdirection = "forward",
+                                cmap = 'viridis_r'):
         ''' Create pathline plots with residence times 
             using colours as indicator.
             with: 
@@ -3411,7 +3394,7 @@ class ModPathWell:
             trackingdirection: direction of calculating flow along pathlines"
             cmap: Uses colormap 'viridis_r' (viridis reversed as default)
             '''
-            
+   
         if lognorm:
             if vmin <= 0.:
                 vmin = 1.e-2
@@ -3447,7 +3430,7 @@ class ModPathWell:
             xyz_scatter = np.stack((x_points,z_points,time_points), axis = 1)
 
             # Plot function (lines))
-            marker_size=0.05  # 's' in functie scatter
+            marker_size=0.5  # 's' in functie scatter
             if lognorm:
                 # formatting of values (log or linear?)
                 norm_vals = colors.LogNorm()
@@ -3494,16 +3477,126 @@ class ModPathWell:
             plt.text(x = x_text,y = y_text,s = figtext,
                     bbox={'facecolor': 'gray', 'alpha': 0.5, 'pad': 10})
             plt.subplots_adjust(left=0.5)
-        if fpathfig is not None:
-            # pass
-            # try: plt.show()
-            # except Exception as e: 
-            #     print(e)
-            #     pass
-        # else:
+        if fpathfig is None:
+            plt.show()
+        else:
             plt.savefig(fpathfig, dpi = dpi)
         # Sluit figuren af
-        plt.close('all')
+        plt.close('all')    
+        
+#     def plot_pathtimes(self,df_particle, 
+#                   vmin = 0.,vmax = 1.,orientation = {'row': 0},
+#                   fpathfig = None, figtext = None,x_text = 0,
+#                   y_text = 0, lognorm = True, xmin = 0., xmax = None,
+#                   line_dist = 1, dpi = 192, trackingdirection = "forward",
+#                   cmap = 'viridis_r'):
+#         ''' Create pathline plots with residence times 
+#             using colours as indicator.
+#             with: 
+#             - df_particle: dataframe containing xyzt-points of the particle paths.
+#             - fpathfig = output location of plots
+#             figtext: figure text to show within plot starting at
+#             x-location 'x_text' and y-location 'y_text'.
+#             lognorm: True/False (if vmin <= 0. --> vmin = 1.e-5)
+#             line_dist: min. distance between well pathlines at source (m)
+#             line_freq: show every 'X' pathlines
+#             dpi: pixel density
+#             trackingdirection: direction of calculating flow along pathlines"
+#             cmap: Uses colormap 'viridis_r' (viridis reversed as default)
+#             '''
+            
+#         if lognorm:
+#             if vmin <= 0.:
+#                 vmin = 1.e-2
+
+#         # Keep track of minimum line distance between pathlines ('line_dist')
+#         xmin_plot = 0.
+#         # Flowline IDs
+#         flowline_ID = list(df_particle.index.unique())
+#         for fid in flowline_ID:
+
+#             x_points = df_particle.loc[df_particle.index == fid, "xcoord"].values
+# #           y_points = df_particle.loc[df_particle.index == fid, "ycoord"].values
+#             z_points = df_particle.loc[df_particle.index == fid, "zcoord"].values
+#             # Cumulative travel times
+#             time_points = df_particle.loc[df_particle.index == fid, "total_travel_time"].values
+
+#             # Plot every 'line_dist' number of meters one line
+#             if trackingdirection == "forward":
+#                 # x_origin: starting position of pathline
+#                 x_origin = x_points[0]  
+#             else:
+#                 # x_origin: starting position of pathline
+#                 x_origin = x_points[-1]
+
+#             # Check if line should be plotted
+#             if x_origin > xmin_plot:
+#                 xmin_plot += line_dist
+#                 pass
+#             else:
+#                 continue
+
+#             # Combine to xyz scatter array with x,y,values
+#             xyz_scatter = np.stack((x_points,z_points,time_points), axis = 1)
+
+#             # Plot function (lines))
+#             marker_size=0.05  # 's' in functie scatter
+#             if lognorm:
+#                 # formatting of values (log or linear?)
+#                 norm_vals = colors.LogNorm()
+#                 # norm_labels = [str(iLog) for iLog in [8,7,6,5,4,3,2,1,0]]
+#             else:
+#                 # formatting of values (log or linear: None?)
+#                 norm_vals = None
+                
+#             # Mask values outside of vmin & vmax
+#             time_vals = np.ma.masked_where((xyz_scatter[:,2] > vmax), xyz_scatter[:,2])
+#             plt.scatter(xyz_scatter[:,0],
+#                         xyz_scatter[:,1],
+#                         s = marker_size,
+#                         cmap = cmap,
+#                         c=time_vals,
+#                         marker = 'o',
+#                         norm= norm_vals)
+#             plt.plot(xyz_scatter[:,0],
+#                         xyz_scatter[:,1], c = 'k', lw = 0.1)  
+#                         # 'o', markersize = marker_size,
+#                         # markerfacecolor="None", markeredgecolor='black') #, lw = 0.1)
+#             plt.xlim(xmin,xmax)
+#             plt.clim(vmin,vmax)
+#         # Voeg kleurenbalk toe
+#         cbar = plt.colorbar()
+#         ticklabs_old = [t.get_text() for t in cbar.ax.get_yticklabels()]
+#         # print(ticklabs_old)
+#         # ticklabs_new = [str(iLab).replace("-0.0","0.0") for iLab in \
+#         #                 np.linspace(-np.log10(vmin),0.,num = len(ticklabs_old), endpoint = True)]
+#         # cbar.ax.set_yticklabels(ticklabs_new)
+        
+#         # cbar.set_yticks([mn,md,mx])
+#         # cbar.ax.set_yticklabels(norm_labels)
+#         cbar.set_label("Residence time [days]")
+#     #    cbar.set_label("Concentratie [N/L]")
+#         # Titel
+#         # plt.title("Pathogenenverwijdering in grondwater")
+#         # Label x-as
+#         plt.xlabel("Distance (m)")
+#         # Label y-as
+#         plt.ylabel("Depth (m)")
+#         # Tekst voor in de figuur
+#         if figtext is not None:
+#             plt.text(x = x_text,y = y_text,s = figtext,
+#                     bbox={'facecolor': 'gray', 'alpha': 0.5, 'pad': 10})
+#             plt.subplots_adjust(left=0.5)
+#         if fpathfig is not None:
+#             # pass
+#             # try: plt.show()
+#             # except Exception as e: 
+#             #     print(e)
+#             #     pass
+#         # else:
+#             plt.savefig(fpathfig, dpi = dpi)
+#         # Sluit figuren af
+#         plt.close('all')
 
     
     # Check for parameters in df_flowline #
@@ -3798,7 +3891,45 @@ class ModPathWell:
 
             # Run modflow model
             self.mfmodelrun()
-            
+
+
+            # If phreatic, generate groundwater level
+            if self.schematisation_type in ["phreatic","semiconfined"]:
+            # Check if gwlevel at edge of model corresponds with expected hydraulic head
+            # gwlevel_distant == ibound_parameters['well1']['head']??
+
+                # Load head data    
+                self.gw_level, self.head_mf = self._get_gwlevel(model_hds = self.model_hds,time = -1)
+
+            if self.schematisation_type in ["phreatic",]:
+                # Correct for difference in gw_level AW en MPW classes
+                gw_level_distant = self.gw_level[0,-1]
+                # gw_level_analytical at vadose zone (boundary)
+                gw_level_vad_zone_bound_anal = self.schematisation.bottom_vadose_zone_at_boundary
+
+                # Adjust starting head to correct for difference in drawdown
+                self.strt[self.ibound == -1] = self.strt[self.ibound == -1] - gw_level_distant + gw_level_vad_zone_bound_anal
+
+                # reload bas package (self.ibound & self.strt)
+                self.create_bas()
+                # Generate modflow file of reloaded bas package
+                self.bas.write_file()
+
+                # Run modflow model
+                try:
+                    self.run_modflowmod()
+                    # Model run completed succesfully
+                    print("Model run", self.workspace, self.modelname, "completed without errors:", self.success_mf)
+
+                except Exception as e:
+                    self.success_mf = False
+                    print(e, self.success_mf)
+                # print(self.success_mf, self.buff)
+
+                # Reload head data    
+                self.gw_level_reloaded, self.head_mf_reloaded = self._get_gwlevel(model_hds = self.model_hds,time = -1)
+
+        
         # Modpath simulation
         if self.run_mpmodel:
 
@@ -3839,7 +3970,6 @@ def _calculate_hydraulic_head_phreatic(self, distance):
                 / (2 * math.pi * self.KD))
                 * np.log(self.radial_distance_recharge / distance))
     return head
-
 
 #%%
 if __name__ == "__main__":
