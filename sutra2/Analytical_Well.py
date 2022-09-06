@@ -1689,7 +1689,7 @@ class AnalyticalWell():
                          travel_time_unsaturated,
                          distance,
                          self.schematisation.model_width,
-                         head_vadose, # @MartinvdS should this be the thickness_vadose_zone_drawdown??
+                         head_vadose, # bottom_vadose_zone_at_boundary, # @MartinvdS should this be the thickness_vadose_zone_drawdown??
                          self.schematisation.redox_vadose_zone,
                          self.schematisation.temp_water,
                          travel_distance_vadose,
