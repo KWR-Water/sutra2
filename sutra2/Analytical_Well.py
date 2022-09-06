@@ -734,7 +734,8 @@ class HydroChemicalSchematisation:
                 'temp_water': self.temperature_vadose_zone,
                 'grainsize': self.grainsize_vadose_zone,
                 'hk': self.hor_permeability_shallow_aquifer,
-                'vani': self.vertical_anisotropy_shallow_aquifer
+                'vani': self.vertical_anisotropy_shallow_aquifer,
+                'nlayers': int(max(1, math.ceil(self.thickness_vadose_zone_at_boundary/2.)))
                 },
             'shallow_aquifer': {
                 'top': self.bottom_vadose_zone_at_boundary,
@@ -833,7 +834,7 @@ class HydroChemicalSchematisation:
                     'substance_name': self.substance,
                     'organism_name': self.organism,
                     'recharge': self.recharge_rate,
-                    'xmin': self.diameter_gravelpack/2,
+                    'xmin': self.diameter_borehole/2,
                     'xmax': self.model_radius_computed,
                     'dissolved_organic_carbon': self.dissolved_organic_carbon_infiltration_water,
                     'TOC': self.total_organic_carbon_infiltration_water,
@@ -848,7 +849,7 @@ class HydroChemicalSchematisation:
                 'substance_name': self.substance,
                 'organism_name': self.organism,
                 'recharge': self.recharge_rate,
-                'xmin': self.diameter_gravelpack/2 + 0.1,
+                'xmin': self.diameter_borehole/2 + 0.1,
                 'xmax': self.model_radius,
                 'zmin': self.bottom_vadose_zone_at_boundary - 0.05,
                 'zmax': self.bottom_vadose_zone_at_boundary - 0.05,
@@ -1232,8 +1233,8 @@ class AnalyticalWell():
         #MK: this is a complex if statement. please elaborate on what is happening in a comment
         if depth_point_contamination is None:
             travel_distance_shallow_aquifer = self.schematisation.thickness_shallow_aquifer - (self.schematisation.groundwater_level - head)
-            travel_time_shallow_aquifer = ((travel_distance_shallow_aquifer)
-                            * self.schematisation.porosity_shallow_aquifer / self.schematisation.recharge_rate)
+            travel_time_shallow_aquifer = (travel_distance_shallow_aquifer * \
+                            self.schematisation.porosity_shallow_aquifer / self.schematisation.recharge_rate)
             
             
             #@MartinvdS -> under the default conditions, the travel time in the shallow aquifer is negative
@@ -1294,11 +1295,11 @@ class AnalyticalWell():
 
         elif distance is None:
             ''' diffuse calculation or regular TTD'''
-            travel_time_target_aquifer = (self.schematisation.porosity_target_aquifer * self.schematisation.thickness_target_aquifer
-                                / self.schematisation.recharge_rate
-                                * np.log(1 / (1 -fraction_flux)))
+            travel_time_target_aquifer = ((self.schematisation.porosity_target_aquifer * self.schematisation.thickness_target_aquifer
+                                / self.schematisation.recharge_rate) * \
+                                np.log(1 / (1 -fraction_flux)))
         else:
-            raise ValueError('Eiter fractin flux or distance should be None')
+            raise ValueError('Either fraction flux or distance should be None')
 
         return travel_time_target_aquifer
 
@@ -1613,7 +1614,7 @@ class AnalyticalWell():
         if self.schematisation.schematisation_type =='phreatic':
             travel_distance_vadose = self.schematisation.drawdown_at_well
             travel_distance_shallow = (self.schematisation.thickness_vadose_zone_at_boundary + 
-                                self.schematisation.thickness_shallow_aquifer -
+                                    self.schematisation.thickness_shallow_aquifer -
                                     self.schematisation.drawdown_at_well)
             travel_distance_target = self.schematisation.radial_distance
 
@@ -1677,13 +1678,19 @@ class AnalyticalWell():
                         self.schematisation.solid_density_vadose_zone,
                         ]
 
+            if self.schematisation.schematisation_type =='phreatic':
+                # gwlevel
+                head_vadose = self.schematisation.drawdown_at_well[flowline_id-1]
+            else:
+                # indicator of bottom 'vadose zone'
+                head_vadose = self.schematisation.bottom_vadose_zone_at_boundary
             df.loc[1] = [flowline_id,
                          "vadose_zone",
                          travel_time_unsaturated,
                          travel_time_unsaturated,
                          distance,
                          self.schematisation.model_width,
-                         self.schematisation.bottom_vadose_zone_at_boundary, # @MartinvdS should this be the thickness_vadose_zone_drawdown??
+                         head_vadose, # bottom_vadose_zone_at_boundary, # @MartinvdS should this be the thickness_vadose_zone_drawdown??
                          self.schematisation.redox_vadose_zone,
                          self.schematisation.temp_water,
                          travel_distance_vadose,

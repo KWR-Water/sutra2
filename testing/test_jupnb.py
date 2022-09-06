@@ -83,6 +83,8 @@ def test_modpath_run_phreatic_nogravelpack(organism_name = "MS2"):
                                       solid_density_shallow_aquifer= 2.650, 
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 0.75,
+                                      diameter_gravelpack = 0.2,
+                                      diameter_clayseal = 0.2,
                                       name = organism_name,
                                       # diameter_filterscreen = 0.2,
                                       point_input_concentration = 100.,
@@ -2531,7 +2533,8 @@ def test_mpw_omp_removal(substance_name = 'benzene'):
     ''' calculate the removal of a default substance using ModPathWell class.'''
 
     # Lets start with a simple example defining a HydroChemicalSchematisation object for a phreatic aquifer:
-
+    # Simple scheme without gravelpack and without clayseal
+    # diameter_gravelpack == diameter_clayseal == diameter_filterscreen == 0.2,
     phreatic_schematisation = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                                         computation_method = 'modpath',
                                                         removal_function = 'omp',
@@ -2541,6 +2544,8 @@ def test_mpw_omp_removal(substance_name = 'benzene'):
                                                         thickness_shallow_aquifer=10,  #m
                                                         thickness_target_aquifer=40, #m
                                                         hor_permeability_target_aquifer=35, #m/day
+                                                        diameter_gravelpack = 0.2,
+                                                        diameter_clayseal = 0.2,
                                                         redox_vadose_zone='anoxic',
                                                         redox_shallow_aquifer='anoxic',
                                                         redox_target_aquifer='deeply_anoxic',
@@ -2555,7 +2560,7 @@ def test_mpw_omp_removal(substance_name = 'benzene'):
     phreatic_schematisation.make_dictionary()
 
     # workspace
-    workspace = os.path.join(path, "test_mpw_ompremoval")
+    workspace = os.path.join(path, "test_mpw_ompremoval_nogp")
     if not os.path.exists(workspace):
         os.makedirs(workspace)
 
