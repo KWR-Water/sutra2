@@ -1677,13 +1677,19 @@ class AnalyticalWell():
                         self.schematisation.solid_density_vadose_zone,
                         ]
 
+            if self.schematisation.schematisation_type =='phreatic':
+                # gwlevel
+                head_vadose = self.schematisation.drawdown_at_well[flowline_id-1]
+            else:
+                # indicator of bottom 'vadose zone'
+                head_vadose = self.schematisation.bottom_vadose_zone_at_boundary
             df.loc[1] = [flowline_id,
                          "vadose_zone",
                          travel_time_unsaturated,
                          travel_time_unsaturated,
                          distance,
                          self.schematisation.model_width,
-                         self.schematisation.bottom_vadose_zone_at_boundary, # @MartinvdS should this be the thickness_vadose_zone_drawdown??
+                         head_vadose, # @MartinvdS should this be the thickness_vadose_zone_drawdown??
                          self.schematisation.redox_vadose_zone,
                          self.schematisation.temp_water,
                          travel_distance_vadose,
