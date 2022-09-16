@@ -625,7 +625,7 @@ class HydroChemicalSchematisation:
                     'top': self.ground_surface, #self.bottom_vadose_zone_at_boundary,
                     'bot': self.bottom_vadose_zone_at_boundary,
                     'xmin': 0,
-                    'xmax': self.diameter_borehole/2., #self.diameter_filterscreen/2.,
+                    'xmax': self.diameter_filterscreen/2., #self.diameter_filterscreen/2.,
                     'ibound':0,
                     },
                 'inner_boundary_shallow_aquifer': {
@@ -1683,6 +1683,7 @@ class AnalyticalWell():
             else:
                 # indicator of bottom 'vadose zone'
                 head_vadose = self.schematisation.bottom_vadose_zone_at_boundary
+                
             df.loc[1] = [flowline_id,
                          "vadose_zone",
                          travel_time_unsaturated,

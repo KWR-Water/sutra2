@@ -344,10 +344,10 @@ class ModPathWell:
                 # Remove the keys added as vadose_parameters (vadose_zone)
                 schematisation[dict_key].pop(iKey)
             else:
-                # Keep "vadose" in geo_parameters and include as inactive boundary
+                # Keep "vadose" in geo_parameters and include as active boundary
                 schematisation["ibound_parameters"][iKey] = schematisation["ibound_parameters"].get(iKey,{})
                 # Add no-flow boundary indication (ibound = 0)
-                schematisation["ibound_parameters"][iKey]["ibound"] = 0
+                schematisation["ibound_parameters"][iKey]["ibound"] = 1
                 # Add extent of vadose zone location
                 for iBoundary in ["top","bot","xmin","xmax","ymin","ymax"]:
                     if iBoundary in schematisation[dict_key][iKey].keys():
@@ -3149,6 +3149,8 @@ class ModPathWell:
         # remove duplicate records from df_particle
         df_particle = df_particle.drop_duplicates(
             subset=["xcoord","ycoord","zcoord","total_travel_time"], keep = 'first')
+        # # Add flowline_id as separate column
+        # df_particle.loc[:,"flowline_id"] = df_particle.index.values
 
         return df_particle, df_particle_data
         
@@ -3378,8 +3380,10 @@ class ModPathWell:
                                 vmin = 0.,vmax = 1.,orientation = {'row': 0},
                                 fpathfig = None, figtext = None,x_text = 0,
                                 y_text = 0, lognorm = True, xmin = 0., xmax = None,
+                                ymin = None, ymax = None,
                                 line_dist = 1, dpi = 192, trackingdirection = "forward",
-                                cmap = 'viridis_r'):
+                                cmap = 'viridis_r',
+                                show_vadose = True):
         ''' Create pathline plots with residence times 
             using colours as indicator.
             with: 
@@ -3388,11 +3392,16 @@ class ModPathWell:
             figtext: figure text to show within plot starting at
             x-location 'x_text' and y-location 'y_text'.
             lognorm: True/False (if vmin <= 0. --> vmin = 1.e-5)
+            xmin: left boundary figure
+            xmax: right boundary figure
+            ymin: lower boundary figure
+            ymax: upper boundary figure
             line_dist: min. distance between well pathlines at source (m)
             line_freq: show every 'X' pathlines
             dpi: pixel density
             trackingdirection: direction of calculating flow along pathlines"
             cmap: Uses colormap 'viridis_r' (viridis reversed as default)
+            show_vadose: T/F (if True, include vadose zone flow lines; default = True)
             '''
    
         if lognorm:
@@ -3402,19 +3411,36 @@ class ModPathWell:
         # Keep track of minimum line distance between pathlines ('line_dist')
         xmin_plot = 0.
         # Flowline IDs
-        flowline_ID = list(df_particle.index.unique())
+        try:
+            flowline_ID = list(df_particle.flowline_id.unique())
+        except:
+            # Use index as flowline_id instead
+            df_particle.loc[:,"flowline_id"] = df_particle.index.values
+            flowline_ID = list(df_particle.flowline_id.unique())
+            
+
         for fid in flowline_ID:
 
-            x_points = df_particle.loc[df_particle.index == fid, "xcoord"].values
-#           y_points = df_particle.loc[df_particle.index == fid, "ycoord"].values
-            z_points = df_particle.loc[df_particle.index == fid, "zcoord"].values
-            # Cumulative travel times
-            time_points = df_particle.loc[df_particle.index == fid, "total_travel_time"].values
+            if show_vadose:
+                x_points = df_particle.loc[df_particle.flowline_id == fid, "xcoord"].values
+    #           y_points = df_particle.loc[df_particle.flowline_id == fid, "ycoord"].values
+                z_points = df_particle.loc[df_particle.flowline_id == fid, "zcoord"].values
+                # Cumulative travel times
+                time_points = df_particle.loc[df_particle.flowline_id == fid, "total_travel_time"].values
+            else:
+                x_points = df_particle.loc[(df_particle.flowline_id == fid) & (~df_particle.zone.str.contains("vadose_zone")), "xcoord"].values
+    #           y_points = df_particle.loc[(df_particle.flowline_id == fid) & (~df_particle.zone.str.contains("vadose_zone")), "ycoord"].values
+                z_points = df_particle.loc[(df_particle.flowline_id == fid) & (~df_particle.zone.str.contains("vadose_zone")), "zcoord"].values
+                # Cumulative travel times
+                time_points = df_particle.loc[(df_particle.flowline_id == fid) & (~df_particle.zone.str.contains("vadose_zone")), "total_travel_time"].values
 
             # Plot every 'line_dist' number of meters one line
             if trackingdirection == "forward":
                 # x_origin: starting position of pathline
-                x_origin = x_points[0]  
+                x_origin = x_points[0]
+                if not show_vadose:
+                    # Reduce time by initial time value out of vadose_zone
+                    time_points -= time_points[0]
             else:
                 # x_origin: starting position of pathline
                 x_origin = x_points[-1]
@@ -3453,6 +3479,9 @@ class ModPathWell:
                         # 'o', markersize = marker_size,
                         # markerfacecolor="None", markeredgecolor='black') #, lw = 0.1)
             plt.xlim(xmin,xmax)
+
+            # ymin, ymax
+            plt.ylim(ymin,ymax)
             plt.clim(vmin,vmax)
         # Voeg kleurenbalk toe
         cbar = plt.colorbar()
@@ -3907,24 +3936,28 @@ class ModPathWell:
                 # gw_level_analytical at vadose zone (boundary)
                 gw_level_vad_zone_bound_anal = self.schematisation.bottom_vadose_zone_at_boundary
 
-                # Adjust starting head to correct for difference in drawdown
-                self.strt[self.ibound == -1] = self.strt[self.ibound == -1] - gw_level_distant + gw_level_vad_zone_bound_anal
+                if (gw_level_distant >= gw_level_vad_zone_bound_anal) | (gw_level_distant == self.top):
+                    Warning("Chosen well discharge is too high: as a result the drawdown at the well will partly" + \
+                    "dry up the (top of the) well screen. Drawdown will be limited to top of target_aquifer.")
+                else:
+                    # Adjust starting head to correct for difference in drawdown
+                    self.strt[self.ibound == -1] = self.strt[self.ibound == -1] - gw_level_distant + gw_level_vad_zone_bound_anal
 
-                # reload bas package (self.ibound & self.strt)
-                self.create_bas()
-                # Generate modflow file of reloaded bas package
-                self.bas.write_file()
+                    # reload bas package (self.ibound & self.strt)
+                    self.create_bas()
+                    # Generate modflow file of reloaded bas package
+                    self.bas.write_file()
 
-                # Run modflow model
-                try:
-                    self.run_modflowmod()
-                    # Model run completed succesfully
-                    print("Model run", self.workspace, self.modelname, "completed without errors:", self.success_mf)
+                    # Run modflow model
+                    try:
+                        self.run_modflowmod()
+                        # Model run completed succesfully
+                        print("Model run", self.workspace, self.modelname, "completed without errors:", self.success_mf)
 
-                except Exception as e:
-                    self.success_mf = False
-                    print(e, self.success_mf)
-                # print(self.success_mf, self.buff)
+                    except Exception as e:
+                        self.success_mf = False
+                        print(e, self.success_mf)
+                    # print(self.success_mf, self.buff)
 
                 # Reload head data    
                 self.gw_level_reloaded, self.head_mf_reloaded = self._get_gwlevel(model_hds = self.model_hds,time = -1)

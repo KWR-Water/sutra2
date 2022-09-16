@@ -54,7 +54,7 @@ def test_travel_time_distribution_phreatic():
                                         solid_density_vadose_zone= 2.650,
                                         solid_density_shallow_aquifer= 2.650,
                                         solid_density_target_aquifer= 2.650,
-                                        diameter_borehole = 0.75,
+                                        diameter_borehole = 200.,
                                         )
 
     well1 = AW.AnalyticalWell(test_)

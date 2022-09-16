@@ -1561,8 +1561,10 @@ class Transport():
                                 vmin = 0.,vmax = 1.,orientation = {'row': 0},
                                 fpathfig = None, figtext = None,x_text = 0,
                                 y_text = 0, lognorm = True, xmin = 0., xmax = None,
+                                ymin = None, ymax = None,
                                 line_dist = 1, dpi = 192, trackingdirection = "forward",
-                                cmap = 'viridis_r'):
+                                cmap = 'viridis_r',
+                                show_vadose = True):
         ''' Create pathline plots with residence times 
             using colours as indicator.
             with: 
@@ -1571,11 +1573,16 @@ class Transport():
             figtext: figure text to show within plot starting at
             x-location 'x_text' and y-location 'y_text'.
             lognorm: True/False (if vmin <= 0. --> vmin = 1.e-5)
+            xmin: left boundary figure
+            xmax: right boundary figure
+            ymin: lower boundary figure
+            ymax: upper boundary figure
             line_dist: min. distance between well pathlines at source (m)
             line_freq: show every 'X' pathlines
             dpi: pixel density
             trackingdirection: direction of calculating flow along pathlines"
             cmap: Uses colormap 'viridis_r' (viridis reversed as default)
+            show_vadose: T/F (if True, include vadose zone flow lines; default = True)
             '''
    
         if lognorm:
@@ -1585,19 +1592,36 @@ class Transport():
         # Keep track of minimum line distance between pathlines ('line_dist')
         xmin_plot = 0.
         # Flowline IDs
-        flowline_ID = list(df_particle.index.unique())
+        try:
+            flowline_ID = list(df_particle.flowline_id.unique())
+        except:
+            # Use index as flowline_id instead
+            df_particle.loc[:,"flowline_id"] = df_particle.index.values
+            flowline_ID = list(df_particle.flowline_id.unique())
+            
+
         for fid in flowline_ID:
 
-            x_points = df_particle.loc[df_particle.index == fid, "xcoord"].values
-#           y_points = df_particle.loc[df_particle.index == fid, "ycoord"].values
-            z_points = df_particle.loc[df_particle.index == fid, "zcoord"].values
-            # Cumulative travel times
-            time_points = df_particle.loc[df_particle.index == fid, "total_travel_time"].values
+            if show_vadose:
+                x_points = df_particle.loc[df_particle.flowline_id == fid, "xcoord"].values
+    #           y_points = df_particle.loc[df_particle.flowline_id == fid, "ycoord"].values
+                z_points = df_particle.loc[df_particle.flowline_id == fid, "zcoord"].values
+                # Cumulative travel times
+                time_points = df_particle.loc[df_particle.flowline_id == fid, "total_travel_time"].values
+            else:
+                x_points = df_particle.loc[(df_particle.flowline_id == fid) & (~df_particle.zone.str.contains("vadose_zone")), "xcoord"].values
+    #           y_points = df_particle.loc[(df_particle.flowline_id == fid) & (~df_particle.zone.str.contains("vadose_zone")), "ycoord"].values
+                z_points = df_particle.loc[(df_particle.flowline_id == fid) & (~df_particle.zone.str.contains("vadose_zone")), "zcoord"].values
+                # Cumulative travel times
+                time_points = df_particle.loc[(df_particle.flowline_id == fid) & (~df_particle.zone.str.contains("vadose_zone")), "total_travel_time"].values
 
             # Plot every 'line_dist' number of meters one line
             if trackingdirection == "forward":
                 # x_origin: starting position of pathline
-                x_origin = x_points[0]  
+                x_origin = x_points[0]
+                if not show_vadose:
+                    # Reduce time by initial time value out of vadose_zone
+                    time_points -= time_points[0]
             else:
                 # x_origin: starting position of pathline
                 x_origin = x_points[-1]
@@ -1636,6 +1660,9 @@ class Transport():
                         # 'o', markersize = marker_size,
                         # markerfacecolor="None", markeredgecolor='black') #, lw = 0.1)
             plt.xlim(xmin,xmax)
+
+            # ymin, ymax
+            plt.ylim(ymin,ymax)
             plt.clim(vmin,vmax)
         # Voeg kleurenbalk toe
         cbar = plt.colorbar()

@@ -140,6 +140,9 @@ def test_modpath_run_phreatic_nogravelpack(organism_name = "MS2"):
     # xcoord bounds
     x_point = test_phrea.model_radius - 0.5
     xmin, xmax = 0., min(50., x_point)
+    # ycoord bounds
+    ymin = modpath_phrea.bot.min()
+    ymax = modpath_phrea.top
 
 
     # Create travel time plots (lognormal)
@@ -147,16 +150,20 @@ def test_modpath_run_phreatic_nogravelpack(organism_name = "MS2"):
             vmin = tmin,vmax = tmax,
             fpathfig = fpath_scatter_times_log, figtext = None,x_text = 0,
             y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
+            ymin = ymin, ymax = ymax,
             line_dist = 1, dpi = 192, trackingdirection = "forward",
-            cmap = 'viridis_r')
+            cmap = 'viridis_r',
+            show_vadose = True)
 
     # Create travel time plots (linear)
     modpath_removal.plot_age_distribution(df_particle=df_particle,
             vmin = 0.,vmax = tmax,
             fpathfig = fpath_scatter_times, figtext = None,x_text = 0,
             y_text = 0, lognorm = False, xmin = xmin, xmax = xmax,
+            ymin = ymin, ymax = ymax,
             line_dist = 1, dpi = 192, trackingdirection = "forward",
-            cmap = 'viridis_r')
+            cmap = 'viridis_r',
+            show_vadose = True)
 
     # Correct travel_time for vadose_zone section
     fpath_scatter_times_saturated_log = os.path.join(modpath_phrea.dstroot,"log_travel_times_saturated.png")
@@ -167,18 +174,22 @@ def test_modpath_run_phreatic_nogravelpack(organism_name = "MS2"):
     # Create travel time plots (lognormal)
     modpath_removal.plot_age_distribution(df_particle=df_particle,
             vmin = tmin,vmax = tmax,
-            fpathfig = fpath_scatter_times_log, figtext = None,x_text = 0,
+            fpathfig = fpath_scatter_times_saturated_log, figtext = None,x_text = 0,
             y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
+            ymin = ymin, ymax = ymax,
             line_dist = 1, dpi = 192, trackingdirection = "forward",
-            cmap = 'viridis_r')
+            cmap = 'viridis_r',
+            show_vadose = False)
 
     # Create travel time plots (linear)
     modpath_removal.plot_age_distribution(df_particle=df_particle,
             vmin = 0.,vmax = tmax,
-            fpathfig = fpath_scatter_times, figtext = None,x_text = 0,
+            fpathfig = fpath_scatter_times_saturated, figtext = None,x_text = 0,
             y_text = 0, lognorm = False, xmin = xmin, xmax = xmax,
+            ymin = ymin, ymax = ymax,
             line_dist = 1, dpi = 192, trackingdirection = "forward",
-            cmap = 'viridis_r')
+            cmap = 'viridis_r',
+            show_vadose = False)
 
 
     # df_particle file name 
@@ -772,7 +783,8 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
             fpathfig = fpath_scatter_times_log, figtext = None,x_text = 0,
             y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
             line_dist = 1, dpi = 192, trackingdirection = "forward",
-            cmap = 'viridis_r')
+            cmap = 'viridis_r',
+            show_vadose = False)
 
     # Create travel time plots (linear)
     modpath_semiconf.plot_age_distribution(df_particle = df_particle, 
@@ -780,7 +792,8 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
             fpathfig = fpath_scatter_times, figtext = None,x_text = 0,
             y_text = 0, lognorm = False, xmin = xmin, xmax = xmax,
             line_dist = 1, dpi = 192, trackingdirection = "forward",
-            cmap = 'viridis_r')
+            cmap = 'viridis_r',
+            show_vadose = False)
 
     assert modpath_semiconf.success_mp
 
@@ -910,6 +923,8 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
                                                         pH_target_aquifer=7.,
                                                         temp_water=11.,
                                                         diffuse_input_concentration = 100, #ug/L
+                                                        ncols_near_well = 20,
+                                                        ncols_far_well = 80,
                                                         )
 
     # test_phrea = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
@@ -1125,22 +1140,29 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
     tmin, tmax = 0.1, 10000.
     # xcoord bounds
     xmin, xmax = 0., 50.
+    # ycoord bounds
+    ymin = well1_mp.bot.min()
+    ymax = well1_mp.top
 
     # Create travel time plots (lognormal)
     well1_mp.plot_age_distribution(df_particle = df_particle, 
             vmin = tmin,vmax = tmax,
             fpathfig = fpath_scatter_times_log, figtext = None,x_text = 0,
             y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
+            ymin = ymin, ymax = ymax,
             line_dist = 1, dpi = 192, trackingdirection = "forward",
-            cmap = 'viridis_r')
+            cmap = 'viridis_r',
+            show_vadose = False)
 
     # Create travel time plots (linear)
     well1_mp.plot_age_distribution(df_particle = df_particle, 
             vmin = 0.,vmax = tmax,
             fpathfig = fpath_scatter_times, figtext = None,x_text = 0,
             y_text = 0, lognorm = False, xmin = xmin, xmax = xmax,
+            ymin = ymin, ymax = ymax,
             line_dist = 1, dpi = 192, trackingdirection = "forward",
-            cmap = 'viridis_r')
+            cmap = 'viridis_r',
+            show_vadose = False)
 
 
     # try:
@@ -2339,8 +2361,8 @@ def test_analyticalwell_mbo_removal(organism_name = 'solani'):
 
     phreatic_schematisation = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                                         computation_method='analytical',
-                                                        well_discharge=-7500, #m3/day
-                                                        recharge_rate=0.0008, #m/day
+                                                        well_discharge=-1000, #m3/day
+                                                        recharge_rate=0.001, #m/day
                                                         thickness_vadose_zone_at_boundary=5, #m
                                                         thickness_shallow_aquifer=10,  #m
                                                         thickness_target_aquifer=40, #m
@@ -2654,16 +2676,16 @@ def test_mpw_mbo_removal(organism_name = 'solani'):
 
     phreatic_schematisation = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                                         computation_method = 'modpath',
-                                                        removal_function = 'omp',
-                                                        well_discharge=-7500, #m3/day
-                                                        recharge_rate=0.0008, #m/day
+                                                        removal_function = 'mbo',
+                                                        well_discharge=-1000, #m3/day
+                                                        recharge_rate=0.001, #m/day
                                                         thickness_vadose_zone_at_boundary=5, #m
                                                         thickness_shallow_aquifer=10,  #m
                                                         thickness_target_aquifer=40, #m
                                                         hor_permeability_target_aquifer=35, #m/day
                                                         redox_vadose_zone='anoxic',
                                                         redox_shallow_aquifer='anoxic',
-                                                        redox_target_aquifer='deeply_anoxic',
+                                                        redox_target_aquifer='anoxic',
                                                         pH_target_aquifer=7.,
                                                         temp_water=11.,
                                                         diffuse_input_concentration = 100, #ug/L
@@ -2731,7 +2753,11 @@ def test_mpw_mbo_removal(organism_name = 'solani'):
     C_final = {}
     # Update df_flowline and df_particle. Calculate final concentration at endpoint_id(s)
     for endpoint_id in endpoint_ids:
-        df_particle, df_flowline, C_final[endpoint_id] = phreatic_transport.calc_advective_microbial_removal(endpoint_id = endpoint_id)
+        df_particle, df_flowline, C_final[endpoint_id] = phreatic_transport.calc_advective_microbial_removal(
+                                                    phreatic_transport.df_particle, phreatic_transport.df_flowline, 
+                                                    endpoint_id = endpoint_id,
+                                                    conc_start = 1., conc_gw = 0.)
+
         # print(f"Final concentration {endpoint_id}: {C_final[endpoint_id]}")
         # print(df_particle.iloc[:4,:])
 
@@ -2751,6 +2777,43 @@ def test_mpw_mbo_removal(organism_name = 'solani'):
     # Save dataframes
     df_particle.to_csv(particle_fname)
     df_flowline.to_csv(flowline_fname)
+
+
+
+    # Create travel time plots
+    fpath_scatter_times_log = os.path.join(workspace,"log_travel_times_test.png")
+    fpath_scatter_times = os.path.join(workspace,"travel_times_test.png")
+    # df particle
+    df_particle = modpath_phrea.df_particle
+    # time limits
+    tmin, tmax = 0.1, 1000.
+    # xcoord bounds
+    xmin, xmax = 0., 100.
+    # ycoord bounds
+    ymin = modpath_phrea.bot.min()
+    ymax = modpath_phrea.top
+
+    # Create travel time plots (lognormal)
+    modpath_phrea.plot_age_distribution(df_particle = df_particle, 
+            vmin = tmin,vmax = tmax,
+            fpathfig = fpath_scatter_times_log, figtext = None,x_text = 0,
+            y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
+            ymin = ymin, ymax = ymax,
+            line_dist = 1, dpi = 192, trackingdirection = "forward",
+            cmap = 'viridis_r',
+            show_vadose = False)
+
+    # Create travel time plots (linear)
+    modpath_phrea.plot_age_distribution(df_particle = df_particle, 
+            vmin = 0.,vmax = tmax,
+            fpathfig = fpath_scatter_times, figtext = None,x_text = 0,
+            y_text = 0, lognorm = False, xmin = xmin, xmax = xmax,
+            ymin = ymin, ymax = ymax,
+            line_dist = 1, dpi = 192, trackingdirection = "forward",
+            cmap = 'viridis_r',
+            show_vadose = False)
+
+
 
     conc_plot = phreatic_transport.plot_concentration(ylim=[0,10 ], as_fraction_input = True)
 
