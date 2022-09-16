@@ -659,14 +659,14 @@ class HydroChemicalSchematisation:
                     'top': self.bottom_vadose_zone_at_boundary, # OLD: 10 cm ficticous thickness to allow head boundary
                     'bot': self.bottom_vadose_zone_at_boundary -0.1,  # NEW: ibound =-1 up to 10 cm below layer 1 top
                     'xmin': 0.,
-                    'xmax': self.diameter_gravelpack/2.,
+                    'xmax': self.diameter_borehole/2.,
                     'ibound': 0
                     },
                 'top_boundary1': {
                     'head': self.bottom_vadose_zone_at_boundary,
                     'top': self.bottom_vadose_zone_at_boundary, # OLD: 10 cm ficticous thickness to allow head boundary
                     'bot': self.bottom_vadose_zone_at_boundary -0.1,  # NEW: ibound =-1 up to 10 cm below layer 1 top
-                    'xmin': self.diameter_gravelpack/2.,
+                    'xmin': self.diameter_borehole/2.,
                     'xmax': self.model_radius_computed,
                     'ibound': -1,
                     },
@@ -722,7 +722,7 @@ class HydroChemicalSchematisation:
                 'vadose': True,
                 'top': self.ground_surface,
                 'bot': self.bottom_vadose_zone_at_boundary,
-                'xmin': self.diameter_gravelpack/2,
+                'xmin': self.diameter_filterscreen/2., # self.diameter_gravelpack/2,
                 'xmax': self.model_radius_computed,
                 'porosity': self.porosity_vadose_zone,
                 'moisture_content': self.moisture_content_vadose_zone,
@@ -739,7 +739,7 @@ class HydroChemicalSchematisation:
             'shallow_aquifer': {
                 'top': self.bottom_vadose_zone_at_boundary,
                 'bot': self.bottom_shallow_aquifer,
-                'xmin': self.diameter_gravelpack/2,
+                'xmin': self.diameter_filterscreen/2., # self.diameter_gravelpack/2,
                 'xmax': self.model_radius_computed,
                 'porosity': self.porosity_shallow_aquifer,
                 'solid_density': self.solid_density_shallow_aquifer,
@@ -756,7 +756,7 @@ class HydroChemicalSchematisation:
             'target_aquifer': {
                 'top': self.bottom_shallow_aquifer,
                 'bot': self.bottom_target_aquifer,
-                'xmin': self.diameter_gravelpack/2,
+                'xmin': self.diameter_filterscreen/2., # self.diameter_gravelpack/2,
                 'xmax': self.model_radius_computed,
                 'porosity': self.porosity_target_aquifer,
                 'solid_density': self.solid_density_target_aquifer,
@@ -833,7 +833,7 @@ class HydroChemicalSchematisation:
                     'substance_name': self.substance,
                     'organism_name': self.organism,
                     'recharge': self.recharge_rate,
-                    'xmin': self.diameter_gravelpack/2,
+                    'xmin': self.diameter_borehole/2,
                     'xmax': self.model_radius_computed,
                     'dissolved_organic_carbon': self.dissolved_organic_carbon_infiltration_water,
                     'TOC': self.total_organic_carbon_infiltration_water,
@@ -848,7 +848,7 @@ class HydroChemicalSchematisation:
                 'substance_name': self.substance,
                 'organism_name': self.organism,
                 'recharge': self.recharge_rate,
-                'xmin': self.diameter_gravelpack/2 + 0.1,
+                'xmin': self.diameter_borehole/2 + 0.1,
                 'xmax': self.model_radius,
                 'zmin': self.bottom_vadose_zone_at_boundary - 0.05,
                 'zmax': self.bottom_vadose_zone_at_boundary - 0.05,
