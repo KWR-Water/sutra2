@@ -170,7 +170,6 @@ def test_modpath_run_phreatic_nogravelpack(organism_name = "MS2"):
     fpath_scatter_times_saturated = os.path.join(modpath_phrea.dstroot,"travel_times_saturated.png")
 
     # travel_time_vadose_zone
-    df_particle 
     # Create travel time plots (lognormal)
     modpath_removal.plot_age_distribution(df_particle=df_particle,
             vmin = tmin,vmax = tmax,
@@ -246,7 +245,7 @@ def test_modpath_run_phreatic_withgravelpack_largewell(organism_name = "MS2"):
                                       solid_density_target_aquifer= 2.650, 
                                       diameter_borehole = 2.,
                                       diameter_gravelpack = 2.,
-                                      diameter_clayseal = 1.,
+                                      diameter_clayseal = 2.,
                                       diameter_filterscreen= 0.2,
                                       name = organism_name,
                                       # diameter_filterscreen = 0.2,

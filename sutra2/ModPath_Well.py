@@ -1132,7 +1132,7 @@ class ModPathWell:
         ''' Add multi nodal well Package to the MODFLOW model. 
             # Function allows for a single row, col combination in current version per identified well.
             Documented in `flopy docs - MNW2 <https://flopy.readthedocs.io/en/3.3.5/_modules/flopy/modflow/mfmnw2.html>`_.
-            
+            https://github.com/modflowpy/flopy/blob/develop/examples/Notebooks/flopy3_mnw2package_example.ipynb
             Parameters
             -----------
             wellid: str or int
@@ -1302,7 +1302,9 @@ class ModPathWell:
                                     itmp = [len(well_names)] * self.nper,
                                     mnwprnt = 2,
                                     )
+        self.mnw2.check()
 
+        node_df = pd.DataFrame(self.mnw2.node_data)
         # MNW2 package made from mnw objects
         # self.mnw2 = flopy.modflow.ModflowMnw2(model = self.mf, 
         #                             ipakcb = self.iu_cbc,
@@ -1321,7 +1323,7 @@ class ModPathWell:
             be reused from the previous stress period and dataset 4 is skipped.
         '''
         self.mnw_dict = self.mnw2.mnw["well1"].__dict__
-        # self.mf.mnw2.check(f = os.path.join(self.workspace,"mnw_summary.log"), level = 1)
+        self.mnw2.check(f = os.path.join(self.workspace,"mnw_summary.log"), level = 1)
 
     def create_modflow_packages(self, **kwargs):
         ''' Create modflow packages used in the model run.'''
@@ -3920,7 +3922,6 @@ class ModPathWell:
 
             # Run modflow model
             self.mfmodelrun()
-
 
             # If phreatic, generate groundwater level
             if self.schematisation_type in ["phreatic","semiconfined"]:
