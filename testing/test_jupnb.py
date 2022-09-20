@@ -938,12 +938,16 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
     tmin, tmax = 0.1, 10000.
     # xcoord bounds
     xmin, xmax = 0., 100.
+    # ycoord bounds
+    ymin = modpath_semiconf.bot.min()
+    ymax = modpath_semiconf.top
 
     # Create travel time plots (lognormal)
     modpath_semiconf.plot_age_distribution(df_particle = df_particle, 
             vmin = tmin,vmax = tmax,
             fpathfig = fpath_scatter_times_log, figtext = None,x_text = 0,
             y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
+            ymin = ymin, ymax = ymax,
             line_dist = 1, dpi = 192, trackingdirection = "forward",
             cmap = 'viridis_r',
             show_vadose = False)
@@ -953,6 +957,7 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
             vmin = 0.,vmax = tmax,
             fpathfig = fpath_scatter_times, figtext = None,x_text = 0,
             y_text = 0, lognorm = False, xmin = xmin, xmax = xmax,
+            ymin = ymin, ymax = ymax,
             line_dist = 1, dpi = 192, trackingdirection = "forward",
             cmap = 'viridis_r',
             show_vadose = False)
@@ -1504,7 +1509,7 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
     test_feces_contamination.point_parameters = point_parameters
 
     # Add leakage at 9.5 m depth
-    leak_Q = 0. #-0.001
+    leak_Q = -0.001
     leak_depth = -9.5
     leak_depth_bot = leak_depth - 0.1
     test_feces_contamination.well_parameters['leak1'] = {
@@ -1514,7 +1519,9 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
                     'xmin': 0., # test_feces_contamination.diameter_filterscreen/2,  # next to filter screen [ibound=0]
                     'xmax': test_feces_contamination.diameter_filterscreen/2.,
                     }
-                
+    # pop well1 from well_parameters (use ibound_parameters and recharge instead)
+    test_feces_contamination.well_parameters.pop('well1')   
+
     # Change inner_boundary ibound above and below well leak
     test_feces_contamination.ibound_parameters.pop('inner_boundary_shallow_aquifer')
     test_feces_contamination.ibound_parameters['inner_boundary_shallow_aquifer_above_leak'] = {'top': 0.0, 'bot': leak_depth,

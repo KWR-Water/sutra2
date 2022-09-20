@@ -252,6 +252,7 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
         # Confined top boundary ; no recharge_parameters
         test_conf_hor.ibound_parameters.pop("top_boundary1")
         test_conf_hor.ibound_parameters.pop("inner_boundary_shallow_aquifer")
+        test_conf_hor.ibound_parameters.pop("top_boundary_well")
 
         # Add outer boundary for horizontal flow test
         test_conf_hor.ibound_parameters["outer_boundary_target_aquifer"] = {
@@ -860,6 +861,10 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
 
     # Remove/empty point_parameters
     test_semiconf.point_parameters = {}
+    # remove ibound == 0 above well (for now also to test MNW2)
+    test_semiconf.ibound_parameters.pop("inner_boundary_shallow_aquifer")
+    test_semiconf.ibound_parameters.pop("top_boundary_well")
+
 
     modpath_semiconf = mpw.ModPathWell(test_semiconf, # semiconf_dict_1, #test_phrea,
                             workspace = os.path.join(path,"test7_semiconf_nogp"),
@@ -928,7 +933,8 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
             line_dist = 1, dpi = 192, trackingdirection = "forward",
             cmap = 'viridis_r')
 
-    assert C_final['well1'] == 5.422398552529719e-61
+    # Adjust assertion using MNW2 instead
+    assert C_final['well1'] == 8.899971102146719e-69 # 5.422398552529719e-61
 
 
 # #%%
