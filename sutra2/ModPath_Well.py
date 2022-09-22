@@ -1274,6 +1274,8 @@ class ModPathWell:
         #     radius_well = abs(schematisation[dict_key][iWell].get("xmax") - \
         #                     schematisation[dict_key][iWell].get("xmin"))
 
+        # # multi nodal well object(s) dict
+        # spd_mnw_list = []
 
         # self.mnw2 = flopy.modflow.ModflowMnw2(
         #     model = self.mf,
