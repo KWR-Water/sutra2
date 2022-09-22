@@ -862,8 +862,8 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
     # Remove/empty point_parameters
     test_semiconf.point_parameters = {}
     # remove ibound == 0 above well (for now also to test MNW2)
-    test_semiconf.ibound_parameters.pop("inner_boundary_shallow_aquifer")
-    test_semiconf.ibound_parameters.pop("top_boundary_well")
+    # test_semiconf.ibound_parameters.pop("inner_boundary_shallow_aquifer")
+
 
 
     modpath_semiconf = mpw.ModPathWell(test_semiconf, # semiconf_dict_1, #test_phrea,
@@ -934,7 +934,8 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
             cmap = 'viridis_r')
 
     # Adjust assertion using MNW2 instead
-    assert C_final['well1'] == 8.899971102146719e-69 # 5.422398552529719e-61
+    assert C_final['well1'] == 9.030410075565216e-69 
+    # with WEL package: assert C_final['well1'] == 5.422398552529719e-61
 
 
 # #%%
