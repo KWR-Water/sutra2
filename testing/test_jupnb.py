@@ -2402,8 +2402,8 @@ def test_analyticalwell_omp_removal(substance_name = 'benzene'):
     phreatic_schematisation = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                                         computation_method='analytical',
                                                         removal_function = 'omp',
-                                                        well_discharge=-7500, #m3/day
-                                                        recharge_rate=0.0008, #m/day
+                                                        well_discharge=-1000., #m3/day
+                                                        recharge_rate=0.001, #m/day
                                                         thickness_vadose_zone_at_boundary=5, #m
                                                         thickness_shallow_aquifer=10,  #m
                                                         thickness_target_aquifer=40, #m
@@ -2728,8 +2728,8 @@ def test_mpw_omp_removal(substance_name = 'benzene'):
     phreatic_schematisation = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
                                                         computation_method = 'modpath',
                                                         removal_function = 'omp',
-                                                        well_discharge=-7500, #m3/day
-                                                        recharge_rate=0.0008, #m/day
+                                                        well_discharge=-1000., #m3/day
+                                                        recharge_rate=0.001, #m/day
                                                         thickness_vadose_zone_at_boundary=5, #m
                                                         thickness_shallow_aquifer=10,  #m
                                                         thickness_target_aquifer=40, #m
