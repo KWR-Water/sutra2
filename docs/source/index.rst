@@ -14,6 +14,7 @@ Fields (PSWFs)
 
     getting-started.rst
     Tutorial <tutorial_combined.rst>
+    Tutorial single pathline mbo-removal <tutorial_removal_functions.rst>
     Appendix - Microbial organism removal functions <background_mbo_removal.rst>
     faq.rst
     glossary.rst

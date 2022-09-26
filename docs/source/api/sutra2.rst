@@ -11,6 +11,7 @@ Submodules
    sutra2.ModPath_Well
    sutra2.Transport_Removal
    sutra2.project_path
+   sutra2.removal_functions
 
 Module contents
 ---------------
