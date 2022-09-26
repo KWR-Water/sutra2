@@ -7,7 +7,7 @@ Tutorial - Microbial Organism (mbo) subsurface removal along a (straight) line
 Overview
 ========
 
-Sutra is a python package to calculate the advective removal of microbial organisms 
+Sutra(2) is a python package to calculate the advective removal of microbial organisms 
 (also called 'pathogens') from source to end_point.
 
 Main features:
@@ -108,7 +108,7 @@ Now, let’s try some examples. First we import the necessary python packages
     import os
     import sys
     from pathlib import Path
-    import sutra.removal_functions as rf
+    import sutra2.removal_functions as rf
 
 
 Scenario A: Calculate removal of a microbial organism using default database parameters. 
