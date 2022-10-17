@@ -12,7 +12,7 @@ import warnings
 
 from zmq import zmq_version_info
 
-import sutra.removal_functions as rf
+import sutra2.removal_functions as rf
 
 # get directory of this file
 path = Path(__file__).parent #os.getcwd() #path of working directory
@@ -52,16 +52,16 @@ def test_scenarios_mbo_removal_function(organism_name = "MS2"):
         conc_gw = 0.     # normally in df_flowline; use relative concentration as output
         distance_traveled = df_test.at[fid,'relative_distance']
         traveltime = df_test.at[fid,'total_travel_time']
- 
+
         # Calculate advective microbial removal
         mbo_removal = rf.MicrobialRemoval(organism = organism_name)
         # Calculate final concentration after advective microbial removal
         C_final = mbo_removal.calc_advective_microbial_removal(grainsize = grainsize,
                                                 temp_water = temp_water, rho_water = rho_water,
-                                                pH = pH_water, por_eff = por_eff, 
+                                                pH = pH_water, por_eff = por_eff,
                                                 conc_start = conc_start, conc_gw = conc_gw,
                                                 redox = redox,
-                                                distance_traveled = distance_traveled, 
+                                                distance_traveled = distance_traveled,
                                                 traveltime = traveltime,
                                                 organism_diam = organism_diam,
                                                 mu1 = mu1,
@@ -101,9 +101,9 @@ def test_mbo_removal_function_check_default(organism_name = "carotovorum",
                                             conc_gw = 0.,
                                             distance_traveled = 1.,
                                             traveltime = 100.):
-    ''' Verify whether the default removal parameters is loaded successfully and gives 
+    ''' Verify whether the default removal parameters is loaded successfully and gives
         the same result as manual input for the 'default parameters'.
-    
+
     ## Default parameters: ##
     organism_name = "carotovorum"
     redox = 'anoxic',
@@ -128,8 +128,8 @@ def test_mbo_removal_function_check_default(organism_name = "carotovorum",
     # Calculate final concentration after advective microbial removal
     C_final_default= mbo_removal_default.calc_advective_microbial_removal()
 
-    # Lambda (default): inactivation 
-    lambda_default = mbo_removal_default.lamda   
+    # Lambda (default): inactivation
+    lambda_default = mbo_removal_default.lamda
 
 
 
@@ -138,10 +138,10 @@ def test_mbo_removal_function_check_default(organism_name = "carotovorum",
     # Calculate final concentration after advective microbial removal
     C_final_test = mbo_removal_test.calc_advective_microbial_removal(grainsize = grainsize,
                                             temp_water = temp_water, rho_water = rho_water,
-                                            pH = pH_water, por_eff = por_eff, 
+                                            pH = pH_water, por_eff = por_eff,
                                             conc_start = 1., conc_gw = 0.,
                                             redox = 'anoxic',
-                                            distance_traveled = distance_traveled, 
+                                            distance_traveled = distance_traveled,
                                             traveltime = traveltime,
                                             organism_diam = organism_diam,
                                             mu1 = mu1,
@@ -149,10 +149,10 @@ def test_mbo_removal_function_check_default(organism_name = "carotovorum",
                                             pH0 = pH0
                                             )
 
-    # Lambda: inactivation 
-    lambda_test = mbo_removal_test.lamda     
+    # Lambda: inactivation
+    lambda_test = mbo_removal_test.lamda
 
-    assert round(lambda_default,4) == round(lambda_test,4) 
+    assert round(lambda_default,4) == round(lambda_test,4)
     assert round(C_final_default,4) == round(C_final_test,4)
 
 
@@ -191,23 +191,23 @@ def test_manual_input_mbo_removal(organism_name = "MS2"):
     # Calculate advective microbial removal
     C_final = mbo_removal.calc_advective_microbial_removal(grainsize = grainsize,
                                             temp_water = temp_water, rho_water = rho_water,
-                                            pH = pH_water, por_eff = por_eff, 
+                                            pH = pH_water, por_eff = por_eff,
                                             conc_start = 1., conc_gw = 0.,
                                             redox = 'anoxic',
-                                            distance_traveled = distance_traveled, 
+                                            distance_traveled = distance_traveled,
                                             traveltime = traveltime,
                                             organism_diam = organism_diam,
                                             mu1 = mu1,
                                             alpha0 = alpha0,
                                             pH0 = pH0
                                             )
-    # Lambda: inactivation 
-    lamda = mbo_removal.lamda                                             
+    # Lambda: inactivation
+    lamda = mbo_removal.lamda
 
-    assert round(lamda,4) == round(0.7993188853572424 + mu1,4) 
+    assert round(lamda,4) == round(0.7993188853572424 + mu1,4)
 
     assert round(C_final,3) == round(6.531818379725895e-42,3)
-    
+
 
 def test_manual_input_AW_mbo_removal(organism_name = "solani"):
     '''
@@ -243,19 +243,19 @@ def test_manual_input_AW_mbo_removal(organism_name = "solani"):
     # Calculate advective microbial removal
     C_final = mbo_removal.calc_advective_microbial_removal(grainsize = grainsize,
                                             temp_water = temp_water, rho_water = rho_water,
-                                            pH = pH_water, por_eff = por_eff, 
+                                            pH = pH_water, por_eff = por_eff,
                                             conc_start = 1., conc_gw = 0.,
                                             redox = 'anoxic',
-                                            distance_traveled = distance_traveled, 
+                                            distance_traveled = distance_traveled,
                                             traveltime = traveltime,
                                             organism_diam = organism_diam,
                                             mu1 = mu1,
                                             alpha0 = alpha0,
                                             pH0 = pH0
                                             )
-    # Lambda: inactivation 
-    lamda = mbo_removal.lamda     
+    # Lambda: inactivation
+    lamda = mbo_removal.lamda
 
-    assert round(lamda,4) == round(0.019023489784646908 + mu1,4) 
+    assert round(lamda,4) == round(0.019023489784646908 + mu1,4)
 
     assert round(C_final,3) == round(5.2028714869195504e-145,3)
