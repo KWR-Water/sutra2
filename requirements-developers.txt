@@ -3,7 +3,7 @@
 sphinx_rtd_theme
 pytest
 pylint
-autopep8==1.5.7
+autopep8
 jupyter-sphinx
 numpydoc
-reStructuredText
+#reStructuredText

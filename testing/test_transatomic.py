@@ -27,7 +27,7 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 
 #%%
 def test_travel_time_distribution_phreatic():
-    """ Compares the calculated travel times (total, unsaturated zone, shallow aquifer and target aquifer) 
+    """ Compares the calculated travel times (total, unsaturated zone, shallow aquifer and target aquifer)
     against a known case from TRANSATOMIC excel """
     output_phreatic = pd.read_csv(path / 'phreatic_test.csv')
     output_phreatic = output_phreatic.round(7) #round to 7 digits (or any digit), keep same as for the output for the model to compare
@@ -240,7 +240,7 @@ def test_steady_concentration_temp_koc_correction_phreatic(pollutant='benzene'):
 # %%
 
 def test_travel_time_distribution_semiconfined():
-    """ Compares the calculated travel times (total, unsaturated zone, shallow aquifer and target aquifer) 
+    """ Compares the calculated travel times (total, unsaturated zone, shallow aquifer and target aquifer)
     against a known case from TRANSATOMIC excel """
 
     # output_semiconfined = pd.read_csv(path / 'semiconfined_test.csv')
@@ -456,7 +456,7 @@ def test_redox_options():
 #%%
 
 def test_phreatic_diffuse_point_source():
-    ''' Test for phreatic case with both a diffuse and point source contamination, 
+    ''' Test for phreatic case with both a diffuse and point source contamination,
     Checks if the concentration over time matches a known case'''
 
     phreatic_scheme = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
@@ -516,7 +516,7 @@ def test_phreatic_diffuse_point_source():
     phreatic_conc.compute_omp_removal()
     df_well_concentration = phreatic_conc.compute_concentration_in_well_at_date()
     df_well_concentration = df_well_concentration.astype({'time': 'int32', 'date': 'datetime64[ns]', 'total_concentration_in_well': 'float64'})
-    
+
     df_well_concentration_test = read_csv(path / 'phreatic_diffuse_point_test.csv', index_col=0)
     # AH the assert frame_equal is being difficult, so have to specify each data type
     df_well_concentration_test = df_well_concentration_test.astype({'time': 'int32', 'date': 'datetime64[ns]', 'total_concentration_in_well': 'float64'}) #etc
@@ -588,7 +588,7 @@ def test_phreatic_diffuse_only_source():
     df_well_concentration_test = read_csv(path / 'phreatic_diffuse_only_test.csv', index_col=0)
     # AH the assert frame_equal is being difficult, so have to specify each data type
     df_well_concentration_test = df_well_concentration_test.astype({'time': 'int32', 'date': 'datetime64[ns]', 'total_concentration_in_well': 'float64'})
-    
+
     # relative tolerance
     rtol = 5.e-3
     # absolute tolerance
@@ -671,7 +671,7 @@ def test_phreatic_point_only_source():
                         rtol = rtol, atol = atol)
 
 def test_drawdown_lower_than_target_aquifer():
-    ''' Tests whether the correct exception is raised when the drawdown of the 
+    ''' Tests whether the correct exception is raised when the drawdown of the
     well is lower than the bottom of the target aquifer' '''
     with pytest.raises(ValueError) as exc:
         phreatic_scheme = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
@@ -689,7 +689,7 @@ def test_drawdown_lower_than_target_aquifer():
 
         phreatic_well = AW.AnalyticalWell(phreatic_scheme)
 
-        phreatic_well.phreatic()                                         
+        phreatic_well.phreatic()
     assert "The drawdown at the well is lower than the bottom of the target aquifer. Please select a different schematisation." in str(exc.value)
 
 

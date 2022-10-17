@@ -14,7 +14,7 @@
 # INITIALISATION OF PYTHON e.g. packages, etc.
 # ------------------------------------------------------------------------------
 
-# %reset -f #reset all variables for each run, -f 'forces' reset, !! 
+# %reset -f #reset all variables for each run, -f 'forces' reset, !!
 # only seems to work in Python command window...
 
 import matplotlib.pyplot as plt
@@ -65,22 +65,22 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       pH_vadose_zone=5.,
                                       pH_shallow_aquifer=6.,
                                       pH_target_aquifer=7.,
-                                      dissolved_organic_carbon_vadose_zone=10., 
-                                      dissolved_organic_carbon_shallow_aquifer=4., 
+                                      dissolved_organic_carbon_vadose_zone=10.,
+                                      dissolved_organic_carbon_shallow_aquifer=4.,
                                       dissolved_organic_carbon_target_aquifer=2.,
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
-                                      fraction_organic_carbon_target_aquifer=0.0005, 
+                                      fraction_organic_carbon_target_aquifer=0.0005,
                                       diffuse_input_concentration = 100, #ug/L
                                       temperature=11.,
-                                      solid_density_vadose_zone= 2.650, 
-                                      solid_density_shallow_aquifer= 2.650, 
-                                      solid_density_target_aquifer= 2.650, 
+                                      solid_density_vadose_zone= 2.650,
+                                      solid_density_shallow_aquifer= 2.650,
+                                      solid_density_target_aquifer= 2.650,
                                       diameter_borehole = 0.75,
                                     )
- 
+
 semiconfined_well = AnalyticalWell(semiconfined_scheme) #.semiconfined()
-semiconfined_well.semiconfined()   
+semiconfined_well.semiconfined()
 semiconfined_conc = Transport(semiconfined_well, substance = 'OMP-X')
 
 semiconfined_conc.compute_omp_removal()

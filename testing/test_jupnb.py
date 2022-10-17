@@ -17,10 +17,10 @@ from zmq import zmq_version_info
 
 # Plotting modules
 import matplotlib.pyplot as plt
-import matplotlib 
+import matplotlib
 import matplotlib.colors as colors
 
-# sutra2 modules    
+# sutra2 modules
 import sutra2.Analytical_Well as AW
 import sutra2.ModPath_Well as mpw
 import sutra2.Transport_Removal as TR
@@ -72,16 +72,16 @@ def test_modpath_run_phreatic_nogravelpack(organism_name = "MS2"):
                                       pH_vadose_zone=5.,
                                       pH_shallow_aquifer=6.,
                                       pH_target_aquifer=7.,
-                                      dissolved_organic_carbon_vadose_zone=10., 
-                                      dissolved_organic_carbon_shallow_aquifer=4., 
+                                      dissolved_organic_carbon_vadose_zone=10.,
+                                      dissolved_organic_carbon_shallow_aquifer=4.,
                                       dissolved_organic_carbon_target_aquifer=2.,
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
-                                      fraction_organic_carbon_target_aquifer=0.0005, 
+                                      fraction_organic_carbon_target_aquifer=0.0005,
                                       temp_water=11.,
-                                      solid_density_vadose_zone= 2.650, 
-                                      solid_density_shallow_aquifer= 2.650, 
-                                      solid_density_target_aquifer= 2.650, 
+                                      solid_density_vadose_zone= 2.650,
+                                      solid_density_shallow_aquifer= 2.650,
+                                      solid_density_target_aquifer= 2.650,
                                       diameter_borehole = 2.,
                                       diameter_gravelpack = 0.2,
                                       diameter_clayseal = 0.2,
@@ -116,13 +116,13 @@ def test_modpath_run_phreatic_nogravelpack(organism_name = "MS2"):
     # Calculate advective microbial removal
     modpath_removal = TR.Transport(modpath_phrea,
                                             pollutant = organism)
- 
+
     # Calculate advective microbial removal
     # Final concentration per endpoint_id
     C_final = {}
     for endpoint_id in modpath_phrea.schematisation_dict.get("endpoint_id"):
         df_particle, df_flowline, C_final[endpoint_id] = modpath_removal.calc_advective_microbial_removal(
-                                            modpath_phrea.df_particle, modpath_phrea.df_flowline, 
+                                            modpath_phrea.df_particle, modpath_phrea.df_flowline,
                                             endpoint_id = endpoint_id,
                                             trackingdirection = modpath_phrea.trackingdirection,
                                             mu1 = 0.1151, grainsize = 0.00025, alpha0 = 0.037e-2, pH0 = 7.5,
@@ -191,16 +191,16 @@ def test_modpath_run_phreatic_nogravelpack(organism_name = "MS2"):
             show_vadose = False)
 
 
-    # df_particle file name 
+    # df_particle file name
     particle_fname = os.path.join(modpath_phrea.dstroot,modpath_phrea.schematisation_type + "_df_particle_microbial_removal.csv")
-    # Save df_particle 
+    # Save df_particle
     df_particle.to_csv(particle_fname)
-    
+
     # df_flowline file name
     flowline_fname = os.path.join(modpath_phrea.dstroot,modpath_phrea.schematisation_type + "_df_flowline_microbial_removal.csv")
     # Save df_flowline
     df_flowline.to_csv(flowline_fname)
-    
+
     assert modpath_phrea.success_mp
 
 
@@ -233,16 +233,16 @@ def test_modpath_run_phreatic_withgravelpack_largewell(organism_name = "MS2"):
                                       pH_vadose_zone=5.,
                                       pH_shallow_aquifer=6.,
                                       pH_target_aquifer=7.,
-                                      dissolved_organic_carbon_vadose_zone=10., 
-                                      dissolved_organic_carbon_shallow_aquifer=4., 
+                                      dissolved_organic_carbon_vadose_zone=10.,
+                                      dissolved_organic_carbon_shallow_aquifer=4.,
                                       dissolved_organic_carbon_target_aquifer=2.,
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
-                                      fraction_organic_carbon_target_aquifer=0.0005, 
+                                      fraction_organic_carbon_target_aquifer=0.0005,
                                       temp_water=11.,
-                                      solid_density_vadose_zone= 2.650, 
-                                      solid_density_shallow_aquifer= 2.650, 
-                                      solid_density_target_aquifer= 2.650, 
+                                      solid_density_vadose_zone= 2.650,
+                                      solid_density_shallow_aquifer= 2.650,
+                                      solid_density_target_aquifer= 2.650,
                                       diameter_borehole = 2.,
                                       diameter_gravelpack = 2.,
                                       diameter_clayseal = 2.,
@@ -278,13 +278,13 @@ def test_modpath_run_phreatic_withgravelpack_largewell(organism_name = "MS2"):
     # Calculate advective microbial removal
     modpath_removal = TR.Transport(modpath_phrea,
                                             pollutant = organism)
- 
+
     # Calculate advective microbial removal
     # Final concentration per endpoint_id
     C_final = {}
     for endpoint_id in modpath_phrea.schematisation_dict.get("endpoint_id"):
         df_particle, df_flowline, C_final[endpoint_id] = modpath_removal.calc_advective_microbial_removal(
-                                            modpath_phrea.df_particle, modpath_phrea.df_flowline, 
+                                            modpath_phrea.df_particle, modpath_phrea.df_flowline,
                                             endpoint_id = endpoint_id,
                                             trackingdirection = modpath_phrea.trackingdirection,
                                             mu1 = 0.1151, grainsize = 0.00025, alpha0 = 0.037e-2, pH0 = 7.5,
@@ -353,16 +353,16 @@ def test_modpath_run_phreatic_withgravelpack_largewell(organism_name = "MS2"):
             show_vadose = False)
 
 
-    # df_particle file name 
+    # df_particle file name
     particle_fname = os.path.join(modpath_phrea.dstroot,modpath_phrea.schematisation_type + "_df_particle_microbial_removal.csv")
-    # Save df_particle 
+    # Save df_particle
     df_particle.to_csv(particle_fname)
-    
+
     # df_flowline file name
     flowline_fname = os.path.join(modpath_phrea.dstroot,modpath_phrea.schematisation_type + "_df_flowline_microbial_removal.csv")
     # Save df_flowline
     df_flowline.to_csv(flowline_fname)
-    
+
     assert modpath_phrea.success_mp
 
 
@@ -408,16 +408,16 @@ def test_modpath_run_phreatic_withgravelpack_largewell(organism_name = "MS2"):
 #                                 pH_vadose_zone=7.5,
 #                                 pH_shallow_aquifer=7.5,
 #                                 pH_target_aquifer=7.5,
-#                                 dissolved_organic_carbon_vadose_zone=1., 
-#                                 dissolved_organic_carbon_shallow_aquifer=1., 
+#                                 dissolved_organic_carbon_vadose_zone=1.,
+#                                 dissolved_organic_carbon_shallow_aquifer=1.,
 #                                 dissolved_organic_carbon_target_aquifer=1.,
 #                                 fraction_organic_carbon_vadose_zone=0.001,
 #                                 fraction_organic_carbon_shallow_aquifer=0.001,
-#                                 fraction_organic_carbon_target_aquifer=0.001, 
+#                                 fraction_organic_carbon_target_aquifer=0.001,
 #                                 temp_water=12.,
-#                                 solid_density_vadose_zone= 2.650, 
-#                                 solid_density_shallow_aquifer= 2.650, 
-#                                 solid_density_target_aquifer= 2.650, 
+#                                 solid_density_vadose_zone= 2.650,
+#                                 solid_density_shallow_aquifer= 2.650,
+#                                 solid_density_target_aquifer= 2.650,
 #                                 diameter_borehole = 0.2,
 #                                 name = organism_name,
 #                                 diameter_filterscreen = 0.2,
@@ -435,16 +435,16 @@ def test_modpath_run_phreatic_withgravelpack_largewell(organism_name = "MS2"):
 
 #     test_conf_hor.make_dictionary()
 
-    
+
 #     # Remove "vadose" layer from geo_parameters
 #     test_conf_hor.geo_parameters.pop("vadose_zone")
 
 #     ### Adjust ibound_parameters to add horizontal flow ###
-    
+
 #     # Confined top boundary ; no recharge_parameters
 #     test_conf_hor.ibound_parameters.pop("top_boundary1")
 #     test_conf_hor.ibound_parameters.pop("inner_boundary_shallow_aquifer")
-    
+
 #     # Width (delr) outer boundary cells
 #     delr_outer = 1.
 
@@ -470,9 +470,9 @@ def test_modpath_run_phreatic_withgravelpack_largewell(organism_name = "MS2"):
 #     # Remove/empty point_parameters
 #     test_conf_hor.point_parameters = {}
 
-#     # Add point parameters                       
+#     # Add point parameters
 #     startpoint_id = ["outer_boundary_target_aquifer"]
-    
+
 
 #     # ModPath well
 #     modpath_hor = mpw.ModPathWell(test_conf_hor, #test_phrea,
@@ -492,7 +492,7 @@ def test_modpath_run_phreatic_withgravelpack_largewell(organism_name = "MS2"):
 #     organism_diam =  2.33e-8
 #     mu1 = {"suboxic": 0.149,"anoxic": 0.023,"deeply_anoxic": 0.023}
 
-#     removal_parameters = {organism_name: 
+#     removal_parameters = {organism_name:
 #                     {"organism_name": organism_name,
 #                         "alpha0": alpha0,
 #                         "pH0": pH0,
@@ -508,22 +508,22 @@ def test_modpath_run_phreatic_withgravelpack_largewell(organism_name = "MS2"):
     # # Calculate advective microbial removal
     # modpath_removal = TR.Transport(modpath_hor,
     #                                 pollutant = organism)
- 
+
 #     # Calculate advective microbial removal
 #     # Final concentration per endpoint_id
 #     C_final = {}
 #     for endpoint_id in modpath_hor.schematisation_dict.get("endpoint_id"):
 #         df_particle, df_flowline, C_final[endpoint_id] = modpath_removal.calc_advective_microbial_removal(
-#                                             modpath_hor.df_particle, modpath_hor.df_flowline, 
+#                                             modpath_hor.df_particle, modpath_hor.df_flowline,
 #                                             endpoint_id = endpoint_id,
 #                                             trackingdirection = modpath_hor.trackingdirection,
 #                                             conc_start = 1., conc_gw = 0.)
 
-#     # df_particle file name 
+#     # df_particle file name
 #     particle_fname = os.path.join(modpath_hor.dstroot,modpath_hor.schematisation_type + "_df_particle_microbial_removal.csv")
-#     # Save df_particle 
+#     # Save df_particle
 #     df_particle.to_csv(particle_fname)
-    
+
 #     # df_flowline file name
 #     flowline_fname = os.path.join(modpath_hor.dstroot,modpath_hor.schematisation_type + "_df_flowline_microbial_removal.csv")
 #     # Save df_flowline
@@ -605,16 +605,16 @@ def test_modpath_run_phreatic_withgravelpack_largewell(organism_name = "MS2"):
 #                                 pH_vadose_zone=5.,
 #                                 pH_shallow_aquifer=6.,
 #                                 pH_target_aquifer=7.,
-#                                 dissolved_organic_carbon_vadose_zone=10., 
-#                                 dissolved_organic_carbon_shallow_aquifer=4., 
+#                                 dissolved_organic_carbon_vadose_zone=10.,
+#                                 dissolved_organic_carbon_shallow_aquifer=4.,
 #                                 dissolved_organic_carbon_target_aquifer=2.,
 #                                 fraction_organic_carbon_vadose_zone=0.001,
 #                                 fraction_organic_carbon_shallow_aquifer=0.0005,
-#                                 fraction_organic_carbon_target_aquifer=0.0005, 
+#                                 fraction_organic_carbon_target_aquifer=0.0005,
 #                                 temp_water=11.,
-#                                 solid_density_vadose_zone= 2.650, 
-#                                 solid_density_shallow_aquifer= 2.650, 
-#                                 solid_density_target_aquifer= 2.650, 
+#                                 solid_density_vadose_zone= 2.650,
+#                                 solid_density_shallow_aquifer= 2.650,
+#                                 solid_density_target_aquifer= 2.650,
 #                                 diameter_borehole = 0.75,
 #                                 name = organism_name,
 #                                 diameter_filterscreen = 0.2,
@@ -642,7 +642,7 @@ def test_modpath_run_phreatic_withgravelpack_largewell(organism_name = "MS2"):
 #     # Run phreatic schematisation
 #     modpath_phrea.run_model(run_mfmodel = True,
 #                         run_mpmodel = True)
-    
+
 #     # Create travel time plots
 #     fpath_scatter_times_log = os.path.join(modpath_phrea.dstroot,"log_travel_times_test.png")
 #     fpath_scatter_times = os.path.join(modpath_phrea.dstroot,"travel_times_test.png")
@@ -654,7 +654,7 @@ def test_modpath_run_phreatic_withgravelpack_largewell(organism_name = "MS2"):
 #     xmin, xmax = 0., 50.
 
 #     # Create travel time plots (lognormal)
-#     modpath_phrea.plot_age_distribution(df_particle = df_particle, 
+#     modpath_phrea.plot_age_distribution(df_particle = df_particle,
 #             vmin = tmin,vmax = tmax,
 #             fpathfig = fpath_scatter_times_log, figtext = None,x_text = 0,
 #             y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
@@ -662,7 +662,7 @@ def test_modpath_run_phreatic_withgravelpack_largewell(organism_name = "MS2"):
 #             cmap = 'viridis_r')
 
 #     # Create travel time plots (linear)
-#     modpath_phrea.plot_age_distribution(df_particle = df_particle, 
+#     modpath_phrea.plot_age_distribution(df_particle = df_particle,
 #             vmin = 0.,vmax = tmax,
 #             fpathfig = fpath_scatter_times, figtext = None,x_text = 0,
 #             y_text = 0, lognorm = False, xmin = xmin, xmax = xmax,
@@ -703,16 +703,16 @@ def test_modpath_run_phreatic_withgravelpack_removal(organism_name = "MS2"):
                                 pH_vadose_zone=5.,
                                 pH_shallow_aquifer=6.,
                                 pH_target_aquifer=7.,
-                                dissolved_organic_carbon_vadose_zone=10., 
-                                dissolved_organic_carbon_shallow_aquifer=4., 
+                                dissolved_organic_carbon_vadose_zone=10.,
+                                dissolved_organic_carbon_shallow_aquifer=4.,
                                 dissolved_organic_carbon_target_aquifer=2.,
                                 fraction_organic_carbon_vadose_zone=0.001,
                                 fraction_organic_carbon_shallow_aquifer=0.0005,
-                                fraction_organic_carbon_target_aquifer=0.0005, 
+                                fraction_organic_carbon_target_aquifer=0.0005,
                                 temp_water=11.,
-                                solid_density_vadose_zone= 2.650, 
-                                solid_density_shallow_aquifer= 2.650, 
-                                solid_density_target_aquifer= 2.650, 
+                                solid_density_vadose_zone= 2.650,
+                                solid_density_shallow_aquifer= 2.650,
+                                solid_density_target_aquifer= 2.650,
                                 diameter_borehole = 0.75,
                                 name = organism_name,
                                 diameter_filterscreen = 0.2,
@@ -748,7 +748,7 @@ def test_modpath_run_phreatic_withgravelpack_removal(organism_name = "MS2"):
     organism_diam =  2.33e-8
     mu1 = {"suboxic": 0.149,"anoxic": 0.023,"deeply_anoxic": 0.023}
 
-    removal_parameters = {organism_name: 
+    removal_parameters = {organism_name:
                     {"organism_name": organism_name,
                         "alpha0": alpha0,
                         "pH0": pH0,
@@ -765,17 +765,17 @@ def test_modpath_run_phreatic_withgravelpack_removal(organism_name = "MS2"):
     # Calculate advective microbial removal
     modpath_removal = TR.Transport(modpath_phrea,
                             pollutant = organism)
- 
+
     # Calculate advective microbial removal
     # Final concentration per endpoint_id
     C_final = {}
     for endpoint_id in modpath_phrea.schematisation_dict.get("endpoint_id"):
         df_particle, df_flowline, C_final[endpoint_id] = modpath_removal.calc_advective_microbial_removal(
-                                            modpath_phrea.df_particle, modpath_phrea.df_flowline, 
+                                            modpath_phrea.df_particle, modpath_phrea.df_flowline,
                                             endpoint_id = endpoint_id,
                                             trackingdirection = modpath_phrea.trackingdirection,
                                             conc_start = 1., conc_gw = 0.)
-    
+
         # Create travel time plots
         fpath_scatter_times_log = os.path.join(modpath_phrea.dstroot,"log_travel_times_" + endpoint_id + ".png")
         fpath_scatter_times = os.path.join(modpath_phrea.dstroot,"travel_times_" + endpoint_id + ".png")
@@ -855,17 +855,17 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
                                       pH_vadose_zone=5.,
                                       pH_shallow_aquifer=6.,
                                       pH_target_aquifer=7.,
-                                      dissolved_organic_carbon_vadose_zone=10., 
-                                      dissolved_organic_carbon_shallow_aquifer=4., 
+                                      dissolved_organic_carbon_vadose_zone=10.,
+                                      dissolved_organic_carbon_shallow_aquifer=4.,
                                       dissolved_organic_carbon_target_aquifer=2.,
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
-                                      fraction_organic_carbon_target_aquifer=0.0005, 
+                                      fraction_organic_carbon_target_aquifer=0.0005,
                                       diffuse_input_concentration = 100, #ug/L
                                       temp_water=11.,
-                                      solid_density_vadose_zone= 2.650, 
-                                      solid_density_shallow_aquifer= 2.650, 
-                                      solid_density_target_aquifer= 2.650, 
+                                      solid_density_vadose_zone= 2.650,
+                                      solid_density_shallow_aquifer= 2.650,
+                                      solid_density_target_aquifer= 2.650,
                                       diameter_borehole = 0.75,
                                       name = organism_name,
                                       # diameter_filterscreen = 0.2,
@@ -873,7 +873,7 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
                                       discharge_point_contamination = 100.,#made up value
                                       top_clayseal = 17,
                                       compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
-                                      
+
                                       ncols_near_well = 20,
                                       ncols_far_well = 20,
                                       nlayers_target_aquifer = 20,
@@ -910,24 +910,24 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
     C_final = {}
     for endpoint_id in modpath_semiconf.schematisation_dict.get("endpoint_id"):
         df_particle, df_flowline, C_final[endpoint_id] = modpath_removal.calc_advective_microbial_removal(
-                                            modpath_semiconf.df_particle, modpath_semiconf.df_flowline, 
+                                            modpath_semiconf.df_particle, modpath_semiconf.df_flowline,
                                             endpoint_id = endpoint_id,
                                             trackingdirection = modpath_semiconf.trackingdirection,
                                             mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, pH0 = 6.8,
                                             temp_water = 11., rho_water = 999.703, organism_diam = 2.33e-8,
                                             conc_start = 1., conc_gw = 0.)
 
-    # df_particle file name 
+    # df_particle file name
     particle_fname = os.path.join(modpath_semiconf.dstroot,modpath_semiconf.schematisation_type + "_df_particle_microbial_removal.csv")
-    # Save df_particle 
+    # Save df_particle
     df_particle.to_csv(particle_fname)
-    
+
     # df_flowline file name
     flowline_fname = os.path.join(modpath_semiconf.dstroot,modpath_semiconf.schematisation_type + "_df_flowline_microbial_removal.csv")
     # Save df_flowline
     df_flowline.to_csv(flowline_fname)
 
-    
+
     # Create travel time plots
     fpath_scatter_times_log = os.path.join(modpath_semiconf.dstroot,"log_travel_times_test.png")
     fpath_scatter_times = os.path.join(modpath_semiconf.dstroot,"travel_times_test.png")
@@ -942,7 +942,7 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
     ymax = modpath_semiconf.top
 
     # Create travel time plots (lognormal)
-    modpath_semiconf.plot_age_distribution(df_particle = df_particle, 
+    modpath_semiconf.plot_age_distribution(df_particle = df_particle,
             vmin = tmin,vmax = tmax,
             fpathfig = fpath_scatter_times_log, figtext = None,x_text = 0,
             y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
@@ -952,7 +952,7 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
             show_vadose = False)
 
     # Create travel time plots (linear)
-    modpath_semiconf.plot_age_distribution(df_particle = df_particle, 
+    modpath_semiconf.plot_age_distribution(df_particle = df_particle,
             vmin = 0.,vmax = tmax,
             fpathfig = fpath_scatter_times, figtext = None,x_text = 0,
             y_text = 0, lognorm = False, xmin = xmin, xmax = xmax,
@@ -995,17 +995,17 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
 #                                       pH_vadose_zone=5.,
 #                                       pH_shallow_aquifer=6.,
 #                                       pH_target_aquifer=7.,
-#                                       dissolved_organic_carbon_vadose_zone=10., 
-#                                       dissolved_organic_carbon_shallow_aquifer=4., 
+#                                       dissolved_organic_carbon_vadose_zone=10.,
+#                                       dissolved_organic_carbon_shallow_aquifer=4.,
 #                                       dissolved_organic_carbon_target_aquifer=2.,
 #                                       fraction_organic_carbon_vadose_zone=0.001,
 #                                       fraction_organic_carbon_shallow_aquifer=0.0005,
-#                                       fraction_organic_carbon_target_aquifer=0.0005, 
+#                                       fraction_organic_carbon_target_aquifer=0.0005,
 #                                       diffuse_input_concentration = 100, #ug/L
 #                                       temp_water=11.,
-#                                       solid_density_vadose_zone= 2.650, 
-#                                       solid_density_shallow_aquifer= 2.650, 
-#                                       solid_density_target_aquifer= 2.650, 
+#                                       solid_density_vadose_zone= 2.650,
+#                                       solid_density_shallow_aquifer= 2.650,
+#                                       solid_density_target_aquifer= 2.650,
 #                                       diameter_borehole = 0.75,
 #                                       name = organism_name,
 #                                       # diameter_filterscreen = 0.2,
@@ -1032,7 +1032,7 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
 #     # Run phreatic schematisation
 #     modpath_semiconf.run_model(run_mfmodel = True,
 #                         run_mpmodel = True)
-    
+
 #     # Create travel time plots
 #     fpath_scatter_times_log = os.path.join(modpath_semiconf.dstroot,"log_travel_times_test.png")
 #     fpath_scatter_times = os.path.join(modpath_semiconf.dstroot,"travel_times_test.png")
@@ -1044,7 +1044,7 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
 #     xmin, xmax = 0., 100.
 
 #     # Create travel time plots (lognormal)
-#     modpath_semiconf.plot_age_distribution(df_particle = df_particle, 
+#     modpath_semiconf.plot_age_distribution(df_particle = df_particle,
 #             vmin = tmin,vmax = tmax,
 #             fpathfig = fpath_scatter_times_log, figtext = None,x_text = 0,
 #             y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
@@ -1052,7 +1052,7 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
 #             cmap = 'viridis_r')
 
 #     # Create travel time plots (linear)
-#     modpath_semiconf.plot_age_distribution(df_particle = df_particle, 
+#     modpath_semiconf.plot_age_distribution(df_particle = df_particle,
 #             vmin = 0.,vmax = tmax,
 #             fpathfig = fpath_scatter_times, figtext = None,x_text = 0,
 #             y_text = 0, lognorm = False, xmin = xmin, xmax = xmax,
@@ -1069,7 +1069,7 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
 
     # @ Steven: plots naar readthedocs --> niet in test toevoegen
     # assert_frame_equal analytical vs Modpath df_uitvoer behouden
-    
+
     output_phreatic = pd.read_csv(path / 'phreatic_test_mp.csv')
     output_phreatic = output_phreatic.round(7) #round to 7 digits (or any digit), keep same as for the output for the model to compare
     output_phreatic.index = RangeIndex(start = 1,stop=len(output_phreatic.index)+1)
@@ -1113,7 +1113,7 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
     #                                     # KD=1400,
     #                                     ncols_near_well = 20,
     #                                     ncols_far_well = 100,
-                                        
+
     #                                     thickness_full_capillary_fringe=0.4,
     #                                     temp_water=11,
     #                                     solid_density_vadose_zone= 2.650,
@@ -1150,15 +1150,15 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
     df_particle_mp = df_particle_mp.round(7)
 
     # Export output of analytical and modpath calculations
-    
+
     # df_particle file name (analytical well data)
     particle_fname_an = os.path.join(well1_mp.dstroot,well1_mp.schematisation_type + "_df_particle_analytical.csv")
-    # Save df_particle 
+    # Save df_particle
     df_particle_an.to_csv(particle_fname_an)
-   
-    # df_particle file name 
+
+    # df_particle file name
     particle_fname_mp = os.path.join(well1_mp.dstroot,well1_mp.schematisation_type + "_df_particle_modpath.csv")
-    # Save df_particle 
+    # Save df_particle
     df_particle_mp.to_csv(particle_fname_mp)
 
 
@@ -1168,7 +1168,7 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
     flowline_ids_an = list(df_particle_an.loc[:,"flowline_id"].unique())
     # Zones to compare
     zones = ["vadose_zone","shallow_aquifer","target_aquifer"]
-    
+
                     #  ["total_travel_time",
                     # "travel_time_vadose_zone",
                     # "travel_time_shallow_aquifer",
@@ -1178,15 +1178,15 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
     # Summary traveltimes (analytical)
     summary_traveltimes_an = pd.DataFrame(index = flowline_ids_an,
                                         columns = summary_columns)
-    # Fill summary df         
+    # Fill summary df
     for fid in flowline_ids_an:
         # Total traveltime
         summary_traveltimes_an.loc[fid,"total_travel_time"] = \
-                                df_particle_an.loc[df_particle_an["flowline_id"] == fid,:].sort_values(by="total_travel_time", 
+                                df_particle_an.loc[df_particle_an["flowline_id"] == fid,:].sort_values(by="total_travel_time",
                                         ascending = True).loc[:,"total_travel_time"].iloc[-1]
         # Starting location
         summary_traveltimes_an.loc[fid,"xcoord"] = \
-                        df_particle_an.loc[df_particle_an["flowline_id"] == fid,:].sort_values(by="total_travel_time", 
+                        df_particle_an.loc[df_particle_an["flowline_id"] == fid,:].sort_values(by="total_travel_time",
                                 ascending = True).loc[:,"xcoord"].iloc[0]
         for iZone in zones:
             # Travel time per zone
@@ -1198,7 +1198,7 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
     summary_traveltimes_mp = pd.DataFrame(index = flowline_ids_mp,
                                         columns = summary_columns)
 
-    # Fill summary df         
+    # Fill summary df
     for fid in flowline_ids_mp:
         # Total traveltime
         summary_traveltimes_mp.loc[fid,"total_travel_time"] = \
@@ -1206,7 +1206,7 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
                                         ascending = True).loc[:,"total_travel_time"].iloc[-1]
         # Starting location
         summary_traveltimes_mp.loc[fid,"xcoord"] = \
-                        df_particle_mp.loc[df_particle_mp["flowline_id"] == fid,:].sort_values(by="total_travel_time", 
+                        df_particle_mp.loc[df_particle_mp["flowline_id"] == fid,:].sort_values(by="total_travel_time",
                                 ascending = True).loc[:,"xcoord"].iloc[0]
         ## Travel time per zone ##
         try:
@@ -1230,12 +1230,12 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
 
     # df_particle file name (analytical well data)
     summary_fname_an = os.path.join(well1_mp.dstroot,well1_mp.schematisation_type + "_summary_traveltimes_analytical.csv")
-    # Save df_particle 
+    # Save df_particle
     summary_traveltimes_an.to_csv(summary_fname_an)
-   
-    # df_particle file name 
+
+    # df_particle file name
     summary_fname_mp = os.path.join(well1_mp.dstroot,well1_mp.schematisation_type + "_summary_traveltimes_modpath.csv")
-    # Save df_particle 
+    # Save df_particle
     summary_traveltimes_mp.to_csv(summary_fname_mp)
 
     # Pollutant to define removal parameters for
@@ -1276,11 +1276,11 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
         # Fill distance_points array
         distance_points_mp[idx] = summary_traveltimes_mp.loc[summary_traveltimes_mp.index == fid, ["xcoord","total_travel_time"]].sort_values(
                                     by = "total_travel_time", ascending = True).iloc[-1,0]
-          
+
         # Fill time_points array
         time_points_mp[idx] = summary_traveltimes_mp.loc[summary_traveltimes_mp.index == fid, ["xcoord","total_travel_time"]].sort_values(
                                     by = "total_travel_time", ascending = True).iloc[-1,1]
-    
+
 
     # Create travel time distribution plot
     fig, ax = plt.subplots(figsize= (10,10),dpi=300)
@@ -1311,7 +1311,7 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
     ymax = well1_mp.top
 
     # Create travel time plots (lognormal)
-    well1_mp.plot_age_distribution(df_particle = df_particle, 
+    well1_mp.plot_age_distribution(df_particle = df_particle,
             vmin = tmin,vmax = tmax,
             fpathfig = fpath_scatter_times_log, figtext = None,x_text = 0,
             y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
@@ -1321,7 +1321,7 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
             show_vadose = False)
 
     # Create travel time plots (linear)
-    well1_mp.plot_age_distribution(df_particle = df_particle, 
+    well1_mp.plot_age_distribution(df_particle = df_particle,
             vmin = 0.,vmax = tmax,
             fpathfig = fpath_scatter_times, figtext = None,x_text = 0,
             y_text = 0, lognorm = False, xmin = xmin, xmax = xmax,
@@ -1344,22 +1344,22 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
 def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
     ''' Scenario with feces at surface level near pumping well.
         Case: phreatic
-        organism_name: "MS2" 
+        organism_name: "MS2"
         Vadose zone: False
         redox: anoxic
         pH: neutral (7.5)
         depth of a leak 'leak1' at 9.5 m depth
-        
-        ''' 
+
+        '''
     ''' Phreatic scheme with gravelpack: modpath run.'''
-    
+
     # @ Steven 2022-7-11: tijdelijk niet invoegen --> eerst readthedocs werkend.
     # well discharge
     well_discharge = -1000.
     # recharge_rate
     recharge_rate = 0.001
     # model radius [m]
-    model_radius = 564. 
+    model_radius = 564.
     # model_radius = math.sqrt(abs(well_discharge / (math.pi * recharge_rate)))
 
     test_feces_contamination = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
@@ -1392,16 +1392,16 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
                                 grainsize_vadose_zone= 0.00025,
                                 grainsize_shallow_aquifer=0.00025,
                                 grainsize_target_aquifer=0.00025,
-                                redox_vadose_zone='anoxic', 
+                                redox_vadose_zone='anoxic',
                                 redox_shallow_aquifer='anoxic',
                                 redox_target_aquifer='anoxic',
                                 pH_vadose_zone=7.5,
                                 pH_shallow_aquifer=7.5,
                                 pH_target_aquifer=7.5,
                                 temp_water=12.,
-                                solid_density_vadose_zone= 2.650, 
-                                solid_density_shallow_aquifer= 2.650, 
-                                solid_density_target_aquifer= 2.650, 
+                                solid_density_vadose_zone= 2.650,
+                                solid_density_shallow_aquifer= 2.650,
+                                solid_density_target_aquifer= 2.650,
                                 diameter_borehole = 0.75,
                                 name = organism_name,
                                 diameter_filterscreen = 0.2,
@@ -1448,7 +1448,7 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
     # Create point_parameters (i.e. starting points) from scratch
     point_parameters = {}
 
-        # 
+        #
     # concentration boundary parms
     cbp = test_feces_contamination.concentration_boundary_parameters
     for iSource in cbp:
@@ -1475,7 +1475,7 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
 
             # Determine discharge per fraction using fraction_flux
             discharge_fraction = np.diff(np.array([0.] + list(fraction_flux))) * discharge_total
-            
+
             # Determine start points (x)
             x_bound_list = [xmin] + list(np.sqrt((np.cumsum(discharge_fraction) / (math.pi * recharge_rate)) + xmin**2))
             x_start_arr = np.array([np.mean(x_bound_list[i-1:i+1]) for i in range(1,len(x_bound_list))])
@@ -1497,7 +1497,7 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
                         'substance_name': substance_name,
                         'organism_name': organism_name,
                         'input_concentration': input_concentration,
-                        'x_start': round(x_start,4), 
+                        'x_start': round(x_start,4),
                         'z_start': round(z_start,4),
                         'discharge': round(point_discharge,7)
                         }
@@ -1519,7 +1519,7 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
                     'xmax': test_feces_contamination.diameter_filterscreen/2.,
                     }
     # pop well1 from well_parameters (use ibound_parameters and recharge instead)
-    test_feces_contamination.well_parameters.pop('well1')   
+    test_feces_contamination.well_parameters.pop('well1')
 
     # Change inner_boundary ibound above and below well leak
     test_feces_contamination.ibound_parameters.pop('inner_boundary_shallow_aquifer')
@@ -1584,7 +1584,7 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
     organism_diam =  2.33e-8
     mu1 = {"suboxic": 0.039,"anoxic": 0.023,"deeply_anoxic": 0.023}
 
-    removal_parameters = {organism_name: 
+    removal_parameters = {organism_name:
                             {"organism_name": organism_name,
                                 "alpha0": alpha0,
                                 "pH0": pH0,
@@ -1615,7 +1615,7 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
     # Calculate advective microbial removal
     modpath_transport = TR.Transport(modpath_phrea,
                             pollutant = MS2_organism)
- 
+
     # Calculate advective microbial removal
     # Final concentration per endpoint_id
     C_final = {}
@@ -1628,7 +1628,7 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
                                             df_particle = df_particle, df_flowline = df_flowline,
                                             endpoint_id = endpoint_id,
                                             trackingdirection = modpath_phrea.trackingdirection)
-    
+
         # # Create travel time plots
         # fpath_scatter_times_log = os.path.join(modpath_phrea.dstroot,"log_travel_times_" + endpoint_id + ".png")
         # fpath_scatter_times = os.path.join(modpath_phrea.dstroot,"travel_times_" + endpoint_id + ".png")
@@ -1670,17 +1670,17 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
         #         fpathfig = fpath_scatter_removal_log, figtext = None,x_text = 0,
         #         y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
         #         line_dist = 1, dpi = 192, trackingdirection = "forward",
-        #         cmap = 'viridis_r')    
+        #         cmap = 'viridis_r')
 
-    # df_particle file name 
+    # df_particle file name
     particle_fname = os.path.join(modpath_phrea.dstroot,"df_particle_microbial_removal.csv")
-    # Save df_particle 
+    # Save df_particle
     df_particle.to_csv(particle_fname)
-    
+
     # df_flowline file name
     flowline_fname = os.path.join(modpath_phrea.dstroot,"df_flowline_microbial_removal.csv")
     # Save df_flowline
-    df_flowline.to_csv(flowline_fname)      
+    df_flowline.to_csv(flowline_fname)
 
     assert modpath_phrea.success_mp
 
@@ -1688,22 +1688,22 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
 def test_phreatic_defecation_withgravelpack_noleak_diffuse_boundary(organism_name = "MS2"):
     ''' Scenario with feces at surface level near pumping well.
         Case: phreatic
-        organism_name: "MS2" 
+        organism_name: "MS2"
         Vadose zone: False
         redox: anoxic
         pH: neutral (7.5)
         depth of a leak 'leak1' at 9.5 m depth
-        
-        ''' 
+
+        '''
     ''' Phreatic scheme with gravelpack: modpath run.'''
-    
+
     # @ Steven 2022-7-11: tijdelijk niet invoegen --> eerst readthedocs werkend.
     # well discharge
     well_discharge = -1000.
     # recharge_rate
     recharge_rate = 0.001
     # model radius [m]
-    model_radius = 564. 
+    model_radius = 564.
     # model_radius = math.sqrt(abs(well_discharge / (math.pi * recharge_rate)))
 
     test_feces_contamination = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
@@ -1736,16 +1736,16 @@ def test_phreatic_defecation_withgravelpack_noleak_diffuse_boundary(organism_nam
                                 grainsize_vadose_zone= 0.00025,
                                 grainsize_shallow_aquifer=0.00025,
                                 grainsize_target_aquifer=0.00025,
-                                redox_vadose_zone='anoxic', 
+                                redox_vadose_zone='anoxic',
                                 redox_shallow_aquifer='anoxic',
                                 redox_target_aquifer='anoxic',
                                 pH_vadose_zone=7.5,
                                 pH_shallow_aquifer=7.5,
                                 pH_target_aquifer=7.5,
                                 temp_water=12.,
-                                solid_density_vadose_zone= 2.650, 
-                                solid_density_shallow_aquifer= 2.650, 
-                                solid_density_target_aquifer= 2.650, 
+                                solid_density_vadose_zone= 2.650,
+                                solid_density_shallow_aquifer= 2.650,
+                                solid_density_target_aquifer= 2.650,
                                 diameter_borehole = 0.75,
                                 name = organism_name,
                                 diameter_filterscreen = 0.2,
@@ -1825,7 +1825,7 @@ def test_phreatic_defecation_withgravelpack_noleak_diffuse_boundary(organism_nam
     organism_diam =  2.33e-8
     mu1 = {"suboxic": 0.039,"anoxic": 0.023,"deeply_anoxic": 0.023}
 
-    removal_parameters = {organism_name: 
+    removal_parameters = {organism_name:
                             {"organism_name": organism_name,
                                 "alpha0": alpha0,
                                 "pH0": pH0,
@@ -1856,7 +1856,7 @@ def test_phreatic_defecation_withgravelpack_noleak_diffuse_boundary(organism_nam
     # Calculate advective microbial removal
     modpath_transport = TR.Transport(modpath_phrea,
                             pollutant = MS2_organism)
- 
+
     # Calculate advective microbial removal
     # Final concentration per endpoint_id
     C_final = {}
@@ -1870,7 +1870,7 @@ def test_phreatic_defecation_withgravelpack_noleak_diffuse_boundary(organism_nam
                                             endpoint_id = endpoint_id,
                                             trackingdirection = modpath_phrea.trackingdirection)
 
-    
+
         # # Create travel time plots
         # fpath_scatter_times_log = os.path.join(modpath_phrea.dstroot,"log_travel_times_" + endpoint_id + ".png")
         # fpath_scatter_times = os.path.join(modpath_phrea.dstroot,"travel_times_" + endpoint_id + ".png")
@@ -1912,17 +1912,17 @@ def test_phreatic_defecation_withgravelpack_noleak_diffuse_boundary(organism_nam
         #         fpathfig = fpath_scatter_removal_log, figtext = None,x_text = 0,
         #         y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
         #         line_dist = 1, dpi = 192, trackingdirection = "forward",
-        #         cmap = 'viridis_r')    
+        #         cmap = 'viridis_r')
 
-    # df_particle file name 
+    # df_particle file name
     particle_fname = os.path.join(modpath_phrea.dstroot,"df_particle_microbial_removal.csv")
-    # Save df_particle 
+    # Save df_particle
     df_particle.to_csv(particle_fname)
-    
+
     # df_flowline file name
     flowline_fname = os.path.join(modpath_phrea.dstroot,"df_flowline_microbial_removal.csv")
     # Save df_flowline
-    df_flowline.to_csv(flowline_fname)      
+    df_flowline.to_csv(flowline_fname)
 
     assert modpath_phrea.success_mp
 
@@ -1930,22 +1930,22 @@ def test_phreatic_defecation_withgravelpack_noleak_diffuse_boundary(organism_nam
 def test_phreatic_defecation_noleak_diffuse_nogravelpack(organism_name = "MS2"):
     ''' Scenario with feces at surface level near pumping well.
         Case: phreatic
-        organism_name: "MS2" 
+        organism_name: "MS2"
         Vadose zone: False
         redox: anoxic
         pH: neutral (7.5)
         depth of a leak 'leak1' at 9.5 m depth
-        
-        ''' 
+
+        '''
     ''' Phreatic scheme with gravelpack: modpath run.'''
-    
+
     # @ Steven 2022-7-11: tijdelijk niet invoegen --> eerst readthedocs werkend.
     # well discharge
     well_discharge = -1000.
     # recharge_rate
     recharge_rate = 0.001
     # model radius [m]
-    model_radius = 564. 
+    model_radius = 564.
     # model_radius = math.sqrt(abs(well_discharge / (math.pi * recharge_rate)))
 
     test_feces_contamination = AW.HydroChemicalSchematisation(schematisation_type='semiconfined',
@@ -1978,16 +1978,16 @@ def test_phreatic_defecation_noleak_diffuse_nogravelpack(organism_name = "MS2"):
                                 grainsize_vadose_zone= 0.00025,
                                 grainsize_shallow_aquifer= 0.00025,
                                 grainsize_target_aquifer= 0.00025,
-                                redox_vadose_zone='anoxic', 
+                                redox_vadose_zone='anoxic',
                                 redox_shallow_aquifer='anoxic',
                                 redox_target_aquifer='anoxic',
                                 pH_vadose_zone=7.5,
                                 pH_shallow_aquifer=7.5,
                                 pH_target_aquifer=7.5,
                                 temp_water=12.,
-                                solid_density_vadose_zone= 2.650, 
-                                solid_density_shallow_aquifer= 2.650, 
-                                solid_density_target_aquifer= 2.650, 
+                                solid_density_vadose_zone= 2.650,
+                                solid_density_shallow_aquifer= 2.650,
+                                solid_density_target_aquifer= 2.650,
                                 diameter_borehole = 0.75,
                                 name = organism_name,
                                 diameter_filterscreen = 0.2,
@@ -2067,7 +2067,7 @@ def test_phreatic_defecation_noleak_diffuse_nogravelpack(organism_name = "MS2"):
     organism_diam =  2.33e-8
     mu1 = {"suboxic": 0.039,"anoxic": 0.023,"deeply_anoxic": 0.023}
 
-    removal_parameters = {organism_name: 
+    removal_parameters = {organism_name:
                             {"organism_name": organism_name,
                                 "alpha0": alpha0,
                                 "pH0": pH0,
@@ -2098,7 +2098,7 @@ def test_phreatic_defecation_noleak_diffuse_nogravelpack(organism_name = "MS2"):
     # Calculate advective microbial removal
     modpath_transport = TR.Transport(modpath_phrea,
                             pollutant = MS2_organism)
- 
+
     # Calculate advective microbial removal
     # Final concentration per endpoint_id
     C_final = {}
@@ -2112,7 +2112,7 @@ def test_phreatic_defecation_noleak_diffuse_nogravelpack(organism_name = "MS2"):
                                             endpoint_id = endpoint_id,
                                             trackingdirection = modpath_phrea.trackingdirection)
 
-    
+
         # # Create travel time plots
         # fpath_scatter_times_log = os.path.join(modpath_phrea.dstroot,"log_travel_times_" + endpoint_id + ".png")
         # fpath_scatter_times = os.path.join(modpath_phrea.dstroot,"travel_times_" + endpoint_id + ".png")
@@ -2154,17 +2154,17 @@ def test_phreatic_defecation_noleak_diffuse_nogravelpack(organism_name = "MS2"):
         #         fpathfig = fpath_scatter_removal_log, figtext = None,x_text = 0,
         #         y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
         #         line_dist = 1, dpi = 192, trackingdirection = "forward",
-        #         cmap = 'viridis_r')    
+        #         cmap = 'viridis_r')
 
-    # df_particle file name 
+    # df_particle file name
     particle_fname = os.path.join(modpath_phrea.dstroot,"df_particle_microbial_removal.csv")
-    # Save df_particle 
+    # Save df_particle
     df_particle.to_csv(particle_fname)
-    
+
     # df_flowline file name
     flowline_fname = os.path.join(modpath_phrea.dstroot,"df_flowline_microbial_removal.csv")
     # Save df_flowline
-    df_flowline.to_csv(flowline_fname)      
+    df_flowline.to_csv(flowline_fname)
 
     assert modpath_phrea.success_mp
 
@@ -2173,22 +2173,22 @@ def test_phreatic_defecation_noleak_diffuse_nogravelpack(organism_name = "MS2"):
 # def test_phreatic_defecation_withgravelpack_noleak_diffuse_boundary_sensitivity(organism_name = "MS2"):
 #     ''' Scenario with feces at surface level near pumping well.
 #         Case: phreatic
-#         organism_name: "MS2" 
+#         organism_name: "MS2"
 #         Vadose zone: False
 #         redox: anoxic
 #         pH: neutral (7.5)
 #         depth of a leak 'leak1' at 9.5 m depth
-        
-#         ''' 
+
+#         '''
 #     ''' Phreatic scheme with gravelpack: modpath run.'''
-    
+
 #     # @ Steven 2022-7-11: tijdelijk niet invoegen --> eerst readthedocs werkend.
 #     # well discharge
 #     well_discharge = -1000.
 #     # recharge_rate
 #     recharge_rate = 0.001
 #     # model radius [m]
-#     model_radius = 564. 
+#     model_radius = 564.
 #     # model_radius = math.sqrt(abs(well_discharge / (math.pi * recharge_rate)))
 
 #     # microbial removal properties
@@ -2198,7 +2198,7 @@ def test_phreatic_defecation_noleak_diffuse_nogravelpack(organism_name = "MS2"):
 #     organism_diam =  2.33e-8
 #     mu1 = {"suboxic": 0.039,"anoxic": 0.023,"deeply_anoxic": 0.023}
 
-#     removal_parameters = {organism_name: 
+#     removal_parameters = {organism_name:
 #                             {"organism_name": organism_name,
 #                                 "alpha0": alpha0,
 #                                 "pH0": pH0,
@@ -2258,16 +2258,16 @@ def test_phreatic_defecation_noleak_diffuse_nogravelpack(organism_name = "MS2"):
 #                                     grainsize_vadose_zone= 0.00025,
 #                                     grainsize_shallow_aquifer=0.00025,
 #                                     grainsize_target_aquifer=0.00025,
-#                                     redox_vadose_zone='anoxic', 
+#                                     redox_vadose_zone='anoxic',
 #                                     redox_shallow_aquifer='anoxic',
 #                                     redox_target_aquifer='anoxic',
 #                                     pH_vadose_zone=7.5,
 #                                     pH_shallow_aquifer=7.5,
 #                                     pH_target_aquifer=7.5,
 #                                     temp_water=12.,
-#                                     solid_density_vadose_zone= 2.650, 
-#                                     solid_density_shallow_aquifer= 2.650, 
-#                                     solid_density_target_aquifer= 2.650, 
+#                                     solid_density_vadose_zone= 2.650,
+#                                     solid_density_shallow_aquifer= 2.650,
+#                                     solid_density_target_aquifer= 2.650,
 #                                     diameter_borehole = 0.75,
 #                                     name = organism_name,
 #                                     diameter_filterscreen = 0.2,
@@ -2360,7 +2360,7 @@ def test_phreatic_defecation_noleak_diffuse_nogravelpack(organism_name = "MS2"):
 #         # Calculate advective microbial removal
 #         modpath_transport = TR.Transport(modpath_phrea,
 #                                 pollutant = MS2_organism)
-    
+
 #         # Calculate advective microbial removal
 #         # Final concentration per endpoint_id
 #         C_final = {}
@@ -2380,15 +2380,15 @@ def test_phreatic_defecation_noleak_diffuse_nogravelpack(organism_name = "MS2"):
 #         output_fname = os.path.join(modpath_phrea.dstroot,f"df_output_scen{iScen}.csv")
 #         df_output.to_csv(output_fname)
 
-#         # df_particle file name 
+#         # df_particle file name
 #         particle_fname = os.path.join(modpath_phrea.dstroot,f"df_particle_{ncols_near_well}_{ncols_far_well}_{nlayers_shallow_aquifer}_{nlayers_target_aquifer}.csv")
-#         # Save df_particle 
+#         # Save df_particle
 #         df_particle.to_csv(particle_fname)
-        
+
 #         # df_flowline file name
 #         flowline_fname = os.path.join(modpath_phrea.dstroot,f"df_flowline_{ncols_near_well}_{ncols_far_well}_{nlayers_shallow_aquifer}_{nlayers_target_aquifer}.csv")
 #         # Save df_flowline
-#         df_flowline.to_csv(flowline_fname)      
+#         df_flowline.to_csv(flowline_fname)
 
 #     assert modpath_phrea.success_mp
 
@@ -2431,11 +2431,11 @@ def test_analyticalwell_omp_removal(substance_name = 'benzene'):
     phreatic_well = AW.AnalyticalWell(phreatic_schematisation)
 
     # Then we calculate the travel time for each of the zones unsaturated, shallow aquifer and target aquifer zones
-    # by running the .phreatic() function for the well object. 
+    # by running the .phreatic() function for the well object.
     phreatic_well.phreatic()
 
     # The total travel time can be plotted as a function of radial distance from the well, or as a function
-    # of the cumulative fraction of abstracted water: 
+    # of the cumulative fraction of abstracted water:
     radial_plot = phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 2000], ylim=[1e3, 1e6])
     cumulative_plot = phreatic_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
 
@@ -2472,9 +2472,9 @@ def test_analyticalwell_omp_removal(substance_name = 'benzene'):
 
     # .. Optional: You may specify a different value for the substance parameters, for example
     # .. a different half-life for the anoxic redox zone. This can be input in the HydroChemicalSchematisation
-    # .. and this will be used in the calculation for the removal for the OMP. The AnalyticalWell and 
+    # .. and this will be used in the calculation for the removal for the OMP. The AnalyticalWell and
     # .. phreatic() functions must be rerun:
-       
+
     # Optional: You may specify a different value for the substance parameters, for example
     # a different half-life for the anoxic redox zone. This can be input in the SubstanceTransport
     # and this will be used in the calculation for the removal for the OMP. The SubstanceTransportclass
@@ -2483,11 +2483,11 @@ def test_analyticalwell_omp_removal(substance_name = 'benzene'):
                                                 partition_coefficient_water_organic_carbon=2,
                                                 molar_mass = 78.1,
                                                 dissociation_constant=1,
-                                                halflife_suboxic=12, 
-                                                halflife_anoxic=420, 
+                                                halflife_suboxic=12,
+                                                halflife_anoxic=420,
                                                 halflife_deeply_anoxic=6000)
-    
-    phreatic_concentration = TR.Transport(well = phreatic_well, 
+
+    phreatic_concentration = TR.Transport(well = phreatic_well,
                                             pollutant = test_substance)
 
     # If you have specified values for the substance (e.g. half-life, pKa, log_Koc),
@@ -2516,7 +2516,7 @@ def test_analyticalwell_omp_removal(substance_name = 'benzene'):
     particle_fname = os.path.join(workspace,"df_particle_AW_omp_removal.csv")
     # df_flowline filename
     flowline_fname = os.path.join(workspace,"df_flowline_AW_omp_removal.csv")
-    
+
     # Save dataframes
     phreatic_concentration.df_particle.to_csv(particle_fname)
     phreatic_concentration.df_flowline.to_csv(flowline_fname)
@@ -2550,18 +2550,18 @@ def test_analyticalwell_mbo_removal(organism_name = 'solani'):
     phreatic_well = AW.AnalyticalWell(phreatic_schematisation)
 
     # Then we calculate the travel time for each of the zones unsaturated, shallow aquifer and target aquifer zones
-    # by running the .phreatic() function for the well object. 
+    # by running the .phreatic() function for the well object.
     phreatic_well.phreatic()
 
     # # The total travel time can be plotted as a function of radial distance from the well, or as a function
-    # # of the cumulative fraction of abstracted water: 
+    # # of the cumulative fraction of abstracted water:
     # radial_plot = phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 2000], ylim=[1e3, 1e6])
     # cumulative_plot = phreatic_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
 
     # Step 3: Collect removal parameters for the mbo (MicrobialOrganism)
     # -------------------------------------------------------------------
 
-    # You can retrieve the default removal parameters used to calculate the removal of microbial organisms [mbo] 
+    # You can retrieve the default removal parameters used to calculate the removal of microbial organisms [mbo]
     # in the Transport class. The data are stored in a dictionary. In the example plant pathogen 'solani' is used.
 
     test_organism = TR.MicrobialOrganism(organism_name=organism_name)
@@ -2597,7 +2597,7 @@ def test_analyticalwell_mbo_removal(organism_name = 'solani'):
     # Update df_flowline and df_particle. Calculate final concentration at endpoint_id(s)
     for endpoint_id in endpoint_ids:
         df_particle, df_flowline, C_final[endpoint_id] = phreatic_transport.calc_advective_microbial_removal(
-                                                    phreatic_transport.df_particle, phreatic_transport.df_flowline, 
+                                                    phreatic_transport.df_particle, phreatic_transport.df_flowline,
                                                     endpoint_id = endpoint_id,
                                                     conc_start = 1., conc_gw = 0.)
         # print(f"Final concentration {endpoint_id}: {C_final[endpoint_id]}")
@@ -2615,7 +2615,7 @@ def test_analyticalwell_mbo_removal(organism_name = 'solani'):
     particle_fname = os.path.join(workspace,"df_particle_AW_microbial_removal.csv")
     # df_flowline filename
     flowline_fname = os.path.join(workspace,"df_flowline_AW_microbial_removal.csv")
-    
+
     # Save dataframes
     df_particle.to_csv(particle_fname)
     df_flowline.to_csv(flowline_fname)
@@ -2634,7 +2634,7 @@ def test_analyticalwell_mbo_removal(organism_name = 'solani'):
 
 
     # phreatic_well = AW.AnalyticalWell(phreatic_schematisation)
-    phreatic_well.phreatic() 
+    phreatic_well.phreatic()
     # removal parameters carotovorum (default)
     organism_carotovorum = TR.MicrobialOrganism(organism_name = "carotovorum")
     print(organism_carotovorum.organism_dict)
@@ -2645,7 +2645,7 @@ def test_analyticalwell_mbo_removal(organism_name = 'solani'):
     C_final = {}
     # Update df_flowline and df_particle. Calculate final concentration at endpoint_id(s)
     for endpoint_id in endpoint_ids:
-        df_particle, df_flowline, C_final[endpoint_id] = phreatic_transport.calc_advective_microbial_removal( 
+        df_particle, df_flowline, C_final[endpoint_id] = phreatic_transport.calc_advective_microbial_removal(
                                                     endpoint_id = endpoint_id)
         print(f"Final concentration {endpoint_id}: {C_final[endpoint_id]}")
 
@@ -2653,7 +2653,7 @@ def test_analyticalwell_mbo_removal(organism_name = 'solani'):
     carotovorum_plot = phreatic_transport.plot_concentration(ylim=[0,10 ], as_fraction_input = True)
 
     # phreatic_well = AW.AnalyticalWell(phreatic_schematisation)
-    phreatic_well.phreatic() 
+    phreatic_well.phreatic()
     # removal parameters solanacearum (default)
     organism_solanacearum = TR.MicrobialOrganism(organism_name = "solanacearum")
     print(organism_solanacearum.organism_dict)
@@ -2664,7 +2664,7 @@ def test_analyticalwell_mbo_removal(organism_name = 'solani'):
     C_final = {}
     # Update df_flowline and df_particle. Calculate final concentration at endpoint_id(s)
     for endpoint_id in endpoint_ids:
-        df_particle, df_flowline, C_final[endpoint_id] = phreatic_transport.calc_advective_microbial_removal( 
+        df_particle, df_flowline, C_final[endpoint_id] = phreatic_transport.calc_advective_microbial_removal(
                                                     endpoint_id = endpoint_id)
         print(f"Final concentration {endpoint_id}: {C_final[endpoint_id]}")
 
@@ -2673,7 +2673,7 @@ def test_analyticalwell_mbo_removal(organism_name = 'solani'):
     # Define removal parameters for a virus (MS2): manual input
 
     # phreatic_well = AW.AnalyticalWell(phreatic_schematisation)
-    phreatic_well.phreatic() 
+    phreatic_well.phreatic()
 
     # microbial removal properties of microbial organism
     organism_name = 'MS2'
@@ -2708,7 +2708,7 @@ def test_analyticalwell_mbo_removal(organism_name = 'solani'):
     C_final = {}
     # Update df_flowline and df_particle. Calculate final concentration at endpoint_id(s)
     for endpoint_id in endpoint_ids:
-        df_particle, df_flowline, C_final[endpoint_id] = phreatic_transport.calc_advective_microbial_removal( 
+        df_particle, df_flowline, C_final[endpoint_id] = phreatic_transport.calc_advective_microbial_removal(
                                                     endpoint_id = endpoint_id)
         print(f"Final concentration {endpoint_id}: {C_final[endpoint_id]}")
 
@@ -2762,7 +2762,7 @@ def test_mpw_omp_removal(substance_name = 'benzene'):
                                 workspace = workspace,
                                 modelname = "phreatic")
 
-    # Now we run the Modpath model, which numerically calculates the flow in the subsurface using the 
+    # Now we run the Modpath model, which numerically calculates the flow in the subsurface using the
     # 'schematisation' dictionary stored in the HydroChemicalSchematisation object. By default the model will
     # calculate both the hydraulic head distribution (using modflow: 'run_mfmodel' = True) and
     # the particle pathlines [X,Y,Z,T-data] (using modpath: 'run_mpmodel' = True) with which OMP removal
@@ -2775,7 +2775,7 @@ def test_mpw_omp_removal(substance_name = 'benzene'):
 
     # Step 3a: View the Substance class (Optional)
     # ============================================
-    # You can retrieve the default removal parameters used to calculate the removal of organic micropollutants [OMP] 
+    # You can retrieve the default removal parameters used to calculate the removal of organic micropollutants [OMP]
     # in the SubstanceTransport class. The data are stored in a dictionary
     test_substance = TR.Substance(substance_name=substance_name)
     test_substance.substance_dict
@@ -2784,7 +2784,7 @@ def test_mpw_omp_removal(substance_name = 'benzene'):
     # ========================================
     # To calculate the removal and the steady-state concentration in each zone (analytical solution) or per particle node (modpath), create a concentration
     # object by running the SubstanceTransport class with the phreatic_well object and specifying
-    # the OMP or microbial organism (mbo) of interest. 
+    # the OMP or microbial organism (mbo) of interest.
     # The type of removal is defined using the option 'removal_function: 'omp' or 'mbo'
     # All required parameters for removal are stored as 'removal_parameters'.
 
@@ -2792,8 +2792,8 @@ def test_mpw_omp_removal(substance_name = 'benzene'):
     # ========================================
     # As example, we take the default removal parameters for the substances 'benzene'.
     # Note: For OMP you will have to specify values relevant for substances (e.g. half-life, pKa, log_Koc).
-    # Any/all default values will be stored and used in the calculation of the removal. 
-    # Note that by default the class expects the removal of microbial organisms copied from removal_function 
+    # Any/all default values will be stored and used in the calculation of the removal.
+    # Note that by default the class expects the removal of microbial organisms copied from removal_function
     # entered in modpath_phrea. We have to explicitly enter the removal_function below for removal op substances.
     # removal_function == 'omp'
 
@@ -2806,8 +2806,8 @@ def test_mpw_omp_removal(substance_name = 'benzene'):
                                     halflife_suboxic=None,
                                     halflife_anoxic=None,
                                     halflife_deeply_anoxic=None)
-    
-    
+
+
     # Calculate removal of organic micro-pollutants (removal_function = 'omp')
     modpath_removal = TR.Transport(well = modpath_phrea,
                                     pollutant = test_substance)
@@ -2831,7 +2831,7 @@ def test_mpw_omp_removal(substance_name = 'benzene'):
     particle_fname = os.path.join(workspace,"df_particle_mpw_omp_removal.csv")
     # df_flowline filename
     flowline_fname = os.path.join(workspace,"df_flowline_mpw_omp_removal.csv")
-    
+
     # Save dataframes
     modpath_removal.df_particle.to_csv(particle_fname)
     modpath_removal.df_flowline.to_csv(flowline_fname)
@@ -2877,7 +2877,7 @@ def test_mpw_mbo_removal(organism_name = 'solani'):
                                 workspace = workspace,
                                 modelname = "phreatic")
 
-    # Now we run the Modpath model, which numerically calculates the flow in the subsurface using the 
+    # Now we run the Modpath model, which numerically calculates the flow in the subsurface using the
     # 'schematisation' dictionary stored in the HydroChemicalSchematisation object. By default the model will
     # calculate both the hydraulic head distribution (using modflow: 'run_mfmodel' = True) and
     # the particle pathlines [X,Y,Z,T-data] (using modpath: 'run_mpmodel' = True) with which OMP removal
@@ -2891,7 +2891,7 @@ def test_mpw_mbo_removal(organism_name = 'solani'):
     # Step 3: Collect removal parameters for the mbo (MicrobialOrganism)
     # -------------------------------------------------------------------
 
-    # You can retrieve the default removal parameters used to calculate the removal of microbial organisms [mbo] 
+    # You can retrieve the default removal parameters used to calculate the removal of microbial organisms [mbo]
     # in the Transport class. The data are stored in a dictionary. In the example plant pathogen 'solani' is used.
 
     test_organism = TR.MicrobialOrganism(organism_name=organism_name)
@@ -2922,7 +2922,7 @@ def test_mpw_mbo_removal(organism_name = 'solani'):
     # Update df_flowline and df_particle. Calculate final concentration at endpoint_id(s)
     for endpoint_id in endpoint_ids:
         df_particle, df_flowline, C_final[endpoint_id] = phreatic_transport.calc_advective_microbial_removal(
-                                                    phreatic_transport.df_particle, phreatic_transport.df_flowline, 
+                                                    phreatic_transport.df_particle, phreatic_transport.df_flowline,
                                                     endpoint_id = endpoint_id,
                                                     conc_start = 1., conc_gw = 0.)
 
@@ -2941,7 +2941,7 @@ def test_mpw_mbo_removal(organism_name = 'solani'):
     particle_fname = os.path.join(workspace,"df_particle_AW_microbial_removal_solani.csv")
     # df_flowline filename
     flowline_fname = os.path.join(workspace,"df_flowline_AW_microbial_removal_solani.csv")
-    
+
     # Save dataframes
     df_particle.to_csv(particle_fname)
     df_flowline.to_csv(flowline_fname)
@@ -2962,7 +2962,7 @@ def test_mpw_mbo_removal(organism_name = 'solani'):
     ymax = modpath_phrea.top
 
     # Create travel time plots (lognormal)
-    modpath_phrea.plot_age_distribution(df_particle = df_particle, 
+    modpath_phrea.plot_age_distribution(df_particle = df_particle,
             vmin = tmin,vmax = tmax,
             fpathfig = fpath_scatter_times_log, figtext = None,x_text = 0,
             y_text = 0, lognorm = True, xmin = xmin, xmax = xmax,
@@ -2972,7 +2972,7 @@ def test_mpw_mbo_removal(organism_name = 'solani'):
             show_vadose = False)
 
     # Create travel time plots (linear)
-    modpath_phrea.plot_age_distribution(df_particle = df_particle, 
+    modpath_phrea.plot_age_distribution(df_particle = df_particle,
             vmin = 0.,vmax = tmax,
             fpathfig = fpath_scatter_times, figtext = None,x_text = 0,
             y_text = 0, lognorm = False, xmin = xmin, xmax = xmax,
@@ -2994,7 +2994,7 @@ def test_mpw_mbo_removal(organism_name = 'solani'):
     # * MS2 (virus)
 
     # To do so you can use the original schematisation, but specify a different mbo when you create the Transport object.
-    
+
     # carotovorum (default)
 
     # First, rerun the model to recalculate df_particle and df_flowline
@@ -3010,7 +3010,7 @@ def test_mpw_mbo_removal(organism_name = 'solani'):
     C_final = {}
     # Update df_flowline and df_particle. Calculate final concentration at endpoint_id(s)
     for endpoint_id in endpoint_ids:
-        df_particle, df_flowline, C_final[endpoint_id] = phreatic_transport.calc_advective_microbial_removal( 
+        df_particle, df_flowline, C_final[endpoint_id] = phreatic_transport.calc_advective_microbial_removal(
                                                     endpoint_id = endpoint_id)
         print(f"Final concentration {endpoint_id}: {C_final[endpoint_id]}")
 
@@ -3021,7 +3021,7 @@ def test_mpw_mbo_removal(organism_name = 'solani'):
     particle_fname = os.path.join(workspace,"df_particle_AW_microbial_removal_carotovorum.csv")
     # df_flowline filename
     flowline_fname = os.path.join(workspace,"df_flowline_AW_microbial_removal_carotovorum.csv")
-    
+
     # Save dataframes
     df_particle.to_csv(particle_fname)
     df_flowline.to_csv(flowline_fname)
@@ -3042,7 +3042,7 @@ def test_mpw_mbo_removal(organism_name = 'solani'):
     C_final = {}
     # Update df_flowline and df_particle. Calculate final concentration at endpoint_id(s)
     for endpoint_id in endpoint_ids:
-        df_particle, df_flowline, C_final[endpoint_id] = phreatic_transport.calc_advective_microbial_removal( 
+        df_particle, df_flowline, C_final[endpoint_id] = phreatic_transport.calc_advective_microbial_removal(
                                                     endpoint_id = endpoint_id)
         print(f"Final concentration {endpoint_id}: {C_final[endpoint_id]}")
 
@@ -3052,7 +3052,7 @@ def test_mpw_mbo_removal(organism_name = 'solani'):
     particle_fname = os.path.join(workspace,"df_particle_AW_microbial_removal_solanacearum.csv")
     # df_flowline filename
     flowline_fname = os.path.join(workspace,"df_flowline_AW_microbial_removal_solanacearum.csv")
-    
+
     # Save dataframes
     df_particle.to_csv(particle_fname)
     df_flowline.to_csv(flowline_fname)
@@ -3096,7 +3096,7 @@ def test_mpw_mbo_removal(organism_name = 'solani'):
     C_final = {}
     # Update df_flowline and df_particle. Calculate final concentration at endpoint_id(s)
     for endpoint_id in endpoint_ids:
-        df_particle, df_flowline, C_final[endpoint_id] = phreatic_transport.calc_advective_microbial_removal( 
+        df_particle, df_flowline, C_final[endpoint_id] = phreatic_transport.calc_advective_microbial_removal(
                                                     endpoint_id = endpoint_id)
         print(f"Final concentration {endpoint_id}: {C_final[endpoint_id]}")
 
@@ -3108,7 +3108,7 @@ def test_mpw_mbo_removal(organism_name = 'solani'):
     particle_fname = os.path.join(workspace,"df_particle_AW_microbial_removal_MS2.csv")
     # df_flowline filename
     flowline_fname = os.path.join(workspace,"df_flowline_AW_microbial_removal_MS2.csv")
-    
+
     # Save dataframes
     df_particle.to_csv(particle_fname)
     df_flowline.to_csv(flowline_fname)

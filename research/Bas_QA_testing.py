@@ -8,7 +8,7 @@
 # ------------------------------------------------------------------------------
 
 #### Notes ####
-# Example for use in the read the docs and for Bas for 
+# Example for use in the read the docs and for Bas for
 # Quality assurance of the analytical code
 ####
 
@@ -16,7 +16,7 @@
 # INITIALISATION OF PYTHON e.g. packages, etc.
 # ------------------------------------------------------------------------------
 
-# %reset -f #reset all variables for each run, -f 'forces' reset, !! 
+# %reset -f #reset all variables for each run, -f 'forces' reset, !!
 # only seems to work in Python command window...
 
 import matplotlib.pyplot as plt
@@ -47,11 +47,11 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 # Example 1
 ###########
 # Phreatic example using many of the default values
-# Shows: 
+# Shows:
 # * how to make a basic schematisation for a phreatic aquifer
 # * how to create an ANalyticalWell object
 # * change the default OMP parameters
-# * compute and plot the OMP concentration in the well 
+# * compute and plot the OMP concentration in the well
 #%% Step 1: Define the HydroChemicalSchematisation
 # ==============================================
 # The first step is to define the hydrogeochemistry of the system using the HydroChemicalSchematisation class.
@@ -84,7 +84,7 @@ phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phrea
 
 phreatic_well = AnalyticalWell(phreatic_schematisation)
 
-phreatic_well.phreatic() 
+phreatic_well.phreatic()
 
 # radial_plot = phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 2000], ylim=[1e3, 1e6])
 # cumulative_plot = phreatic_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
@@ -116,7 +116,7 @@ phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phrea
 
 phreatic_well = AnalyticalWell(phreatic_schematisation)
 
-phreatic_well.phreatic() 
+phreatic_well.phreatic()
 
 # radial_plot = phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 2000], ylim=[1e3, 1e6])
 # cumulative_plot = phreatic_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
@@ -158,7 +158,7 @@ phreatic_schematisation = HydroChemicalSchematisation(schematisation_type='phrea
 
 phreatic_well = AnalyticalWell(phreatic_schematisation)
 
-phreatic_well.phreatic() 
+phreatic_well.phreatic()
 
 radial_plot = phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 2000], ylim=[1e3, 1e6])
 cumulative_plot = phreatic_well.plot_travel_time_versus_cumulative_abstracted_water(xlim=[0, 1], ylim=[1e3, 1e6])
@@ -176,5 +176,5 @@ df_particle =phreatic_well.df_particle
 ##%% Plotting the situation modelled
 
 crosssection_plot = phreatic_well.plot_depth_aquifers()
-               
+
 #%%

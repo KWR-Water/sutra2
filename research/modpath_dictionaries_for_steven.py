@@ -15,7 +15,7 @@
 # INITIALISATION OF PYTHON e.g. packages, etc.
 # ------------------------------------------------------------------------------
 
-# %reset -f #reset all variables for each run, -f 'forces' reset, !! 
+# %reset -f #reset all variables for each run, -f 'forces' reset, !!
 # only seems to work in Python command window...
 
 import matplotlib.pyplot as plt
@@ -75,17 +75,17 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       pH_vadose_zone=5.,
                                       pH_shallow_aquifer=6.,
                                       pH_target_aquifer=7.,
-                                      dissolved_organic_carbon_vadose_zone=10., 
-                                      dissolved_organic_carbon_shallow_aquifer=4., 
+                                      dissolved_organic_carbon_vadose_zone=10.,
+                                      dissolved_organic_carbon_shallow_aquifer=4.,
                                       dissolved_organic_carbon_target_aquifer=2.,
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
-                                      fraction_organic_carbon_target_aquifer=0.0005, 
+                                      fraction_organic_carbon_target_aquifer=0.0005,
                                       diffuse_input_concentration = 100, #ug/L
                                       temperature=11.,
-                                      solid_density_vadose_zone= 2.650, 
-                                      solid_density_shallow_aquifer= 2.650, 
-                                      solid_density_target_aquifer= 2.650, 
+                                      solid_density_vadose_zone= 2.650,
+                                      solid_density_shallow_aquifer= 2.650,
+                                      solid_density_target_aquifer= 2.650,
                                       diameter_borehole = 0.75,
                                       substance = 'benzo(a)pyrene',
                                       # diameter_filterscreen = 0.2,
@@ -93,14 +93,14 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       discharge_point_contamination = 100.,#made up value
                                       top_clayseal = 17,
                                       compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
-                                      
+
                                       # substance = 'benzene',
                                       # halflife_suboxic=600,
                                       # partition_coefficient_water_organic_carbon = 3.3,
                                     )
 
 
-semiconfined_well_dict = semiconfined_scheme.make_dictionary()  
+semiconfined_well_dict = semiconfined_scheme.make_dictionary()
 # Export dicts for steven
 
 semi_dict_1  = { 'simulation_parameters' : semiconfined_scheme.simulation_parameters,
@@ -118,7 +118,7 @@ semi_dict_1  = { 'simulation_parameters' : semiconfined_scheme.simulation_parame
 f = open("semiconfined_dict_nogravel.txt","w")
 f.write( str(semi_dict_1))
 f.close()
-semi_dict_1 
+semi_dict_1
 
 #%%
 semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfined',
@@ -145,16 +145,16 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                       pH_vadose_zone=5.,
                                       pH_shallow_aquifer=6.,
                                       pH_target_aquifer=7.,
-                                      dissolved_organic_carbon_vadose_zone=10., 
-                                      dissolved_organic_carbon_shallow_aquifer=4., 
+                                      dissolved_organic_carbon_vadose_zone=10.,
+                                      dissolved_organic_carbon_shallow_aquifer=4.,
                                       dissolved_organic_carbon_target_aquifer=2.,
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
-                                      fraction_organic_carbon_target_aquifer=0.0005, 
+                                      fraction_organic_carbon_target_aquifer=0.0005,
                                       temperature=11.,
-                                      solid_density_vadose_zone= 2.650, 
-                                      solid_density_shallow_aquifer= 2.650, 
-                                      solid_density_target_aquifer= 2.650, 
+                                      solid_density_vadose_zone= 2.650,
+                                      solid_density_shallow_aquifer= 2.650,
+                                      solid_density_target_aquifer= 2.650,
                                       diameter_borehole = 0.75,
                                       substance = 'benzo(a)pyrene',
                                       diameter_filterscreen = 0.2,
@@ -168,7 +168,7 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                     )
 
 
-semiconfined_well_dict = semiconfined_scheme.make_dictionary()  
+semiconfined_well_dict = semiconfined_scheme.make_dictionary()
 # Export dicts for steven
 
 semi_dict_2 = { 'simulation_parameters' : semiconfined_scheme.simulation_parameters,
@@ -222,16 +222,16 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       pH_vadose_zone=5.,
                                       pH_shallow_aquifer=6.,
                                       pH_target_aquifer=7.,
-                                      dissolved_organic_carbon_vadose_zone=10., 
-                                      dissolved_organic_carbon_shallow_aquifer=4., 
+                                      dissolved_organic_carbon_vadose_zone=10.,
+                                      dissolved_organic_carbon_shallow_aquifer=4.,
                                       dissolved_organic_carbon_target_aquifer=2.,
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
-                                      fraction_organic_carbon_target_aquifer=0.0005, 
+                                      fraction_organic_carbon_target_aquifer=0.0005,
                                       temperature=11.,
-                                      solid_density_vadose_zone= 2.650, 
-                                      solid_density_shallow_aquifer= 2.650, 
-                                      solid_density_target_aquifer= 2.650, 
+                                      solid_density_vadose_zone= 2.650,
+                                      solid_density_shallow_aquifer= 2.650,
+                                      solid_density_target_aquifer= 2.650,
                                       diameter_borehole = 0.75,
                                       substance = 'benzo(a)pyrene',
                                       # diameter_filterscreen = 0.2,
@@ -245,7 +245,7 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       # partition_coefficient_water_organic_carbon = 3.3,
                                     )
 
-phreatic_scheme.make_dictionary()  
+phreatic_scheme.make_dictionary()
 
 phreatic_dict_1 = { 'simulation_parameters' : phreatic_scheme.simulation_parameters,
         'endpoint_id': phreatic_scheme.endpoint_id,
@@ -288,16 +288,16 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       pH_vadose_zone=5.,
                                       pH_shallow_aquifer=6.,
                                       pH_target_aquifer=7.,
-                                      dissolved_organic_carbon_vadose_zone=10., 
-                                      dissolved_organic_carbon_shallow_aquifer=4., 
+                                      dissolved_organic_carbon_vadose_zone=10.,
+                                      dissolved_organic_carbon_shallow_aquifer=4.,
                                       dissolved_organic_carbon_target_aquifer=2.,
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
-                                      fraction_organic_carbon_target_aquifer=0.0005, 
+                                      fraction_organic_carbon_target_aquifer=0.0005,
                                       temperature=11.,
-                                      solid_density_vadose_zone= 2.650, 
-                                      solid_density_shallow_aquifer= 2.650, 
-                                      solid_density_target_aquifer= 2.650, 
+                                      solid_density_vadose_zone= 2.650,
+                                      solid_density_shallow_aquifer= 2.650,
+                                      solid_density_target_aquifer= 2.650,
                                       diameter_borehole = 0.75,
                                       substance = 'benzo(a)pyrene',
                                       diameter_filterscreen = 0.2,
@@ -310,7 +310,7 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       # partition_coefficient_water_organic_carbon = 3.3,
                                     )
 
-phreatic_scheme.make_dictionary()  
+phreatic_scheme.make_dictionary()
 
 phreatic_dict_2 = { 'simulation_parameters' : phreatic_scheme.simulation_parameters,
         'endpoint_id': phreatic_scheme.endpoint_id,
@@ -356,7 +356,7 @@ phreatic_test_scheme = HydroChemicalSchematisation(schematisation_type='phreatic
                                       diameter_borehole = 0.75,
                                       )
 
-phreatic_test_scheme.make_dictionary()  
+phreatic_test_scheme.make_dictionary()
 
 phreatic_test_scheme_dict= { 'simulation_parameters' : phreatic_scheme.simulation_parameters,
         'endpoint_id': semiconfined_scheme.endpoint_id,
@@ -409,7 +409,7 @@ semiconfined_test_scheme = HydroChemicalSchematisation(schematisation_type='semi
                                         solid_density_target_aquifer= 2.650,
                                         diameter_borehole = 0.75,)
 
-semiconfined_test_scheme.make_dictionary()  
+semiconfined_test_scheme.make_dictionary()
 
 semiconfined_test_scheme_dict= { 'simulation_parameters' : phreatic_scheme.simulation_parameters,
         'endpoint_id': semiconfined_scheme.endpoint_id,

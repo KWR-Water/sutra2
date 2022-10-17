@@ -11,7 +11,7 @@
 # INITIALISATION OF PYTHON e.g. packages, etc.
 # ------------------------------------------------------------------------------
 
-# %reset -f #reset all variables for each run, -f 'forces' reset, !! 
+# %reset -f #reset all variables for each run, -f 'forces' reset, !!
 # only seems to work in Python command window...
 
 import matplotlib.pyplot as plt
@@ -43,7 +43,7 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 
 # %%
 phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
-                                      computation_method= 'analytical', 
+                                      computation_method= 'analytical',
                                       what_to_export='omp',
                                       well_discharge=-319.4*24, #m3/day
                                       porosity_vadose_zone=0.38,
@@ -63,16 +63,16 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       pH_vadose_zone=5,
                                       pH_shallow_aquifer=6,
                                       pH_target_aquifer=7,
-                                      dissolved_organic_carbon_vadose_zone=10, 
-                                      dissolved_organic_carbon_shallow_aquifer=4, 
+                                      dissolved_organic_carbon_vadose_zone=10,
+                                      dissolved_organic_carbon_shallow_aquifer=4,
                                       dissolved_organic_carbon_target_aquifer=2,
                                       fraction_organic_carbon_vadose_zone=0.001,
                                       fraction_organic_carbon_shallow_aquifer=0.0005,
-                                      fraction_organic_carbon_target_aquifer=0.0005, 
+                                      fraction_organic_carbon_target_aquifer=0.0005,
                                       temperature=11,
-                                      solid_density_vadose_zone=2.650, 
-                                      solid_density_shallow_aquifer=2.650, 
-                                      solid_density_target_aquifer=2.650, 
+                                      solid_density_vadose_zone=2.650,
+                                      solid_density_shallow_aquifer=2.650,
+                                      solid_density_target_aquifer=2.650,
                                       diameter_borehole=0.75,
                                       #diffuse parameters
                                       diffuse_input_concentration=100, #ug/L
@@ -89,9 +89,9 @@ phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       end_date_contamination=dt.datetime.strptime('1990-01-01',"%Y-%m-%d"),
                                       )
 
-# phreatic_scheme.make_dictionary()  
+# phreatic_scheme.make_dictionary()
 phreatic_well = AnalyticalWell(phreatic_scheme)
-phreatic_well.phreatic() 
+phreatic_well.phreatic()
 
 
 crosssection_plot = phreatic_well.plot_depth_aquifers()
@@ -107,7 +107,7 @@ phreatic_conc = Transport(phreatic_well, substance = 'OMP-X')
 phreatic_conc.compute_omp_removal()
 # phreatic_conc.plot_concentration()
 
-conc_plot = phreatic_conc.plot_concentration(x_axis='Time') 
+conc_plot = phreatic_conc.plot_concentration(x_axis='Time')
 
 conc_plot.savefig('travel_time_versus_radial_distance_phreatic.png', dpi=300, bbox_inches='tight')  # save_results_to + '/
 

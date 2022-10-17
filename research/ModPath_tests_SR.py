@@ -8,7 +8,7 @@ Created on Mon May 31 10:20:39 2021
 # INITIALISATION OF PYTHON e.g. packages, etc.
 # ------------------------------------------------------------------------------
 
-# %reset -f conda install #reset all variables for each run, -f 'forces' reset, !! 
+# %reset -f conda install #reset all variables for each run, -f 'forces' reset, !!
 # only seems to work in Python command window...
 
 import matplotlib.pyplot as plt
@@ -48,8 +48,8 @@ from pathlib import Path
 
 # Import schematisation functions
 try:
-    from sutra2.ModPath_Well import ModPathWell   
-    from sutra2.Analytical_Well import * 
+    from sutra2.ModPath_Well import ModPathWell
+    from sutra2.Analytical_Well import *
     from sutra2.Transport_Removal import *
 except ModuleNotFoundError as e:
     print(e, ": second try.")
@@ -57,8 +57,8 @@ except ModuleNotFoundError as e:
     if module_path not in sys.path:
         sys.path.insert(0,module_path)
 
-    from ModPath_functions import ModPathWell   
-    from Analytical_Well import * 
+    from ModPath_functions import ModPathWell
+    from Analytical_Well import *
     from Substance_Transport import *
 
     print("Second try to import modules succeeded.")
@@ -106,7 +106,7 @@ def _assign_cellboundaries(schematisation: dict, dict_keys: list or None = None,
                             bound_min: str = "xmin", bound_max: str = "xmax",
                             n_refinement: str = "ncols", ascending: bool = True,
                             res_max: int or float or None = None):
-    
+
     # Keep track of grid boundaries
     bound_list = []
 
@@ -116,7 +116,7 @@ def _assign_cellboundaries(schematisation: dict, dict_keys: list or None = None,
     # Loop through schematisation keys (dict_keys)
     for iDict in dict_keys:
         # Loop through subkeys of schematisation dictionary
-        for iDict_sub in schematisation[iDict]:   
+        for iDict_sub in schematisation[iDict]:
 
             try:
                 # minimum bound
@@ -141,18 +141,18 @@ def _assign_cellboundaries(schematisation: dict, dict_keys: list or None = None,
                 else:
                     # Limit the cell resolution using 'res_max' (if not None)
                     n_ref = max(1,math.ceil((bound_max-bound_min)/res_max))
-                pass  
+                pass
 
             # Calculate local resolution [L]
-            resolution = (val_max-val_min) / n_ref   
+            resolution = (val_max-val_min) / n_ref
 
             # Determine (in-between) column boundaries
             boundaries = np.linspace(val_min,val_max,
                                         num = n_ref + 1, endpoint = True)
             bound_list.extend(list(boundaries))
 
-    # Only keep unique values for boundary list 'bound_list' 
-    if ascending:  
+    # Only keep unique values for boundary list 'bound_list'
+    if ascending:
         bound_list = np.sort(np.unique(np.round(bound_list,3)))
     else:
         bound_list = np.sort(np.unique(np.round(bound_list,3)))[::-1]
@@ -167,11 +167,11 @@ def _assign_cellboundaries(schematisation: dict, dict_keys: list or None = None,
     if ascending: # xmid and ymid arrays are increasing with increasing index number
         center_points[0] = cell_sizes[0] * 0.5
         for idx in range(1, len_arr):
-            center_points[idx] = (center_points[(idx - 1)] + ((cell_sizes[(idx)]) + (cell_sizes[(idx - 1)])) * 0.5)  
+            center_points[idx] = (center_points[(idx - 1)] + ((cell_sizes[(idx)]) + (cell_sizes[(idx - 1)])) * 0.5)
     else: # zmid arrays are decreasing with increasing index number
         center_points[0] = cell_sizes[0] * 0.5
         for idx in range(1, len_arr):
-            center_points[idx] = (center_points[(idx - 1)] - ((cell_sizes[(idx)]) + (cell_sizes[(idx - 1)])) * 0.5)  
+            center_points[idx] = (center_points[(idx - 1)] - ((cell_sizes[(idx)]) + (cell_sizes[(idx - 1)])) * 0.5)
 
     return len_arr, cell_sizes, center_points, bound_list
 
@@ -184,7 +184,7 @@ def make_discretisation(schematisation: dict, dict_keys = None,
     - res_hor_max: maximum horizontal resolution if horizontal resolution 'res_hor'
       is not given in the subdictionary.
 
-    The function returns numpy arrays of: 
+    The function returns numpy arrays of:
     - delr: column widths of the model columns [np.array]
       rounded to three decimals [mm scale].
     - xmid: x-coordinates (middle) of the model columns [np.array]
@@ -202,14 +202,14 @@ def make_discretisation(schematisation: dict, dict_keys = None,
     ncol, delr, xmid,_ = _assign_cellboundaries(schematisation, dict_keys,
                                bound_min = "xmin", bound_max = "xmax",
                                n_refinement = "ncols", ascending = True)
-    # Assign delv and zmid    
+    # Assign delv and zmid
     nlay, delv, zmid, lay_bounds = _assign_cellboundaries(schematisation, dict_keys,
                                bound_min = "bot", bound_max = "top",
-                               n_refinement = "nlayers", ascending = False)                                   
+                               n_refinement = "nlayers", ascending = False)
     # Model top
     top = max(lay_bounds)
     # Model bottoms
-    bot = top - delv.cumsum() 
+    bot = top - delv.cumsum()
 
     # Assign delc and ymid
     if axisym:
@@ -220,8 +220,8 @@ def make_discretisation(schematisation: dict, dict_keys = None,
         nrow,delc,ymid,_ = _assign_cellboundaries(schematisation, dict_keys,
                                bound_min = "ymin", bound_max = "ymax",
                                n_refinement = "nrows", ascending = True)
-    
-    
+
+
     return nlay,nrow,ncol, delv,delc,delr, zmid,ymid,xmid,top,bot
 
 
@@ -256,7 +256,7 @@ if check_schematisation:
 # thickness_aquifer = 20.
 # model_radius = 500.
 
-    
+
 # # Method 1: horizontal discretisation based on number of columns
 # # phreatic_scheme['geo_parameters']['mesh_refinement1'] =   {"rmin": 0.,
 # #                                          "rmax": 0.5,
@@ -273,7 +273,7 @@ if check_schematisation:
 # dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
 #                       "well_parameters"]
 
-                    
+
 # delr, xmid, refinement_bounds = make_radial_discretisation(schematisation = phreatic_scheme,
 #                                                             dict_keys = dict_keys,
 #                                                             res_hor_max = 10.)
@@ -320,7 +320,7 @@ model_top, model_bot,model_thickness, model_radius = calc_modeldim_phrea(phreati
 #                                         "rmax": model_radius,
 #                                         "res_hor": 5.,
 #                                         "ncols": 100}
-                                        
+
 dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
                     "well_parameters"]
 
@@ -346,7 +346,7 @@ dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
 #     phreatic_scheme["well_parameters"]['gravelpack1'] = phreatic_scheme["geo_parameters"]['gravelpack1']
 #     phreatic_scheme["well_parameters"]['clayseal1'] = phreatic_scheme["geo_parameters"]['clayseal1']
 # except KeyError:
-#     pass   
+#     pass
 # # Delete (or 'pop') key from dictionary (use pop if you are not sure the key exists or not)
 # phreatic_scheme["geo_parameters"].pop('gravelpack1', None)
 # phreatic_scheme["geo_parameters"].pop('clayseal1', None)
@@ -429,7 +429,7 @@ modpath_phrea.run_model(run_mfmodel = True,
 # test_var = {}
 # for iAttr in check_attr_list:
 #     try:
-#         test_var[iAttr] = getattr(modpath_phrea,iAttr) 
+#         test_var[iAttr] = getattr(modpath_phrea,iAttr)
 #         print(iAttr, test_var[iAttr])
 #     except Exception as e:
 #         print(e)

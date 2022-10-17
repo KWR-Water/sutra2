@@ -8,14 +8,14 @@
 # ------------------------------------------------------------------------------
 
 #### Notes ####
-# Example for use in the read the docs 
+# Example for use in the read the docs
 ####
 
 #%% ----------------------------------------------------------------------------
 # INITIALISATION OF PYTHON e.g. packages, etc.
 # ------------------------------------------------------------------------------
 
-# %reset -f #reset all variables for each run, -f 'forces' reset, !! 
+# %reset -f #reset all variables for each run, -f 'forces' reset, !!
 # only seems to work in Python command window...
 
 import matplotlib.pyplot as plt
@@ -118,7 +118,7 @@ print(phreatic_schematisation.porosity_shallow_aquifer)
 #%%
 
 phreatic_well = AnalyticalWell(phreatic_schematisation)
-phreatic_well.phreatic() 
+phreatic_well.phreatic()
 
 radial_plot = phreatic_well.plot_travel_time_versus_radial_distance(xlim=[0, 2000] )#, ylim=[1e3, 1e6])
 
@@ -137,13 +137,13 @@ phreatic_concentration.plot_concentration(ylim=[0,100 ])
 #%%
 
 phreatic_well = AnalyticalWell(phreatic_schematisation)
-phreatic_well.phreatic() 
+phreatic_well.phreatic()
 phreatic_concentration = Transport(phreatic_well, substance = 'benzene')
 phreatic_concentration.compute_omp_removal()
 phreatic_concentration.plot_concentration(ylim=[0,10 ])
 
 phreatic_well = AnalyticalWell(phreatic_schematisation)
-phreatic_well.phreatic() 
+phreatic_well.phreatic()
 phreatic_concentration = Transport(phreatic_well, substance = 'AMPA')
 phreatic_concentration.compute_omp_removal()
 phreatic_concentration.plot_concentration( ylim=[0,1 ])

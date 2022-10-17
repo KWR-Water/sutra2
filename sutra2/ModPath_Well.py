@@ -5,7 +5,7 @@
 # AquaPriori - Transport Model
 # With Martin Korevaar, Martin vd Schans, Steven Ros
 #
-# Based on Stuyfzand, P. J. (2020). Predicting organic micropollutant behavior 
+# Based on Stuyfzand, P. J. (2020). Predicting organic micropollutant behavior
 #               for 4 public supply well field types, with TRANSATOMIC Lite+
 #               (Vol. 2). Nieuwegein, Netherlands.
 # ------------------------------------------------------------------------------
@@ -20,17 +20,17 @@
 # INITIALISATION OF PYTHON e.g. packages, etc.
 # ------------------------------------------------------------------------------
 
-# %reset -f conda install #reset all variables for each run, -f 'forces' reset, !! 
+# %reset -f conda install #reset all variables for each run, -f 'forces' reset, !!
 # only seems to work in Python command window...
 
 # Plotting modules
 import matplotlib.pyplot as plt
-import matplotlib 
+import matplotlib
 import matplotlib.colors as colors
 
 import numpy as np
 # functions to deal with numpy rec.array data
-import numpy.lib.recfunctions as rfn  
+import numpy.lib.recfunctions as rfn
 import pandas as pd
 import os
 import sys
@@ -49,22 +49,22 @@ from scipy.special import kn as besselk
 from sutra2.Analytical_Well import AnalyticalWell, HydroChemicalSchematisation
 
 # try:
-#     from sutra2.Analytical_Well import * 
+#     from sutra2.Analytical_Well import *
 #     from sutra2.Substance_Transport import *
 # except ModuleNotFoundError as e:
 #     print(e, ": second try.")
 #     module_path = os.path.join("..","sutra2")
 #     if module_path not in sys.path:
 #         sys.path.insert(0,module_path)
-#     from Analytical_Well import * 
+#     from Analytical_Well import *
 #     from Substance_Transport import *
 
 #     print("Second try to import modules succeeded.")
 
 # path of working directory
-path = os.getcwd()  
+path = os.getcwd()
 
-# run installed version of flopy or add local path 
+# run installed version of flopy or add local path
 # (add flopy to requirements.txt: pip install flopy==3.3.1)
 try:
     import flopy
@@ -99,8 +99,8 @@ Bas_parameters-> Ok then this is an empty dictionary, rest of params come in the
 
 -> rmax: mag weg, want wordt nu elders gedefinieerd.
 
-Simulation_paramters 
--> Simulation_paramEters 
+Simulation_paramters
+-> Simulation_paramEters
 
 -> compute_contamination_for_date, start_date_contamination, end_date_well:
 De value moet een “Date” zijn ipv integer. -> This is now a datetime type
@@ -109,7 +109,7 @@ Point_parameters
 -> voeg even een voorbeeld toe voor Steven. Dat scheelt Steven tijd.
 
 Geo_parameters
-Vadoze, layer1, layer2: 
+Vadoze, layer1, layer2:
 -> de Top en Bot moeten op elkaar aansluiten (mogen geen gaten tussen zitten) en in mASL. Volgens mij gaat hier iets mis.
 -> rmin moet gelijk zijn aan de diameter van de diameter_borehole / 2 (0.75 default / 2) -> before this was the diameter_gravelpack, changed to diameter_borehole
 
@@ -125,18 +125,18 @@ Filterscreen met diameter 0.2 ,
 Clayseal ter plaatse van layer1
 Gravelpack ter plaatse van layer2
 
-Meshrefinement1 
+Meshrefinement1
 -> rmin: moet gelijk zijn aan straal van boorgat-> before this was the diameter_gravelpack, changed to diameter_borehole
 -> rmax: moet gelijk zijn aan top – bottom van layer2
 
-Meshrefiniment2 
+Meshrefiniment2
 -> rmin: moet gelijk zijn rmax van Meshrefinement1
 
 Recharge_parameters
 Rmin -> diameter_borehole / 2
 Name -> vervangen door “substance_name”
 
-Substance_parameters -> ok lets discuss, now these params are not passed to the dictionary yet unless user-specified, as the Substance class is not used until the Concentration class. 
+Substance_parameters -> ok lets discuss, now these params are not passed to the dictionary yet unless user-specified, as the Substance class is not used until the Concentration class.
 Dit bij volgende overleg met martinK bespreken
 Optie 1: “substance_name” als key toevoegen (makkelijk als we 1 stof per berekening doen)
 Optie 2: nested dictionary van maken, met “substance_name” als key (dan kun je in 1x meerdere stoffen doen)
@@ -151,16 +151,16 @@ rmax -> diameter_filterscreen
 
 class ModPathWell:
 
-    """ Compute travel time distribution using MODFLOW and MODPATH.""" 
+    """ Compute travel time distribution using MODFLOW and MODPATH."""
     def __init__(self, schematisation: HydroChemicalSchematisation,
                        workspace: str or None = None, modelname: str or None = None,
                        mf_exe = "mf2005.exe", mp_exe = "mpath7.exe",
                        bound_left: str = "xmin", bound_right: str = "xmax",
                        bound_top: str = "top", bound_bot: str = "bot",
                        bound_north: str = "ymin", bound_south: str = "ymax",
-                       trackingdirection = "forward"): 
+                       trackingdirection = "forward"):
         ''''unpack/parse' all the variables from the hydrogeochemical schematizization """
-       
+
         #@Steven: Parameters df_particle & df_flowline mogen weg. Beschrijf wel overige invoer
         Parameters
         ----------
@@ -185,7 +185,7 @@ class ModPathWell:
 
         # get the non-default parameters
         # self.test_variable = None #AH test variable here to see if errors are caught....
-        
+
         self.workspace = workspace  # workspace
         self.modelname = modelname  # modelname
         # executables of modflow and modpath
@@ -218,7 +218,7 @@ class ModPathWell:
         self.model_hds = os.path.join(self.workspace, self.modelname + '.hds')
         self.model_cbc = os.path.join(self.workspace, self.modelname + '.cbc')
         '''
-        Initialize the AnalyticalWell object by making the dictionaries and adding the schematisation (and therefore attributes 
+        Initialize the AnalyticalWell object by making the dictionaries and adding the schematisation (and therefore attributes
         of the schematisation) to the object.
 
         Returns
@@ -240,10 +240,10 @@ class ModPathWell:
             # self.schematisation.make_dictionary()
             self.schematisation_dict = {}
             self._create_schematisation_dict(self.required_keys)
-        
+
     def _create_schematisation_dict(self,required_keys):
         '''
-        # Create schematisation_dict 
+        # Create schematisation_dict
         # required_keys = ["simulation_parameters","geo_parameters",
         # "ibound_parameters","recharge_parameters",
         # "well_parameters","point_parameters"]
@@ -253,7 +253,7 @@ class ModPathWell:
                 self.schematisation_dict[iKey] = getattr(self.schematisation,iKey)
 
     def _check_schematisation(self,required_keys):
-        
+
         for req_key in required_keys:
             if not hasattr(self.schematisation,req_key):
                 print(f'Error, required variable {req_key} is not defined in schematisation dict.')
@@ -271,14 +271,14 @@ class ModPathWell:
             occur in the schematisation dictionary 'schematisation'.'''
 
         for iPackage in package_list:
-            if schematisation.get(iPackage + '_parameters', default=None) is None: 
+            if schematisation.get(iPackage + '_parameters', default=None) is None:
                 raise KeyError(f'Error, required package parameters for {iPackage} are not defined.')
-          
+
 
     ## Tijdelijk overslaan (*codeSteven_20211021.xlsx)
     def _check_init_schematisation(self, required_keys,required_parameters):
         '''check the parameters that we need for the individual aquifer types are not NONE aka set by the user'''
-        
+
         # Check schematisation dictionary
         self._check_schematisation(required_keys)
         # Check required parameters
@@ -286,7 +286,7 @@ class ModPathWell:
 
     def _check_schematisation_input(self):
         ''' Modflow & modpath calculation using subsurface schematisation type 'phreatic'. '''
-        
+
         # list active packages
         active_packages = ["DIS","BAS","LPF","OC","PCG"]
         # Parameter requirement
@@ -302,7 +302,7 @@ class ModPathWell:
         required_parameters = []
 
         # Check input for schematisation type
-        self._check_init_schematisation(required_keys = required_keys, required_parameters = required_parameters)  
+        self._check_init_schematisation(required_keys = required_keys, required_parameters = required_parameters)
 
 
     def _update_property(self, property, value):
@@ -326,11 +326,11 @@ class ModPathWell:
 
         # Add vadose_parameters as key for schematisation dictionary
         schematisation["vadose_parameters"] = vadose_parameters
-        
+
         if remove_layer is None:
             if schematisation_type in ["phreatic"]:
                 # Do not remove vadose_zone from geo_parameters and add to separate dict "vadose_parameters"
-                # Also, add no-flow boundary to vadose zone layers 
+                # Also, add no-flow boundary to vadose zone layers
                 remove_layer = False
             elif schematisation_type in ["semiconfined"]:
                 # Remove vadose_zone from geo_parameters and add to separate dict "vadose_parameters"
@@ -380,7 +380,7 @@ class ModPathWell:
         # Loop through schematisation keys (dict_keys)
         for iDict in dict_keys:
             # Loop through subkeys of schematisation dictionary
-            for iDict_sub in schematisation[iDict]:   
+            for iDict_sub in schematisation[iDict]:
                 try:
                     # minimum bound
                     val_min = schematisation[iDict][iDict_sub][bound_min]
@@ -404,18 +404,18 @@ class ModPathWell:
                     else:
                         # Limit the cell resolution using 'res_max' (if not None)
                         n_ref = max(1,math.ceil((val_max-val_min)/res_max))
-                    pass  
+                    pass
 
                 # Calculate local resolution [L]
-                resolution = (val_max-val_min) / n_ref   
+                resolution = (val_max-val_min) / n_ref
 
                 # Determine (in-between) column boundaries
                 boundaries = np.linspace(val_min,val_max,
                                             num = n_ref + 1, endpoint = True)
                 bound_list.extend(list(boundaries))
 
-        # Only keep unique values for boundary list 'bound_list' 
-        if ascending:  
+        # Only keep unique values for boundary list 'bound_list'
+        if ascending:
             bound_list = np.sort(np.unique(np.round(bound_list,3)))
         else:
             bound_list = np.sort(np.unique(np.round(bound_list,3)))[::-1]
@@ -430,22 +430,22 @@ class ModPathWell:
         if ascending: # xmid and ymid arrays are increasing with increasing index number
             center_points[0] = bound_list[0] + cell_sizes[0] * 0.5
             for idx in range(1, len_arr):
-                center_points[idx] = center_points[(idx - 1)] + ((cell_sizes[(idx)] + cell_sizes[(idx - 1)]) * 0.5)  
+                center_points[idx] = center_points[(idx - 1)] + ((cell_sizes[(idx)] + cell_sizes[(idx - 1)]) * 0.5)
         else: # zmid arrays are decreasing with increasing index number
             center_points[0] = bound_list[0] - cell_sizes[0] * 0.5
             for idx in range(1, len_arr):
-                center_points[idx] = center_points[(idx - 1)] - ((cell_sizes[(idx)] + cell_sizes[(idx - 1)]) * 0.5)  
+                center_points[idx] = center_points[(idx - 1)] - ((cell_sizes[(idx)] + cell_sizes[(idx - 1)]) * 0.5)
 
         return len_arr, cell_sizes, center_points, bound_list
 
     def make_discretisation(self, schematisation: dict, dict_keys = None,
                             model_type = 'axisymmetric'):
         ''' Generate spatial grid for model_type choices: 'axisymmetric', '2D' or '3D'.
-            
+
         Parameter 'schematisation' is of type dict with (sub)dictionaries with keys 'dict_keys'.
-        The subdictionaries should contain specific keyword arguments to generate the grids.  
+        The subdictionaries should contain specific keyword arguments to generate the grids.
         The function indirectly uses "_assign_cellboundaries" to obtain grid data outputs.
-        
+
         # Layer data assignment (model_type: axi-symmetric | 2D | 3D)
         Required keys:
         - "bot"  # bottom of local grid refinement
@@ -459,8 +459,8 @@ class ModPathWell:
         - self.nlay: number of model layers
         - self.top: model top [float or np.array]
         - self.bot: model bottoms per layer [1D | 2D | 3D np.array of floats]
-                
-        # Column data assignment (model_type: axi-symmetric | 2D | 3D) 
+
+        # Column data assignment (model_type: axi-symmetric | 2D | 3D)
         Required keys:
         - "xmin"  # left side of local grid refinement
         - "xmax"  # right side of local grid refinement
@@ -486,7 +486,7 @@ class ModPathWell:
         - self.delc: row widths of the model rows [np.array]
         - self.ymid: y-coordinates (middle) of the model rows [np.array]
         - self.nrow: number of model rows
-        
+
         Returns
         -------
 
@@ -498,22 +498,22 @@ class ModPathWell:
             Left and right boundaries of the model grid cells [1D-array]
         col_bounds: np.array
             North-south boundaries of the grid-cells [1D-array]
-        
+
         '''
 
         if schematisation is None:
             schematisation = getattr(self,"schematisation_dict")
 
-        # Assign delv and zmid   
+        # Assign delv and zmid
         self.nlay, self.delv, self.zmid, lay_bounds = self._assign_cellboundaries(schematisation = schematisation,
                                                                                   dict_keys = dict_keys,
                                                                                   bound_min = self.bound_bot, bound_max = self.bound_top,
-                                                                                  n_refinement = "nlayers", ascending = False)                                   
- 
+                                                                                  n_refinement = "nlayers", ascending = False)
+
         # Model top
         self.top = max(lay_bounds)
         # Model bottoms
-        self.bot = self.top - self.delv.cumsum() 
+        self.bot = self.top - self.delv.cumsum()
         # Assign delr and xmid
         self.ncol, self.delr, self.xmid, col_bounds = self._assign_cellboundaries(schematisation = schematisation,
                                                                                   dict_keys = dict_keys,
@@ -542,20 +542,20 @@ class ModPathWell:
                         dict_subkey: str = "None",
                         model_type = "axisymmetric"):
         ''' Create cell boundaries of box created using following boundaries:
-            self.bound_left: str = "xmin" 
+            self.bound_left: str = "xmin"
             self.bound_right: str = "xmax"
             self.bound_top: str = "top"
             self.bound_bot: str = "bot"
             self.bound_north: str = "ymin"  # not required for axisymmetric or 2D model
-            self.bound_south: str = "ymax"  # not required for axisymmetric or 2D model  
+            self.bound_south: str = "ymax"  # not required for axisymmetric or 2D model
             # Return boundary indices of row and columns plus parameter value
-            return layidx_min,layidx_max,rowidx_min,rowidx_max,colidx_min,colidx_max                
+            return layidx_min,layidx_max,rowidx_min,rowidx_max,colidx_min,colidx_max
         '''
-        
+
         # Loop through schematisation keys (dict_keys)
         iDict = dict_key
         # Use subkeys of schematisation dictionary
-        iDict_sub = dict_subkey   
+        iDict_sub = dict_subkey
 
         # coordinate values of boundaries [float]
         left = schematisation[iDict][iDict_sub][self.bound_left]
@@ -566,7 +566,7 @@ class ModPathWell:
             # print("set top of", iDict, iDict_sub, "to 0.")
             top = self.top
         # CHECK FOR ERRORS IF KEYWORD "bot" is not given
-        try: 
+        try:
             bot = schematisation[iDict][iDict_sub][self.bound_bot]
         except KeyError:
             # print("set bottom of", iDict, iDict_sub, "to model bottom.")
@@ -588,7 +588,7 @@ class ModPathWell:
             # Determine layer indices
             layidx_min = int(np.argwhere((top >= self.zmid) & (bot < self.zmid))[0])
             layidx_max = int(np.argwhere((top >= self.zmid) & (bot < self.zmid))[-1]) + 1
-        
+
         except IndexError as e:
             # print(e, iDict,iDict_sub,top,bot, "(top,bot)")
             # print("Set layidx_min and layidx_max to None.")
@@ -598,7 +598,7 @@ class ModPathWell:
             # Determine column indices
             colidx_min = int(np.argwhere((left <= self.xmid) & (right > self.xmid))[0])
             colidx_max = int(np.argwhere((left <= self.xmid) & (right > self.xmid))[-1]) + 1
-            # np.where((self.xmid < right) & (self.xmid > left))    
+            # np.where((self.xmid < right) & (self.xmid > left))
         except IndexError as e:
             # print(e, iDict,iDict_sub,left,right, "(left,right)")
             # print("Set colidx_min and colidx_max to None.")
@@ -622,7 +622,7 @@ class ModPathWell:
         # Loop through schematisation keys (dict_keys)
         for iDict in dict_keys:
             # Loop through subkeys of schematisation dictionary
-            for iDict_sub in schematisation[iDict]:   
+            for iDict_sub in schematisation[iDict]:
 
                 # if 'mesh_refinement' not in iDict_sub:
 
@@ -645,9 +645,9 @@ class ModPathWell:
                         colidx_min: colidx_max][self.material[layidx_min: layidx_max,\
                         rowidx_min: rowidx_max,\
                         colidx_min: colidx_max] == None] = iDict_sub
-                    
+
         if self.model_type in ["axisymmetric","2D"]:
-                # In 2D model or axisymmetric models an 
+                # In 2D model or axisymmetric models an
                 # inactive row is added to be able to run Modpath successfully.
                 self.material[:,1,:] = self.material[:,0,:]
 
@@ -662,7 +662,7 @@ class ModPathWell:
         # Check if model is axisymmetric along rows or columns.
         if dtype is None:
             dtype = grid.dtype
-        # Create empty numpy grid    
+        # Create empty numpy grid
         grid_axi = np.zeros((self.nlay,self.nrow,self.ncol), dtype = dtype)
         if (self.nrow == 1) | (self.nrow == 2):
             for iCol in range(self.ncol):
@@ -675,14 +675,14 @@ class ModPathWell:
                         parameter: str = "None",
                         grid: np.array or None = None,
                         dtype: str or None = 'float'):
-        ''' Assign values to 'grid' [np.array] for parameter name 'parameter' [str], 
+        ''' Assign values to 'grid' [np.array] for parameter name 'parameter' [str],
             using the keys dict_keys [list] in schematisation dictionary 'self.schematisation'.
             'dtype' [grid dtype] --> grid dtype [str] is obtained from grid if initial array is given.
             The schematisation type refers to the model_type["axisymmetric","2D" or "3D"]
-            
+
             Boundaries of the parameter values are to be included in the dictionaries:
 
-            self.bound_left: str = "xmin" 
+            self.bound_left: str = "xmin"
             self.bound_right: str = "xmax"
             self.bound_top: str = "top"
             self.bound_bot: str = "bot"
@@ -692,8 +692,8 @@ class ModPathWell:
             The function returns:
             - grid  # grid [np.array] filled with (numeric) values for parameter 'parameter'.
 
-        ''' 
-        
+        '''
+
         if grid is None:
             # Set dtype
             if dtype is not None:
@@ -710,13 +710,13 @@ class ModPathWell:
 
         if dict_keys is None:
             dict_keys = [iDict for iDict in self.schematisation_dict.keys()]
-       
-        
+
+
         # Loop through schematisation keys (dict_keys)
         for iDict in dict_keys:
             # Loop through subkeys of schematisation dictionary
-            for iDict_sub in schematisation[iDict]:   
-                
+            for iDict_sub in schematisation[iDict]:
+
                 if parameter in schematisation[iDict][iDict_sub]:
 
 
@@ -737,13 +737,13 @@ class ModPathWell:
                             rowidx_min: rowidx_max,\
                             colidx_min: colidx_max] = parm_val
                     if self.model_type in ["axisymmetric","2D"]:
-                        # In 2D model or axisymmetric models an 
+                        # In 2D model or axisymmetric models an
                         # inactive row is added to be able to run Modpath successfully.
                         grid[:,1,:] = grid[:,0,:]
-  
-        # Return the filled grid                
+
+        # Return the filled grid
         return grid
-  
+
 
     def assign_wellloc(self,schematisation: dict,
                         dict_key: str = "well_parameters",
@@ -751,11 +751,11 @@ class ModPathWell:
                         discharge_parameter = "well_discharge"):
 
         ''' Determine the location of the pumping wells and the relative discharge per cell.
-            
-            Boundaries of the well locations are to be included in the dictionaries with 
+
+            Boundaries of the well locations are to be included in the dictionaries with
             keys "dict_keys" [list], based on presence of "discharge_parameter" [str (default = "Q")]:
-                       
-            bound_left: str = "xmin" 
+
+            bound_left: str = "xmin"
             bound_right: str = "xmax"
             bound_top: str = "top"
             bound_bot: str = "bot"
@@ -766,7 +766,7 @@ class ModPathWell:
             # Creates a dict with list of tuples representing the well locations
             well_loc = {"well1": [(5,0,0),(6,0,0)],
             "well2":}
-            
+
             # Calculate cumulative KD per well [m2/day] (to calculate relative discharge per cell)
             KD_well = {"well1": 500.,
             "well2": 100.,...}
@@ -781,11 +781,11 @@ class ModPathWell:
         if (well_names is None) or (well_names == "None"):
             well_names = []
             # Loop through "well_parameters" of schematisation dictionary
-            for iKey in schematisation[dict_key]:   
-                # Determine if wells exist (with a "discharge_parameter")  
+            for iKey in schematisation[dict_key]:
+                # Determine if wells exist (with a "discharge_parameter")
                 if discharge_parameter in schematisation[dict_key][iKey]:
                     well_names.append(iKey)
-                    
+
         # Create empty dicts
         well_loc = {}  # well locations
         KD_well = {}   # KD (cumulative) per well
@@ -794,7 +794,7 @@ class ModPathWell:
         spd_wel = {}
         spd_wel[0] = []
         for iWell in well_names:
-            # Daily flux [m3/d]   (negative value)  
+            # Daily flux [m3/d]   (negative value)
             Qwell_day[iWell] = schematisation[dict_key][iWell][discharge_parameter]
             # Calculate boundary indices
             layidx_min,layidx_max,\
@@ -821,14 +821,14 @@ class ModPathWell:
                    for iCol in range(colidx_min, colidx_max):
                         spd_wel[0].append([iLay, iRow, iCol, Qwell_day[iWell] * \
                                           (self.hk[iLay,iRow,iCol] * self.delv[iLay] * self.delr[iCol] * self.delc[iRow]) / KD_well[iWell]])
-        
+
         return well_names,well_loc,KD_well, spd_wel, Qwell_day
 
     ####################
     ### Fill modules ###
     def create_modflow_input(self, **kwargs):
         """ Generate flopy files."""
-            
+
         # Use dictionary keys from schematisation
         dict_keys = ["geo_parameters","recharge_parameters","ibound_parameters",
                       "well_parameters","mesh_refinement"]
@@ -851,19 +851,19 @@ class ModPathWell:
                                     dict_keys = dict_keys_ibound,
                                     parameter = "head",
                                     grid = self.strt,
-                                    dtype = 'int')      
+                                    dtype = 'int')
 
         # # Calculate the travel time distribution for the semiconfined schematisation
         # # for each of the aquifer zones and creates df_flowline and df_particle dataframes for the analytical case.
         # if self.schematisation_type in ["phreatic"]:
-        #     self.schematisation._calculate_travel_time_unsaturated_zone(distance=self.delr.cumsum(axis=0))        
+        #     self.schematisation._calculate_travel_time_unsaturated_zone(distance=self.delr.cumsum(axis=0))
         #     '''
         #     # Assign attributes:
         #     - 'head' --> head distribution with distance to abstraction well [m]
         #     - 'travel_time_unsaturated' --> travel time through vadose zone [d]
         #     - 'thickness_vadose_zone_drawdown' --> drawdown due to abstraction in pumping well [m]
-        #     '''   
-        #     self.strt = self.schematisation.head[0]     
+        #     '''
+        #     self.strt = self.schematisation.head[0]
         #     self.travel_time_unsaturated = self.schematisation.travel_time_unsaturated
         #     self.thickness_vadose_zone_drawdown = self.schematisation.thickness_vadose_zone_drawdown
         #     self.head = self.schematisation.head
@@ -888,7 +888,7 @@ class ModPathWell:
                         "temp_water": [["geo_parameters"],"float",self.schematisation.temp_water],
                         "grainsize": [["geo_parameters"],"float",0.00025]
                         }
-                      
+
 
         for iParm, dict_keys in self.geoparm_names.items():
             # Temporary value grid
@@ -905,7 +905,7 @@ class ModPathWell:
                                 dtype = dict_keys[1])
             self._update_property(property = iParm, value = grid)
 
-            
+
 
 
         # Assign material grid
@@ -938,7 +938,7 @@ class ModPathWell:
                 # Update attribute
                 self._update_property(property = iParm, value = grid_axi)
 
-        ### Outstanding issue: how to deal with multiple recharge sources 
+        ### Outstanding issue: how to deal with multiple recharge sources
         # Create recharge package
         rech_parmnames = {"recharge": [["recharge_parameters"],"float"]}
         for iParm, dict_keys in rech_parmnames.items():
@@ -949,7 +949,7 @@ class ModPathWell:
                             parameter = iParm,
                             grid = grid_temp,
                             dtype = dict_keys[1])
-            
+
             if self.model_type == "axisymmetric":
                 rech_grid = self.axisym_correction(grid = grid)[0,:,:]
             else:
@@ -963,7 +963,7 @@ class ModPathWell:
         # leakage discharge from well
         well_names = [iWell for iWell in self.schematisation_dict["well_parameters"] if \
                         "well_discharge" in self.schematisation_dict["well_parameters"][iWell].keys()]
-       
+
         self.well_names,\
             self.well_loc,\
                 self.KD_well,\
@@ -992,30 +992,30 @@ class ModPathWell:
         perlen = self.perlen[per_nr]
         nstp = self.nstp[per_nr]
         steady = self.steady[per_nr]
-        
-        self.dis = flopy.modflow.ModflowDis(self.mf, self.nlay, self.nrow, self.ncol, 
+
+        self.dis = flopy.modflow.ModflowDis(self.mf, self.nlay, self.nrow, self.ncol,
                                             nper= 1, lenuni = 2, # meters
                                             itmuni = 4, # 3: hours, 4: days
-                                            delr= self.delr, delc= self.delc, laycbd= 0, top= self.top,      
-                                            botm= self.bot, perlen = perlen, 
+                                            delr= self.delr, delc= self.delc, laycbd= 0, top= self.top,
+                                            botm= self.bot, perlen = perlen,
                                             nstp= nstp, steady = steady)
                                             # Laycbd --> 0, then no confining lay below
 
     def create_bas(self):
         ''' Add basic Package to the MODFLOW model '''
         self.bas = flopy.modflow.ModflowBas(self.mf, ibound = self.ibound, strt = self.strt)
-        
+
     def create_lpf(self):
         ''' Add lpf Package to the MODFLOW model '''
 
         ''' ### lpf package input parms ###
-            
+
             hk: Horizontal conductivity
             vka: Vertical conductivity (-> if layvka = 0 (default))
             ss: Specific storage (1/m)
             storativity: # If True (default): Ss stands for storativity [-] instead of specific storage [1/m]
             layavg: Layer average of hydraulic conductivity
-                layavg: 0 --> harmonic mean 
+                layavg: 0 --> harmonic mean
                 layavg: 1 --> logarithmic mean (is used in axisymmetric models).
                 layavg: 2 --> arithmetic mean of saturated thickness and logarithmic mean of of hydraulic conductivity (unconfined flow correction)
         '''
@@ -1047,7 +1047,7 @@ class ModPathWell:
 
             # semiconfined --> axisymmetric, confined flow schematisation
             elif self.schematisation_type in ["semiconfined"]:
-                
+
                 self.layavg = np.ones((self.nlay), dtype = 'int')
 
                 # Confined model cells (no dry cells)
@@ -1055,8 +1055,8 @@ class ModPathWell:
 
                 # Wetting is inactive
                 self.laywet = np.zeros((self.nlay), dtype = 'int')
-                
-        else:  
+
+        else:
             # Harmonic mean hydraulic conductivity for 2D-scheme (layavg = 0)
             self.layavg = np.zeros((self.nlay), dtype = 'int')
             # Confined model cells (no dry cells)
@@ -1067,27 +1067,27 @@ class ModPathWell:
         # Dry cell head
         self.head_dry = -1.e30
 
-        self.lpf = flopy.modflow.ModflowLpf(self.mf, ipakcb = self.iu_cbc, 
+        self.lpf = flopy.modflow.ModflowLpf(self.mf, ipakcb = self.iu_cbc,
                                             hdry = self.head_dry,
-                                            layavg = self.layavg, 
+                                            layavg = self.layavg,
                                             laytyp = self.laytyp,
-                                            laywet = self.laywet, 
+                                            laywet = self.laywet,
                                             wetfct = self.wetfct,
-                                            iwetit = self.iwetit, 
+                                            iwetit = self.iwetit,
                                             ihdwet = self.ihdwet,
-                                            hk=self.hk, vka=self.vka, 
-                                            ss = self.ss, storagecoefficient = True) 
+                                            hk=self.hk, vka=self.vka,
+                                            ss = self.ss, storagecoefficient = True)
         # layavg = 1 (--> logarithmic mean); storagecoefficient = True (means: storativity)
-        
+
     def create_pcg(self, hclose=1e-4, rclose = 0.001):
         ''' Add PCG Package to the MODFLOW model '''
-        
+
         self.pcg = flopy.modflow.ModflowPcg(self.mf, hclose=hclose, rclose = rclose)
-            
+
     def create_oc(self, spd_oc = {(0, 0): ['save head', 'save budget']},
                 per_nr = 0):
-        ''' Add output control Package to the 
-        MODFLOW model. '''    
+        ''' Add output control Package to the
+        MODFLOW model. '''
 
         # Extensions of  output files
         extension = ['oc', 'hds', 'ddn', 'cbc', 'ibo']
@@ -1101,24 +1101,24 @@ class ModPathWell:
                                           extension = extension,  # Default extensions
                                           filenames = filenames,
                                           compact = True #,cboufm='(20i5)'
-                                          )                                            
+                                          )
         # compact option is a requirement for using Modpath
 
     def create_rch(self, rech = None):
-        ''' Add recharge Package to the MODFLOW model. '''     
-                                           
-        # Stress period data dict 
-        if rech is not None:                       
+        ''' Add recharge Package to the MODFLOW model. '''
+
+        # Stress period data dict
+        if rech is not None:
             self.rech = rech
 
-        self.rch = flopy.modflow.ModflowRch(self.mf, ipakcb = self.iu_cbc, #102, 
-                                     rech = self.rech, nrchop = 3)  
-        # nrchop 3: Recharge to highest active cell (default is 3).        
+        self.rch = flopy.modflow.ModflowRch(self.mf, ipakcb = self.iu_cbc, #102,
+                                     rech = self.rech, nrchop = 3)
+        # nrchop 3: Recharge to highest active cell (default is 3).
 
     def create_wel(self, spd_wel = None):
-        ''' Add well Package to the MODFLOW model. '''     
-                                           
-        # Stress period data dict                        
+        ''' Add well Package to the MODFLOW model. '''
+
+        # Stress period data dict
         self.spd_wel = spd_wel
 
         self.wel = flopy.modflow.ModflowWel(self.mf, ipakcb = self.iu_cbc,
@@ -1129,16 +1129,16 @@ class ModPathWell:
                         dict_key: str = "well_parameters",
                         well_names: list or str or None = None,
                         discharge_parameter = "well_discharge"):
-        ''' Add multi nodal well Package to the MODFLOW model. 
+        ''' Add multi nodal well Package to the MODFLOW model.
             # Function allows for a single row, col combination in current version per identified well.
             Documented in `flopy docs - MNW2 <https://flopy.readthedocs.io/en/3.3.5/_modules/flopy/modflow/mfmnw2.html>`_.
-            
+
             Parameters
             -----------
             wellid: str or int
                 name of the well
             nnodes: int
-                nr of filter screens per vertical well (if nnodes < 0). 
+                nr of filter screens per vertical well (if nnodes < 0).
                 Allows for input of ztop and zbot per filter screen.
             ztop : float
                 top elevation of open intervals of vertical well. [m]
@@ -1146,13 +1146,13 @@ class ModPathWell:
                 bottom elevation of open intervals of vertical well. [m]
             rw: float
                 well radius of the vertical well(s) [m]
-            '''     
+            '''
 
         if (well_names is None) or (well_names == "None"):
             well_names = []
             # Loop through "well_parameters" of schematisation dictionary
-            for iKey in schematisation[dict_key]:   
-                # Determine if wells exist (with a "discharge_parameter")  
+            for iKey in schematisation[dict_key]:
+                # Determine if wells exist (with a "discharge_parameter")
                 if discharge_parameter in schematisation[dict_key][iKey]:
                     well_names.append(iKey)
 
@@ -1165,9 +1165,9 @@ class ModPathWell:
         well_row = {}   # well row
         well_col = {}   # well col
 
-        for id_nr, iWell in enumerate(well_names): 
-            # Daily flux [m3/d]   (negative value)  
-            Qwell_day[iWell] = schematisation[dict_key][iWell][discharge_parameter]   
+        for id_nr, iWell in enumerate(well_names):
+            # Daily flux [m3/d]   (negative value)
+            Qwell_day[iWell] = schematisation[dict_key][iWell][discharge_parameter]
             # well top
             ztop_well[iWell] = schematisation[dict_key][iWell].get("top")
             # well top
@@ -1257,7 +1257,7 @@ class ModPathWell:
             be reused from the previous stress period and dataset 4 is skipped.
         '''
         # # Stress period data for Mnw object
-        # spd_mnw = np.array([(0, Qwell_day[iWell], -1, 0)], 
+        # spd_mnw = np.array([(0, Qwell_day[iWell], -1, 0)],
         #                     dtype=[('per', '<i8'), ('qdes', '<f8'), ('capmult', '<f8'), ('cprime', '<f8')])
 
 
@@ -1277,26 +1277,26 @@ class ModPathWell:
                 except Exception as e:
                     print (e,"Error loading strt_fw data\nstrt_fw set to '0'.")
                     self.strt = 0.
-            
+
             # Open modflow object
             self.create_mfobject(mf_exe = self.mf_exe)
             # Load packages
-            self.create_dis(per_nr = iper)   
-            self.create_bas()   
-            self.create_lpf()   
-            self.create_pcg()   
+            self.create_dis(per_nr = iper)
+            self.create_bas()
+            self.create_lpf()
+            self.create_pcg()
             # Output control stress period data
             self.spd_oc = {(0, 0): ['save head', 'save budget']}
             self.create_oc(spd_oc = self.spd_oc)
             if "well_parameters" in kwargs.keys():
                 if len(kwargs["well_parameters"]) > 0:
-                    # try:    
-                    # self.create_wel(spd_wel = self.spd_wel)                    
+                    # try:
+                    # self.create_wel(spd_wel = self.spd_wel)
                     self.create_MNW(schematisation = self.schematisation_dict,
                                                 dict_key = "well_parameters",
                                                 well_names = None,
                                                 discharge_parameter = "well_discharge")
-                
+
                     # except Exception as e:
 
                     #     print(e, "error loading multi-nodal well package.")
@@ -1314,11 +1314,11 @@ class ModPathWell:
         self.mf.write_input()
 
         # Try to delete the previous output files, to prevent accidental use of older files
-        try:  
+        try:
             os.remove(self.model_hds)
         except FileNotFoundError:
             pass
-        try:  
+        try:
             os.remove(self.model_cbc)
         except FileNotFoundError:
             pass
@@ -1334,7 +1334,7 @@ class ModPathWell:
 
         # Load mp7 object into Aximodel class
         self.create_MP7object(mp_exe = self.mp_exe, mf_model = self.mf)#,
-   
+
 
         # Head modflowmodel
         try:
@@ -1343,19 +1343,19 @@ class ModPathWell:
         except Exception as e:
             print (e,"Error loading strt_fw data\nstrt_fw set to '0'.")
             self.head_mf = np.zeros((self.nlay,self.nrow,self.ncol), dtype= 'float')
-        
+
 
         # Calculate the travel time distribution for the semiconfined schematisation
         # for each of the aquifer zones and creates df_flowline and df_particle dataframes for the analytical case.
         if self.schematisation_type in ["phreatic"]:
-            self.schematisation._calculate_travel_time_unsaturated_zone(distance=self.delr.cumsum(axis=0))        
+            self.schematisation._calculate_travel_time_unsaturated_zone(distance=self.delr.cumsum(axis=0))
             '''
             # Assign attributes:
             - 'head' --> head distribution with distance to abstraction well [m]
             - 'travel_time_unsaturated' --> travel time through vadose zone [d]
             - 'thickness_vadose_zone_drawdown' --> drawdown due to abstraction in pumping well [m]
-            '''   
-            # self.strt = self.schematisation.head[0]     
+            '''
+            # self.strt = self.schematisation.head[0]
             self.travel_time_unsaturated_analytical = self.schematisation.travel_time_unsaturated
             self.thickness_vadose_zone_drawdown_analytical = self.schematisation.thickness_vadose_zone_drawdown
             self.head_analytical = self.schematisation.head
@@ -1369,7 +1369,7 @@ class ModPathWell:
         # self.head_anal_dd = self.schematisation.head_analytical - self.schematisation.head_analytical.max()
         # Drawdown in mfmodel (max head)
         # self.head_mf_dd = self.head_mf[self.ibound != 0].min(axis=1) - self.head_mf[:,0,:].max()
-       
+
         # Create radial distance array with particle locations
         # self._create_radial_distance_array() # Analytische fluxverdeling
         # self._create_diffuse_particles(recharge_parameters = 'concentration_boundary_parameters',
@@ -1378,12 +1378,12 @@ class ModPathWell:
         #                                 timeoffset=0.0, drape=0,
         #                                 trackingdirection = self.trackingdirection,
         #                                 releasedata=0.0, gw_level_release = True,
-        #                                 gw_level = None) # self.head_mf[0,:,:] --> only works if ibound[0,..,..] == 1)  
+        #                                 gw_level = None) # self.head_mf[0,:,:] --> only works if ibound[0,..,..] == 1)
         if self.schematisation_type in ["phreatic"]:
             gw_level_release = True
         else:
             gw_level_release = False
-        
+
         # Concentration boundary particles release
         self._create_diffuse_particles(recharge_parameters = 'concentration_boundary_parameters',
                                         nparticles_cell = 1,
@@ -1393,11 +1393,11 @@ class ModPathWell:
                                         trackingdirection = self.trackingdirection,
                                         releasedata=0.0, gw_level_release = gw_level_release,
                                         gw_level = None)
-        
+
         # Point parameters release of particles
         self._create_point_particles(point_parameters = "point_parameters",
-                                        localx = 0.5, 
-                                        localy = 0.5, 
+                                        localx = 0.5,
+                                        localy = 0.5,
                                         localz = 0.5,
                                         timeoffset = 0.0, drape = 0,
                                         trackingdirection = self.trackingdirection,  ## 'forward'
@@ -1405,13 +1405,13 @@ class ModPathWell:
 
         # Default flux interfaces
         defaultiface = {'RECHARGE': 6, 'ET': 6}
-    
+
         ## Model mpbas input ##
         self.mpbas_input(prsity = self.porosity, defaultiface = defaultiface)
 
         # Load modpath basic package
         self.create_mpbas()
-        
+
         # Select particle groups as input to the model
         self.particlegroups = []
         for iPG in self.pg:
@@ -1422,10 +1422,10 @@ class ModPathWell:
         # Write modpath simulation File:
         self.modpath_simulation(mp_model = None,# trackingdirection = None,
                            simulationtype = 'combined', stoptimeoption = 'specified',
-                           particlegroups = self.particlegroups, stoptime = 100000.) 
+                           particlegroups = self.particlegroups, stoptime = 100000.)
 
 
-    def run_modflowmod(self):         
+    def run_modflowmod(self):
         ''' Run modflow model '''
         self.success_mf, _ = self.mf.run_model(silent=False)
 
@@ -1458,7 +1458,7 @@ class ModPathWell:
         input style 1). Input style 1 is the most general input style and provides
         the highest flexibility in customizing starting locations, see flopy docs. '''
         self.partlocs = partlocs # particle starting locations [(lay,row,col),(k,i,j),...]
-        # (structured): Boolean defining if a structured (True) or 
+        # (structured): Boolean defining if a structured (True) or
         # unstructured particle recarray will be created
         # (particleids) --> if not None: id-vals of particles added
         self.localx = localx
@@ -1471,15 +1471,15 @@ class ModPathWell:
         if not hasattr(self, "pg"):
             # print("Create a new particle group dataset dict.")
             self.pg = {}
-            
+
         self.pids[pgname] = particleids
         #mp7particledata.
         # Particle distribution package - particle allocation
         #modpath.mp7particledata.Part...
         self.pd = flopy.modpath.ParticleData(partlocs = self.partlocs, structured=True,
-                                             drape=0, localx= self.localx, 
+                                             drape=0, localx= self.localx,
                                              localy= self.localy, localz= self.localz,
-                                             timeoffset = timeoffset, 
+                                             timeoffset = timeoffset,
                                              particleids = particleids)
 
 
@@ -1505,7 +1505,7 @@ class ModPathWell:
             Travel time in the unsaturated zone for each point in the given distance array returned as
             attrubute of the function, [days].
         thickness_vadose_zone_drawdown: array
-            Thickness of the vadose zone, corresponding to the depth where saturated flow starts 
+            Thickness of the vadose zone, corresponding to the depth where saturated flow starts
             and where modpath particles are being released.
         '''
 
@@ -1526,11 +1526,11 @@ class ModPathWell:
         #@MartinK -> how to raise this warning properly in the web interface? #AH_todo
         self.drawdown_at_well = self.schematisation.ground_surface - self.thickness_vadose_zone_drawdown
         if self.drawdown_at_well[0] < self.schematisation.bottom_target_aquifer:
-            raise ValueError('The drawdown at the well is lower than the bottom of the target aquifer. Please select a different schematisation.') 
+            raise ValueError('The drawdown at the well is lower than the bottom of the target aquifer. Please select a different schematisation.')
 
         elif self.drawdown_at_well[0] < self.schematisation.bottom_shallow_aquifer:
             warnings.warn('The drawdown at the well is lower than the bottom of the shallow aquifer')
-        
+
         else:
             pass
 
@@ -1559,7 +1559,7 @@ class ModPathWell:
             Travel time in the unsaturated zone for each point in the given distance array returned as
             attrubute of the function, [days].
         travel_distance_unsaturated: array
-            Thickness of the vadose zone/vadose aquifer, corresponding to the depth where saturated (aquifer) flow starts 
+            Thickness of the vadose zone/vadose aquifer, corresponding to the depth where saturated (aquifer) flow starts
             and where modpath particles are being released.
 
         '''
@@ -1611,7 +1611,7 @@ class ModPathWell:
         is the distance from the well needed to recharge the well to meet the pumping demand.
         '''
         # SUGGESTION SR: --> add term to dictionary 'recharge_parameters' as 'nparticles_cell'
-        
+
         # nparticles_cell: n number of particles defaults to 1
         nparticles_cell = 1
 
@@ -1651,22 +1651,22 @@ class ModPathWell:
         if not hasattr(self, "flowline_type"):
             self.flowline_type = {}
         if not hasattr(self, "point_discharge"):
-            self.point_discharge = {}    
-        # Particle starting concentration   
+            self.point_discharge = {}
+        # Particle starting concentration
         if not hasattr(self, "inputconc_particle"):
-            self.inputconc_particle = {}    
+            self.inputconc_particle = {}
 
         # particle starting locations [(lay,row,col),(k,i,j),...]
         if not hasattr(self, "part_locs"):
-            self.part_locs = {}  
+            self.part_locs = {}
         # Relative location within grid cells (per particle group)
         if not hasattr(self, "localx"):
-            self.localx = {}  
+            self.localx = {}
         if not hasattr(self, "localy"):
-            self.localy = {}  
+            self.localy = {}
         if not hasattr(self, "localz"):
-            self.localz = {}  
-     
+            self.localz = {}
+
 
         # Particle id [part group, particle id] - zero based integers
         if not hasattr(self, "pids"):
@@ -1690,7 +1690,7 @@ class ModPathWell:
         if not hasattr(self, "pcount"):
             # print("Create a new particle counter.")
             self.pcount = -1
-            
+
         for iPG in pgroups:
 
             if len(iPG) == 0:
@@ -1740,10 +1740,10 @@ class ModPathWell:
                     (self.xmid - 0.5 * self.delr <= self.pg_xmax[iPG]))[0])
                 colidx_max = int(np.argwhere((self.xmid + 0.5 * self.delr >= self.pg_xmin[iPG]) & \
                     (self.xmid - 0.5 * self.delr <= self.pg_xmax[iPG]))[-1])
-                # np.where((self.xmid < right) & (self.xmid > left))    
+                # np.where((self.xmid < right) & (self.xmid > left))
             except IndexError as e:
                 # print(e,"Set colidx_min and colidx_max to None.")
-                colidx_min, colidx_max = None, None            
+                colidx_min, colidx_max = None, None
 
             try:
                 # Determine row indices
@@ -1751,10 +1751,10 @@ class ModPathWell:
                     (self.ymid - 0.5 * self.delc <= self.pg_ymax[iPG]))[0])
                 rowidx_max = int(np.argwhere((self.ymid + 0.5 * self.delc >= self.pg_ymin[iPG]) & \
                     (self.ymid - 0.5 * self.delc <= self.pg_ymax[iPG]))[-1])
-                # np.where((self.xmid < right) & (self.xmid > left))    
+                # np.where((self.xmid < right) & (self.xmid > left))
             except IndexError as e:
                 # print(e,"Set rowidx_min and rowidx_max to 0.")
-                rowidx_min, rowidx_max = 0, 0            
+                rowidx_min, rowidx_max = 0, 0
 
             try:
                 # Determine layer indices
@@ -1762,10 +1762,10 @@ class ModPathWell:
                     (self.zmid - 0.5 * self.delv <= self.pg_zmax[iPG]))[0]) # shallow layer
                 layidx_max = int(np.argwhere((self.zmid + 0.5 * self.delv >= self.pg_zmin[iPG]) & \
                     (self.zmid - 0.5 * self.delv <= self.pg_zmax[iPG]))[-1])  # deepest layer
-                # np.where((self.xmid < right) & (self.xmid > left))    
+                # np.where((self.xmid < right) & (self.xmid > left))
             except IndexError as e:
                 # print(e,"Set layidx_min and layidx_max to 0.")
-                layidx_min, layidx_max = 0, 0            
+                layidx_min, layidx_max = 0, 0
 
             # Particles ids (use counter)
             self.pids[iPG] = []
@@ -1785,7 +1785,7 @@ class ModPathWell:
                         # Steven_todo: separate function for get_gwlevel()
 
                         # groundwater level array (initially assume starting points at model top)
-                        # Load head data    
+                        # Load head data
                         self.gw_level, _ = self._get_gwlevel(model_hds = self.model_hds,time = -1)
 
                     except:
@@ -1797,7 +1797,7 @@ class ModPathWell:
                 # self.gw_level[self.gw_level > self.bot[0]] = self.bot[0]
                 # self.gw_level[self.gw_level > self.top] = self.top
 
-            
+
                 # layers in which particles are being released
                 layers = []
                 for iRow in range(rowidx_min,rowidx_max+1):
@@ -1839,15 +1839,15 @@ class ModPathWell:
                         else:
                             localz_release.append((self.pg_zmin[iPG] - self.bot[layers[idx_count]]) / \
                                             (self.bot[layers[idx_count]-1] - self.bot[layers[idx_count]]))
-            
+
 
             idx_count = -1
             for iRow in range(rowidx_min,rowidx_max+1):
-                for iCol in range(colidx_min,colidx_max+1):   
-                                    
+                for iCol in range(colidx_min,colidx_max+1):
+
                     # Keep track of index
-                    idx_count += 1   
-                    
+                    idx_count += 1
+
                     # Particle row
                     p_row = iRow
                     # Particle layer
@@ -1857,34 +1857,34 @@ class ModPathWell:
 
                     # check for active cell
                     if self.ibound[p_lay,p_row,p_col] == 0:
-                        continue 
-                    
+                        continue
+
                     # locations for reading output in modpath model
                     self.pg_nodes[iPG].append((p_lay,p_row,p_col))
                     # for iPart_cell in range(nparticles_cell):
-                    
+
                     # Add particle locations (lay,row,col)
-                    self.part_locs[iPG].append((p_lay,p_row,p_col))                    
+                    self.part_locs[iPG].append((p_lay,p_row,p_col))
                     # Relative location of the particles in the cells
                     self.localx[iPG].append(localx) #(iPart_cell + 0.5)/(float(nparticles_cell)))
                     self.localy[iPG].append(localy)
                     self.localz[iPG].append(localz_release[idx_count])
                     # particle count
-                    self.pcount += 1 
+                    self.pcount += 1
                     self.pids[iPG].append(self.pcount)
 
                     # flowline_type: diffuse_source (or point_source)
-                    self.flowline_type[self.pcount] = 'diffuse_source'  
+                    self.flowline_type[self.pcount] = 'diffuse_source'
 
-                    # Particle starting concentration   
-                    self.inputconc_particle[self.pcount] = recharge_parameters.get(iPG).get("input_concentration")     
+                    # Particle starting concentration
+                    self.inputconc_particle[self.pcount] = recharge_parameters.get(iPG).get("input_concentration")
 
             # Particle distribution package - particle allocation
             #modpath.mp7particledata.Part...
             self.pd[iPG] = flopy.modpath.ParticleData(partlocs = self.part_locs[iPG], structured=True,
-                                                drape=drape, localx= self.localx[iPG], 
+                                                drape=drape, localx= self.localx[iPG],
                                                 localy= self.localy[iPG], localz= self.localz[iPG],
-                                                timeoffset = timeoffset, 
+                                                timeoffset = timeoffset,
                                                 particleids = self.pids[iPG])
 
 
@@ -1953,7 +1953,7 @@ class ModPathWell:
         is the distance from the well needed to recharge the well to meet the pumping demand.
         '''
         # SUGGESTION SR: --> add term to dictionary 'recharge_parameters' as 'nparticles_cell'
-        
+
         # nparticles_cell: n number of particles defaults to 1
         nparticles_cell = 1
 
@@ -1998,22 +1998,22 @@ class ModPathWell:
         if not hasattr(self, "flowline_type"):
             self.flowline_type = {}
         if not hasattr(self, "point_discharge"):
-            self.point_discharge = {}      
+            self.point_discharge = {}
 
         # particle starting locations [(lay,row,col),(k,i,j),...]
         if not hasattr(self, "part_locs"):
-            self.part_locs = {}  
+            self.part_locs = {}
         # Relative location within grid cells (per particle group)
         if not hasattr(self, "localx"):
-            self.localx = {}  
+            self.localx = {}
         if not hasattr(self, "localy"):
-            self.localy = {}  
+            self.localy = {}
         if not hasattr(self, "localz"):
-            self.localz = {}  
+            self.localz = {}
 
-        # Particle starting concentration   
+        # Particle starting concentration
         if not hasattr(self, "inputconc_particle"):
-            self.inputconc_particle = {}       
+            self.inputconc_particle = {}
 
         # Particle id [part group, particle id] - zero based integers
         if not hasattr(self, "pids"):
@@ -2037,7 +2037,7 @@ class ModPathWell:
         if not hasattr(self, "pcount"):
             # print("Create a new particle counter.")
             self.pcount = -1
-            
+
         for iPG in pgroups:
 
             if len(iPG) == 0:
@@ -2088,10 +2088,10 @@ class ModPathWell:
                     (self.xmid - 0.5 * self.delr <= self.pg_xmax[iPG]))[0])
                 colidx_max = int(np.argwhere((self.xmid + 0.5 * self.delr >= self.pg_xmin[iPG]) & \
                     (self.xmid - 0.5 * self.delr <= self.pg_xmax[iPG]))[-1])
-                # np.where((self.xmid < right) & (self.xmid > left))    
+                # np.where((self.xmid < right) & (self.xmid > left))
             except IndexError as e:
                 # print(e,"Set colidx_min and colidx_max to None.")
-                colidx_min, colidx_max = None, None            
+                colidx_min, colidx_max = None, None
 
             try:
                 # Determine row indices
@@ -2099,10 +2099,10 @@ class ModPathWell:
                     (self.ymid - 0.5 * self.delc <= self.pg_ymax[iPG]))[0])
                 rowidx_max = int(np.argwhere((self.ymid + 0.5 * self.delc >= self.pg_ymin[iPG]) & \
                     (self.ymid - 0.5 * self.delc <= self.pg_ymax[iPG]))[-1])
-                # np.where((self.xmid < right) & (self.xmid > left))    
+                # np.where((self.xmid < right) & (self.xmid > left))
             except IndexError as e:
                 # print(e,"Set rowidx_min and rowidx_max to 0.")
-                rowidx_min, rowidx_max = 0, 0            
+                rowidx_min, rowidx_max = 0, 0
 
             try:
                 # Determine layer indices
@@ -2110,10 +2110,10 @@ class ModPathWell:
                     (self.zmid - 0.5 * self.delv <= self.pg_zmax[iPG]))[0]) # shallow layer
                 layidx_max = int(np.argwhere((self.zmid + 0.5 * self.delv >= self.pg_zmin[iPG]) & \
                     (self.zmid - 0.5 * self.delv <= self.pg_zmax[iPG]))[-1])  # deepest layer
-                # np.where((self.xmid < right) & (self.xmid > left))    
+                # np.where((self.xmid < right) & (self.xmid > left))
             except IndexError as e:
                 # print(e,"Set layidx_min and layidx_max to 0.")
-                layidx_min, layidx_max = 0, 0            
+                layidx_min, layidx_max = 0, 0
 
             # Particles ids (use counter)
             self.pids[iPG] = []
@@ -2132,7 +2132,7 @@ class ModPathWell:
                     try:
 
                         # groundwater level array (initially assume starting points at model top)
-                        # Load head data    
+                        # Load head data
                         self.gw_level, _ = self._get_gwlevel(model_hds = self.model_hds,time = -1)
 
                     except:
@@ -2166,10 +2166,10 @@ class ModPathWell:
             idx_count = -1
             for iRow in range(rowidx_min,rowidx_max+1):
                 for iCol in range(colidx_min,colidx_max+1):
-                    
+
                     # Keep track of index
-                    idx_count += 1   
-                    
+                    idx_count += 1
+
                     # Particle row
                     p_row = iRow
                     # Particle layer
@@ -2179,33 +2179,33 @@ class ModPathWell:
                     # check for active cell
                     if self.ibound[p_lay,p_row,p_col] == 0:
                         continue
-                    
+
                     # locations for reading output in modpath model
                     self.pg_nodes[iPG].append((p_lay,p_row,p_col))
                     # for iPart_cell in range(nparticles_cell):
-                    
+
                     # Add particle locations (lay,row,col)
-                    self.part_locs[iPG].append((p_lay,p_row,p_col))                    
+                    self.part_locs[iPG].append((p_lay,p_row,p_col))
                     # Relative location of the particles in the cells
                     self.localx[iPG].append(localx) #(iPart_cell + 0.5)/(float(nparticles_cell)))
                     self.localy[iPG].append(localy)
                     self.localz[iPG].append(localz_release[idx_count])
                     # particle count
-                    self.pcount += 1 
+                    self.pcount += 1
                     self.pids[iPG].append(self.pcount)
 
                     # flowline_type: diffuse_source (or point_source)
-                    self.flowline_type[self.pcount] = 'diffuse_source'  
+                    self.flowline_type[self.pcount] = 'diffuse_source'
 
-                    # Particle starting concentration   
-                    self.inputconc_particle[self.pcount] = recharge_parameters.get(iPG).get("input_concentration")     
+                    # Particle starting concentration
+                    self.inputconc_particle[self.pcount] = recharge_parameters.get(iPG).get("input_concentration")
 
             # Particle distribution package - particle allocation
             #modpath.mp7particledata.Part...
             self.pd[iPG] = flopy.modpath.ParticleData(partlocs = self.part_locs[iPG], structured=True,
-                                                drape=drape, localx= self.localx[iPG], 
+                                                drape=drape, localx= self.localx[iPG],
                                                 localy= self.localy[iPG], localz= self.localz[iPG],
-                                                timeoffset = timeoffset, 
+                                                timeoffset = timeoffset,
                                                 particleids = self.pids[iPG])
 
 
@@ -2222,8 +2222,8 @@ class ModPathWell:
 
 
     def _create_point_particles(self, point_parameters = None,
-                                                   localx = 0.5, 
-                                                   localy = 0.5, 
+                                                   localx = 0.5,
+                                                   localy = 0.5,
                                                    localz = 0.5,
                                                    timeoffset=0.0, drape=0,
                                                    trackingdirection = 'forward',
@@ -2235,7 +2235,7 @@ class ModPathWell:
         Create points using dictionary 'point_parameters' with start position(s) 'x_start', 'y_start' and 'z_start'.
         '''
 
-        
+
         if point_parameters is None:
             point_parameters = self.schematisation_dict.get('point_parameters')
         else:
@@ -2253,7 +2253,7 @@ class ModPathWell:
         if not hasattr(self, "y_start_particle"):
             self.y_start_particle = {}
         if not hasattr(self, "z_start_particle"):
-            self.z_start_particle = {}            
+            self.z_start_particle = {}
 
         # particle group filenames
         if not hasattr(self, "pg_filenames"):
@@ -2263,24 +2263,24 @@ class ModPathWell:
 
     	# flowline_type: point_source (or diffuse_source)
         if not hasattr(self, "flowline_type"):
-            self.flowline_type = {}     
+            self.flowline_type = {}
         if not hasattr(self, "point_discharge"):
-            self.point_discharge = {} 
+            self.point_discharge = {}
 
-        # Particle starting concentration   
+        # Particle starting concentration
         if not hasattr(self, "inputconc_particle"):
-            self.inputconc_particle = {}          
+            self.inputconc_particle = {}
 
         # particle starting locations [(lay,row,col),(k,i,j),...]
         if not hasattr(self, "part_locs"):
-            self.part_locs = {}  
+            self.part_locs = {}
         # Relative location within grid cells (per particle group)
         if not hasattr(self, "localx"):
-            self.localx = {}  
+            self.localx = {}
         if not hasattr(self, "localy"):
-            self.localy = {}  
+            self.localy = {}
         if not hasattr(self, "localz"):
-            self.localz = {}  
+            self.localz = {}
 
         # Particle id [part group, particle id] - zero based integers
         if not hasattr(self, "pids"):
@@ -2304,7 +2304,7 @@ class ModPathWell:
         if not hasattr(self, "pcount"):
             # print("Create a new particle counter.")
             self.pcount = -1
-            
+
         for iPG in pgroups:
 
             if len(iPG) == 0:
@@ -2337,21 +2337,21 @@ class ModPathWell:
                 p_col = np.argwhere((left_arr <= self.x_start_particle[iPG]) & (right_arr > self.x_start_particle[iPG]))[0]
             except IndexError as e:
                 # print(e,"Set p_col to 0")
-                p_col = 0  
+                p_col = 0
 
-            try:   
-                # Determine particle row idx  
+            try:
+                # Determine particle row idx
                 p_row = np.argwhere((north_arr >= self.y_start_particle[iPG]) & (south_arr < self.y_start_particle[iPG]))[0]
             except IndexError as e:
                 # print(e,"Set p_row to 0")
-                p_row = 0    
+                p_row = 0
 
             try:
                 # Determine particle layer idx
                 p_lay = np.argwhere((top_arr >= self.z_start_particle[iPG]) & (bot_arr < self.z_start_particle[iPG]))[0]
             except IndexError as e:
                 # print(e,"Set p_lay to 0")
-                p_lay = 0  
+                p_lay = 0
 
 
             # Particles ids (use counter)
@@ -2376,19 +2376,19 @@ class ModPathWell:
             # locations for reading output in modpath model
             self.pg_nodes[iPG].append((p_lay,p_row,p_col))
             # Add particle locations (lay,row,col)
-            self.part_locs[iPG].append((p_lay,p_row,p_col))                    
+            self.part_locs[iPG].append((p_lay,p_row,p_col))
             # Relative location of the particles in the cells
             self.localx[iPG].append(localx)
             self.localy[iPG].append(localy)
             self.localz[iPG].append(localz)
             # particle count
-            self.pcount += 1 
+            self.pcount += 1
             self.pids[iPG].append(self.pcount)
 
             # flowline_type: diffuse_source or point_source
             self.flowline_type[self.pcount] = 'point_source'
             # Add point_discharge
-            self.point_discharge[self.pcount] = point_parameters.get(iPG).get("discharge") 
+            self.point_discharge[self.pcount] = point_parameters.get(iPG).get("discharge")
 
             # Starting concentration of particles
             self.inputconc_particle[self.pcount] = point_parameters.get(iPG)["input_concentration"]
@@ -2396,9 +2396,9 @@ class ModPathWell:
             # Particle distribution package - particle allocation
             #modpath.mp7particledata.Part...
             self.pd[iPG] = flopy.modpath.ParticleData(partlocs = self.part_locs[iPG], structured=True,
-                                                drape=drape, localx= self.localx[iPG], 
+                                                drape=drape, localx= self.localx[iPG],
                                                 localy= self.localy[iPG], localz= self.localz[iPG],
-                                                timeoffset = timeoffset, 
+                                                timeoffset = timeoffset,
                                                 particleids = self.pids[iPG])
 
             # particle group object
@@ -2424,14 +2424,14 @@ class ModPathWell:
         if mf_model is not None:
             self.mf = mf_model
         if headfilename is None:  # Filename of the MODFLOW output head file.
-            self.headfile = self.model_hds # os.path.join(self.workspace, 
+            self.headfile = self.model_hds # os.path.join(self.workspace,
         else:
             self.headfile = headfilename
         if budgetfilename is None: # Filename of the MODFLOW output cell-by-cell budget file.
             self.cbcfile = self.model_cbc
-        else:     
+        else:
             self.cbcfile = budgetfilename
-            
+
         # Modpath object
         self.mp7 = flopy.modpath.Modpath7(modelname = self.modelname + "_mp", model_ws=self.workspace,
                                              exe_name= self.mp_exe, flowmodel = self.mf)#,
@@ -2441,37 +2441,37 @@ class ModPathWell:
         ''' Read model prsity and iface values into object. '''
         self.prsity = prsity
         self.defaultiface = defaultiface
-        
+
     def create_mpbas(self):
         ''' Add BAS Package to the ModPath model '''
-        
+
         self.mpbas = flopy.modpath.Modpath7Bas(model = self.mp7, porosity = self.porosity,
                                                       defaultiface = self.defaultiface)
 
     def modpath_simulation(self,mp_model = None, trackingdirection = 'backward',
                            simulationtype = 'combined', stoptimeoption = 'specified',
-                           particlegroups = None, stoptime = 100000., zones = None):        
+                           particlegroups = None, stoptime = 100000., zones = None):
         ''' input MODPATH Simulation File Package Class, see flopy docs. '''
         if mp_model is not None:
             self.mp7 = mp_model
-            
+
         if self.trackingdirection is None:
             self.trackingdirection = trackingdirection
-            
-            
+
+
         # Zones are not read in detail
         if zones is None:
             self.zones = [1] * self.nlay
         else:
             self.zones = zones
-        
-        self.mp7sim = flopy.modpath.Modpath7Sim(model = self.mp7, mpnamefilename=None, 
+
+        self.mp7sim = flopy.modpath.Modpath7Sim(model = self.mp7, mpnamefilename=None,
                                          listingfilename=None, endpointfilename=None,
                                          pathlinefilename=None, timeseriesfilename=None,
                                          tracefilename=None, simulationtype = simulationtype,
-                                         trackingdirection = self.trackingdirection, 
+                                         trackingdirection = self.trackingdirection,
                                          weaksinkoption='stop_at', weaksourceoption= 'stop_at', # 'pass_through',
-                                         budgetoutputoption='summary', traceparticledata=None, #[0,0], #self.pid, 
+                                         budgetoutputoption='summary', traceparticledata=None, #[0,0], #self.pid,
                                          budgetcellnumbers=None, referencetime=0.,
                                          stoptimeoption = stoptimeoption, stoptime=stoptime, #None,
                                          timepointdata=None, zonedataoption='off',  # timepointdata=[100*24,1/24.]
@@ -2487,17 +2487,17 @@ class ModPathWell:
         ''' Write package data ModPath model. '''
         self.mp7.write_input()
 
-    def run_ModPathmod(self):         
+    def run_ModPathmod(self):
         ''' Run ModPath model '''
         # self.mp7.run_model(silent=False)
-        self.success_mp,_ = self.mp7.run_model(silent=False)     
+        self.success_mp,_ = self.mp7.run_model(silent=False)
 
     def MP7modelrun(self, mf_namfile = None, mp_exe = None):
         ''' Modpath model run.'''
         print ("Run modpath:",self.workspace, self.modelname +"\n")
 
         # Copy mfmodel to modpath section
-        if mf_namfile is None:  
+        if mf_namfile is None:
             if hasattr(self, "mf"):
                 # print("Modflow model 'mf' already exists in object.")
                 pass
@@ -2528,21 +2528,21 @@ class ModPathWell:
             print("ModPath run", self.workspace, self.modelname, "completed succesfully.")
         except Exception as e:
             self.success_mp = False
-            print(e, "ModPath run", self.workspace, self.modelname, "failed.")           
+            print(e, "ModPath run", self.workspace, self.modelname, "failed.")
 
     def read_hdsobj(self, fname = None, time = None):
-        
+
         ''' Return head data from file.
             If time = -1 --> return final time and head grid,
             elif time = 'all' --> return all time values and head grids,
             elif time = [1.,2.,time_n]--> Return head grids for prespecified times. '''
-        
+
         try:
             # Read binary concentration file
             hdsobj = bf.HeadFile(fname, precision = 'single', verbose = False)
             times = hdsobj.get_times()
             head_dat = {}
-                
+
             if time == -1:
                 head_dat = hdsobj.get_data(totim = times[-1])
             elif time == 'all':
@@ -2565,8 +2565,8 @@ class ModPathWell:
 
     def _get_gwlevel(self,model_hds, time = -1):
         ''' function to obtain gwlevel based on model_hds output.'''
-        
-        # Load head data    
+
+        # Load head data
         _, head_mf = self.read_hdsobj(fname = self.model_hds,time = time)
 
         # groundwater level array (initially assume starting points at model top)
@@ -2621,11 +2621,11 @@ class ModPathWell:
 
 
     def read_binarycbc_flow(self, fname = None):
-        ''' Read binary cell budget file (fname). 
+        ''' Read binary cell budget file (fname).
             This is modflow output.
 
             return frf, flf, fff.'''
-            
+
         cbcobj = bf.CellBudgetFile(fname)
         # print(cbcobj.list_records())
         try:
@@ -2634,8 +2634,8 @@ class ModPathWell:
             fff = cbcobj.get_data(text='FLOW FRONT FACE')[0]
         finally:
             cbcobj.close()
-        
-        return frf, flf, fff 
+
+        return frf, flf, fff
 
     def get_node_ID(self,locs):
         ''' Obtain/return model node index (int) belonging to
@@ -2682,7 +2682,7 @@ class ModPathWell:
         except IndexError:
             node_col = np.argwhere((xyz_point[0] >= xmin_arr) & \
                         (xyz_point[0] <= xmax_arr))[0][0]
-                        
+
         # Node index (lay,row,col)
         node_idx = (node_lay,node_row,node_col)
 
@@ -2691,10 +2691,10 @@ class ModPathWell:
     def get_node_indices(self,xyz_nodes, particle_list: list or None = None):
         ''' Obtain/return layer,row,column idx ("node_indices") as dict of np.arrays
             corresponding to xyz-coördinates of type dict per tracked particle (as key)
-            with nodes "xyz_nodes" (np.array). 
-            
+            with nodes "xyz_nodes" (np.array).
+
             Method requires center points xmid, ymid, zmid to be predefined.
-            
+
         '''
 
         if particle_list is None:
@@ -2717,7 +2717,7 @@ class ModPathWell:
                 # list lay, row, col of nodes and store them in 'node_indices' dict
                 node_idx = self.xyz_to_layrowcol(xyz_point = xyz_nodes[iPart][iNode].tolist(), decimals = 3)
                 node_indices[iPart].append(node_idx)
-                
+
         return node_indices
 
     def calc_flux_cell(self, frf,flf,fff, loc, flux_direction = 'total'):
@@ -2729,17 +2729,17 @@ class ModPathWell:
 
         frf: np.array
             flux right face (= positive to the right) [m^3 d-1]
-        
+
         flf: np.array
             flux lower face (= positive in downward direction) [m^3 d-1]
-        
+
         fff: np.array
             flux front face (= positive in 'southward' direction) [m^3 d-1]
-        
+
         loc: tuple
             cell location (lay,row,col)
         flux_direction: str
-            cell flux along boundary 
+            cell flux along boundary
             ['total','west','east','north','south','top','bottom',
             'vertical', 'horizontal']
             (NB 'total': 'magnitude' of flow in cell)
@@ -2759,7 +2759,7 @@ class ModPathWell:
         # flux cell (direction: west <--> east)  (Note: flux is positive to the right)
         flux_westeast = (flux_dict['west'] + flux_dict['east']) / 2.
 
-        
+
         # fluxes along y-direction (positive to south)
         flux_dict['south'] = fff[loc[0],loc[1],loc[2]]
         if loc[1]-1 >= 0:
@@ -2770,7 +2770,7 @@ class ModPathWell:
         # flux cell (direction: north <--> south)  (Note: flux is positive to the south)
         flux_northsouth = (flux_dict['north'] + flux_dict['south'])  / 2.
 
-            
+
         # fluxes along z-direction (positive to bottom)
         flux_dict['bottom'] = flf[loc[0],loc[1],loc[2]]
         if loc[0]-1 >= 0:
@@ -2781,15 +2781,15 @@ class ModPathWell:
         # flux cell (direction: top <--> bottom)  (Note: flux is positive to the bottom)
         flux_topbottom = (flux_dict['top'] + flux_dict['bottom']) / 2.
 
-        
+
         # Total flux IN from all directions
         # flux_dict['total'] = -(flux_dict['west'] - flux_dict['east'] + \
         #                         flux_dict['north'] - flux_dict['south'] + \
         #                         flux_dict['top'] - flux_dict['bottom'])
-        
-        # total flux (summed over boundaries) 
+
+        # total flux (summed over boundaries)
         flux_dict['total'] = abs(flux_westeast) + abs(flux_northsouth) + abs(flux_topbottom)
-        
+
         # Alternative total flux - corrected for vertical influx
         flux_dict['vertical'] = abs(flux_dict['bottom']) - flux_dict['east'] + flux_dict['west']
 
@@ -2818,22 +2818,22 @@ class ModPathWell:
         nodes:
             Cell node indices of starting locations.
             Can be obtained using the method get_node_ID((iLay,iRow,iCol))
-        
+
         Returns
-        -------- 
+        --------
         xyz_nodes:
             The xyz coördinates of each node per tracked particle
-        dist: 
+        dist:
             The distance between each node per tracked particle [L]
         tdiff:
             The travel time (difference) between each node per particle [T]
-        dist_tot: 
+        dist_tot:
             Total distance covered by each tracked particle [L]
-        time_tot: 
+        time_tot:
             Total duration between release and ending of each particle [T]
         pth_data: np.recarray
             Complete recarray is returned to see what is in the file fpth.
-            
+
         '''
 
         pth_object = flopy.utils.PathlineFile(fpth)
@@ -2879,7 +2879,7 @@ class ModPathWell:
             #     print(xyz_nodes[idx].shape[0],time_nodes[idx].shape[0])
             #Distance array between nodes
             dist[idx] = np.zeros((n_nodes-1), dtype = 'float')
-            
+
             # Time difference array
             tdiff[idx] = np.zeros((n_nodes-1), dtype = 'float')
             for iNode in range(1,n_nodes):
@@ -2889,12 +2889,12 @@ class ModPathWell:
                     (xyz_nodes[idx][iNode][2] - xyz_nodes[idx][iNode-1][2])**2)
                 # Calculate time difference between nodes
                 tdiff[idx][iNode-1] = (time_nodes[idx][iNode] - time_nodes[idx][iNode - 1])
-                
+
             # Total distance covered per particle
             dist_tot[idx] = dist[idx].sum()
             # Total time covered per particle
             time_tot[idx] = time_nodes[idx][-1]
-                        
+
         return time_nodes, xyz_nodes, dist, tdiff, dist_tot, time_tot, pth_data
 
     # Make df_particle
@@ -2911,7 +2911,7 @@ class ModPathWell:
             particle group name of released particles
         pg_nodes: list of tuple or list of list
             locations at which particles were started [(lay,row,col),(...)]
-        parm_list: 
+        parm_list:
             list of columns to include in df_particle (to be returned)
         mppth: str or Path
             'modpath_name.pth' file location
@@ -2937,7 +2937,7 @@ class ModPathWell:
                 travel time since start of model [days]
 
             material: str
-                identifier for geological layer or other material/object wherein particle resides 
+                identifier for geological layer or other material/object wherein particle resides
 
             redox: str
                 redox condition [‘suboxic’,’anoxic’,’deeply_anoxic’]
@@ -2998,9 +2998,9 @@ class ModPathWell:
             time_tot, pth_data =  \
                         self.read_pathlinedata(fpth = mppth,
                                             nodes = iNode)
-            
-            '''                             
-            xyz_points, \    # XYZ data 
+
+            '''
+            xyz_points, \    # XYZ data
             dist_data,  \    # Distance array between nodes
             time_diff,  \    # Save flow duration (time_diff) of pathlines: array
             dist_tot,   \    # Total distance covered per particle
@@ -3010,12 +3010,12 @@ class ModPathWell:
 
             # Check, if axisymmetric or 2D --> y should be self.ymid[0]
             if (self.model_type == "axisymmetric") | (self.model_type == "2D"):
-            
+
                 for iKey in xyz_nodes.keys():
                     xyz_nodes[iKey] = np.array([(round(idx_[0],4),
                                                 round(self.ymid[0],4),
                                                 round(idx_[2],4)) for idx_ in xyz_nodes[iKey]])
-                
+
             # col, lay, row index
             node_indices = self.get_node_indices(xyz_nodes = xyz_nodes)
             # Particle indices
@@ -3024,16 +3024,16 @@ class ModPathWell:
             tot_time_arr = {iPart: time_diff[iPart].sum() for iPart in part_idx}
 
             for iPart in part_idx:
-                # Loop through converted rec.arrays of pth_data using part_idx 
+                # Loop through converted rec.arrays of pth_data using part_idx
                 # Fill recarray using pathline_data
                 particle_data[f"{iNode}-{iPart}"] = copy.deepcopy(pth_data[iPart][:]) # [:-1]
                 # Export rec.arrays as pd dataframe
                 df_particle_data[f"{iNode}-{iPart}"] = pd.DataFrame.from_records(data = particle_data[f"{iNode}-{iPart}"],
                                                                             index = "particleid",
                                                                             exclude = ["k"]).iloc[:,:]
-                # Drop duplicates                                                            
+                # Drop duplicates
                 df_particle_data[f"{iNode}-{iPart}"] = df_particle_data[f"{iNode}-{iPart}"].drop_duplicates(
-                    subset=["x","y","z","time"], keep = 'first') 
+                    subset=["x","y","z","time"], keep = 'first')
 
                 for iParm in parm_list:
 
@@ -3045,7 +3045,7 @@ class ModPathWell:
                     #     dtype_ = '|S20'
                     # else:
                     dtype_ = mat_dtype
-                        
+
                     # Numpy array values
                     # Use parm values for the first row in both 2D and axisymmetric models
                     if self.model_type in ["axisymmetric","2D"]:
@@ -3057,16 +3057,16 @@ class ModPathWell:
                     # Append recarray to particle_data (dict of dicts of np.recarray)
                     df_particle_data[f"{iNode}-{iPart}"].loc[:,iParm] = parm_values
 
-                # Change index name of df_particle                                                           
+                # Change index name of df_particle
                 df_particle_data[f"{iNode}-{iPart}"].index.name = "flowline_id"
                 # Pseudonyms for df_particle column names
                 colnames_df_particle = {"x": "xcoord","y":"ycoord","z":"zcoord","time":"total_travel_time","prsity_uncorr":"porosity",
-                            "solid_density": "solid_density", "fraction_organic_carbon": "fraction_organic_carbon", "redox": "redox", 
+                            "solid_density": "solid_density", "fraction_organic_carbon": "fraction_organic_carbon", "redox": "redox",
                             "dissolved_organic_carbon":	"dissolved_organic_carbon", "pH": "pH",	"temp_water": "temp_water",
                             "grainsize": "grainsize", "material": "zone"}
-                df_particle_data[f"{iNode}-{iPart}"].rename(columns = colnames_df_particle, 
+                df_particle_data[f"{iNode}-{iPart}"].rename(columns = colnames_df_particle,
                                                                                 inplace = True, errors = "raise")
-                df_particle_data[f"{iNode}-{iPart}"] = df_particle_data[f"{iNode}-{iPart}"].drop_duplicates(subset=["xcoord","ycoord","zcoord","total_travel_time"], keep = 'first')                                                                
+                df_particle_data[f"{iNode}-{iPart}"] = df_particle_data[f"{iNode}-{iPart}"].drop_duplicates(subset=["xcoord","ycoord","zcoord","total_travel_time"], keep = 'first')
 
                 # Append dataframes
                 df_particle_list.append(df_particle_data[f"{iNode}-{iPart}"])
@@ -3076,7 +3076,7 @@ class ModPathWell:
             df_particle = pd.concat(df_particle_list, axis = 0, ignore_index = False) #.drop_duplicates()
         else:
             colnames_df_particle = {"x": "xcoord","y":"ycoord","z":"zcoord","time":"total_travel_time","prsity_uncorr":"porosity",
-                                "solid_density": "solid_density", "fraction_organic_carbon": "fraction_organic_carbon", "redox": "redox", 
+                                "solid_density": "solid_density", "fraction_organic_carbon": "fraction_organic_carbon", "redox": "redox",
                                 "dissolved_organic_carbon":	"dissolved_organic_carbon", "pH": "pH",	"temp_water": "temp_water",
                                 "grainsize": "grainsize", "material": "zone"}
             df_particle = pd.DataFrame(columns = colnames_df_particle)
@@ -3092,12 +3092,12 @@ class ModPathWell:
         # df_particle.loc[:,"flowline_id"] = df_particle.index.values
 
         return df_particle, df_particle_data
-        
+
 
     # Fill df_flowline
     def fill_df_flowline(self, df_particle, model_cbc):
         '''
-        Fill df_flowline dataframe 
+        Fill df_flowline dataframe
 
         Parameters
         ----------
@@ -3155,11 +3155,11 @@ class ModPathWell:
 
         # Removal function
         df_flowline.loc[:,"removal_function"] = self.schematisation.removal_function
-        
+
         for fid in flowline_id:
-            # X,Y,Z,time data per particle flowline 
+            # X,Y,Z,time data per particle flowline
             xyzt_data = df_particle.loc[df_particle.index == fid,["xcoord","ycoord","zcoord","total_travel_time"]].sort_values(by = "total_travel_time")
-            
+
             # Startpoint and endpoint (XYZ-data) of particle flowlines
             startpoint = xyzt_data.loc[xyzt_data.total_travel_time == xyzt_data.total_travel_time.min(),
                                         ["xcoord","ycoord","zcoord"]].values.tolist()[0]
@@ -3185,7 +3185,7 @@ class ModPathWell:
             if self.trackingdirection == "forward":
 
                 if df_flowline.loc[fid,"flowline_type"] in ["diffuse_source","point_source"]:
-                    # Steven_todo: add 'flux_direction' as input to modPath_Well class to calc total flux accurately  
+                    # Steven_todo: add 'flux_direction' as input to modPath_Well class to calc total flux accurately
                     # starting point is used to calculate flux of pathline (flux_pathline) # 'bottom'
                     flux_pathline[fid] = abs(round(self.calc_flux_cell(frf,flf,fff, loc = node_start[fid], flux_direction = 'vertical') / \
                                         count_startpoints[node_start[fid]],4))
@@ -3211,11 +3211,11 @@ class ModPathWell:
             df_flowline.loc[fid,"endpoint_id"] = endpoint_id[fid]
 
         for end_id in df_flowline["endpoint_id"].unique():
-            # well (=endpoint) discharge (using cbc-file)       
+            # well (=endpoint) discharge (using cbc-file)
             well_discharge = round(abs(frf[(self.material == end_id) & (self.ibound != 0)]).sum() + \
                                     abs(flf[(self.material == end_id) & (self.ibound != 0)]).sum() + \
                                     abs(fff[(self.material == end_id) & (self.ibound != 0)]).sum(), 4)
-            
+
             # well_discharge = df_flowline.loc[df_flowline.endpoint_id == end_id,"flowline_discharge"].astype('float').values.sum()
             df_flowline.loc[df_flowline.endpoint_id == end_id,"well_discharge"] = well_discharge
 
@@ -3223,7 +3223,7 @@ class ModPathWell:
 
     def _export_to_df(self, mppth):
         """ Makes 'df_flowline' and 'df_particle' for ModPath model simulation
-  
+
             Parameters
             -------
             mppth: str
@@ -3290,7 +3290,7 @@ class ModPathWell:
                             mppth = mppth)
 
 
-        
+
         # Create dataframe df_flowline
         self.df_flowline = self.fill_df_flowline(df_particle = self.df_particle,
                                                 model_cbc = self.model_cbc)
@@ -3304,7 +3304,7 @@ class ModPathWell:
         # Add travel time from time difference
         for fid in self.df_particle.index.unique():
             self.df_particle.loc[fid,"travel_time"] = np.array([0.] + list(self.df_particle.loc[fid,"total_travel_time"].values - self.df_particle.loc[fid,"total_travel_time"].shift(1).values)[1:])
-            
+
         # df_particle file name
         particle_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_particle.csv")
         # Save df_particle
@@ -3313,7 +3313,7 @@ class ModPathWell:
         # df_flowline file name
         flowline_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_flowline.csv")
         # Save df_flowline
-        self.df_flowline.to_csv(flowline_fname)   
+        self.df_flowline.to_csv(flowline_fname)
 
     def plot_age_distribution(self, df_particle: pd.DataFrame,
                                 vmin = 0.,vmax = 1.,orientation = {'row': 0},
@@ -3323,9 +3323,9 @@ class ModPathWell:
                                 line_dist = 1, dpi = 192, trackingdirection = "forward",
                                 cmap = 'viridis_r',
                                 show_vadose = True):
-        ''' Create pathline plots with residence times 
+        ''' Create pathline plots with residence times
             using colours as indicator.
-            with: 
+            with:
             - df_particle: dataframe containing xyzt-points of the particle paths.
             - fpathfig = output location of plots
             figtext: figure text to show within plot starting at
@@ -3342,7 +3342,7 @@ class ModPathWell:
             cmap: Uses colormap 'viridis_r' (viridis reversed as default)
             show_vadose: T/F (if True, include vadose zone flow lines; default = True)
             '''
-   
+
         if lognorm:
             if vmin <= 0.:
                 vmin = 1.e-2
@@ -3356,7 +3356,7 @@ class ModPathWell:
             # Use index as flowline_id instead
             df_particle.loc[:,"flowline_id"] = df_particle.index.values
             flowline_ID = list(df_particle.flowline_id.unique())
-            
+
 
         for fid in flowline_ID:
 
@@ -3403,7 +3403,7 @@ class ModPathWell:
             else:
                 # formatting of values (log or linear: None?)
                 norm_vals = None
-                
+
             # Mask values outside of vmin & vmax
             time_vals = np.ma.masked_where((xyz_scatter[:,2] > vmax), xyz_scatter[:,2])
             plt.scatter(xyz_scatter[:,0],
@@ -3414,7 +3414,7 @@ class ModPathWell:
                         marker = 'o',
                         norm= norm_vals)
             plt.plot(xyz_scatter[:,0],
-                        xyz_scatter[:,1], c = 'k', lw = 0.1)  
+                        xyz_scatter[:,1], c = 'k', lw = 0.1)
                         # 'o', markersize = marker_size,
                         # markerfacecolor="None", markeredgecolor='black') #, lw = 0.1)
             plt.xlim(xmin,xmax)
@@ -3429,7 +3429,7 @@ class ModPathWell:
         # ticklabs_new = [str(iLab).replace("-0.0","0.0") for iLab in \
         #                 np.linspace(-np.log10(vmin),0.,num = len(ticklabs_old), endpoint = True)]
         # cbar.ax.set_yticklabels(ticklabs_new)
-        
+
         # cbar.set_yticks([mn,md,mx])
         # cbar.ax.set_yticklabels(norm_labels)
         cbar.set_label("Residence time [days]")
@@ -3450,17 +3450,17 @@ class ModPathWell:
         else:
             plt.savefig(fpathfig, dpi = dpi)
         # Sluit figuren af
-        plt.close('all')    
-        
-#     def plot_pathtimes(self,df_particle, 
+        plt.close('all')
+
+#     def plot_pathtimes(self,df_particle,
 #                   vmin = 0.,vmax = 1.,orientation = {'row': 0},
 #                   fpathfig = None, figtext = None,x_text = 0,
 #                   y_text = 0, lognorm = True, xmin = 0., xmax = None,
 #                   line_dist = 1, dpi = 192, trackingdirection = "forward",
 #                   cmap = 'viridis_r'):
-#         ''' Create pathline plots with residence times 
+#         ''' Create pathline plots with residence times
 #             using colours as indicator.
-#             with: 
+#             with:
 #             - df_particle: dataframe containing xyzt-points of the particle paths.
 #             - fpathfig = output location of plots
 #             figtext: figure text to show within plot starting at
@@ -3472,7 +3472,7 @@ class ModPathWell:
 #             trackingdirection: direction of calculating flow along pathlines"
 #             cmap: Uses colormap 'viridis_r' (viridis reversed as default)
 #             '''
-            
+
 #         if lognorm:
 #             if vmin <= 0.:
 #                 vmin = 1.e-2
@@ -3492,7 +3492,7 @@ class ModPathWell:
 #             # Plot every 'line_dist' number of meters one line
 #             if trackingdirection == "forward":
 #                 # x_origin: starting position of pathline
-#                 x_origin = x_points[0]  
+#                 x_origin = x_points[0]
 #             else:
 #                 # x_origin: starting position of pathline
 #                 x_origin = x_points[-1]
@@ -3516,7 +3516,7 @@ class ModPathWell:
 #             else:
 #                 # formatting of values (log or linear: None?)
 #                 norm_vals = None
-                
+
 #             # Mask values outside of vmin & vmax
 #             time_vals = np.ma.masked_where((xyz_scatter[:,2] > vmax), xyz_scatter[:,2])
 #             plt.scatter(xyz_scatter[:,0],
@@ -3527,7 +3527,7 @@ class ModPathWell:
 #                         marker = 'o',
 #                         norm= norm_vals)
 #             plt.plot(xyz_scatter[:,0],
-#                         xyz_scatter[:,1], c = 'k', lw = 0.1)  
+#                         xyz_scatter[:,1], c = 'k', lw = 0.1)
 #                         # 'o', markersize = marker_size,
 #                         # markerfacecolor="None", markeredgecolor='black') #, lw = 0.1)
 #             plt.xlim(xmin,xmax)
@@ -3539,7 +3539,7 @@ class ModPathWell:
 #         # ticklabs_new = [str(iLab).replace("-0.0","0.0") for iLab in \
 #         #                 np.linspace(-np.log10(vmin),0.,num = len(ticklabs_old), endpoint = True)]
 #         # cbar.ax.set_yticklabels(ticklabs_new)
-        
+
 #         # cbar.set_yticks([mn,md,mx])
 #         # cbar.ax.set_yticklabels(norm_labels)
 #         cbar.set_label("Residence time [days]")
@@ -3558,7 +3558,7 @@ class ModPathWell:
 #         if fpathfig is not None:
 #             # pass
 #             # try: plt.show()
-#             # except Exception as e: 
+#             # except Exception as e:
 #             #     print(e)
 #             #     pass
 #         # else:
@@ -3566,7 +3566,7 @@ class ModPathWell:
 #         # Sluit figuren af
 #         plt.close('all')
 
-    
+
     # Check for parameters in df_flowline #
     def _df_fillna(self, df,df_column: str, value = 0., dtype_ = 'float'):
         ''' Check dataframe for missing values for
@@ -3585,7 +3585,7 @@ class ModPathWell:
             # Fill dataframe series (if needed with default value)
             if df[df_column].dropna().empty:
                 df[df_column] = df[df_column].fillna(value)
-            else: 
+            else:
                 # fill empty rows (with mean value of other records)
                 value_mean = df[df_column].values.mean()
                 df[df_column] = df[df_column].fillna(value_mean)
@@ -3600,7 +3600,7 @@ class ModPathWell:
                                                         depth_point_contamination=None,
                                                         ):
         ''' Calculates the travel time in the shallow aquifer for the phreatic case.
-        If the depth_point_contamination is None, then the calculation is for a 
+        If the depth_point_contamination is None, then the calculation is for a
         diffuse flow lines
         #AH_todo finish this explanation
 
@@ -3624,7 +3624,7 @@ class ModPathWell:
             travel_distance_shallow_aquifer = self.schematisation.thickness_shallow_aquifer - (self.schematisation.groundwater_level - head)
             travel_time_shallow_aquifer = ((travel_distance_shallow_aquifer)
                             * self.schematisation.porosity_shallow_aquifer / self.schematisation.recharge_rate)
-            
+
             #@MartinvdS -> under the default conditions, the travel time in the shallow aquifer is negative
             # should we alter the default values or do we do below?
             travel_time_shallow_aquifer[travel_time_shallow_aquifer<0] = 0
@@ -3670,7 +3670,7 @@ class ModPathWell:
         travel_time_shallow_aquifer: array
             Travel time in the shallow aquifer for each point in the given distance array, [days].
         '''
-        
+
         if depth_point_contamination is None:
             travel_distance_shallow_aquifer  = self.schematisation.thickness_shallow_aquifer
         elif depth_point_contamination > self.schematisation.bottom_shallow_aquifer:
@@ -3724,12 +3724,12 @@ class ModPathWell:
             # Calculate the travel time distribution for the semiconfined schematisation
             # for each of the aquifer zones and creates df_flowline and df_particle dataframes for the analytical case.
             if self.schematisation_type in ["phreatic","semiconfined"]:
-                self._calculate_travel_time_unsaturated_zone(gw_level_particles = gw_level_particles)   
+                self._calculate_travel_time_unsaturated_zone(gw_level_particles = gw_level_particles)
             '''
             # Assign attributes:
             - 'travel_time_unsaturated' --> travel time through vadose zone [d]
             - 'thickness_vadose_zone_drawdown' --> drawdown due to abstraction in pumping well [m]
-            '''                    
+            '''
             # self.travel_time_unsaturated = self.schematisation.travel_time_unsaturated
             # self.thickness_vadose_zone_drawdown = self.schematisation.thickness_vadose_zone_drawdown
 
@@ -3739,7 +3739,7 @@ class ModPathWell:
                         "porosity","solid_density","fraction_organic_carbon",
                         "redox","dissolved_organic_carbon","pH","temp_water",
                         "grainsize","zone"]
-            
+
             # Define index of phreatic pathline df
             flowline_id = self.df_particle.index.unique()
             df_index = flowline_id
@@ -3754,10 +3754,10 @@ class ModPathWell:
             # Groundlevel
             df_phreatic.loc[df_index,"zcoord"] = np.array([vadose_parameters[dict_key]['top']] * len(flowline_id))
             # first record no time passed; shift other time values in dataframe afterwards
-            df_phreatic.loc[df_index,"total_travel_time"] = np.array([0.] * len(flowline_id))  
+            df_phreatic.loc[df_index,"total_travel_time"] = np.array([0.] * len(flowline_id))
             for iRow,pid in enumerate(self.df_particle.index.unique()):
                 # shift travel times with unsaturated zone traveltime
-                self.df_particle.loc[pid,"total_travel_time"] = self.df_particle.loc[pid,"total_travel_time"] + self.travel_time_unsaturated[iRow] 
+                self.df_particle.loc[pid,"total_travel_time"] = self.df_particle.loc[pid,"total_travel_time"] + self.travel_time_unsaturated[iRow]
 
             # Fill arrays to add to df_particle
             df_phreatic.loc[df_index,"porosity"] = np.array([vadose_parameters[dict_key]['porosity']] * len(flowline_id))
@@ -3769,8 +3769,8 @@ class ModPathWell:
             df_phreatic.loc[df_index,"temp_water"] = np.array([vadose_parameters[dict_key]['temp_water']] * len(flowline_id))
             df_phreatic.loc[df_index,"grainsize"] = np.array([vadose_parameters[dict_key]['grainsize']] * len(flowline_id))
             df_phreatic.loc[df_index,"zone"] = np.array(['vadose_zone'] * len(flowline_id))
-            
-            # Append records to df_particle dataframe 
+
+            # Append records to df_particle dataframe
             self.df_particle = self.df_particle.append(df_phreatic)
 
             # sort by 'flowline_id' (=index) and 'time'
@@ -3779,11 +3779,11 @@ class ModPathWell:
 
     def run_model(self,
                     # simulation_parameters: dict or None = None,
-                    xll = 0., yll = 0., perlen:dict or float or int = 365.*50, 
+                    xll = 0., yll = 0., perlen:dict or float or int = 365.*50,
                     nstp:dict or int = 1, nper:int = 1,
                     steady:dict or bool = True,
                     run_mfmodel = True, run_mpmodel = True,):
-        ''' Run the combined modflow and modpath model using one 
+        ''' Run the combined modflow and modpath model using one
             of four possible schematisation types:
             - "Phreatic"
             - "Semi-confined"
@@ -3808,23 +3808,23 @@ class ModPathWell:
         # Simulation parameters
         # Dict with stress period lengths
         if type(perlen) != dict:
-            self.perlen = {0: perlen}    
+            self.perlen = {0: perlen}
         else:
             self.perlen = perlen
         # Nr of time periods per stress period (int)
         if type(nstp) != dict:
-            self.nstp = {0: nstp} 
+            self.nstp = {0: nstp}
         else:
-            self.nstp = nstp 
+            self.nstp = nstp
 
         # Nr of stress periods  (int)
         self.nper = nper
 
         # Steady state model run (True/False)
         if type(steady) != dict:
-            self.steady = {0: steady} 
-        else:    
-            self.steady = steady  
+            self.steady = {0: steady}
+        else:
+            self.steady = steady
 
         # Define reference lowerleft
         self.xll = xll
@@ -3839,7 +3839,7 @@ class ModPathWell:
         # Extract vadose_zone from geo_parameters and add to separate dict "vadose_parameters"
         self.schematisation_dict = self.extract_vadose_zone_parameters(schematisation = self.schematisation_dict,
                                                                         schematisation_type = self.schematisation_type)
-    
+
         ## Following code only relevant if there are different input requirements for each schematisation type
         if self.schematisation_type in ["phreatic","semiconfined"]:
             self.model_type = "axisymmetric"
@@ -3865,7 +3865,7 @@ class ModPathWell:
             # Check if gwlevel at edge of model corresponds with expected hydraulic head
             # gwlevel_distant == ibound_parameters['well1']['head']??
 
-                # Load head data    
+                # Load head data
                 self.gw_level, self.head_mf = self._get_gwlevel(model_hds = self.model_hds,time = -1)
 
             if self.schematisation_type in ["phreatic",]:
@@ -3897,10 +3897,10 @@ class ModPathWell:
                         print(e, self.success_mf)
                     # print(self.success_mf, self.buff)
 
-                # Reload head data    
+                # Reload head data
                 self.gw_level_reloaded, self.head_mf_reloaded = self._get_gwlevel(model_hds = self.model_hds,time = -1)
 
-        
+
         # Modpath simulation
         if self.run_mpmodel:
 
@@ -3920,7 +3920,7 @@ class ModPathWell:
 
 
 
-#%%  
+#%%
 
 def _calculate_hydraulic_head_phreatic(self, distance):
     ''' Calcualtes the hydraulic head distribution for the phreatic schematisation case
@@ -3944,13 +3944,13 @@ def _calculate_hydraulic_head_phreatic(self, distance):
 
 #%%
 if __name__ == "__main__":
-    #%% 
+    #%%
 
     # ------------------------------------------------------------------------------
     # Questions
     # ------------------------------------------------------------------------------
 
-    # 1. 
+    # 1.
 
     # ------------------------------------------------------------------------------
     # Phreatic and Semi-Confined Aquifer Functions
@@ -4013,7 +4013,7 @@ if __name__ == "__main__":
     # width_basin
     # _depth_basin
     # horizontal_distance_basin_gallery = horizontal distance between basin bank and drainage gallery [m];
-    # porosity_recharge_basin 
+    # porosity_recharge_basin
     # groundwater_level_above_saturated_zone = normal maximum rise of watertable above H0 [m];
 
     # from sutra2.draft_transport_function import HydroChemicalSchematisation as HCS
@@ -4023,16 +4023,16 @@ if __name__ == "__main__":
     # #%%
     # class AnalyticalWell():
     #     """ Compute travel time distribution using analytical well functions."""
-    
+
     #   	def __init__(self):
     #     		""" 'unpack/parse' all the variables from the hydrogeochemical schematizization """
     #   	  	for key, item for input_dict.items():
-    
-    
+
+
     #     def _check_init_freatic():
     #        	#check the variables that we need for the individual aquifer types are not NONE aka set by the user
     #   			pass
-    
+
     #   	def export_to_df(self, what_to_export='all')
     #   	    """ Export to dataframe....
 
@@ -4044,7 +4044,7 @@ if __name__ == "__main__":
     #   			#delete the unwanted columns depending on what the user asks for here
     #   			returns df_flowline, df_particle
 
-    #%%  
+    #%%
     # the python user will call the function as follows
     # well = AnalyticalWell()
     # if schematisation == 'freatic':

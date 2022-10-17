@@ -15,7 +15,7 @@
 # INITIALISATION OF PYTHON e.g. packages, etc.
 # ------------------------------------------------------------------------------
 
-# %reset -f #reset all variables for each run, -f 'forces' reset, !! 
+# %reset -f #reset all variables for each run, -f 'forces' reset, !!
 # only seems to work in Python command window...
 
 import matplotlib.pyplot as plt
@@ -51,7 +51,7 @@ path = Path(__file__).parent #os.getcwd() #path of working directory
 #DICTIONARIES START HERE
 #%%
 #%%
-# PHREATIC TEST 
+# PHREATIC TEST
 
 phreatic_scheme = HydroChemicalSchematisation(schematisation_type='phreatic',
                                       computation_method= 'analytical',
@@ -137,7 +137,7 @@ semiconfined_test_scheme = HydroChemicalSchematisation(schematisation_type='semi
                                         solid_density_target_aquifer= 2.650,
                                         diameter_borehole = 0.75,)
 
-semiconfined_test_scheme.make_dictionary()  
+semiconfined_test_scheme.make_dictionary()
 
 semiconfined_test_scheme_dict= { 'simulation_parameters' : phreatic_scheme.simulation_parameters,
         'endpoint_id': semiconfined_test_scheme.endpoint_id,

@@ -24,7 +24,7 @@
 
 # Plotting modules
 import matplotlib.pyplot as plt
-import matplotlib 
+import matplotlib
 import matplotlib.colors as colors
 
 import numpy as np
@@ -43,7 +43,7 @@ from datetime import timedelta
 # if module_path not in sys.path:
 #     sys.path.insert(0,module_path)
 
-from sutra2.Analytical_Well import AnalyticalWell 
+from sutra2.Analytical_Well import AnalyticalWell
 from sutra2.ModPath_Well import ModPathWell
 
 # from Analytical_Well import AnalyticalWell
@@ -55,11 +55,11 @@ from sutra2.ModPath_Well import ModPathWell
 path = os.getcwd()  # path of working directory
 
 class MicrobialOrganism:
-    ''' 
+    '''
     Placeholder class which will later be replaced by the QSAR functionality of AquaPriori ?!
 
-    For removal of microbial organisms ('mbo') / pathogen 
-    
+    For removal of microbial organisms ('mbo') / pathogen
+
     Return
     -------
     microbial_species_dict: dict
@@ -82,7 +82,7 @@ class MicrobialOrganism:
         Parameters
         ----------
         organism_name: str
-            name of the organism (for now limited dictionary to 
+            name of the organism (for now limited dictionary to
             'solani','carotovorum', 'solanacearum')
         alpha0_suboxic, alpha0_anoxic, alpha0_deeply_anoxic: float
             reference_collision_efficiency [-]
@@ -120,60 +120,60 @@ class MicrobialOrganism:
 
         # Naming convention organism: Uppercamelcase species
         self.micro_organism_database = {
-            "solani": 
+            "solani":
                 {"organism_name": "solani",
                     "alpha0": {
-                        "suboxic": 0.037, 
+                        "suboxic": 0.037,
                         "anoxic": 0.037e-2,     # NOT reported: factor 100 smaller than suboxic
                         "deeply_anoxic": 0.037e-2
                     },
                     "pH0": {
-                        "suboxic": 7.5, 
+                        "suboxic": 7.5,
                         "anoxic": 7.5,          # NOT reported: assumed equal to suboxic
                         "deeply_anoxic": 7.5    # NOT reported: assumed equal to suboxic
                     },
                     "organism_diam": 2.731e-6,
                     "mu1": {
-                        "suboxic": 1.2472, 
-                        "anoxic": 0.1151, 
+                        "suboxic": 1.2472,
+                        "anoxic": 0.1151,
                         "deeply_anoxic": 0.1151
                     }
                 },
-            "carotovorum": 
+            "carotovorum":
                 {"organism_name": "carotovorum",
                     "alpha0": {
-                        "suboxic": 0.300, 
-                        "anoxic": 0.577, 
+                        "suboxic": 0.300,
+                        "anoxic": 0.577,
                         "deeply_anoxic": 0.577
                     },
                     "pH0": {
-                        "suboxic": 7.5, 
-                        "anoxic": 7.5, 
+                        "suboxic": 7.5,
+                        "anoxic": 7.5,
                         "deeply_anoxic": 7.5
                     },
                     "organism_diam": 1.803e-6,
                     "mu1": {
-                        "suboxic": 1.2664, 
-                        "anoxic": 0.1279, 
+                        "suboxic": 1.2664,
+                        "anoxic": 0.1279,
                         "deeply_anoxic": 0.1279
                     }
                 },
-            "solanacearum": 
+            "solanacearum":
                 {"organism_name": "solanacearum",
                     "alpha0": {
-                        "suboxic": 0.011, 
-                        "anoxic": 0.456, 
+                        "suboxic": 0.011,
+                        "anoxic": 0.456,
                         "deeply_anoxic": 0.456
                     },
                     "pH0": {
-                        "suboxic": 7.5, 
-                        "anoxic": 7.5, 
+                        "suboxic": 7.5,
+                        "anoxic": 7.5,
                         "deeply_anoxic": 7.5
                     },
                     "organism_diam": 1.945e-6,
                     "mu1": {
-                        "suboxic": 0.3519, 
-                        "anoxic": 0.1637, 
+                        "suboxic": 0.3519,
+                        "anoxic": 0.1637,
                         "deeply_anoxic": 0.1637
                     }
                 },
@@ -186,19 +186,19 @@ class MicrobialOrganism:
             self.organism_dict = \
                 {"organism_name": self.organism_name,
                  "alpha0": {
-                    "suboxic": 1.e-2, 
-                    "anoxic": 1.e-3, 
+                    "suboxic": 1.e-2,
+                    "anoxic": 1.e-3,
                     "deeply_anoxic": 1.e-4
                     },
                  "pH0": {
-                    "suboxic": 7.5, 
-                    "anoxic": 7.5, 
+                    "suboxic": 7.5,
+                    "anoxic": 7.5,
                     "deeply_anoxic": 7.5
                     },
                  "organism_diam": 1.e-6,
                  "mu1": {
-                    "suboxic": 1., 
-                    "anoxic": 0.1, 
+                    "suboxic": 1.,
+                    "anoxic": 0.1,
                     "deeply_anoxic": 0.1
                      }
                 }
@@ -225,19 +225,19 @@ class MicrobialOrganism:
         if mu1_deeply_anoxic is not None:
             self.organism_dict["mu1"]["deeply_anoxic"] = mu1_deeply_anoxic
 
-        
+
 class Substance:
-    ''' 
+    '''
     Placeholder class which will later be replaced by the QSAR functionality of AquaPriori.
 
     For removal of organic micro pollutants (omp)
-    
+
     Return
     -------
     microbial_species_dict: dict
     removal_function = 'omp'
     '''
-    
+
     def __init__(self, substance_name,
                 molar_mass: int or float = None,
                 partition_coefficient_water_organic_carbon: int or float = None,
@@ -270,7 +270,7 @@ class Substance:
                 disassociation constant for acic H-OMP [-]
             omp_half_life: float
                 per redox zone, [days])
-     
+
         '''
 
         # substance name
@@ -337,13 +337,13 @@ class Substance:
                 "molar_mass": 10,
                 'pKa': 99,
                 "omp_half_life": {
-                    "suboxic": 1e99, 
-                    "anoxic": 1e99, 
+                    "suboxic": 1e99,
+                    "anoxic": 1e99,
                     "deeply_anoxic": 1e99
                     }
                 }
-            
-        
+
+
         # add/overwrite parameters 'if values are not None'
         if partition_coefficient_water_organic_carbon is not None:
             self.substance_dict["log_Koc"] = partition_coefficient_water_organic_carbon
@@ -364,7 +364,7 @@ class Substance:
 
 
 class Transport():
-    """ 
+    """
 
     # @Steven --> verander in 'Transport'
     Substance + Organism --> Pollutant
@@ -457,7 +457,7 @@ class Transport():
 
 
         '''
-        removal_parameters: 
+        removal_parameters:
 
         Initialization of the SubstanceTransport class. Checks for either user-defined OMP substance parameters (removal_function == 'omp')
         or user-defined microbial organism removal parameters (removal_function == 'mbo') and overrides the database values, if any.
@@ -471,11 +471,11 @@ class Transport():
         organism: object
             The Organism object with microbial organism (MBO) of interest
 
-        removal_function (inherited from Substance ('omp') or MicrobialOrganism ('mbo')): str 
+        removal_function (inherited from Substance ('omp') or MicrobialOrganism ('mbo')): str
             removal_function: ['omp' or 'mbo']
             Calculate removal of either organic micro pollutants ('omp') or microbial organisms ('mbo')
         '''
-        
+
         # well: AnalyticalWell or Modpath_Well object
         self.well = well
         # Load input dataframes
@@ -491,12 +491,12 @@ class Transport():
         if self.removal_function == 'omp':
             self.omp_initialized = False
             self.micro_organism_initialized = True
-      
+
         # Run init of 'pathogen'
         elif self.removal_function == 'mbo':
             self.omp_initialized = True
             self.micro_organism_initialized = False
-       
+
         if type(self.pollutant) == Substance:
             # Substance
             self.pollutant_name = self.pollutant.substance_name
@@ -512,7 +512,7 @@ class Transport():
         self._contamination_date_vs_well_abstraction()
 
     def _init_omp(self):
-        ''' 
+        '''
         Initialisation if the Substance is an OMP
         '''
         if self.omp_initialized:
@@ -527,7 +527,7 @@ class Transport():
 
     def _init_micro_organism(self):
         ''' Initialisation if the Species is a microbial organism'''
-        
+
         if self.micro_organism_initialized:
             pass
         else:
@@ -539,7 +539,7 @@ class Transport():
 
         self.micro_organism_initialized = True
 
-    #@Steven_todo, @MartinK: include in a function (used for both omp_removal as well as mbo removal)     
+    #@Steven_todo, @MartinK: include in a function (used for both omp_removal as well as mbo removal)
     def _contamination_date_vs_well_abstraction(self):
         # reduce the amount of text per line by extracting the following parameters
         self.compute_contamination_for_date = self.well.schematisation.compute_contamination_for_date
@@ -557,7 +557,7 @@ class Transport():
 
         self.compute_date = self.compute_contamination_for_date - self.start_date
         self.back_compute_date = self.start_date - self.back_date_start
-    
+
         # Particle release day
         self.particle_release_day = (self.start_date - start_date_contamination).days
 
@@ -632,7 +632,7 @@ class Transport():
                                                                         10 ** (1913 * (1 / (self.df_particle.loc[self.df_particle.log_Koc != 0,"temp_water"] + 273.15) - 1 / (20 + 273.15)))
         else:
             self.df_particle.loc[:,'Koc_temperature_correction'] = self.df_particle.loc[:,"log_Koc"]
-        
+
         # if log_Koc is zero, assign value of zero
         self.df_particle.loc[self.df_particle.log_Koc == 0,'Koc_temperature_correction'] = 0
 
@@ -671,7 +671,7 @@ class Transport():
                 # # AH 300 limit only to avoid very small numnbers, makes no difference for other calculations therefore left in
                 # Put back in, otherwise there is an error there are too many numbers in the output
                 # can't reproduce the error, so take out again
-                
+
                 elif (self.df_particle.travel_time.iloc[i] * self.df_particle.retardation.iloc[i]
                                                                             / self.df_particle.omp_half_life_temperature_corrected.iloc[i]) >300:
                     self.df_particle.steady_state_concentration.iloc[i] = 0
@@ -704,7 +704,7 @@ class Transport():
             self.df_flowline.at[fid, 'breakthrough_concentration'] = self.df_particle.loc[fid,'steady_state_concentration'].iloc[-1]
 
     def compute_omp_removal(self):
-        """ 
+        """
         Calculates the concentration in the well of each flowline. Returns
         the values in 'df_flowline' and 'df_particle' as attributes of the object.
 
@@ -756,7 +756,7 @@ class Transport():
 
             """
 
-        # load (diffuse) input concentration    
+        # load (diffuse) input concentration
         self.df_flowline.loc[:,'input_concentration'] = self.well.schematisation.diffuse_input_concentration
         self.df_particle.loc[:,'input_concentration'] = None
         if 'steady_state_concentration' not in self.df_particle.columns:
@@ -807,7 +807,7 @@ class Transport():
 
             # First value of input_concentration/steady_state_concentration equals point input concentration of pathline
             # for fid in df_particle_points.flowline_id.unique():
-                
+
             df_particle_points.loc[df_particle_points.total_travel_time == 0., 'input_concentration'] = df_flowline_points.loc[:,'input_concentration'].values
             df_particle_points.loc[df_particle_points.total_travel_time == 0., 'steady_state_concentration'] = df_flowline_points.loc[:,'input_concentration'].values
 
@@ -852,7 +852,7 @@ class Transport():
 
     def compute_concentration_in_well_at_date(self):
         #@Martink, this function is quite slow. I'm not sure how to make it go faster?
-        ''' 
+        '''
         Calculates the concentration in the well up to a specific date,
         taking into account the start and end date of the contamiantion and
         start date of the well.
@@ -1013,22 +1013,22 @@ class Transport():
             # Fill dataframe series (if needed with default value)
             if df[df_column].dropna().empty:
                 df[df_column] = df[df_column].fillna(value)
-            else: 
+            else:
                 # fill empty rows (with mean value of other records)
                 if not dtype_ == 'object':
                     value_mean = df[df_column].values.mean()
                     df[df_column] = df[df_column].fillna(value_mean)
-                else: 
+                else:
                     df[df_column] = df[df_column].fillna(value)
         # Adjust dtype
         df = df.astype({df_column: dtype_})
 
         return df
 
-    def calc_lambda(self, df_particle, df_flowline, 
+    def calc_lambda(self, df_particle, df_flowline,
                 redox = 'anoxic',
                 mu1 = 0.149,
-                por_eff = 0.33, 
+                por_eff = 0.33,
                 grainsize = 0.00025,
                 alpha0 = 0.001,
                 pH = 7.5,
@@ -1036,22 +1036,22 @@ class Transport():
                 temp_water = 10., rho_water = 999.703,
                 organism_diam = 2.33e-8, v_por = 0.01):
 
-        ''' For more information about the advective microbial removal calculation: 
+        ''' For more information about the advective microbial removal calculation:
             BTO2012.015: Ch 6.7 (page 71-74)
 
             Calculate removal coefficient lambda [/day].
-            
+
             Parameters
             -----------
             redox: str
                 redox condition ['suboxic','anoxic','deeply_anoxic']
-            
+
             mu1: float
                 inactivation coefficient [day-1]
-            
+
             por_eff: float
                 effective porosity [-]
-            
+
             grainsize: float
                 grain diameter of sediment [m]
 
@@ -1062,17 +1062,17 @@ class Transport():
                 pH of the water [-]
 
             pH0: float
-                reference pH for which alpha0 was determined 
-            
+                reference pH for which alpha0 was determined
+
             temp_water: float
                 Water temperature [degrees celcius]
-            
+
             rho_water: float
                 Water density [kg m-3]
-            
+
             alpha: float
                 'sticky coefficient' [-], pH corrected
-            
+
             organism_diam: float
                 Organism/species diameter [m]
 
@@ -1080,8 +1080,8 @@ class Transport():
                 porewater velocity [m/d]
 
             const_BM: float
-                Boltzmann constant [1,38 × 10-23 J K-1] 
-        
+                Boltzmann constant [1,38 × 10-23 J K-1]
+
             Return
             ---------
             df_flowline: pandas.DataFrame
@@ -1096,12 +1096,12 @@ class Transport():
         '''
 
         # Boltzmann coefficient [J K-1]
-        const_BM = 1.38e-23 
+        const_BM = 1.38e-23
 
         # Create empty column 'relative_distance' in df_particle
-        df_particle['relative_distance'] = None  
+        df_particle['relative_distance'] = None
         # Create empty column 'porewater_velocity' in df_particle
-        df_particle['porewater_velocity'] = None     
+        df_particle['porewater_velocity'] = None
 
 
         # Pathogen diameter [m]
@@ -1117,12 +1117,12 @@ class Transport():
         # Water density [kg m-3]
         df_particle = self._df_fillna(df_particle,
                                 df_column = 'rho_water',
-                                value = rho_water) 
-        
+                                value = rho_water)
+
         # Effective porosity [-]
         df_particle = self._df_fillna(df_particle,
                                 df_column = 'porosity',
-                                value = por_eff)   
+                                value = por_eff)
 
         # grain size [m]
         df_particle = self._df_fillna(df_particle,
@@ -1154,7 +1154,7 @@ class Transport():
                                 value = mu1)
 
         # Create empty column 'alpha' in df_particle
-        df_particle['alpha'] = None  
+        df_particle['alpha'] = None
 
         # Calculate 'sticky coefficient' alpha [np.array]
         alpha = {}
@@ -1167,15 +1167,15 @@ class Transport():
         # Create empty column 'k_att' in df_particle
         df_particle['k_att'] = None
         # Create empty column 'lambda' in df_particle
-        df_particle['lamda'] = None        
-        
+        df_particle['lamda'] = None
+
         # Calculate porewater velocity
-        v_por, dist, tdiff = {}, {}, {}   
+        v_por, dist, tdiff = {}, {}, {}
         for pid in df_flowline.index:
 
             # Distance squared argument
-            dist_ = (df_particle.loc[pid,"xcoord"].diff().values**2 + 
-                                df_particle.loc[pid,"ycoord"].diff().values**2 + 
+            dist_ = (df_particle.loc[pid,"xcoord"].diff().values**2 +
+                                df_particle.loc[pid,"ycoord"].diff().values**2 +
                                 df_particle.loc[pid,"zcoord"].diff().values**2)
             # Replace nan values
             dist_ = np.nan_to_num(dist_.astype('float'),nan=0.)
@@ -1189,7 +1189,7 @@ class Transport():
             # correct "0" velocity values
             v_por[pid][v_por[pid] == 0.] = 0.001
 
-            # Fill column relative_distance in 'df_particle' 
+            # Fill column relative_distance in 'df_particle'
             df_particle.loc[pid,'relative_distance'] = np.array([0] + list(dist[pid][1:]))
             # df_particle.loc[pid,'relative_distance'][-1] = 0
 
@@ -1199,7 +1199,7 @@ class Transport():
             # df_particle.loc[pid,"porewater_velocity"][-1] = v_por[pid][-1]
 
             # number of nodes
-            n_nodes = len(df_particle.loc[pid,:])            
+            n_nodes = len(df_particle.loc[pid,:])
 
 
         # Create empty dicts and keys to keep track of arrays per particle id
@@ -1217,7 +1217,7 @@ class Transport():
 
             # Calculate Happel’s porosity dependent parameter 'A_s' (Eq. 5: BTO2012.015)
             ''' !!! Use correct formula:-> As =  2 * (1-gamma**5) /  (2 - 3 * gamma + 3 * gamma**5 - 2 * gamma**6)
-                instead of... 2 * (1-gamma)**5 / (.......) 
+                instead of... 2 * (1-gamma)**5 / (.......)
             '''
             As_happ[pid] = 2 * (1-gamma[pid]**5) / \
                     (2 - 3 * gamma[pid] + 3 * gamma[pid]**5 - 2 * gamma[pid]**6)
@@ -1225,7 +1225,7 @@ class Transport():
             # Dynamic viscosity (mu) [kg m-1 s-1]
             mu[pid] = (df_particle.loc[pid,"rho_water"].values * 497.e-6) / \
                         (df_particle.loc[pid,"temp_water"].values + 42.5)**(3/2)
- 
+
             # Diffusion constant 'D_BM' (Eq.6: BTO2012.015) --> unit: m2 s-1
             D_BM[pid] = (const_BM * (df_particle.loc[pid,"temp_water"].values + 273.)) / \
                         (3 * np.pi * df_flowline.loc[pid,"organism_diam"] * mu[pid])
@@ -1234,7 +1234,7 @@ class Transport():
 
             # Diffusion related attachment term 'k_diff'
             k_diff[pid] = ((D_BM[pid] /
-                        (df_particle.loc[pid,"grainsize"].values * df_particle.loc[pid,"porosity"].values * df_particle.loc[pid,"porewater_velocity"].values))**(2/3) * 
+                        (df_particle.loc[pid,"grainsize"].values * df_particle.loc[pid,"porosity"].values * df_particle.loc[pid,"porewater_velocity"].values))**(2/3) *
                             df_particle.loc[pid,"porewater_velocity"].values)
 
             # 'attachment coefficient' k_att [/dag]
@@ -1249,9 +1249,9 @@ class Transport():
 
         # return (adjusted) df_particle and df_flowline
         return df_particle, df_flowline
-        
-    def calc_advective_microbial_removal(self,df_particle: pd.DataFrame =None, 
-                                        df_flowline: pd.DataFrame =None, 
+
+    def calc_advective_microbial_removal(self,df_particle: pd.DataFrame =None,
+                                        df_flowline: pd.DataFrame =None,
                                         endpoint_id: str = "well1", trackingdirection = "forward",
                                         grainsize = 0.00025,
                                         temp_water = 11., rho_water = 999.703,
@@ -1261,18 +1261,18 @@ class Transport():
                                         organism_diam = 2.33e-8,
                                         mu1 = 0.023, alpha0 = 1.E-5, pH0 = 6.8,
                                         conc_start = 1., conc_gw = 0.):
-                                        
-        ''' 
-            Calculate the steady state concentration along traveled distance per 
+
+        '''
+            Calculate the steady state concentration along traveled distance per
             node for each pathline from startpoint to endpoint_id' after advective microbial removal.
 
-            For more information about the advective microbial removal calculation: 
+            For more information about the advective microbial removal calculation:
                 BTO2012.015: Ch 6.7 (page 71-74)
 
             #SR_todo: remove df_flowline 'substance', 'removal_function', 'input_concentration' [species independent vars]
-            #SR todo: remove df_particle 'lamda' 
+            #SR todo: remove df_particle 'lamda'
             # --> not input, but output (replace 'substance' by 'name' of OMP or MBO)
-            
+
             Attributes
             -----------
             df_particle: pandas.DataFrame
@@ -1323,34 +1323,34 @@ class Transport():
 
             pH: float
                 pH of the water [-]
-            
+
             mu1: float
                 inactivation coefficient [day-1]
-            
+
             pH0: float
-                reference pH for which alpha0 was determined 
-            
+                reference pH for which alpha0 was determined
+
             alpha: float
                 'sticky coefficient' [-], pH corrected
-            
+
             alpha0: float
                 'reference sticky coefficient', for a reference pH [pH0]
-            
+
             organism_diam: float
                 organism/species diameter [m]
-            
+
             v_por: float
                 porewater velocity [m/d]
-            
+
             conc_start: float
                 starting concentration
-            
+
             conc_gw: float
                 initial groundwater concentration
-            
+
             distance_traveled: float
                 distance between points [m]
-            
+
             traveltime: float
                 time between start and endpoint [days]
 
@@ -1393,7 +1393,7 @@ class Transport():
         '''
         if organism_name is None:
             organism_name = self.pollutant_name
-        
+
         if df_particle is not None:
             self.df_particle = df_particle
         if df_flowline is not None:
@@ -1408,8 +1408,8 @@ class Transport():
         # Calculate removal coefficient 'lamda' [/day].
         self.df_particle, self.df_flowline = self.calc_lambda(self.df_particle, self.df_flowline,
                                                     redox = redox, mu1 = mu1, por_eff = por_eff,
-                                                    grainsize = grainsize, alpha0 = alpha0, 
-                                                    pH = pH, pH0 = pH0, temp_water = temp_water, 
+                                                    grainsize = grainsize, alpha0 = alpha0,
+                                                    pH = pH, pH0 = pH0, temp_water = temp_water,
                                                     rho_water = rho_water, organism_diam = organism_diam)
 
         # Starting concentration [-]
@@ -1439,7 +1439,7 @@ class Transport():
         if 'steady_state_concentration' not in self.df_particle.columns:
             # steady-state concentration for particles along a certain flowline
             self.df_particle['steady_state_concentration'] = None
-        
+
         for pid in self.df_flowline.index:
             self.df_particle.loc[pid,"steady_state_concentration"].iloc[0] = self.df_flowline.at[pid,"input_concentration"]
 
@@ -1447,7 +1447,7 @@ class Transport():
         conc_rel = {}
         conc_steady = {}  # concentration corrected for initial concentration
         for pid in self.df_flowline.index:
-            
+
             # Calculate the relative removal along pathlines
             exp_arg = -((self.df_particle.loc[pid,"lamda"].values / self.df_particle.loc[pid,"porewater_velocity"].values) *
                                 self.df_particle.loc[pid,'relative_distance'].values).astype('float')
@@ -1461,10 +1461,10 @@ class Transport():
                                     self.df_flowline.loc[pid,"input_concentration"]
                 # Replace 'nan'-values by 0.
                 conc_steady[pid]  = np.nan_to_num(conc_steady[pid],0.)
-                
+
                 # Index of average final concentration "C_"  idx=-1[C0,...,..,...,Ct-1,C_final]
                 idx_final = -1
-                                
+
             elif trackingdirection == 'backward':
                 conc_steady[pid] = (conc_rel[pid][::-1]/self.df_flowline.loc[pid,"input_concentration"]).cumprod() * \
                                     self.df_flowline.loc[pid,"input_concentration"]
@@ -1496,12 +1496,12 @@ class Transport():
                 self.df_flowline.loc[pid,'breakthrough_concentration'] = C_breakthrough
                 # Add breakthrough_traveltime to df_flowline
                 self.df_flowline.loc[pid,'breakthrough_travel_time'] = time_breakthrough
-        
+
         # Add final concentration in well (at endpoint_id)
         self.df_flowline.loc[self.df_flowline.endpoint_id == endpoint_id,"concentration_in_well"] = C_final
 
         # No retardation included with mbo removal
-        self.df_particle['retardation'] = 1.       
+        self.df_particle['retardation'] = 1.
         self.df_particle.loc[:,'breakthrough_travel_time'] = self.df_particle.loc[:,"retardation"].values * self.df_particle.loc[:,"total_travel_time"].values
 
         # SR_todo: @MartinvdS required to calc total_breakthrough_travel_time mbo?
@@ -1519,12 +1519,12 @@ class Transport():
     def plot_travel_time_distribution(self, df_particle, times_col = "total_travel_time",
                                       distance_col = "xcoord", index_col = "flowline_id",
                                       fpath_fig = None):
-        ''' Plot cumululative travel times using column 'times_col' relative to distance 'distance_col' 
+        ''' Plot cumululative travel times using column 'times_col' relative to distance 'distance_col'
             per pathline with index column 'index_col'.'''
 
         # Pathline indices
         flowline_ids = list(df_particle.loc[:,index_col].unique())
-        
+
         ## modpath solution ##
         # Distance points
         distance_points = np.empty((len(flowline_ids)), dtype = 'float')
@@ -1536,12 +1536,12 @@ class Transport():
             # Fill distance_points array
             distance_points[idx] = df_particle.loc[df_particle[index_col] == fid, [distance_col,times_col]].sort_values(
                                         by = times_col, ascending = True).iloc[0,0]
-            
+
             # Fill time_points array
             time_points[idx] = df_particle.loc[df_particle[index_col] == fid, [distance_col,times_col]].sort_values(
                                         by = times_col, ascending = True).iloc[-1,1]
-        
-        
+
+
         # Create travel time distribution plot
         fig, ax = plt.subplots(figsize= (10,10),dpi=300)
 
@@ -1565,9 +1565,9 @@ class Transport():
                                 line_dist = 1, dpi = 192, trackingdirection = "forward",
                                 cmap = 'viridis_r',
                                 show_vadose = True):
-        ''' Create pathline plots with residence times 
+        ''' Create pathline plots with residence times
             using colours as indicator.
-            with: 
+            with:
             - df_particle: dataframe containing xyzt-points of the particle paths.
             - fpathfig = output location of plots
             figtext: figure text to show within plot starting at
@@ -1584,7 +1584,7 @@ class Transport():
             cmap: Uses colormap 'viridis_r' (viridis reversed as default)
             show_vadose: T/F (if True, include vadose zone flow lines; default = True)
             '''
-   
+
         if lognorm:
             if vmin <= 0.:
                 vmin = 1.e-2
@@ -1598,7 +1598,7 @@ class Transport():
             # Use index as flowline_id instead
             df_particle.loc[:,"flowline_id"] = df_particle.index.values
             flowline_ID = list(df_particle.flowline_id.unique())
-            
+
 
         for fid in flowline_ID:
 
@@ -1645,7 +1645,7 @@ class Transport():
             else:
                 # formatting of values (log or linear: None?)
                 norm_vals = None
-                
+
             # Mask values outside of vmin & vmax
             time_vals = np.ma.masked_where((xyz_scatter[:,2] > vmax), xyz_scatter[:,2])
             plt.scatter(xyz_scatter[:,0],
@@ -1656,7 +1656,7 @@ class Transport():
                         marker = 'o',
                         norm= norm_vals)
             plt.plot(xyz_scatter[:,0],
-                        xyz_scatter[:,1], c = 'k', lw = 0.1)  
+                        xyz_scatter[:,1], c = 'k', lw = 0.1)
                         # 'o', markersize = marker_size,
                         # markerfacecolor="None", markeredgecolor='black') #, lw = 0.1)
             plt.xlim(xmin,xmax)
@@ -1671,7 +1671,7 @@ class Transport():
         # ticklabs_new = [str(iLab).replace("-0.0","0.0") for iLab in \
         #                 np.linspace(-np.log10(vmin),0.,num = len(ticklabs_old), endpoint = True)]
         # cbar.ax.set_yticklabels(ticklabs_new)
-        
+
         # cbar.set_yticks([mn,md,mx])
         # cbar.ax.set_yticklabels(norm_labels)
         cbar.set_label("Residence time [days]")
@@ -1692,7 +1692,7 @@ class Transport():
         else:
             plt.savefig(fpathfig, dpi = dpi)
         # Sluit figuren af
-        plt.close('all')    
+        plt.close('all')
 
 
     def plot_logremoval(self, df_particle: pd.DataFrame,
@@ -1704,7 +1704,7 @@ class Transport():
                         cmap = 'viridis_r'):
         ''' Create pathline plots with log removal
             using colours as indicator.
-            with: 
+            with:
             - df_particle: dataframe containing xyzt-points of the particle paths.
             - fpathfig = output location of plots
             figtext: figure text to show within plot starting at
@@ -1716,7 +1716,7 @@ class Transport():
             trackingdirection: direction of calculating flow along pathlines"
             cmap: Uses colormap 'viridis_r' (viridis reversed as default)
             '''
-            
+
         if lognorm:
             if vmin <= 0.:
                 vmin = 1.e-2
@@ -1740,7 +1740,7 @@ class Transport():
             # Plot every 'line_dist' number of meters one line
             if trackingdirection == "forward":
                 # x_origin: starting position of pathline
-                x_origin = x_points[0]  
+                x_origin = x_points[0]
             else:
                 # x_origin: starting position of pathline
                 x_origin = x_points[-1]
@@ -1764,7 +1764,7 @@ class Transport():
             else:
                 # formatting of values (log or linear: None?)
                 norm_vals = None
-                
+
             # Mask values outside of vmin & vmax
             conc_vals = np.ma.masked_where((xyz_scatter[:,2] < vmin) | (xyz_scatter[:,2] > vmax), xyz_scatter[:,2])
             plt.scatter(xyz_scatter[:,0],
@@ -1775,7 +1775,7 @@ class Transport():
                         marker = 'o',
                         norm= norm_vals)
             plt.plot(xyz_scatter[:,0],
-                        xyz_scatter[:,1], c = 'k', lw = 0.1)  
+                        xyz_scatter[:,1], c = 'k', lw = 0.1)
                         # 'o', markersize = marker_size,
                         # markerfacecolor="None", markeredgecolor='black') #, lw = 0.1)
             plt.xlim(xmin,xmax)
@@ -1787,7 +1787,7 @@ class Transport():
         # ticklabs_new = [str(iLab).replace("-0.0","0.0") for iLab in \
         #                 np.linspace(-np.log10(vmin),0.,num = len(ticklabs_old), endpoint = True)]
         # cbar.ax.set_yticklabels(ticklabs_new)
-        
+
         # cbar.set_yticks([mn,md,mx])
         cbar.ax.set_yticklabels(norm_labels)
         cbar.set_label("Log removal [-]")
@@ -1808,8 +1808,8 @@ class Transport():
         else:
             plt.savefig(fpathfig, dpi = dpi)
         # Sluit figuren af
-        plt.close('all')    
-        
+        plt.close('all')
+
     def compute_pathogen_removal(self):
         #AH_todo
         pass
