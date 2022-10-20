@@ -703,13 +703,18 @@ class Transport():
             self.df_flowline.at[fid, 'total_breakthrough_travel_time'] = sum(self.df_particle.loc[fid,:].fillna(0)['travel_time'])
             self.df_flowline.at[fid, 'breakthrough_concentration'] = self.df_particle.loc[fid,'steady_state_concentration'].iloc[-1]
 
+    # this will introduce an error if user calls it while he has a microb class. so I would make a get_removal method that chekcs whether it is a
+    # omp or mbo simulation and call their resepecive removal method; these methods should be private (prefix _)
     def compute_omp_removal(self):
+        #MWK: the description of df_flowline and df_particle is not the best place here. Better in __init__. only say here
+        # what you will add
         """
         Calculates the concentration in the well of each flowline. Returns
         the values in 'df_flowline' and 'df_particle' as attributes of the object.
 
         Returns
         -------
+
         df_flowline: pandas.DataFrame
             Column 'flowline_id': Integer
             Column 'flowline_type': string
@@ -829,6 +834,7 @@ class Transport():
             # Add substance name
             self.df_flowline.loc[:,'name'] = self.pollutant_name
 
+        # MWK you call it twice now... also in __inti__
         self._init_omp()
 
         self._calculate_Koc_temperature_correction()
@@ -852,6 +858,10 @@ class Transport():
 
     def compute_concentration_in_well_at_date(self):
         #@Martink, this function is quite slow. I'm not sure how to make it go faster?
+        # --> MWK: Probably in the for loop over time_array.few things to try:
+        #          - initialize well_concentration to the length it will get: well_concentration=[0]*len(time_array)
+        #          - do the summation only once before the loop by adding a column cumulative_well_concentration = df_flowline['concentration_in_well'].cumsum()
+        #            and get the right well_conc from that column instead. I think you dont even need to loop over t anymore
         '''
         Calculates the concentration in the well up to a specific date,
         taking into account the start and end date of the contamiantion and
@@ -902,12 +912,14 @@ class Transport():
 
         return df_well_concentration
 
+    # I would add a show_fig = True (as default) to show the fig directly with this method
     def plot_concentration(self,
                             xlim=None,
                             ylim=None,
                             as_fraction_input = None,
                             x_axis = 'Date'):
         ## @Alex: adjust name of function to 'plot_concentration_timeseries'
+        # MWK why is this not done yet?
         ''' Plot the concentration of the given OMP as a function of time since the start of the contamination
 
         Parameters
@@ -960,13 +972,11 @@ class Transport():
             plt.plot(df_well_concentration.date, df_well_concentration.total_concentration_in_well, 'b', label =str(self.pollutant_name))
             plt.axvline(x=start_date_well, color= 'k', label = 'Start date well')
             plt.axvline(x=start_date_contamination, color= 'r', label = 'Start date contamination')
-            if end_date_contamination is None:
-                pass
-            else:
+            if end_date_contamination is not None:
                 plt.axvline(x=end_date_contamination, color= 'g', label = 'End date contamination')
 
             plt.xlabel('Date')
-            if xlim == None:
+            if xlim is None:
                 plt.xlim([datetime.date((back_date_start.year-5), 1, 1), compute_contamination_for_date])
             else: plt.xlim(xlim)
 
@@ -974,17 +984,15 @@ class Transport():
             plt.plot(df_well_concentration.time/365.24, df_well_concentration.total_concentration_in_well,  'b', label =str(self.pollutant_name))
             plt.axvline(x=(start_date_well-start_date).days/365.24, color= 'k', label = 'Start date well')
             plt.axvline(x=(start_date_contamination-start_date).days/365.24, color= 'r', label = 'Start date contamination')
-            if end_date_contamination is None:
-                pass
-            else:
+            if end_date_contamination is not None:
                 plt.axvline(x=(end_date_contamination-start_date).days/365.24, color= 'g', label = 'End date contamination')
 
             plt.xlabel('Time (years)')
-            if xlim == None:
+            if xlim is None:
                 plt.xlim([(back_date_start-start_date).days/365-5,compute_date.days/365.24])
             else: plt.xlim(xlim)
 
-        if ylim == None:
+        if ylim is None:
             plt.ylim([0, input_concentration])
         else: plt.ylim(ylim)
         plt.legend(loc=2)
@@ -1006,25 +1014,26 @@ class Transport():
             Return adjusted dataframe 'df'
         '''
 
-        if not df_column in df.columns:
+        if df_column not in df.columns:
             # Add dataframe column with default value
             df[df_column] = value
+        elif df[df_column].dropna().empty:
+            df[df_column] = df[df_column].fillna(value)
+        elif dtype_ == 'object':
+            df[df_column] = df[df_column].fillna(value)
         else:
-            # Fill dataframe series (if needed with default value)
-            if df[df_column].dropna().empty:
-                df[df_column] = df[df_column].fillna(value)
-            else:
-                # fill empty rows (with mean value of other records)
-                if not dtype_ == 'object':
-                    value_mean = df[df_column].values.mean()
-                    df[df_column] = df[df_column].fillna(value_mean)
-                else:
-                    df[df_column] = df[df_column].fillna(value)
+            value_mean = df[df_column].values.mean()
+            df[df_column] = df[df_column].fillna(value_mean)
         # Adjust dtype
         df = df.astype({df_column: dtype_})
 
         return df
 
+    # MWK: where is OMP and where is mbo removal determined?
+
+    # this can be made a function, just likei others. is there only one df_particle df_flowline  associated with this class?
+    # if so store them as ttribure and remove the as argumetns
+    # this method is too long split it up
     def calc_lambda(self, df_particle, df_flowline,
                 redox = 'anoxic',
                 mu1 = 0.149,
@@ -1250,6 +1259,7 @@ class Transport():
         # return (adjusted) df_particle and df_flowline
         return df_particle, df_flowline
 
+    # docstring too long, method to long, refactor in multiple methods
     def calc_advective_microbial_removal(self,df_particle: pd.DataFrame =None,
                                         df_flowline: pd.DataFrame =None,
                                         endpoint_id: str = "well1", trackingdirection = "forward",
@@ -1780,24 +1790,17 @@ class Transport():
                         # markerfacecolor="None", markeredgecolor='black') #, lw = 0.1)
             plt.xlim(xmin,xmax)
             plt.clim(vmin,vmax)
+
         # Voeg kleurenbalk toe
         cbar = plt.colorbar()
-        ticklabs_old = [t.get_text() for t in cbar.ax.get_yticklabels()]
-        # print(ticklabs_old)
-        # ticklabs_new = [str(iLab).replace("-0.0","0.0") for iLab in \
-        #                 np.linspace(-np.log10(vmin),0.,num = len(ticklabs_old), endpoint = True)]
-        # cbar.ax.set_yticklabels(ticklabs_new)
-
-        # cbar.set_yticks([mn,md,mx])
         cbar.ax.set_yticklabels(norm_labels)
         cbar.set_label("Log removal [-]")
-    #    cbar.set_label("Concentratie [N/L]")
-        # Titel
-        # plt.title("Pathogenenverwijdering in grondwater")
+
         # Label x-as
         plt.xlabel("Distance (m)")
         # Label y-as
         plt.ylabel("Depth (m)")
+
         # Tekst voor in de figuur
         if figtext is not None:
             plt.text(x = x_text,y = y_text,s = figtext,
@@ -1812,12 +1815,5 @@ class Transport():
 
     def compute_pathogen_removal(self):
         #AH_todo
-        pass
+        raise NotImplementedError()
 
-    # def plot_age_distribution(self):
-    #     #AH_todo
-    #     pass
-
-    # def plot_logremoval(self):
-    #     #AH_todo
-    #     pass

@@ -1,3 +1,5 @@
+# MWK: I have the feeling that the modpathwell hclass has becoe too big. it seems that it would beenfit by some restrucutring where grid-related methods are brought togeter in a Grid class and modpath/flow methods like
+# create_dis, create_bas etc in a modpathConnector class (of verzin een leukere naam)
 #%% ----------------------------------------------------------------------------
 # A. Hockin, March 2021
 # KWR BO 402045-247
@@ -25,7 +27,6 @@
 
 # Plotting modules
 import matplotlib.pyplot as plt
-import matplotlib
 import matplotlib.colors as colors
 
 import numpy as np
@@ -37,31 +38,16 @@ import sys
 import copy
 import warnings
 
-# from pandas import read_excel
-from pandas import read_csv
-from pandas import read_excel
-import datetime
-# import pyarrow.parquet as pq
 import math
-import re # regular expressions
 from scipy.special import kn as besselk
 
+# MWK: Schematization needs to be in its own file, schematization.py Because now the import
+# is confusing (why wouold I need the schematization of the analytical well for my
+# modflow simulation)
 from sutra2.Analytical_Well import AnalyticalWell, HydroChemicalSchematisation
 
-# try:
-#     from sutra2.Analytical_Well import *
-#     from sutra2.Substance_Transport import *
-# except ModuleNotFoundError as e:
-#     print(e, ": second try.")
-#     module_path = os.path.join("..","sutra2")
-#     if module_path not in sys.path:
-#         sys.path.insert(0,module_path)
-#     from Analytical_Well import *
-#     from Substance_Transport import *
-
-#     print("Second try to import modules succeeded.")
-
 # path of working directory
+# MWK: this does not seem to be used, correct?
 path = os.getcwd()
 
 # run installed version of flopy or add local path
@@ -70,16 +56,15 @@ try:
     import flopy
     import flopy.utils.binaryfile as bf
 except Exception as e:
+    # MWK wanneer is dit nodig? Dit lijkt me toch ongewenst?
     flopypth = os.path.abspath(os.path.join('..', '..'))
     sys.path.append(flopypth)
     import flopy
     import flopy.utils.binaryfile as bf
 
-# flopy version
-print(flopy.__version__)
-
 
 #%%
+# MWK zijn deze opmerkeingen verwerkt? verwerken en verwijdern
 '''
 Some clarifications in red below:
 
@@ -151,15 +136,17 @@ rmax -> diameter_filterscreen
 
 class ModPathWell:
 
-    """ Compute travel time distribution using MODFLOW and MODPATH."""
     def __init__(self, schematisation: HydroChemicalSchematisation,
                        workspace: str or None = None, modelname: str or None = None,
                        mf_exe = "mf2005.exe", mp_exe = "mpath7.exe",
+                       # MWK these bound_.. are the labels right? Not the value. remane it to bound_left_label or ...key
                        bound_left: str = "xmin", bound_right: str = "xmax",
                        bound_top: str = "top", bound_bot: str = "bot",
                        bound_north: str = "ymin", bound_south: str = "ymax",
                        trackingdirection = "forward"):
-        ''''unpack/parse' all the variables from the hydrogeochemical schematizization """
+        """ Compute travel time distribution using MODFLOW and MODPATH.
+
+        unpack/parse' all the variables from the hydrogeochemical schematizization
 
         #@Steven: Parameters df_particle & df_flowline mogen weg. Beschrijf wel overige invoer
         Parameters
@@ -181,10 +168,7 @@ class ModPathWell:
             Column 'zcoord'
             Column 'redox'
             Column 'temp_water'
-        '''
-
-        # get the non-default parameters
-        # self.test_variable = None #AH test variable here to see if errors are caught....
+        """
 
         self.workspace = workspace  # workspace
         self.modelname = modelname  # modelname
@@ -193,6 +177,7 @@ class ModPathWell:
         self.mp_exe = mp_exe
 
         # Cbc unit flag (modflow oc-package input)
+        # MWK te cryptische variable naam. noem het dan gewoon cbc_unit_flag of modflow_cbc_unit_flag
         iu_cbc = 130
         self.iu_cbc = iu_cbc
         # Expected boundary terms in dicts
@@ -203,11 +188,11 @@ class ModPathWell:
         self.bound_north = bound_north
         self.bound_south = bound_south
         # Direction of calculating flow along pathlines (in modpath)
-        self.trackingdirection = trackingdirection
-
+        self.trackingdirection = tracking_direction
 
         # Create output directories
         # Destination root
+        # MWK ergens anders wordt Path gebruikt, dus ik zou dat consistent overal aanhouden
         self.dstroot = self.workspace + '\\results'
 
         # Create workspace(s)
@@ -217,6 +202,7 @@ class ModPathWell:
         # Source files
         self.model_hds = os.path.join(self.workspace, self.modelname + '.hds')
         self.model_cbc = os.path.join(self.workspace, self.modelname + '.cbc')
+        # MWK dit is een docstring van een andere functie, verwijdern of verplaatsen
         '''
         Initialize the AnalyticalWell object by making the dictionaries and adding the schematisation (and therefore attributes
         of the schematisation) to the object.
@@ -233,6 +219,8 @@ class ModPathWell:
         "well_parameters","concentration_boundary_parameters","point_parameters", "mesh_refinement",
         "endpoint_id"]
 
+        # MWK waarom ondersteun je dit? Je wil mensen toch dwingen om een schematisatie class te gebruiken?
+        # zo niet, dan kun je de schematisatie class uberhaupt beter een dict maken.
         if type(self.schematisation) == dict:
             self.schematisation_dict = self.schematisation
         else:
@@ -253,7 +241,6 @@ class ModPathWell:
                 self.schematisation_dict[iKey] = getattr(self.schematisation,iKey)
 
     def _check_schematisation(self,required_keys):
-
         for req_key in required_keys:
             if not hasattr(self.schematisation,req_key):
                 print(f'Error, required variable {req_key} is not defined in schematisation dict.')
@@ -270,9 +257,9 @@ class ModPathWell:
         ''' Determine whether required packages and corresponding dictionaries
             occur in the schematisation dictionary 'schematisation'.'''
 
-        for iPackage in package_list:
-            if schematisation.get(iPackage + '_parameters', default=None) is None:
-                raise KeyError(f'Error, required package parameters for {iPackage} are not defined.')
+        for package_i in package_list:
+            if schematisation.get(package_i + '_parameters', default=None) is None:
+                raise KeyError(f'Error, required package parameters for {package_i} are not defined.')
 
 
     ## Tijdelijk overslaan (*codeSteven_20211021.xlsx)
@@ -285,9 +272,11 @@ class ModPathWell:
         self._check_parameters(required_parameters)
 
     def _check_schematisation_input(self):
+        #deze doc string klopt niet of is niet duidelijk of de naam van de functie klopt niet/is niet duielijk
         ''' Modflow & modpath calculation using subsurface schematisation type 'phreatic'. '''
 
         # list active packages
+        #MWK unused variable
         active_packages = ["DIS","BAS","LPF","OC","PCG"]
         # Parameter requirement
         package_parms = {"BAS": "ibound"}
@@ -301,13 +290,14 @@ class ModPathWell:
         # Required parameters (to run model)
         required_parameters = []
 
-        # Check input for schematisation type
+        # Check input for schematisation type MWK ik zou verwachten dat dat in deze functie gebeurt
         self._check_init_schematisation(required_keys = required_keys, required_parameters = required_parameters)
 
 
     def _update_property(self, property, value):
-        setattr(self, property, value)
+        # MWK mooie helper methode/functie
         ''' set attribute value to new object attribute/property'''
+        setattr(self, property, value)
 
     def extract_vadose_zone_parameters(self,schematisation: dict,
                                         schematisation_type: str or None,
@@ -319,10 +309,13 @@ class ModPathWell:
         remove_layer: --> remove the key from schematisation[dict_key] if
         it is a vadose_zone (T/F). '''
         vadose_parameters = {}
-        for iDict_sub in schematisation[dict_key]:
-            if parameter in schematisation[dict_key][iDict_sub]:
-                if schematisation[dict_key][iDict_sub][parameter] == True:  # is geological layer a vadose zone? T/F
-                    vadose_parameters[iDict_sub] = schematisation[dict_key][iDict_sub]
+        # MWK denk aan hoofdlettergebruik. (gebruik van i aan het einde is persoonlijke voorkeur omdat het meer lijkt zoals je ook subscripts gebruitk in normale text)
+        for schema_i in schematisation[dict_key]:
+            if parameter in schematisation[dict_key][schema_i]:
+                if schematisation[dict_key][schema_i][parameter] == True:  # is geological layer a vadose zone? T/F # MWK als je checkt voor vadose, moet je toch niet parameter gebruken maar expliciet "vadose"?
+                                                                           # schematisation[dict_key][schema_i]["vadose"]
+
+                    vadose_parameters[schema_i] = schematisation[dict_key][schema_i]
 
         # Add vadose_parameters as key for schematisation dictionary
         schematisation["vadose_parameters"] = vadose_parameters
@@ -339,27 +332,36 @@ class ModPathWell:
                 # Default is to keep layers in schematisation
                 remove_layer = False
 
-        for iKey in vadose_parameters:
+        for key_i in vadose_parameters:
             if remove_layer:
                 # Remove the keys added as vadose_parameters (vadose_zone)
-                schematisation[dict_key].pop(iKey)
+                schematisation[dict_key].pop(key_i)
             else:
                 # Keep "vadose" in geo_parameters and include as active boundary
-                schematisation["ibound_parameters"][iKey] = schematisation["ibound_parameters"].get(iKey,{})
+                schematisation["ibound_parameters"][key_i] = schematisation["ibound_parameters"].get(key_i,{})
                 # Add no-flow boundary indication (ibound = 0)
-                schematisation["ibound_parameters"][iKey]["ibound"] = 1
+                schematisation["ibound_parameters"][key_i]["ibound"] = 1
                 # Add extent of vadose zone location
-                for iBoundary in ["top","bot","xmin","xmax","ymin","ymax"]:
-                    if iBoundary in schematisation[dict_key][iKey].keys():
-                        schematisation["ibound_parameters"][iKey][iBoundary] = schematisation[dict_key][iKey][iBoundary]
+                for boundary_i in ["top","bot","xmin","xmax","ymin","ymax"]:
+                    if boundary_i in schematisation[dict_key][key_i].keys():
+                        schematisation["ibound_parameters"][key_i][boundary_i] = schematisation[dict_key][key_i][boundary_i]
 
 
         return schematisation
 
     def _assign_cellboundaries(self,schematisation: dict, dict_keys: list or None = None,
+                                # is bound_min en max niet ook een attribuut van het object? dan hoef je het hier niet als argument mee te geven...
+                                # of deze methode generiek voor x, y en z richting. dan is het op zich logischer. Maar dan
+                                # zou ik eerder hier zeggen welke richting je cell boundaries wil opgeven (x, y, z) en dan in
+                                # een lookip in deze functie bekijken wlke min en max daarbij hoort. maar goed, dat zijn detai
+                                # en wellicht vooral smaak. al heb ik het gevoel dat dit meer functioneel programmeren
+                                # is dan OOP.
                                 bound_min: str = "xmin", bound_max: str = "xmax",
                                 n_refinement: str = "ncols", ascending: bool = True,
                                 res_max: int or float or None = None):
+        # Uitleg van de arguemnten, vooral ascending vind ik onbegrijpelijk
+        # je gebruikt `self` eigenlijk niet. dus je kunt deze functie ook buiten de class halen. dan is het meteen
+        # duidelijk wat die doet. (moet alleen self.schematisation vervangen door schemtisation) of je maakt er een @staticmoethod van
         ''' Function to help creating the grid discretisation inside 'make_discretisation'.
             Determines grid refinement in either the X (ncol), Y (nrow), or Z (nlay) direction.
 
@@ -375,7 +377,7 @@ class ModPathWell:
         bound_list = []
 
         if dict_keys is None:
-            dict_keys = [iDict for iDict in self.schematisation_dict.keys()]
+            dict_keys = list(self.schematisation_dict.keys())
 
         # Loop through schematisation keys (dict_keys)
         for iDict in dict_keys:
@@ -385,6 +387,8 @@ class ModPathWell:
                     # minimum bound
                     val_min = schematisation[iDict][iDict_sub][bound_min]
                 except KeyError as e:
+                    # MWK gaat dit wel goed? is dit de bedoeling? Ziet er nu uit als een quick fix
+                    # even commentaart erbij zetten waarom dit logsich is
                     # print(e,f"missing {iDict} {iDict_sub}. Continue")
                     continue
 
@@ -392,6 +396,7 @@ class ModPathWell:
                     # maximum bound
                     val_max = schematisation[iDict][iDict_sub][bound_max]
                 except KeyError as e:
+                    # MWK idem als hierboven
                     # print(e,f"missing {iDict} {iDict_sub}. Continue")
                     continue
 
@@ -427,6 +432,8 @@ class ModPathWell:
 
         # Assign center points (xmid | ymid | zmid)
         center_points = np.empty((len_arr), dtype= 'float')
+        # MWK kun je dan niet beter een check inbouwen voor welke richting (x,y,z) je deze functie uitvoert in plaats
+        # van het af te leiden van de
         if ascending: # xmid and ymid arrays are increasing with increasing index number
             center_points[0] = bound_list[0] + cell_sizes[0] * 0.5
             for idx in range(1, len_arr):
@@ -440,6 +447,9 @@ class ModPathWell:
 
     def make_discretisation(self, schematisation: dict, dict_keys = None,
                             model_type = 'axisymmetric'):
+                            #MWK voor alle methodes geldt toch dat shcematisation een attribuut van self is, dus dan hoeft het hier niet als input
+                            #MWK idem voor model_type
+                            # MWK waarom dict_keys ook als arguement? die kun je toch gewoon uit schematisation halen?
         ''' Generate spatial grid for model_type choices: 'axisymmetric', '2D' or '3D'.
 
         Parameter 'schematisation' is of type dict with (sub)dictionaries with keys 'dict_keys'.
@@ -501,9 +511,12 @@ class ModPathWell:
 
         '''
 
+        # waarom drop je schematisation niet als argument? Het zit toch al in de class? en als je een andere
+        # schematisatie wil, moet je een andere instance van de class maken
         if schematisation is None:
             schematisation = getattr(self,"schematisation_dict")
 
+        # MWK erg cryptische namen...
         # Assign delv and zmid
         self.nlay, self.delv, self.zmid, lay_bounds = self._assign_cellboundaries(schematisation = schematisation,
                                                                                   dict_keys = dict_keys,
@@ -522,6 +535,8 @@ class ModPathWell:
 
         # Assign delc and ymid
         if model_type in ["axisymmetric","2D"]:
+            # MWK volgens mij worden deze niet geinstantieerd in de __init__ fucntie, dat is wel best practice
+            # instantieer naar None daar.
             self.nrow = 2
             self.delc = np.ones((self.nrow),dtype = 'float')
             self.ymid = np.array([0.5,1.5])
@@ -535,9 +550,12 @@ class ModPathWell:
         # Create empty model grid
         empty_grid = np.empty((self.nlay,self.nrow,self.ncol), dtype = 'float')
 
+        # mwk waarom return je deze waardes? Zou je die ook niet als attributen willen opslan?
+        # op dit moment worden ze volgens mij nergens gebruikt iig.
         return empty_grid, lay_bounds, row_bounds, col_bounds
 
 
+    # Hoe is deze naam anders dan de _assign_cellboundaries?
     def cell_bounds(self,schematisation: dict, dict_key: str = "None",
                         dict_subkey: str = "None",
                         model_type = "axisymmetric"):
@@ -552,6 +570,7 @@ class ModPathWell:
             return layidx_min,layidx_max,rowidx_min,rowidx_max,colidx_min,colidx_max
         '''
 
+        #MWK ik zie hier geen loop, dus gewoon iDict overal vervallen voor dicktey en idem voordict_subkey
         # Loop through schematisation keys (dict_keys)
         iDict = dict_key
         # Use subkeys of schematisation dictionary
@@ -604,6 +623,7 @@ class ModPathWell:
             # print("Set colidx_min and colidx_max to None.")
             colidx_min, colidx_max = None, None
 
+        # MWK wil je dit niet opslaan als attributen?
         return layidx_min,layidx_max,rowidx_min,rowidx_max,colidx_min,colidx_max
 
     def assign_material(self,schematisation: dict,
@@ -652,7 +672,10 @@ class ModPathWell:
                 self.material[:,1,:] = self.material[:,0,:]
 
 
-    def axisym_correction(self, grid: np.array,
+    # since you are not setting any value to any self attribute, you could use
+    # the get_ prefix to reflect that you are getting some value based
+    # on the attributes of the class instance (self) attributes
+    def get_axisym_corrected_grid(self, grid: np.array,
                           dtype: str or None = None, theta = 2 * np.pi):
 
         ''' Correct modflow parameters to correctly calculate axisymmetric flow.
@@ -671,8 +694,10 @@ class ModPathWell:
         return grid_axi
 
 
-    def fill_grid(self,schematisation: dict, dict_keys: list or None = None,
-                        parameter: str = "None",
+    #  I would call it fill grid if I would be changing the grid attribute. but here you are returning it so get prefix
+    # is more appropriate
+    def get_grid(self,schematisation: dict, dict_keys: list or None = None,
+                        parameter_i: str = "None",
                         grid: np.array or None = None,
                         dtype: str or None = 'float'):
         ''' Assign values to 'grid' [np.array] for parameter name 'parameter' [str],
@@ -713,23 +738,26 @@ class ModPathWell:
 
 
         # Loop through schematisation keys (dict_keys)
-        for iDict in dict_keys:
+        # MWK: dict is wel erg cryptisch. idem voor dict_sub
+        for dict_i in dict_keys:
             # Loop through subkeys of schematisation dictionary
-            for iDict_sub in schematisation[iDict]:
+            for dict_sub_i in schematisation[dict_i]:
 
-                if parameter in schematisation[iDict][iDict_sub]:
+                if parameter_i in schematisation[dict_i][dict_sub_i]:
 
 
 
                     # try:
                     # Obtain parameter value
-                    parm_val = schematisation[iDict][iDict_sub][parameter]
+                    # je doet dit best vaak en het is best cryptisch als je het voor het eerst ziet dus misschien kun je er een methode voor schrijven die ditzelfde doet.
+                    # dus een get_schematisation(), get_sub_key, get_parameter.
+                    parm_val = schematisation[dict_i][dict_sub_i][parameter_i]
                     # Obtain cell boundary limits
                     layidx_min,layidx_max,\
                         rowidx_min,rowidx_max,\
                         colidx_min,colidx_max = self.cell_bounds(schematisation,
-                                                dict_key = iDict,
-                                                dict_subkey = iDict_sub,
+                                                dict_key = dict_i,
+                                                dict_subkey = dict_sub_i,
                                                 model_type = self.model_type)
                     # Fill grid with parameter value 'parm_val'
                     if not None in [layidx_min,layidx_max,colidx_min,colidx_max]:
@@ -745,7 +773,7 @@ class ModPathWell:
         return grid
 
 
-    def assign_wellloc(self,schematisation: dict,
+    def assign_well_location(self,schematisation: dict,
                         dict_key: str = "well_parameters",
                         well_names: list or str or None = "None",
                         discharge_parameter = "well_discharge"):
@@ -787,42 +815,44 @@ class ModPathWell:
                     well_names.append(iKey)
 
         # Create empty dicts
-        well_loc = {}  # well locations
+        well_location = {}
         KD_well = {}   # KD (cumulative) per well
-        Qwell_day = {} # Daily flux [m3/d] per well
+        Q_well_day = {} # Daily flux [m3/d] per well
         # stress period data for well package
-        spd_wel = {}
-        spd_wel[0] = []
-        for iWell in well_names:
+        stress_period_well = {}
+        stress_period_well[0] = []
+        for well_i in well_names:
             # Daily flux [m3/d]   (negative value)
-            Qwell_day[iWell] = schematisation[dict_key][iWell][discharge_parameter]
+            Q_well_day[well_i] = schematisation[dict_key][well_i][discharge_parameter]
             # Calculate boundary indices
+            # MWK: cryptische namen
             layidx_min,layidx_max,\
                 rowidx_min,rowidx_max,\
                 colidx_min,colidx_max = self.cell_bounds(schematisation,
                                         dict_key = dict_key,
-                                        dict_subkey = iWell,
+                                        dict_subkey = well_i,
                                         model_type = self.model_type)
 
             # Add well locations and stress_period_data
-            well_loc[iWell] = []
-            KD_well[iWell] = 0.
-            for iLay in range(layidx_min,layidx_max):
-                for iRow in range(rowidx_min,rowidx_max):
-                    for iCol in range(colidx_min, colidx_max):
+            well_location[well_i] = []
+            KD_well[well_i] = 0.
+            for layer_i in range(layidx_min,layidx_max):
+                for row_i in range(rowidx_min,rowidx_max):
+                    for column_i in range(colidx_min, colidx_max):
                         # print(iLay,iRow,iCol)
-                        well_loc[iWell].append((iLay,iRow,iCol))
+                        well_location[well_i].append((layer_i,row_i,column_i))
                         # Correct discharge for K_hor near wells and for the possible difference in delv (K * D)
-                        KD_well[iWell] += self.hk[iLay,iRow,iCol] * self.delv[iLay] * self.delr[iCol] * self.delc[iRow]
+                        KD_well[well_i] += self.hk[layer_i,row_i,column_i] * self.delv[layer_i] * self.delr[column_i] * self.delc[row_i]
 
             # stress period data for well package
-            for iLay in range(layidx_min,layidx_max):
-                for iRow in range(rowidx_min,rowidx_max):
-                   for iCol in range(colidx_min, colidx_max):
-                        spd_wel[0].append([iLay, iRow, iCol, Qwell_day[iWell] * \
-                                          (self.hk[iLay,iRow,iCol] * self.delv[iLay] * self.delr[iCol] * self.delc[iRow]) / KD_well[iWell]])
+            for layer_i in range(layidx_min,layidx_max):
+                for row_i in range(rowidx_min,rowidx_max):
+                   for column_i in range(colidx_min, colidx_max):
+                        stress_period_well[0].append([layer_i, row_i, column_i, Q_well_day[well_i] * \
+                                          (self.hk[layer_i,row_i,column_i] * self.delv[layer_i] * self.delr[column_i] * self.delc[row_i]) / KD_well[well_i]])
 
-        return well_names,well_loc,KD_well, spd_wel, Qwell_day
+        # this needs to be assigned to self.well_names etc...
+        return well_names,well_location,KD_well, stress_period_well, Q_well_day
 
     ####################
     ### Fill modules ###
@@ -842,14 +872,14 @@ class ModPathWell:
         self.strt = np.zeros((self.nlay,self.nrow,self.ncol), dtype = 'float')
 
         # Relevant dictionary keys
-        self.ibound = self.fill_grid(schematisation = self.schematisation_dict,
+        self.ibound = self.get_grid(schematisation = self.schematisation_dict,
                                     dict_keys = dict_keys_ibound,
-                                    parameter = "ibound",
+                                    parameter_i = "ibound",
                                     grid = self.ibound,
                                     dtype = 'int')
-        self.strt = self.fill_grid(schematisation = self.schematisation_dict,
+        self.strt = self.get_grid(schematisation = self.schematisation_dict,
                                     dict_keys = dict_keys_ibound,
-                                    parameter = "head",
+                                    parameter_i = "head",
                                     grid = self.strt,
                                     dtype = 'int')
 
@@ -898,9 +928,9 @@ class ModPathWell:
                 unitgrid = np.zeros((self.nlay,self.nrow,self.ncol), dtype = dict_keys[1])
                 unitgrid[:,:,:] = dict_keys[2]
             # Fill grid with new values
-            grid = self.fill_grid(schematisation = self.schematisation_dict,
+            grid = self.get_grid(schematisation = self.schematisation_dict,
                                 dict_keys = dict_keys[0],
-                                parameter = iParm,
+                                parameter_i = iParm,
                                 grid = unitgrid,
                                 dtype = dict_keys[1])
             self._update_property(property = iParm, value = grid)
@@ -934,7 +964,7 @@ class ModPathWell:
         if self.model_type == "axisymmetric":
             for iParm in axisym_parms:
                 grid_uncorr = getattr(self,iParm)
-                grid_axi = self.axisym_correction(grid = grid_uncorr)
+                grid_axi = self.get_axisym_corrected_grid(grid = grid_uncorr)
                 # Update attribute
                 self._update_property(property = iParm, value = grid_axi)
 
@@ -944,14 +974,14 @@ class ModPathWell:
         for iParm, dict_keys in rech_parmnames.items():
             # Temporary value
             grid_temp = np.zeros((self.nlay,self.nrow,self.ncol), dtype = 'float')
-            grid = self.fill_grid(schematisation = self.schematisation_dict,
+            grid = self.get_grid(schematisation = self.schematisation_dict,
                             dict_keys = dict_keys[0],
-                            parameter = iParm,
+                            parameter_i = iParm,
                             grid = grid_temp,
                             dtype = dict_keys[1])
 
             if self.model_type == "axisymmetric":
-                rech_grid = self.axisym_correction(grid = grid)[0,:,:]
+                rech_grid = self.get_axisym_corrected_grid(grid = grid)[0,:,:]
             else:
                 rech_grid = grid[0,:,:]
 
@@ -961,6 +991,7 @@ class ModPathWell:
         # Well input
         # !!! Obtain node numbers of well locations (use indices) !!!
         # leakage discharge from well
+        # MWK well_names is unused
         well_names = [iWell for iWell in self.schematisation_dict["well_parameters"] if \
                         "well_discharge" in self.schematisation_dict["well_parameters"][iWell].keys()]
 
@@ -968,7 +999,7 @@ class ModPathWell:
             self.well_loc,\
                 self.KD_well,\
                     self.spd_wel,\
-                        self.Qwell_day = self.assign_wellloc(schematisation = self.schematisation_dict,
+                        self.Qwell_day = self.assign_well_location(schematisation = self.schematisation_dict,
                                                         dict_key = "well_parameters",
                                                         well_names = None,
                                                         discharge_parameter = "well_discharge")
@@ -1092,6 +1123,7 @@ class ModPathWell:
         # Extensions of  output files
         extension = ['oc', 'hds', 'ddn', 'cbc', 'ibo']
         # Unit numbers (of modflow packages and output)
+        # MWK this is extremely cryptic, this should be rephrased
         unitnumber = [14, 51, 52, self.iu_cbc, 0]
         filenames = []
         for iExt in extension:
@@ -1105,6 +1137,7 @@ class ModPathWell:
         # compact option is a requirement for using Modpath
 
     def create_rch(self, rech = None):
+        # MWK the function name says create while the doc string says add. be consistent (holds for all the modflow package related methods)
         ''' Add recharge Package to the MODFLOW model. '''
 
         # Stress period data dict
@@ -1115,8 +1148,10 @@ class ModPathWell:
                                      rech = self.rech, nrchop = 3)
         # nrchop 3: Recharge to highest active cell (default is 3).
 
-    def create_wel(self, spd_wel = None):
+    def create_well(self, spd_wel = None):
         ''' Add well Package to the MODFLOW model. '''
+        # MWK this method is never used, remove it? or at least test it in a unit test
+        # MWK spd_well should be an attribute of the class
 
         # Stress period data dict
         self.spd_wel = spd_wel
@@ -1125,6 +1160,7 @@ class ModPathWell:
                                      stress_period_data= self.spd_wel)
          # If ipakcb != 0: cell budget data is being saved.
 
+    # MWK: useage of hoofdletters and very cryptic
     def create_MNW(self, schematisation: dict,
                         dict_key: str = "well_parameters",
                         well_names: list or str or None = None,
@@ -1148,6 +1184,8 @@ class ModPathWell:
                 well radius of the vertical well(s) [m]
             '''
 
+        # MWK I believe I saw this before, so I think you can abstract that out
+        #     and create a method or function for it.
         if (well_names is None) or (well_names == "None"):
             well_names = []
             # Loop through "well_parameters" of schematisation dictionary
@@ -1165,38 +1203,40 @@ class ModPathWell:
         well_row = {}   # well row
         well_col = {}   # well col
 
-        for id_nr, iWell in enumerate(well_names):
+        # unused id_nr, remove id_nr and enumerate
+        for id_nr, well_i in enumerate(well_names):
             # Daily flux [m3/d]   (negative value)
-            Qwell_day[iWell] = schematisation[dict_key][iWell][discharge_parameter]
+            Qwell_day[well_i] = schematisation[dict_key][well_i][discharge_parameter]
             # well top
-            ztop_well[iWell] = schematisation[dict_key][iWell].get("top")
+            ztop_well[well_i] = schematisation[dict_key][well_i].get("top")
             # well top
-            zbotm_well[iWell] = schematisation[dict_key][iWell].get("bot")
+            zbotm_well[well_i] = schematisation[dict_key][well_i].get("bot")
 
             # well radius
-            radius_well[iWell] = abs(schematisation[dict_key][iWell].get("xmax") - \
-                            schematisation[dict_key][iWell].get("xmin"))
+            radius_well[well_i] = abs(schematisation[dict_key][well_i].get("xmax") - \
+                            schematisation[dict_key][well_i].get("xmin"))
 
             # Calculate boundary indices
             layidx_min,layidx_max,\
                 rowidx_min,rowidx_max,\
                 colidx_min,colidx_max = self.cell_bounds(schematisation,
                                         dict_key = dict_key,
-                                        dict_subkey = iWell,
+                                        dict_subkey = well_i,
                                         model_type = self.model_type)
 
             # Add well locations and stress_period_data
-            well_loc[iWell] = []
+            well_loc[well_i] = []
             # Allow for a single row, col combination in current version
-            well_row[iWell] = [rowidx_min]
-            well_col[iWell] = [colidx_min]
+            well_row[well_i] = [rowidx_min]
+            well_col[well_i] = [colidx_min]
             # Well location(s)
-            well_loc[iWell].append((well_row[iWell][0],well_col[iWell][0]))
+            well_loc[well_i].append((well_row[well_i][0],well_col[well_i][0]))
 
 
         # stress period data for multinodalwell package
         # self.spd_mnw = flopy.modflow.ModflowMnw2.get_empty_stress_period_data(itmp=1)
-        spd_mnw_df = pd.DataFrame([[0,iWell,Qwell_day[iWell]] for iWell in well_names],
+        # Why dont write period instead of per? Much easier to read.
+        spd_mnw_df = pd.DataFrame([[0,well_i,Qwell_day[well_i]] for well_i in well_names],
                                     columns=["per", "wellid", "qdes"],
                                     )
         # spd grouped by "stress period"
@@ -1267,8 +1307,10 @@ class ModPathWell:
 
         # Start model run
         # Load modflow packages
+        # what is per? period? write period then. now I have to guess
         for iper in range(self.nper):
             # If the starting heads have been changed during the first model run:
+            # When would this happen?
             if iper != 0:
 
                 try:
@@ -1314,6 +1356,7 @@ class ModPathWell:
         self.mf.write_input()
 
         # Try to delete the previous output files, to prevent accidental use of older files
+        # MWK: very good, I like this!
         try:
             os.remove(self.model_hds)
         except FileNotFoundError:
@@ -1333,7 +1376,7 @@ class ModPathWell:
             self.mp_exe = mp_exe
 
         # Load mp7 object into Aximodel class
-        self.create_MP7object(mp_exe = self.mp_exe, mf_model = self.mf)#,
+        self.create_mp7_object(mp_exe = self.mp_exe, mf_model = self.mf)#,
 
 
         # Head modflowmodel
@@ -1803,7 +1846,7 @@ class ModPathWell:
                 for iRow in range(rowidx_min,rowidx_max+1):
                     for iCol in range(colidx_min,colidx_max+1):
                         xyz_point = (self.xmid[iCol],self.ymid[iRow],self.gw_level[iRow,iCol])
-                        layers.append(self.xyz_to_layrowcol(xyz_point = xyz_point, decimals = 5)[0])
+                        layers.append(self.xyz_to_layer_row_col(xyz_point = xyz_point, decimals = 5)[0])
 
                 # localz = (gw_level-bot)/(top-bot)
                 localz_release = []
@@ -1825,7 +1868,7 @@ class ModPathWell:
                 for iRow in range(rowidx_min,rowidx_max+1):
                     for iCol in range(colidx_min,colidx_max+1):
                         xyz_point = (self.xmid[iCol],self.ymid[iRow],self.pg_zmin[iPG])
-                        layers.append(self.xyz_to_layrowcol(xyz_point = xyz_point, decimals = 5)[0])
+                        layers.append(self.xyz_to_layer_row_col(xyz_point = xyz_point, decimals = 5)[0])
 
                 # localz = (gw_level-bot)/(top-bot)
                 localz_release = []
@@ -2149,7 +2192,7 @@ class ModPathWell:
                 for iRow in range(rowidx_min,rowidx_max+1):
                     for iCol in range(colidx_min,colidx_max+1):
                         xyz_point = (self.xmid[iCol],self.ymid[iRow],self.gw_level[iRow,iCol])
-                        layers.append(self.xyz_to_layrowcol(xyz_point = xyz_point, decimals = 5)[0])
+                        layers.append(self.xyz_to_layer_row_col(xyz_point = xyz_point, decimals = 5)[0])
                 # localz = (gw_level-bot)/(top-bot)
                 localz_release = []
                 idx_count = -1
@@ -2416,7 +2459,7 @@ class ModPathWell:
     ### ModPath 7 input and analyses ###
     ####################################
     ####### Fill Modpath modules #######
-    def create_MP7object(self, mp_exe = 'mpath7', mf_model = None,
+    def create_mp7_object(self, mp_exe = 'mpath7', mf_model = None,
                       headfilename = None, budgetfilename = None):
         ''' Load modpath7 model, using input from modflow model 'mf_model' (DIS),
             results from head calculations, and cell-by-cell data.'''
@@ -2530,8 +2573,8 @@ class ModPathWell:
             self.success_mp = False
             print(e, "ModPath run", self.workspace, self.modelname, "failed.")
 
+    # MWK self is never used, consider making it a staticmethod or move it to a function (in another file)
     def read_hdsobj(self, fname = None, time = None):
-
         ''' Return head data from file.
             If time = -1 --> return final time and head grid,
             elif time = 'all' --> return all time values and head grids,
@@ -2637,7 +2680,8 @@ class ModPathWell:
 
         return frf, flf, fff
 
-    def get_node_ID(self,locs):
+    def get_node_id(self,locs):
+        # Nice helper function.
         ''' Obtain/return model node index (int) belonging to
             layer 'iLay', row 'iRow' and column 'iCol'.
             for point locations 'locs'. '''
@@ -2647,7 +2691,8 @@ class ModPathWell:
             nodes.append(iLay * self.nrow * self.ncol + iRow * self.ncol + iCol)
         return nodes
 
-    def xyz_to_layrowcol(self,xyz_point, decimals = 3):
+    def xyz_to_layer_row_col(self,xyz_point, decimals = 3):
+        # Nice helper function.
         ''' obtain lay, row, col index of an xyz_point list [x,y,z]. '''
 
         # Round XYZ to 4 digits
@@ -2715,13 +2760,13 @@ class ModPathWell:
             node_indices[iPart] = []
             for iNode in range(nr_nodes):
                 # list lay, row, col of nodes and store them in 'node_indices' dict
-                node_idx = self.xyz_to_layrowcol(xyz_point = xyz_nodes[iPart][iNode].tolist(), decimals = 3)
+                node_idx = self.xyz_to_layer_row_col(xyz_point = xyz_nodes[iPart][iNode].tolist(), decimals = 3)
                 node_indices[iPart].append(node_idx)
 
         return node_indices
 
-    def calc_flux_cell(self, frf,flf,fff, loc, flux_direction = 'total'):
-        ''' Calculate the total volume flux along the cell boundary, using
+    def get_flux_cell(self, frf,flf,fff, loc, flux_direction = 'total'):
+        ''' Calculate and return the total volume flux along the cell boundary, using
         frf, flf and fff.
 
         Parameters
@@ -2782,11 +2827,6 @@ class ModPathWell:
         flux_topbottom = (flux_dict['top'] + flux_dict['bottom']) / 2.
 
 
-        # Total flux IN from all directions
-        # flux_dict['total'] = -(flux_dict['west'] - flux_dict['east'] + \
-        #                         flux_dict['north'] - flux_dict['south'] + \
-        #                         flux_dict['top'] - flux_dict['bottom'])
-
         # total flux (summed over boundaries)
         flux_dict['total'] = abs(flux_westeast) + abs(flux_northsouth) + abs(flux_topbottom)
 
@@ -2796,17 +2836,12 @@ class ModPathWell:
         # Alternative total flux - corrected for horizontal influx
         flux_dict['horizontal'] = abs(flux_dict['west']) - flux_dict['bottom'] + flux_dict['top']
 
-        # Area corrected volume flux
-
-        # q_tot = math.sqrt((flux_westeast / (self.delv[loc[0]] * self.delc[loc[1]]))**2 + \
-        #                     (flux_northsouth / (self.delv[loc[0]] * self.delr[loc[2]]))**2 + \
-        #                         (flux_topbottom / (self.delc[loc[1]] * self.delr[loc[2]]))**2)
-        # # Total flux (area normalized)
-        # flux_dict['total'] = q_tot * (self.delc[loc[1]] * self.delr[loc[2]])
-
         return flux_dict[flux_direction]
 
-    def read_pathlinedata(self,fpth, nodes):
+    # mwk rename fpth
+    def read_pathline_data(self,fpth, nodes):
+        # MWK is pathline data unique for this modpathwell class? of kunnen er meerdere
+        #     mee geassocieerd worden?
         ''' Read pathlinedata from file fpth (extension: '.mppth'),
         given the particle release node index 'nodes' obtained from
         a tuple or list of tuples (iLay,iRow,iCol).
@@ -2840,14 +2875,13 @@ class ModPathWell:
         # Raw pathline data
         pth_data = pth_object.get_destination_pathline_data(nodes)
         # Round rec.arrays to 3 decimals
-        for idx,iPart in enumerate(pth_data):
+        # kun je niet gewoon pth_data.round(4) zeggen?
+        for idx,_ in enumerate(pth_data):
             pth_data[idx]["x"] = pth_data[idx]["x"].round(4)
             pth_data[idx]["y"] = pth_data[idx]["y"].round(4)
             pth_data[idx]["z"] = pth_data[idx]["z"].round(4)
 
-            # # Test unique
-            # test_unique = np.unique(pth_data[idx],return_index=True, return_inverse=True, axis = 0)
-
+        # MWK erg cryptische namen
         time_nodes, xyz_nodes, txyz, dist, tdiff = {}, {}, {}, {}, {}
         # number of particles within file
         npart = len(pth_data)
@@ -2855,7 +2889,7 @@ class ModPathWell:
         dist_tot = np.zeros((npart), dtype = 'float')
         # Numpy arrays storing the total travel time for each particle
         time_tot = np.zeros((npart), dtype = 'float')
-        for idx,iPart in enumerate(pth_data):
+        for idx, _ in enumerate(pth_data):
             # n_nodes (ruw)
             n_nodes_raw = len(pth_data[idx]["x"])
             # XYZ data
@@ -2898,6 +2932,11 @@ class ModPathWell:
         return time_nodes, xyz_nodes, dist, tdiff, dist_tot, time_tot, pth_data
 
     # Make df_particle
+    # MWK what is df_particle? a better name would be useful, that says what is
+    # inside the df.
+    # is there one df_particle per ModPathWell class instance? i think there should be.
+    # and that there should be a column the particle_group
+    # because then in the df_fill_flowline df_particle is not an argument anymore
     def fill_df_particle(self, particle_group,
                         pg_nodes,
                         parm_list: list = list(),
@@ -2970,10 +3009,11 @@ class ModPathWell:
         # List all unique nodes:
         nodes_list = []
 
-        for iPG in particle_group:  # use endpoint_id dict or list
+        # MWK particle group is plural right becuase it is a list?
+        for particle_group_i in particle_group:  # use endpoint_id dict or list
 
             # Node indices to retrieve particle data
-            nodes = self.get_node_ID(pg_nodes.get(iPG))
+            nodes = self.get_node_id(pg_nodes.get(particle_group_i))
 
             for iNode in nodes:
                 nodes_list.append(iNode)
@@ -2996,7 +3036,7 @@ class ModPathWell:
             time_nodes, xyz_nodes, dist_data,  \
             time_diff, dist_tot,   \
             time_tot, pth_data =  \
-                        self.read_pathlinedata(fpth = mppth,
+                        self.read_pathline_data(fpth = mppth,
                                             nodes = iNode)
 
             '''
@@ -3094,8 +3134,8 @@ class ModPathWell:
         return df_particle, df_particle_data
 
 
-    # Fill df_flowline
     def fill_df_flowline(self, df_particle, model_cbc):
+        # because you say fill, you should not return df_flowline but store it as self.df_flowline
         '''
         Fill df_flowline dataframe
 
@@ -3166,8 +3206,8 @@ class ModPathWell:
             endpoint = xyzt_data.loc[xyzt_data.total_travel_time == xyzt_data.total_travel_time.max(),
                                         ["xcoord","ycoord","zcoord"]].values.tolist()[0]
             # Nodes of start and endpoints
-            node_start[fid] = self.xyz_to_layrowcol(xyz_point = startpoint, decimals = 5)
-            node_end[fid] = self.xyz_to_layrowcol(xyz_point = endpoint, decimals = 5)
+            node_start[fid] = self.xyz_to_layer_row_col(xyz_point = startpoint, decimals = 5)
+            node_end[fid] = self.xyz_to_layer_row_col(xyz_point = endpoint, decimals = 5)
             # Count start points in cell
             count_startpoints[node_start[fid]] = count_startpoints.get(node_start[fid],0) + 1
             count_endpoints[node_end[fid]] = count_endpoints.get(node_end[fid],0) + 1
@@ -3187,7 +3227,7 @@ class ModPathWell:
                 if df_flowline.loc[fid,"flowline_type"] in ["diffuse_source","point_source"]:
                     # Steven_todo: add 'flux_direction' as input to modPath_Well class to calc total flux accurately
                     # starting point is used to calculate flux of pathline (flux_pathline) # 'bottom'
-                    flux_pathline[fid] = abs(round(self.calc_flux_cell(frf,flf,fff, loc = node_start[fid], flux_direction = 'vertical') / \
+                    flux_pathline[fid] = abs(round(self.get_flux_cell(frf,flf,fff, loc = node_start[fid], flux_direction = 'vertical') / \
                                         count_startpoints[node_start[fid]],4))
                 # # # Steven_todo check mass and volume balance @MvdS: concept working to add points wihout modflow 'volume'?
                 # elif df_flowline.loc[fid,"flowline_type"] in ["point_source",]:
@@ -3197,7 +3237,7 @@ class ModPathWell:
 
                 if df_flowline.loc[fid,"flowline_type"] in ["diffuse_source","point_source"]:
                     # endpoint is used to calculate flux of pathline   # 'East'
-                    flux_pathline[fid] = abs(round(self.calc_flux_cell(frf,flf,fff, loc = node_end[fid], flux_direction = 'horizontal') / \
+                    flux_pathline[fid] = abs(round(self.get_flux_cell(frf,flf,fff, loc = node_end[fid], flux_direction = 'horizontal') / \
                                             count_endpoints[node_end[fid]],4))
                 # elif df_flowline.loc[fid,"flowline_type"] in ["point_source",]:
                 #     flux_pathline[fid] = self.point_discharge[fid]
@@ -3452,122 +3492,7 @@ class ModPathWell:
         # Sluit figuren af
         plt.close('all')
 
-#     def plot_pathtimes(self,df_particle,
-#                   vmin = 0.,vmax = 1.,orientation = {'row': 0},
-#                   fpathfig = None, figtext = None,x_text = 0,
-#                   y_text = 0, lognorm = True, xmin = 0., xmax = None,
-#                   line_dist = 1, dpi = 192, trackingdirection = "forward",
-#                   cmap = 'viridis_r'):
-#         ''' Create pathline plots with residence times
-#             using colours as indicator.
-#             with:
-#             - df_particle: dataframe containing xyzt-points of the particle paths.
-#             - fpathfig = output location of plots
-#             figtext: figure text to show within plot starting at
-#             x-location 'x_text' and y-location 'y_text'.
-#             lognorm: True/False (if vmin <= 0. --> vmin = 1.e-5)
-#             line_dist: min. distance between well pathlines at source (m)
-#             line_freq: show every 'X' pathlines
-#             dpi: pixel density
-#             trackingdirection: direction of calculating flow along pathlines"
-#             cmap: Uses colormap 'viridis_r' (viridis reversed as default)
-#             '''
-
-#         if lognorm:
-#             if vmin <= 0.:
-#                 vmin = 1.e-2
-
-#         # Keep track of minimum line distance between pathlines ('line_dist')
-#         xmin_plot = 0.
-#         # Flowline IDs
-#         flowline_ID = list(df_particle.index.unique())
-#         for fid in flowline_ID:
-
-#             x_points = df_particle.loc[df_particle.index == fid, "xcoord"].values
-# #           y_points = df_particle.loc[df_particle.index == fid, "ycoord"].values
-#             z_points = df_particle.loc[df_particle.index == fid, "zcoord"].values
-#             # Cumulative travel times
-#             time_points = df_particle.loc[df_particle.index == fid, "total_travel_time"].values
-
-#             # Plot every 'line_dist' number of meters one line
-#             if trackingdirection == "forward":
-#                 # x_origin: starting position of pathline
-#                 x_origin = x_points[0]
-#             else:
-#                 # x_origin: starting position of pathline
-#                 x_origin = x_points[-1]
-
-#             # Check if line should be plotted
-#             if x_origin > xmin_plot:
-#                 xmin_plot += line_dist
-#                 pass
-#             else:
-#                 continue
-
-#             # Combine to xyz scatter array with x,y,values
-#             xyz_scatter = np.stack((x_points,z_points,time_points), axis = 1)
-
-#             # Plot function (lines))
-#             marker_size=0.05  # 's' in functie scatter
-#             if lognorm:
-#                 # formatting of values (log or linear?)
-#                 norm_vals = colors.LogNorm()
-#                 # norm_labels = [str(iLog) for iLog in [8,7,6,5,4,3,2,1,0]]
-#             else:
-#                 # formatting of values (log or linear: None?)
-#                 norm_vals = None
-
-#             # Mask values outside of vmin & vmax
-#             time_vals = np.ma.masked_where((xyz_scatter[:,2] > vmax), xyz_scatter[:,2])
-#             plt.scatter(xyz_scatter[:,0],
-#                         xyz_scatter[:,1],
-#                         s = marker_size,
-#                         cmap = cmap,
-#                         c=time_vals,
-#                         marker = 'o',
-#                         norm= norm_vals)
-#             plt.plot(xyz_scatter[:,0],
-#                         xyz_scatter[:,1], c = 'k', lw = 0.1)
-#                         # 'o', markersize = marker_size,
-#                         # markerfacecolor="None", markeredgecolor='black') #, lw = 0.1)
-#             plt.xlim(xmin,xmax)
-#             plt.clim(vmin,vmax)
-#         # Voeg kleurenbalk toe
-#         cbar = plt.colorbar()
-#         ticklabs_old = [t.get_text() for t in cbar.ax.get_yticklabels()]
-#         # print(ticklabs_old)
-#         # ticklabs_new = [str(iLab).replace("-0.0","0.0") for iLab in \
-#         #                 np.linspace(-np.log10(vmin),0.,num = len(ticklabs_old), endpoint = True)]
-#         # cbar.ax.set_yticklabels(ticklabs_new)
-
-#         # cbar.set_yticks([mn,md,mx])
-#         # cbar.ax.set_yticklabels(norm_labels)
-#         cbar.set_label("Residence time [days]")
-#     #    cbar.set_label("Concentratie [N/L]")
-#         # Titel
-#         # plt.title("Pathogenenverwijdering in grondwater")
-#         # Label x-as
-#         plt.xlabel("Distance (m)")
-#         # Label y-as
-#         plt.ylabel("Depth (m)")
-#         # Tekst voor in de figuur
-#         if figtext is not None:
-#             plt.text(x = x_text,y = y_text,s = figtext,
-#                     bbox={'facecolor': 'gray', 'alpha': 0.5, 'pad': 10})
-#             plt.subplots_adjust(left=0.5)
-#         if fpathfig is not None:
-#             # pass
-#             # try: plt.show()
-#             # except Exception as e:
-#             #     print(e)
-#             #     pass
-#         # else:
-#             plt.savefig(fpathfig, dpi = dpi)
-#         # Sluit figuren af
-#         plt.close('all')
-
-
-    # Check for parameters in df_flowline #
+    # this is very generic, I would put this in a separate function in a seperate file
     def _df_fillna(self, df,df_column: str, value = 0., dtype_ = 'float'):
         ''' Check dataframe for missing values for
             calculation of removal.
@@ -3679,6 +3604,8 @@ class ModPathWell:
         else:
             travel_distance_shallow_aquifer  = depth_point_contamination - self.schematisation.bottom_shallow_aquifer
 
+        # MWK this could be put in a method (that method is easier to unit test)
+        # and makes it more readible
         self.travel_time_shallow_aquifer = (self.schematisation.porosity_shallow_aquifer
                                             * (2 * math.pi * self.schematisation.KD * self.schematisation.vertical_resistance_shallow_aquifer
                                             / (abs(self.schematisation.well_discharge))
@@ -3696,6 +3623,8 @@ class ModPathWell:
                                             distance = None, gw_level = None):
 
         ''' Inherit functionality from Analytical_Well module'''
+        # MWK: I see no inheritance or calling functions from analytical well. Is this functionality repeated here?
+        # MWK: why is this method called analytic? is there a numerical counterpart?
 
 
         # Extract relevant parameters from 'vadose_parameters'
@@ -3719,10 +3648,12 @@ class ModPathWell:
                 # gw_level [assuming particles start at groundwater level]
                 gw_level_particles[iRow] = self.df_particle.loc[pid,"zcoord"].iloc[0]
 
+            # MWK: already done this moving? If not do so, and remove this comment
             #### MOVE TO: section 'create_modpath_packages', so before pathline simulation to determine depth vadose zone boundary (start of particles) ####
 
             # Calculate the travel time distribution for the semiconfined schematisation
             # for each of the aquifer zones and creates df_flowline and df_particle dataframes for the analytical case.
+            # MWK does it make sense tot calculate_Travel_time of another zone in this method?
             if self.schematisation_type in ["phreatic","semiconfined"]:
                 self._calculate_travel_time_unsaturated_zone(gw_level_particles = gw_level_particles)
             '''
@@ -3793,20 +3724,17 @@ class ModPathWell:
 
         # print(self.schematisation)
         # Run modflow model (T/F)
+        # why do you want to save these as attributes?
         self.run_mfmodel = run_mfmodel
         # Run modpath model (T/F)
         self.run_mpmodel = run_mpmodel
         # simulation parameters
+        # MWK you could make @property for this
         self.simulation_parameters = self.schematisation_dict.get('simulation_parameters')
-        # if simulation_parameters is None:
-        #     self.simulation_parameters = self.schematisation_dict.simulation_parameters
-        # else:
-        #     self.simulation_parameters = simulation_parameters
-
-
 
         # Simulation parameters
         # Dict with stress period lengths
+        # MWK cryptic names and why is this not done in the __init__
         if type(perlen) != dict:
             self.perlen = {0: perlen}
         else:
@@ -3827,33 +3755,38 @@ class ModPathWell:
             self.steady = steady
 
         # Define reference lowerleft
+        # MWK cryptic
         self.xll = xll
         self.yll = yll
 
         # Type of scenario
         try:
+            # MWK use @property
             self.schematisation_type = self.simulation_parameters.get("schematisation_type")
         except KeyError as e:
             print(e)
 
         # Extract vadose_zone from geo_parameters and add to separate dict "vadose_parameters"
+        # self.schema... as argument is not good. it can be accessed in the method with self.schem.
+        # moreover, this method seems to update the schematisation_dict vadose_zone. so better name might be `update_schematisation_with_vadose_zone`
         self.schematisation_dict = self.extract_vadose_zone_parameters(schematisation = self.schematisation_dict,
                                                                         schematisation_type = self.schematisation_type)
 
         ## Following code only relevant if there are different input requirements for each schematisation type
+        # I think this should be done in the __init__
         if self.schematisation_type in ["phreatic","semiconfined"]:
             self.model_type = "axisymmetric"
             print("Run phreatic model")
-            self._check_schematisation_input()
 
         ## NOTE to programmer: for additional schematisation_types add to functionality here (elif)...
 
         elif self.schematisation_type in ["BAR", "RBF"]:
             self.model_type = "2D"
             print("Run 2D model")
-            self._check_schematisation_input()
+        self._check_schematisation_input()
 
         #### 29-11-'21: generalize the code based on required modflow_packages
+        # it seems to me that most of this is preprocessing before running the model so I would put in in a different method
         self.create_modflow_input()
         if self.run_mfmodel:
 
@@ -3866,9 +3799,13 @@ class ModPathWell:
             # gwlevel_distant == ibound_parameters['well1']['head']??
 
                 # Load head data
+                # MWK: self. mode... as argument: not good, self.something as return value: not good
                 self.gw_level, self.head_mf = self._get_gwlevel(model_hds = self.model_hds,time = -1)
 
             if self.schematisation_type in ["phreatic",]:
+                # MWK are you only running the model when phreatic?
+                # MWK it seems to me that most in this if loop should be abstracted out so it much easier to see
+                #     what happens
                 # Correct for difference in gw_level AW en MPW classes
                 gw_level_distant = self.gw_level[0,-1]
                 # gw_level_analytical at vadose zone (boundary)
@@ -3888,6 +3825,7 @@ class ModPathWell:
 
                     # Run modflow model
                     try:
+                        # MWK how is this different from mfmodelrun? confusing names
                         self.run_modflowmod()
                         # Model run completed succesfully
                         print("Model run", self.workspace, self.modelname, "completed without errors:", self.success_mf)
@@ -3903,8 +3841,6 @@ class ModPathWell:
 
         # Modpath simulation
         if self.run_mpmodel:
-
-
             # Run modpath model
             self.MP7modelrun(mp_exe = self.mp_exe)
 
@@ -3921,7 +3857,7 @@ class ModPathWell:
 
 
 #%%
-
+# MWK unused function indention is wrong if its a method ()
 def _calculate_hydraulic_head_phreatic(self, distance):
     ''' Calcualtes the hydraulic head distribution for the phreatic schematisation case
 
@@ -3941,128 +3877,3 @@ def _calculate_hydraulic_head_phreatic(self, distance):
                 / (2 * math.pi * self.KD))
                 * np.log(self.radial_distance_recharge / distance))
     return head
-
-#%%
-if __name__ == "__main__":
-    #%%
-
-    # ------------------------------------------------------------------------------
-    # Questions
-    # ------------------------------------------------------------------------------
-
-    # 1.
-
-    # ------------------------------------------------------------------------------
-    # Phreatic and Semi-Confined Aquifer Functions
-    # ------------------------------------------------------------------------------
-    # %%
-
-    # ########### Defaults ###########
-    WELL_SCREEN_DIAMETER = .75  # m
-    BOREHOLE_DIAMETER = .75  # m -> equal to screen diameter to ignore backfilling
-    TEMPERATURE = 11  # Celcius
-    K_HOR_AQUIFER = 10  # m/d
-    VANI_AQUIFER = 1.  # -
-    K_HOR_CONFINING = .001  # m/d
-    VANI_CONFINING = 1.  # -
-    K_HOR_GRAVELPACK = 100  # m/d
-    VANI_GRAVELPACK = 1.  # -
-    K_HOR_CLAYSEAL = .001  # m/d
-    VANI_CLAYSEAL = 1.  # -
-
-    DENSITY_AQUIFER = 2650.  # kg/m3
-    REMOVAL_FUNCTION = 'omp'
-
-    DZ_WELL = 0.5  # preferred height of layer [m]
-    #%%
-    """
-    Parameters
-    ----------
-    schematisation: string
-        'freatic', 'semi-confined', 'riverbankfiltration', 'basinfiltration'
-    removal_function: string
-        'omp' -> get parameters for OMP
-        'pathogen' -> get parameters for pathogen
-    """
-
-
-    # # ########### INPUT PARAMETERS Aquapriori Bodem "Phreatic OMP" ###########
-    # schematisation = 'freatic'
-    # thickness_vadoze_zone = 1.  # m
-    # thickness_shallow_aquifer = 5.  # m
-    # thickness_target_aquifer = 10.  # m
-    # porosity_vadoze_zone = .2  # m3/m3
-    # porosity_shallow_aquifer = .3  # m3/m3
-    # porosity_target_aquifer = .25  # m3/m3
-    # organic_carbon_vadoze_zone = .2  # kg/m3 ??
-    # organic_carbon_shallow_aquifer = .3  # kg/m3 ??
-    # organic_carbon_target_aquifer = .25  # kg/m3 ??
-    # redox_vadoze_zone = 1.  # 1 = (sub)oxic; 2 = anoxic; 3 = deeply anoxic
-    # redox_shallow_aquifer = 2
-    # redox_target_aquifer = 3
-    # well_discharge_m3hour = 20 #m3/h
-    # recharge_rate = .001
-    # recharge_conc = 1.
-    # substance = 'chloridazon'
-    # vertical_resistance_aquitard   # [d], c_V
-    # soil_moisture_content           # [m3/m3], θ
-
-
-    # #@basin paramters
-    # length_basin
-    # width_basin
-    # _depth_basin
-    # horizontal_distance_basin_gallery = horizontal distance between basin bank and drainage gallery [m];
-    # porosity_recharge_basin
-    # groundwater_level_above_saturated_zone = normal maximum rise of watertable above H0 [m];
-
-    # from sutra2.draft_transport_function import HydroChemicalSchematisation as HCS
-    # HCS_test = HCS()
-    # print(vars(HCS_test))
-
-    # #%%
-    # class AnalyticalWell():
-    #     """ Compute travel time distribution using analytical well functions."""
-
-    #   	def __init__(self):
-    #     		""" 'unpack/parse' all the variables from the hydrogeochemical schematizization """
-    #   	  	for key, item for input_dict.items():
-
-
-    #     def _check_init_freatic():
-    #        	#check the variables that we need for the individual aquifer types are not NONE aka set by the user
-    #   			pass
-
-    #   	def export_to_df(self, what_to_export='all')
-    #   	    """ Export to dataframe....
-
-    #         Parameters
-    #         ----------
-    #         what_to_export: String
-    #         		options: 'all', 'omp', 'microbial_parameters'
-    #         """
-    #   			#delete the unwanted columns depending on what the user asks for here
-    #   			returns df_flowline, df_particle
-
-    #%%
-    # the python user will call the function as follows
-    # well = AnalyticalWell()
-    # if schematisation == 'freatic':
-    # 		well.freatic()
-    # elif schematisation == 'semiconfined':
-    # 		well.semiconfined()
-    # else:
-    #   	raise KeyError('schematisation argument not recognized')
-    # df_flow, df_particle = well.export_to_df('all')
-    #%%
-    # # output Alex "phreatic_dict_nogravel.txt" --> saved in "testing dir"
-    # research_dir = os.path.join(path,"..","research")
-    # with open(os.path.join(research_dir,"phreatic_dict_nogravel.txt"),"r") as file_:
-    #     dict_content = file_.read()
-    #     phreatic_scheme = eval(dict_content)
-
-    # check_schematisation = False # Check input dict (T/F)
-    # if check_schematisation:
-    #     for iKey,iVal in phreatic_scheme.items():
-    #         print(iKey,iVal,"\n")
-

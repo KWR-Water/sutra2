@@ -1,4 +1,4 @@
-
+# MWK: houd je filename consistent: geen hoofdletters
 #%%
 import pytest
 from pandas import RangeIndex, read_csv
@@ -40,104 +40,6 @@ mf_exe = os.path.join(path, "mf2005.exe")
 mp_exe = os.path.join(path, "mpath7.exe")
 
 
-# <<<<<<< HEAD
-#%%
-# def test_modpath_run_phreatic_nogravelpack(organism_name = "MS2"):
-#     ''' Phreatic scheme without gravelpack: modpath run.'''
-
-#     #@Steven: mag weg uit testing: of final concentration toevoegen (geen echte 'assert'). Deze test (of variant ervan) naar readthedocs --> toon de dataframes
-#     test_phrea = AW.HydroChemicalSchematisation(schematisation_type='phreatic',
-#                                     computation_method = 'modpath',
-#                                     what_to_export='all',
-#                                     removal_function = 'mbo',
-#                                     # biodegradation_sorbed_phase = False,
-#                                       well_discharge=-319.4*24,
-#                                       # vertical_resistance_shallow_aquifer=500,
-#                                       porosity_vadose_zone=0.38,
-#                                       porosity_shallow_aquifer=0.35,
-#                                       porosity_target_aquifer=0.35,
-#                                       recharge_rate=0.3/365.25,
-#                                       moisture_content_vadose_zone=0.15,
-#                                       ground_surface = 22.0,
-#                                       thickness_vadose_zone_at_boundary=5.0,
-#                                       thickness_shallow_aquifer=10.0,
-#                                       thickness_target_aquifer=40.0,
-#                                       hor_permeability_target_aquifer=35.0,
-#                                       hor_permeability_shallow_aquifer = 0.02,
-#                                       thickness_full_capillary_fringe=0.4,
-#                                       redox_vadose_zone='anoxic', #'suboxic',
-#                                       redox_shallow_aquifer='anoxic',
-#                                       redox_target_aquifer='deeply_anoxic',
-#                                       pH_vadose_zone=5.,
-#                                       pH_shallow_aquifer=6.,
-#                                       pH_target_aquifer=7.,
-#                                       dissolved_organic_carbon_vadose_zone=10.,
-#                                       dissolved_organic_carbon_shallow_aquifer=4.,
-#                                       dissolved_organic_carbon_target_aquifer=2.,
-#                                       fraction_organic_carbon_vadose_zone=0.001,
-#                                       fraction_organic_carbon_shallow_aquifer=0.0005,
-#                                       fraction_organic_carbon_target_aquifer=0.0005,
-#                                       temp_water=11.,
-#                                       solid_density_vadose_zone= 2.650,
-#                                       solid_density_shallow_aquifer= 2.650,
-#                                       solid_density_target_aquifer= 2.650,
-#                                       diameter_borehole = 0.75,
-#                                       name = organism_name,
-#                                       # diameter_filterscreen = 0.2,
-#                                       point_input_concentration = 100.,
-#                                       discharge_point_contamination = 100.,#made up value
-#                                       top_clayseal = 17,
-#                                       compute_contamination_for_date=dt.datetime.strptime('2020-01-01',"%Y-%m-%d"),
-#                                       ncols_near_well = 20,
-#                                       ncols_far_well = 80,
-#                                     )
-
-#     test_phrea.make_dictionary()
-#     # Remove/empty point_parameters
-#     test_phrea.point_parameters = {}
-
-#     # print(test_phrea.__dict__)
-#     modpath_phrea = mpw.ModPathWell(test_phrea,
-#                             workspace = os.path.join(path,"test2_phrea_nogp"),
-#                             modelname = "phreatic",
-#                             bound_left = "xmin",
-#                             bound_right = "xmax")
-#     # print(modpath_phrea.__dict__)
-#     # Run phreatic schematisation
-#     modpath_phrea.run_model(run_mfmodel = True,
-#                         run_mpmodel = True)
-
-    # # Pollutant to define removal parameters for
-    # organism = TR.MicrobialOrganism(organism_name = organism_name)
-
-    # # Calculate advective microbial removal
-    # modpath_removal = TR.Transport(modpath_phrea,
-    #                                         pollutant = organism)
-
-#     # Calculate advective microbial removal
-#     # Final concentration per endpoint_id
-#     C_final = {}
-#     for endpoint_id in modpath_phrea.schematisation_dict.get("endpoint_id"):
-#         df_particle, df_flowline, C_final[endpoint_id] = modpath_removal.calc_advective_microbial_removal(
-#                                             modpath_phrea.df_particle, modpath_phrea.df_flowline,
-#                                             endpoint_id = endpoint_id,
-#                                             trackingdirection = modpath_phrea.trackingdirection,
-#                                             mu1 = 0.1151, grainsize = 0.00025, alpha0 = 0.037e-2, pH0 = 7.5,
-#                                             temp_water = 11., rho_water = 999.703, organism_diam = 2.731e-6,
-#                                             conc_start = 1., conc_gw = 0.)
-
-#     # df_particle file name
-#     particle_fname = os.path.join(modpath_phrea.dstroot,modpath_phrea.schematisation_type + "_df_particle_microbial_removal.csv")
-#     # Save df_particle
-#     df_particle.to_csv(particle_fname)
-
-#     # df_flowline file name
-#     flowline_fname = os.path.join(modpath_phrea.dstroot,modpath_phrea.schematisation_type + "_df_flowline_microbial_removal.csv")
-#     # Save df_flowline
-#     df_flowline.to_csv(flowline_fname)
-
-#     assert modpath_phrea.success_mp
-
 def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
     ''' Horizontal flow test in target_aquifer: modpath run.'''
 
@@ -151,16 +53,12 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
     organism_diam =  2.33e-8
     mu1 = {"suboxic": 0.039,"anoxic": 0.023,"deeply_anoxic": 0.023}
 
-    removal_parameters = {organism_name:
-                    {"organism_name": organism_name,
+    rem_parms = {"organism_name": organism_name,
                         "alpha0": alpha0,
                         "pH0": pH0,
                         "organism_diam": organism_diam,
                         "mu1": mu1
                     }
-                }
-    # Removal parameters organism
-    rem_parms = removal_parameters[organism_name]
 
     # test dataframe of final concentrations to assert the test
     summary_conc_fname_test = os.path.join(testfiles_dir,"Final_concentrations_horizontal_flow_test.csv")
@@ -181,6 +79,7 @@ def test_modpath_run_horizontal_flow_points(organism_name = "MS2"):
     for iDist in dist_boundary:
 
 
+        # MWK alles dat per loop gelijk blijft, uit deloop halen
         # well discharge
         well_discharge = -1000.
         # distance to boundary
