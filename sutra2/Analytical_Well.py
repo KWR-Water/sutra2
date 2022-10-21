@@ -680,17 +680,20 @@ class HydroChemicalSchematisation:
                 }
 
         # make dictionaries of each grouping of parameters
-        simulation_parameters = {
-            'schematisation_type': self.schematisation_type,
-            'computation_method': self.computation_method,
-            'temp_correction_Koc': self.temp_correction_Koc,
-            'temp_correction_halflife': self.temp_correction_halflife,
-            'biodegradation_sorbed_phase': self.biodegradation_sorbed_phase,
-            'compute_thickness_vadose_zone': self.compute_thickness_vadose_zone,
-            'start_date_well': str(self.start_date_well),
-            'start_date_contamination': str(self.start_date_contamination),
-            'compute_contamination_for_date': str(self.compute_contamination_for_date),
-            }
+        # MWK this could also be done in a loop:
+        # store these attributes in a dictionary
+        simulation_parameters = {}
+        for key in ['schematisation_type',
+                    'computation_method',
+                    'temp_correction_Koc',
+                    'temp_correction_halflife',
+                    'biodegradation_sorbed_phase',
+                    'compute_thickness_vadose_zone',
+                    'start_date_well',
+                    'start_date_contamination',
+                    'compute_contamination_for_date']:
+            simulation_parameters[key] = getattr(self, key)
+
         
 
         endpoint_id = {
