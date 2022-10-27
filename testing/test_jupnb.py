@@ -95,7 +95,7 @@ def test_modpath_run_phreatic_nogravelpack(organism_name = "MS2"):
                                       ncols_far_well = 80,
                                     )
 
-    test_phrea.make_dictionary()
+    test_phrea.make_modflow_schematisation()
     # Remove/empty point_parameters
     test_phrea.point_parameters = {}
 
@@ -103,8 +103,8 @@ def test_modpath_run_phreatic_nogravelpack(organism_name = "MS2"):
     modpath_phrea = mpw.ModPathWell(test_phrea,
                             workspace = os.path.join(path,"test2_phrea_nogp"),
                             modelname = "phreatic",
-                            bound_left = "xmin",
-                            bound_right = "xmax")
+                            bound_west_key = "xmin",
+                            bound_east_key = "xmax")
     # print(modpath_phrea.__dict__)
     # Run phreatic schematisation
     modpath_phrea.run_model(run_mfmodel = True,
@@ -124,15 +124,15 @@ def test_modpath_run_phreatic_nogravelpack(organism_name = "MS2"):
         df_particle, df_flowline, C_final[endpoint_id] = modpath_removal.calc_advective_microbial_removal(
                                             modpath_phrea.df_particle, modpath_phrea.df_flowline,
                                             endpoint_id = endpoint_id,
-                                            trackingdirection = modpath_phrea.trackingdirection,
+                                            trackingdirection = modpath_phrea.tracking_direction,
                                             mu1 = 0.1151, grainsize = 0.00025, alpha0 = 0.037e-2, pH0 = 7.5,
                                             temp_water = 11., rho_water = 999.703, organism_diam = 2.731e-6,
                                             conc_start = 1., conc_gw = 0.)
 
 
     # Create travel time plots
-    fpath_scatter_times_log = os.path.join(modpath_phrea.dstroot,"log_travel_times_" + endpoint_id + ".png")
-    fpath_scatter_times = os.path.join(modpath_phrea.dstroot,"travel_times_" + endpoint_id + ".png")
+    fpath_scatter_times_log = os.path.join(modpath_phrea.dst_root,"log_travel_times_" + endpoint_id + ".png")
+    fpath_scatter_times = os.path.join(modpath_phrea.dst_root,"travel_times_" + endpoint_id + ".png")
     # # df particle
     # df_particle = modpath_removal.df_particle
     # time limits
@@ -166,8 +166,8 @@ def test_modpath_run_phreatic_nogravelpack(organism_name = "MS2"):
             show_vadose = True)
 
     # Correct travel_time for vadose_zone section
-    fpath_scatter_times_saturated_log = os.path.join(modpath_phrea.dstroot,"log_travel_times_saturated.png")
-    fpath_scatter_times_saturated = os.path.join(modpath_phrea.dstroot,"travel_times_saturated.png")
+    fpath_scatter_times_saturated_log = os.path.join(modpath_phrea.dst_root,"log_travel_times_saturated.png")
+    fpath_scatter_times_saturated = os.path.join(modpath_phrea.dst_root,"travel_times_saturated.png")
 
     # travel_time_vadose_zone
     # Create travel time plots (lognormal)
@@ -192,12 +192,12 @@ def test_modpath_run_phreatic_nogravelpack(organism_name = "MS2"):
 
 
     # df_particle file name
-    particle_fname = os.path.join(modpath_phrea.dstroot,modpath_phrea.schematisation_type + "_df_particle_microbial_removal.csv")
+    particle_fname = os.path.join(modpath_phrea.dst_root,modpath_phrea.schematisation_type + "_df_particle_microbial_removal.csv")
     # Save df_particle
     df_particle.to_csv(particle_fname)
 
     # df_flowline file name
-    flowline_fname = os.path.join(modpath_phrea.dstroot,modpath_phrea.schematisation_type + "_df_flowline_microbial_removal.csv")
+    flowline_fname = os.path.join(modpath_phrea.dst_root,modpath_phrea.schematisation_type + "_df_flowline_microbial_removal.csv")
     # Save df_flowline
     df_flowline.to_csv(flowline_fname)
 
@@ -257,7 +257,7 @@ def test_modpath_run_phreatic_withgravelpack_largewell(organism_name = "MS2"):
                                       ncols_far_well = 80,
                                     )
 
-    test_phrea.make_dictionary()
+    test_phrea.make_modflow_schematisation()
     # Remove/empty point_parameters
     test_phrea.point_parameters = {}
 
@@ -265,8 +265,8 @@ def test_modpath_run_phreatic_withgravelpack_largewell(organism_name = "MS2"):
     modpath_phrea = mpw.ModPathWell(test_phrea,
                             workspace = os.path.join(path,"test2_phrea_withgp_largewell"),
                             modelname = "phreatic",
-                            bound_left = "xmin",
-                            bound_right = "xmax")
+                            bound_west_key = "xmin",
+                            bound_east_key = "xmax")
     # print(modpath_phrea.__dict__)
     # Run phreatic schematisation
     modpath_phrea.run_model(run_mfmodel = True,
@@ -286,15 +286,15 @@ def test_modpath_run_phreatic_withgravelpack_largewell(organism_name = "MS2"):
         df_particle, df_flowline, C_final[endpoint_id] = modpath_removal.calc_advective_microbial_removal(
                                             modpath_phrea.df_particle, modpath_phrea.df_flowline,
                                             endpoint_id = endpoint_id,
-                                            trackingdirection = modpath_phrea.trackingdirection,
+                                            trackingdirection = modpath_phrea.tracking_direction,
                                             mu1 = 0.1151, grainsize = 0.00025, alpha0 = 0.037e-2, pH0 = 7.5,
                                             temp_water = 11., rho_water = 999.703, organism_diam = 2.731e-6,
                                             conc_start = 1., conc_gw = 0.)
 
 
     # Create travel time plots
-    fpath_scatter_times_log = os.path.join(modpath_phrea.dstroot,"log_travel_times_" + endpoint_id + ".png")
-    fpath_scatter_times = os.path.join(modpath_phrea.dstroot,"travel_times_" + endpoint_id + ".png")
+    fpath_scatter_times_log = os.path.join(modpath_phrea.dst_root,"log_travel_times_" + endpoint_id + ".png")
+    fpath_scatter_times = os.path.join(modpath_phrea.dst_root,"travel_times_" + endpoint_id + ".png")
     # # df particle
     # df_particle = modpath_removal.df_particle
     # time limits
@@ -328,8 +328,8 @@ def test_modpath_run_phreatic_withgravelpack_largewell(organism_name = "MS2"):
             show_vadose = True)
 
     # Correct travel_time for vadose_zone section
-    fpath_scatter_times_saturated_log = os.path.join(modpath_phrea.dstroot,"log_travel_times_saturated.png")
-    fpath_scatter_times_saturated = os.path.join(modpath_phrea.dstroot,"travel_times_saturated.png")
+    fpath_scatter_times_saturated_log = os.path.join(modpath_phrea.dst_root,"log_travel_times_saturated.png")
+    fpath_scatter_times_saturated = os.path.join(modpath_phrea.dst_root,"travel_times_saturated.png")
 
     # travel_time_vadose_zone
     # Create travel time plots (lognormal)
@@ -354,12 +354,12 @@ def test_modpath_run_phreatic_withgravelpack_largewell(organism_name = "MS2"):
 
 
     # df_particle file name
-    particle_fname = os.path.join(modpath_phrea.dstroot,modpath_phrea.schematisation_type + "_df_particle_microbial_removal.csv")
+    particle_fname = os.path.join(modpath_phrea.dst_root,modpath_phrea.schematisation_type + "_df_particle_microbial_removal.csv")
     # Save df_particle
     df_particle.to_csv(particle_fname)
 
     # df_flowline file name
-    flowline_fname = os.path.join(modpath_phrea.dstroot,modpath_phrea.schematisation_type + "_df_flowline_microbial_removal.csv")
+    flowline_fname = os.path.join(modpath_phrea.dst_root,modpath_phrea.schematisation_type + "_df_flowline_microbial_removal.csv")
     # Save df_flowline
     df_flowline.to_csv(flowline_fname)
 
@@ -725,7 +725,7 @@ def test_modpath_run_phreatic_withgravelpack_removal(organism_name = "MS2"):
                                 ncols_far_well = 80,
                             )
 
-    test_phrea_gp.make_dictionary()
+    test_phrea_gp.make_modflow_schematisation()
 
     # Remove/empty point_parameters
     test_phrea_gp.point_parameters = {}
@@ -734,8 +734,8 @@ def test_modpath_run_phreatic_withgravelpack_removal(organism_name = "MS2"):
     modpath_phrea = mpw.ModPathWell(test_phrea_gp, #test_phrea,
                             workspace = os.path.join(path,"test6_phrea_gp_removal"),
                             modelname = "phreatic",
-                            bound_left = "xmin",
-                            bound_right = "xmax")
+                            bound_west_key = "xmin",
+                            bound_east_key = "xmax")
     # print(modpath_phrea.__dict__)
     # Run phreatic schematisation
     modpath_phrea.run_model(run_mfmodel = True,
@@ -773,12 +773,12 @@ def test_modpath_run_phreatic_withgravelpack_removal(organism_name = "MS2"):
         df_particle, df_flowline, C_final[endpoint_id] = modpath_removal.calc_advective_microbial_removal(
                                             modpath_phrea.df_particle, modpath_phrea.df_flowline,
                                             endpoint_id = endpoint_id,
-                                            trackingdirection = modpath_phrea.trackingdirection,
+                                            trackingdirection = modpath_phrea.tracking_direction,
                                             conc_start = 1., conc_gw = 0.)
 
         # Create travel time plots
-        fpath_scatter_times_log = os.path.join(modpath_phrea.dstroot,"log_travel_times_" + endpoint_id + ".png")
-        fpath_scatter_times = os.path.join(modpath_phrea.dstroot,"travel_times_" + endpoint_id + ".png")
+        fpath_scatter_times_log = os.path.join(modpath_phrea.dst_root,"log_travel_times_" + endpoint_id + ".png")
+        fpath_scatter_times = os.path.join(modpath_phrea.dst_root,"travel_times_" + endpoint_id + ".png")
         # # df particle
         # df_particle = modpath_removal.df_particle
         # time limits
@@ -803,7 +803,7 @@ def test_modpath_run_phreatic_withgravelpack_removal(organism_name = "MS2"):
                 cmap = 'viridis_r')
 
         # Create concentration plots
-        fpath_scatter_removal_log = os.path.join(modpath_phrea.dstroot,"log_removal_" + endpoint_id + ".png")
+        fpath_scatter_removal_log = os.path.join(modpath_phrea.dst_root,"log_removal_" + endpoint_id + ".png")
 
         # relative conc limits
         cmin, cmax = 1.e-21, 1.
@@ -880,7 +880,7 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
 
                                     )
 
-    test_semiconf.make_dictionary()
+    test_semiconf.make_modflow_schematisation()
 
     # Test concentration_boundary_parameters (check line 796 in ModPath_functions)
     concentration_boundary_parameters = test_semiconf.recharge_parameters
@@ -891,8 +891,8 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
     modpath_semiconf = mpw.ModPathWell(test_semiconf, # semiconf_dict_1, #test_phrea,
                             workspace = os.path.join(path,"test7_semiconf_nogp"),
                             modelname = "semi_conf_nogp",
-                            bound_left = "xmin",
-                            bound_right = "xmax")
+                            bound_west_key = "xmin",
+                            bound_east_key = "xmax")
 
     # Run phreatic schematisation
     modpath_semiconf.run_model(run_mfmodel = True,
@@ -912,25 +912,25 @@ def test_modpath_run_semiconfined_nogravelpack_traveltimes(organism_name = "MS2"
         df_particle, df_flowline, C_final[endpoint_id] = modpath_removal.calc_advective_microbial_removal(
                                             modpath_semiconf.df_particle, modpath_semiconf.df_flowline,
                                             endpoint_id = endpoint_id,
-                                            trackingdirection = modpath_semiconf.trackingdirection,
+                                            trackingdirection = modpath_semiconf.tracking_direction,
                                             mu1 = 0.023, grainsize = 0.00025, alpha0 = 1.E-5, pH0 = 6.8,
                                             temp_water = 11., rho_water = 999.703, organism_diam = 2.33e-8,
                                             conc_start = 1., conc_gw = 0.)
 
     # df_particle file name
-    particle_fname = os.path.join(modpath_semiconf.dstroot,modpath_semiconf.schematisation_type + "_df_particle_microbial_removal.csv")
+    particle_fname = os.path.join(modpath_semiconf.dst_root,modpath_semiconf.schematisation_type + "_df_particle_microbial_removal.csv")
     # Save df_particle
     df_particle.to_csv(particle_fname)
 
     # df_flowline file name
-    flowline_fname = os.path.join(modpath_semiconf.dstroot,modpath_semiconf.schematisation_type + "_df_flowline_microbial_removal.csv")
+    flowline_fname = os.path.join(modpath_semiconf.dst_root,modpath_semiconf.schematisation_type + "_df_flowline_microbial_removal.csv")
     # Save df_flowline
     df_flowline.to_csv(flowline_fname)
 
 
     # Create travel time plots
-    fpath_scatter_times_log = os.path.join(modpath_semiconf.dstroot,"log_travel_times_test.png")
-    fpath_scatter_times = os.path.join(modpath_semiconf.dstroot,"travel_times_test.png")
+    fpath_scatter_times_log = os.path.join(modpath_semiconf.dst_root,"log_travel_times_test.png")
+    fpath_scatter_times = os.path.join(modpath_semiconf.dst_root,"travel_times_test.png")
     # df particle
     df_particle = modpath_semiconf.df_particle
     # time limits
@@ -1133,8 +1133,8 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
     well1_mp = mpw.ModPathWell(test_phrea, #test_phrea,
                             workspace = os.path.join(path,"test11_phrea"),
                             modelname = "phreatic",
-                            bound_left = "xmin",
-                            bound_right = "xmax")
+                            bound_west_key = "xmin",
+                            bound_east_key = "xmax")
 
     # Run phreatic schematisation
     well1_mp.run_model(run_mfmodel = True,
@@ -1152,12 +1152,12 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
     # Export output of analytical and modpath calculations
 
     # df_particle file name (analytical well data)
-    particle_fname_an = os.path.join(well1_mp.dstroot,well1_mp.schematisation_type + "_df_particle_analytical.csv")
+    particle_fname_an = os.path.join(well1_mp.dst_root,well1_mp.schematisation_type + "_df_particle_analytical.csv")
     # Save df_particle
     df_particle_an.to_csv(particle_fname_an)
 
     # df_particle file name
-    particle_fname_mp = os.path.join(well1_mp.dstroot,well1_mp.schematisation_type + "_df_particle_modpath.csv")
+    particle_fname_mp = os.path.join(well1_mp.dst_root,well1_mp.schematisation_type + "_df_particle_modpath.csv")
     # Save df_particle
     df_particle_mp.to_csv(particle_fname_mp)
 
@@ -1229,12 +1229,12 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
 
 
     # df_particle file name (analytical well data)
-    summary_fname_an = os.path.join(well1_mp.dstroot,well1_mp.schematisation_type + "_summary_traveltimes_analytical.csv")
+    summary_fname_an = os.path.join(well1_mp.dst_root,well1_mp.schematisation_type + "_summary_traveltimes_analytical.csv")
     # Save df_particle
     summary_traveltimes_an.to_csv(summary_fname_an)
 
     # df_particle file name
-    summary_fname_mp = os.path.join(well1_mp.dstroot,well1_mp.schematisation_type + "_summary_traveltimes_modpath.csv")
+    summary_fname_mp = os.path.join(well1_mp.dst_root,well1_mp.schematisation_type + "_summary_traveltimes_modpath.csv")
     # Save df_particle
     summary_traveltimes_mp.to_csv(summary_fname_mp)
 
@@ -1293,13 +1293,13 @@ def test_travel_time_distribution_phreatic_analytical_plus_modpath(organism_name
     plt.legend(loc="upper left")
 
     # travel distribution plot (analytic vs numeric)
-    fpath_traveltime_plot = os.path.join(well1_mp.dstroot,well1_mp.schematisation_type + "_traveltimes_modpath.png")
+    fpath_traveltime_plot = os.path.join(well1_mp.dst_root,well1_mp.schematisation_type + "_traveltimes_modpath.png")
     fig.savefig(fpath_traveltime_plot)
 
 
     # Create travel time plots
-    fpath_scatter_times_log = os.path.join(well1_mp.dstroot,"log_travel_times_test.png")
-    fpath_scatter_times = os.path.join(well1_mp.dstroot,"travel_times_test.png")
+    fpath_scatter_times_log = os.path.join(well1_mp.dst_root,"log_travel_times_test.png")
+    fpath_scatter_times = os.path.join(well1_mp.dst_root,"travel_times_test.png")
     # df particle
     df_particle = well1_mp.df_particle
     # time limits
@@ -1425,7 +1425,7 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
                                 model_radius = model_radius
                             )
 
-    test_feces_contamination.make_dictionary()
+    test_feces_contamination.make_modflow_schematisation()
 
     # Add points based on volume fraction of flux from source
     fraction_flux = np.arange(1.e-8,1.e-6,1.e-8)
@@ -1569,8 +1569,8 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
     modpath_phrea = mpw.ModPathWell(test_feces_contamination, #test_phrea,
                             workspace = workspace,
                             modelname = "semiconfined",
-                            bound_left = "xmin",
-                            bound_right = "xmax")
+                            bound_west_key = "xmin",
+                            bound_east_key = "xmax")
     # print(modpath_phrea.__dict__)
 
     # Run phreatic schematisation
@@ -1627,7 +1627,7 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
         df_particle, df_flowline, C_final[endpoint_id] = modpath_transport.calc_advective_microbial_removal(
                                             df_particle = df_particle, df_flowline = df_flowline,
                                             endpoint_id = endpoint_id,
-                                            trackingdirection = modpath_phrea.trackingdirection)
+                                            trackingdirection = modpath_phrea.tracking_direction)
 
         # # Create travel time plots
         # fpath_scatter_times_log = os.path.join(modpath_phrea.dstroot,"log_travel_times_" + endpoint_id + ".png")
@@ -1673,12 +1673,12 @@ def test_phreatic_defecation_withgravelpack(organism_name = "MS2"):
         #         cmap = 'viridis_r')
 
     # df_particle file name
-    particle_fname = os.path.join(modpath_phrea.dstroot,"df_particle_microbial_removal.csv")
+    particle_fname = os.path.join(modpath_phrea.dst_root,"df_particle_microbial_removal.csv")
     # Save df_particle
     df_particle.to_csv(particle_fname)
 
     # df_flowline file name
-    flowline_fname = os.path.join(modpath_phrea.dstroot,"df_flowline_microbial_removal.csv")
+    flowline_fname = os.path.join(modpath_phrea.dst_root,"df_flowline_microbial_removal.csv")
     # Save df_flowline
     df_flowline.to_csv(flowline_fname)
 
@@ -1769,7 +1769,7 @@ def test_phreatic_defecation_withgravelpack_noleak_diffuse_boundary(organism_nam
                                 model_radius = model_radius
                             )
 
-    test_feces_contamination.make_dictionary()
+    test_feces_contamination.make_modflow_schematisation()
 
     # Create point_parameters (i.e. starting points) from scratch
     point_parameters = {}
@@ -1809,8 +1809,8 @@ def test_phreatic_defecation_withgravelpack_noleak_diffuse_boundary(organism_nam
     modpath_phrea = mpw.ModPathWell(test_feces_contamination, #test_phrea,
                             workspace = workspace,
                             modelname = "semiconfined",
-                            bound_left = "xmin",
-                            bound_right = "xmax")
+                            bound_west_key = "xmin",
+                            bound_east_key = "xmax")
     # print(modpath_phrea.__dict__)
 
     # Run phreatic schematisation
@@ -1868,7 +1868,7 @@ def test_phreatic_defecation_withgravelpack_noleak_diffuse_boundary(organism_nam
         df_particle, df_flowline, C_final[endpoint_id] = modpath_transport.calc_advective_microbial_removal(
                                             df_particle = df_particle, df_flowline = df_flowline,
                                             endpoint_id = endpoint_id,
-                                            trackingdirection = modpath_phrea.trackingdirection)
+                                            trackingdirection = modpath_phrea.tracking_direction)
 
 
         # # Create travel time plots
@@ -1915,12 +1915,12 @@ def test_phreatic_defecation_withgravelpack_noleak_diffuse_boundary(organism_nam
         #         cmap = 'viridis_r')
 
     # df_particle file name
-    particle_fname = os.path.join(modpath_phrea.dstroot,"df_particle_microbial_removal.csv")
+    particle_fname = os.path.join(modpath_phrea.dst_root,"df_particle_microbial_removal.csv")
     # Save df_particle
     df_particle.to_csv(particle_fname)
 
     # df_flowline file name
-    flowline_fname = os.path.join(modpath_phrea.dstroot,"df_flowline_microbial_removal.csv")
+    flowline_fname = os.path.join(modpath_phrea.dst_root,"df_flowline_microbial_removal.csv")
     # Save df_flowline
     df_flowline.to_csv(flowline_fname)
 
@@ -2011,7 +2011,7 @@ def test_phreatic_defecation_noleak_diffuse_nogravelpack(organism_name = "MS2"):
                                 model_radius = model_radius
                             )
 
-    test_feces_contamination.make_dictionary()
+    test_feces_contamination.make_modflow_schematisation()
 
     # Create point_parameters (i.e. starting points) from scratch
     point_parameters = {}
@@ -2051,8 +2051,8 @@ def test_phreatic_defecation_noleak_diffuse_nogravelpack(organism_name = "MS2"):
     modpath_phrea = mpw.ModPathWell(test_feces_contamination, #test_phrea,
                             workspace = workspace,
                             modelname = "semiconfined",
-                            bound_left = "xmin",
-                            bound_right = "xmax")
+                            bound_west_key = "xmin",
+                            bound_east_key = "xmax")
     # print(modpath_phrea.__dict__)
 
     # Run phreatic schematisation
@@ -2110,7 +2110,7 @@ def test_phreatic_defecation_noleak_diffuse_nogravelpack(organism_name = "MS2"):
         df_particle, df_flowline, C_final[endpoint_id] = modpath_transport.calc_advective_microbial_removal(
                                             df_particle = df_particle, df_flowline = df_flowline,
                                             endpoint_id = endpoint_id,
-                                            trackingdirection = modpath_phrea.trackingdirection)
+                                            trackingdirection = modpath_phrea.tracking_direction)
 
 
         # # Create travel time plots
@@ -2157,12 +2157,12 @@ def test_phreatic_defecation_noleak_diffuse_nogravelpack(organism_name = "MS2"):
         #         cmap = 'viridis_r')
 
     # df_particle file name
-    particle_fname = os.path.join(modpath_phrea.dstroot,"df_particle_microbial_removal.csv")
+    particle_fname = os.path.join(modpath_phrea.dst_root,"df_particle_microbial_removal.csv")
     # Save df_particle
     df_particle.to_csv(particle_fname)
 
     # df_flowline file name
-    flowline_fname = os.path.join(modpath_phrea.dstroot,"df_flowline_microbial_removal.csv")
+    flowline_fname = os.path.join(modpath_phrea.dst_root,"df_flowline_microbial_removal.csv")
     # Save df_flowline
     df_flowline.to_csv(flowline_fname)
 
@@ -2747,7 +2747,7 @@ def test_mpw_omp_removal(substance_name = 'benzene'):
     # Then, we create a ModpathWell object for the HydroChemicalSchematisation object that we just made.
     # The ModpathWell object requires a dictionary of the subsurface schematisation and a set of boundary conditions
     # the numerical model has to abide by in calculating flow velocity and direction of flow.
-    phreatic_schematisation.make_dictionary()
+    phreatic_schematisation.make_modflow_schematisation()
 
     # workspace
     workspace = os.path.join(path, "test_mpw_ompremoval_nogp")
@@ -2862,7 +2862,7 @@ def test_mpw_mbo_removal(organism_name = 'solani'):
     # Then, we create a ModpathWell object for the HydroChemicalSchematisation object that we just made.
     # The ModpathWell object requires a dictionary of the subsurface schematisation and a set of boundary conditions
     # the numerical model has to abide by in calculating flow velocity and direction of flow.
-    phreatic_schematisation.make_dictionary()
+    phreatic_schematisation.make_modflow_schematisation()
 
     # Set workspace
     workspace = os.path.join(path, "test_mpw_mboremoval")

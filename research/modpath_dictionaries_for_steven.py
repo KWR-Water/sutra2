@@ -100,7 +100,7 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                     )
 
 
-semiconfined_well_dict = semiconfined_scheme.make_dictionary()
+semiconfined_well_dict = semiconfined_scheme.make_modflow_schematisation()
 # Export dicts for steven
 
 semi_dict_1  = { 'simulation_parameters' : semiconfined_scheme.simulation_parameters,
@@ -168,7 +168,7 @@ semiconfined_scheme = HydroChemicalSchematisation(schematisation_type='semiconfi
                                     )
 
 
-semiconfined_well_dict = semiconfined_scheme.make_dictionary()
+semiconfined_well_dict = semiconfined_scheme.make_modflow_schematisation()
 # Export dicts for steven
 
 semi_dict_2 = { 'simulation_parameters' : semiconfined_scheme.simulation_parameters,
@@ -245,7 +245,7 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       # partition_coefficient_water_organic_carbon = 3.3,
                                     )
 
-phreatic_scheme.make_dictionary()
+phreatic_scheme.make_modflow_schematisation()
 
 phreatic_dict_1 = { 'simulation_parameters' : phreatic_scheme.simulation_parameters,
         'endpoint_id': phreatic_scheme.endpoint_id,
@@ -310,7 +310,7 @@ phreatic_scheme= HydroChemicalSchematisation(schematisation_type='phreatic',
                                       # partition_coefficient_water_organic_carbon = 3.3,
                                     )
 
-phreatic_scheme.make_dictionary()
+phreatic_scheme.make_modflow_schematisation()
 
 phreatic_dict_2 = { 'simulation_parameters' : phreatic_scheme.simulation_parameters,
         'endpoint_id': phreatic_scheme.endpoint_id,
@@ -356,7 +356,7 @@ phreatic_test_scheme = HydroChemicalSchematisation(schematisation_type='phreatic
                                       diameter_borehole = 0.75,
                                       )
 
-phreatic_test_scheme.make_dictionary()
+phreatic_test_scheme.make_modflow_schematisation()
 
 phreatic_test_scheme_dict= { 'simulation_parameters' : phreatic_scheme.simulation_parameters,
         'endpoint_id': semiconfined_scheme.endpoint_id,
@@ -409,7 +409,7 @@ semiconfined_test_scheme = HydroChemicalSchematisation(schematisation_type='semi
                                         solid_density_target_aquifer= 2.650,
                                         diameter_borehole = 0.75,)
 
-semiconfined_test_scheme.make_dictionary()
+semiconfined_test_scheme.make_modflow_schematisation()
 
 semiconfined_test_scheme_dict= { 'simulation_parameters' : phreatic_scheme.simulation_parameters,
         'endpoint_id': semiconfined_scheme.endpoint_id,

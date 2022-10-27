@@ -137,7 +137,7 @@ semiconfined_test_scheme = HydroChemicalSchematisation(schematisation_type='semi
                                         solid_density_target_aquifer= 2.650,
                                         diameter_borehole = 0.75,)
 
-semiconfined_test_scheme.make_dictionary()
+semiconfined_test_scheme.make_modflow_schematisation()
 
 semiconfined_test_scheme_dict= { 'simulation_parameters' : phreatic_scheme.simulation_parameters,
         'endpoint_id': semiconfined_test_scheme.endpoint_id,

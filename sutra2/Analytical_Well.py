@@ -39,13 +39,26 @@ import warnings
 
 path = os.getcwd()  # path of working directory
 
+# @Steven_todo --> create_schematisation_dictionary (dict als uitvoer)
+# Maak er een functie van wat dict oplevert ()
+
+# @Steven_todo: HydroChemicalSchematisation verplaatsen naar andere python-file.
+# Daarna deze file aanroepen (Analytical_Well.py); idem voor imports in ModPath_Well.py
+from sutra2.schematisation import HydroChecmicalSchematisation
 
 # #@MartinK - this is how I found online to check that the exception/error messages
 # # are correct. Is this needed or it there a better/another way to check this?
 # # Seems like quite some extra work to check that the correct error messaged are raised
 
-class HydroChemicalSchematisation:
+# @ Steven_todo: functie --> run everything
+# EEN WRAPPER! --> private functie aanmaken "_aquapriori_wrapper" Analytical_Well of ModPath_well als argument link met OMP removal
+# Overige argumenten als verwijzing naar klasse
 
+
+class HydroChemicalSchematisation:
+    # @Steven_todo: functie voor ModPath --> Alles voor Analytical_Well klasse eruit halen
+    # @steven_todo @mvds alleen nog mar de properties in een dict op slaan, niets meer in de attributeten van deze
+    # klassse. hiervoor moet er dus wel veel worden gewijzigd (al is het eigenlijk alleen hernoemen)
     """ This class holds all the parameters that define the (surrounding of the) well such that travel
     times and removal rates can be determined.
 
@@ -61,6 +74,7 @@ class HydroChemicalSchematisation:
     what_to_export: string
         Defines what paramters are exported, 'all' exports all paramters, 'omp' only those relevant to the OMP or
         'mbo' only exports parameters relevant for the microbial organisms (mbo)
+    # @Steven_todo: check of dit in Tranport_Removal.py staat
     temp_correction_Koc, temp_correction_halflife:: Bool
         KOC and half-life values generally refer to a standard lab temperature (tREF = 20-25oC) and should
         therefore be corrected when field temperature is different. Default is True
@@ -601,24 +615,13 @@ class HydroChemicalSchematisation:
                 self.model_radius = math.sqrt(self.vertical_resistance_shallow_aquifer * self.KD) * 3 # spreading_distance*3
 
 
-    def make_dictionary(self,):
-        # MWK kun je het dan niet beter in de methode aangeven dat het gaat om het maken van de input van ModFlow,
-        # dus zoiets als `create_modflow_input`
+    def make_modflow_schematisation(self,):
+
         """ Returns dicitonaries of the different parameters for MODFLOW schematisation. """
-
-        #MK: this still looks ugly as it basically repeats all the attributes. I think we need to think about something
-        # better for this in a next iteration.
-        #MK: I assume al the logic here (e.g.
-        # 'xmax': self.diameter_filterscreen/2,
-        # ) is only required for modflow? if so then it is now correctly
-        # implemented. If not, then it is confusing, because the docstring here says it is only for MODFLOW
-        #AH yes, this is in principle only for modflow.
         if self.schematisation_type == 'phreatic':
-            compute_thickness_vadose_zone = True # @MartinvdS what is this for? MK: this is never used, remove it -> AH I leave it for now until discuss w/Martin vds
-
             # Additional meter added to the model radius for the fixed head boundary
             # only for the phreatic case, not for the semiconfined case
-            # MK: initilize to None -> AH ok, initialized to None now in init
+            # @MvdS: moet hier nog een meter bij?
             self.model_radius_computed = self.model_radius
 
             # only outer_boundary for phreatic
@@ -649,8 +652,6 @@ class HydroChemicalSchematisation:
                 }
 
         elif self.schematisation_type == 'semiconfined':
-            compute_thickness_vadose_zone = False # @MartinvdS what is this for?
-
             # ibound at the model radius (no additional meter added)
             self.model_radius_computed = self.model_radius
 
@@ -681,9 +682,7 @@ class HydroChemicalSchematisation:
                     }
                 }
 
-        # make dictionaries of each grouping of parameters
-        # MWK this could also be done in a loop:
-        # store these attributes in a dictionary
+        # make dictionaries of each grouping of parameter
         simulation_parameters = {}
         for key in ['schematisation_type',
                     'computation_method',
@@ -695,17 +694,7 @@ class HydroChemicalSchematisation:
                     'start_date_contamination',
                     'compute_contamination_for_date']:
             simulation_parameters[key] = getattr(self, key)
-        # simulation_parameters = {
-        #     'schematisation_type': self.schematisation_type,
-        #     'computation_method': self.computation_method,
-        #     'temp_correction_Koc': self.temp_correction_Koc,
-        #     'temp_correction_halflife': self.temp_correction_halflife,
-        #     'biodegradation_sorbed_phase': self.biodegradation_sorbed_phase,
-        #     'compute_thickness_vadose_zone': self.compute_thickness_vadose_zone,
-        #     'start_date_well': str(self.start_date_well),
-        #     'start_date_contamination': str(self.start_date_contamination),
-        #     'compute_contamination_for_date': str(self.compute_contamination_for_date),
-        #     }
+
 
 
         endpoint_id = {
@@ -812,9 +801,7 @@ class HydroChemicalSchematisation:
         if self.schematisation_type == 'semiconfined':
             well_parameters = {
                 self.well_name: {
-                    'well_discharge': self.well_discharge, #MK: here I see the nameing is different. I like your explicit approach much more. So apparently, the
-                                                #AH @MartinK, yes the naming changes for Modflow, if we want changes, need to discuss
-                                                # w/ @MartinvdS, but I think this is needed to work w/ FloPy...
+                    'well_discharge': self.well_discharge, 
                     'top': self.top_filterscreen,
                     'bot': self.bottom_filterscreen,
                     'xmin': 0.0,
@@ -829,18 +816,6 @@ class HydroChemicalSchematisation:
 
         if self.schematisation_type == 'semiconfined':
             recharge_parameters = {
-                # MWK: this should be removed
-                # 'source1': {
-                #     # source1 -> recharge & diffuse sources
-                #     'substance_name': self.substance,
-                #     'recharge': self.recharge_rate,
-                #     'xmin': self.diameter_gravelpack/2,
-                #     'xmax': self.model_radius,
-                #     'dissolved_organic_carbon': self.dissolved_organic_carbon_infiltration_water,
-                #     'TOC': self.total_organic_carbon_infiltration_water,
-                #     'input_concentration': self.diffuse_input_concentration,
-                #     },
-                # 'source2' :{}> surface water (BAR & RBF) #@MartinvdS come back to this when we start this module
             }
         else:
             recharge_parameters = {
@@ -855,7 +830,7 @@ class HydroChemicalSchematisation:
                     'TOC': self.total_organic_carbon_infiltration_water,
                     'input_concentration': self.diffuse_input_concentration,
                     },
-                # 'source2' :{}> surface water (BAR & RBF) #@MartinvdS come back to this when we start this module
+                # 'source2' :{}> surface water (BAR & RBF) #TODO @MartinvdS come back to this when we start this module
             }
 
         # concentration_boundary assigns location (and substance/organism) of diffuse contamination
@@ -923,6 +898,8 @@ class HydroChemicalSchematisation:
         # where the dict is a new attribute) this is not good: confusing and source for errors. self.simulation_parameters
         # is only used in research and test functions, so not the functionality of the code, so it should be removed
         # altogether
+        # @Steven_todo: check: worden attributen tm regel 896 gebruikt voor de functionaliteit in de modelcode zel (dus niet alleen voor research/tests)?
+        # Als alleen voor research/tests: dan attribuut verwijderen. Code in research / testbestanden aanpassen dien overeenkomstig.
         self.simulation_parameters = simulation_parameters
         self.endpoint_id = endpoint_id
         self.mesh_refinement = mesh_refinement
@@ -1222,7 +1199,7 @@ class AnalyticalWell():
 
         # Translate HydroChemicalSchematizations attributes to dictionaries that
         # are used by ModFlow
-        self.schematisation.make_dictionary()
+        self.schematisation.make_modflow_schematisation()
 
 
     def _calculate_travel_time_shallow_aquifer_phreatic(self,
@@ -1813,7 +1790,7 @@ class AnalyticalWell():
         # #AH_todo do we want to automatically
         # make the dictionaries for modpath when running the analytical model?
         # so far this is the only use for the dicitonaries so they are made here
-        self.schematisation.make_dictionary()
+        self.schematisation.make_modflow_schematisation()
         df_flowline['endpoint_id'] = list(self.schematisation.endpoint_id.keys())[0] # AH_todo Nov. 9, this works now for a sinlge endpoint_id, if in the future there are multiple this needs to be adapted. Wedecide to leave for now.
 
         # @Steven --> 'substance' vervangen door 'name'?

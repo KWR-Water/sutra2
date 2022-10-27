@@ -1,4 +1,5 @@
-# MWK: I have the feeling that the modpathwell hclass has becoe too big. it seems that it would beenfit by some restrucutring where grid-related methods are brought togeter in a Grid class and modpath/flow methods like
+# MWK: @martinvds: I have the feeling that the modpathwell hclass has becoe too big. it seems that it would beenfit by some restrucutring
+# where grid-related methods are brought togeter in a Grid class and modpath/flow methods like
 # create_dis, create_bas etc in a modpathConnector class (of verzin een leukere naam)
 #%% ----------------------------------------------------------------------------
 # A. Hockin, March 2021
@@ -64,86 +65,22 @@ except Exception as e:
 
 
 #%%
-# MWK zijn deze opmerkeingen verwerkt? verwerken en verwijdern
-'''
-Some clarifications in red below:
 
-Algemeen-> What about temperature? Now it is capital T, I don’t see quickly in the modflow documentation what is wanted here
 
-INTEGER vervangen door FLOAT (behalve nlayer, ncols en andere parameters die echt een integer zijn)
-Bijv DOC, TOC, c_in, top, bot, etc.
-Kan door aanpassen van default (1 -> 1.0)
 
-Check hoofdlettergebruik. Belangrijk om dit consistent te doen om foutjes bij invoer of code te voorkomen.
-top, bot -> prima
-pH, DOC, TOC is prima om hoofdletters te doen want dat is een afkorting.
-Recharge -> the flopy parameter is “rech” (https://flopy.readthedocs.io/en/latest/_modules/flopy/modflow/mfrch.html). Recharge is geen afkorting, dus moet sowieso met kleine letter.
-Khor -> the flopy parameter is “hk” (ff overleg met martinK). Ik heb dit zelf niet goed in de tabel gezet.
 
-Bas_parameters-> Ok then this is an empty dictionary, rest of params come in the Modpath class
 
--> rmax: mag weg, want wordt nu elders gedefinieerd.
-
-Simulation_paramters
--> Simulation_paramEters
-
--> compute_contamination_for_date, start_date_contamination, end_date_well:
-De value moet een “Date” zijn ipv integer. -> This is now a datetime type
-
-Point_parameters
--> voeg even een voorbeeld toe voor Steven. Dat scheelt Steven tijd.
-
-Geo_parameters
-Vadoze, layer1, layer2:
--> de Top en Bot moeten op elkaar aansluiten (mogen geen gaten tussen zitten) en in mASL. Volgens mij gaat hier iets mis.
--> rmin moet gelijk zijn aan de diameter van de diameter_borehole / 2 (0.75 default / 2) -> before this was the diameter_gravelpack, changed to diameter_borehole
-
-Clayseal, gravelpack:
-Voeg ajb even een apart voorbeeld toe voor Steven. Dat scheelt Steven tijd.
-Dus 2 bestanden voor phreatic (met / zonder filterscreen) en 2 voor confined
-
-Bestand 1:
-Default waarden (dus zonder gravelpack)
-
-Bestand 2:
-Filterscreen met diameter 0.2 ,
-Clayseal ter plaatse van layer1
-Gravelpack ter plaatse van layer2
-
-Meshrefinement1
--> rmin: moet gelijk zijn aan straal van boorgat-> before this was the diameter_gravelpack, changed to diameter_borehole
--> rmax: moet gelijk zijn aan top – bottom van layer2
-
-Meshrefiniment2
--> rmin: moet gelijk zijn rmax van Meshrefinement1
-
-Recharge_parameters
-Rmin -> diameter_borehole / 2
-Name -> vervangen door “substance_name”
-
-Substance_parameters -> ok lets discuss, now these params are not passed to the dictionary yet unless user-specified, as the Substance class is not used until the Concentration class.
-Dit bij volgende overleg met martinK bespreken
-Optie 1: “substance_name” als key toevoegen (makkelijk als we 1 stof per berekening doen)
-Optie 2: nested dictionary van maken, met “substance_name” als key (dan kun je in 1x meerdere stoffen doen)
-
-well_parameters
-top -> top layer 1 -> do you mean the top of layer 2? I thought the well was in the target aquifer?
-bot -> bottom layer 1 -> same as above, layer2?
-rmin -> 0 (midden van put)
-rmax -> diameter_filterscreen
-'''
 
 
 class ModPathWell:
-
     def __init__(self, schematisation: HydroChemicalSchematisation,
                        workspace: str or None = None, modelname: str or None = None,
+                       # @steven_todo bound.. en tracking direction naar hydroschematization dictionary
                        mf_exe = "mf2005.exe", mp_exe = "mpath7.exe",
-                       # MWK these bound_.. are the labels right? Not the value. remane it to bound_left_label or ...key
-                       bound_left: str = "xmin", bound_right: str = "xmax",
-                       bound_top: str = "top", bound_bot: str = "bot",
-                       bound_north: str = "ymin", bound_south: str = "ymax",
-                       trackingdirection = "forward"):
+                       bound_west_key: str = "xmin", bound_east_key: str = "xmax",
+                       bound_top_key: str = "top", bound_bot_key: str = "bot",
+                       bound_north_key: str = "ymin", bound_south_key: str = "ymax",
+                       tracking_direction = "forward"):
         """ Compute travel time distribution using MODFLOW and MODPATH.
 
         unpack/parse' all the variables from the hydrogeochemical schematizization
@@ -177,43 +114,31 @@ class ModPathWell:
         self.mp_exe = mp_exe
 
         # Cbc unit flag (modflow oc-package input)
-        # MWK te cryptische variable naam. noem het dan gewoon cbc_unit_flag of modflow_cbc_unit_flag
-        iu_cbc = 130
-        self.iu_cbc = iu_cbc
+        self.iu_cbc = 130
         # Expected boundary terms in dicts
-        self.bound_left = bound_left
-        self.bound_right = bound_right
-        self.bound_top = bound_top
-        self.bound_bot = bound_bot
-        self.bound_north = bound_north
-        self.bound_south = bound_south
+        self.bound_west_key = bound_west_key
+        self.bound_east_key = bound_east_key
+        self.bound_top_key = bound_top_key
+        self.bound_bot_key = bound_bot_key
+        self.bound_north_key = bound_north_key
+        self.bound_south_key = bound_south_key
         # Direction of calculating flow along pathlines (in modpath)
-        self.trackingdirection = tracking_direction
+        self.tracking_direction = tracking_direction
 
         # Create output directories
         # Destination root
-        # MWK ergens anders wordt Path gebruikt, dus ik zou dat consistent overal aanhouden
-        self.dstroot = self.workspace + '\\results'
+        self.dst_root = self.workspace + '\\results'
 
         # Create workspace(s)
-        if not os.path.exists(self.dstroot):
-            os.makedirs(self.dstroot)
-
+        if not os.path.exists(self.dst_root):
+            os.makedirs(self.dst_root)
+            
         # Source files
         self.model_hds = os.path.join(self.workspace, self.modelname + '.hds')
         self.model_cbc = os.path.join(self.workspace, self.modelname + '.cbc')
-        # MWK dit is een docstring van een andere functie, verwijdern of verplaatsen
-        '''
-        Initialize the AnalyticalWell object by making the dictionaries and adding the schematisation (and therefore attributes
-        of the schematisation) to the object.
 
-        Returns
-        ------
-        Dictionaries (Modflow) with all parameters as an attribute of the function.
-
-        '''
         self.schematisation = schematisation
-        # Required keys
+        # Required keys in schematisation dict
         self.required_keys = ["simulation_parameters","geo_parameters",
         "ibound_parameters","recharge_parameters",
         "well_parameters","concentration_boundary_parameters","point_parameters", "mesh_refinement",
@@ -223,11 +148,11 @@ class ModPathWell:
         # zo niet, dan kun je de schematisatie class uberhaupt beter een dict maken.
         if type(self.schematisation) == dict:
             self.schematisation_dict = self.schematisation
-        else:
-            #Make dictionaries
-            # self.schematisation.make_dictionary()
-            self.schematisation_dict = {}
-            self._create_schematisation_dict(self.required_keys)
+        # else:
+        #     #Make dictionaries
+        #     # self.schematisation.make_dictionary()
+        #     self.schematisation_dict = {}
+        #     self._create_schematisation_dict(self.required_keys)
 
     def _create_schematisation_dict(self,required_keys):
         '''
@@ -248,7 +173,7 @@ class ModPathWell:
     def _check_parameters(self,required_parameters):
         for req_var in required_parameters:
             value = getattr(self, req_var)
-            print(req_var,value)
+            print(req_var,value)    
             if value is None:
                 raise KeyError(f'Error, required variable {req_var} is not defined.')
 
@@ -520,7 +445,7 @@ class ModPathWell:
         # Assign delv and zmid
         self.nlay, self.delv, self.zmid, lay_bounds = self._assign_cellboundaries(schematisation = schematisation,
                                                                                   dict_keys = dict_keys,
-                                                                                  bound_min = self.bound_bot, bound_max = self.bound_top,
+                                                                                  bound_min = self.bound_bot_key, bound_max = self.bound_top_key,
                                                                                   n_refinement = "nlayers", ascending = False)
 
         # Model top
@@ -530,7 +455,7 @@ class ModPathWell:
         # Assign delr and xmid
         self.ncol, self.delr, self.xmid, col_bounds = self._assign_cellboundaries(schematisation = schematisation,
                                                                                   dict_keys = dict_keys,
-                                                                    bound_min = self.bound_left, bound_max = self.bound_right,
+                                                                    bound_min = self.bound_west_key, bound_max = self.bound_east_key,
                                                                     n_refinement = "ncols", ascending = True)
 
         # Assign delc and ymid
@@ -544,7 +469,7 @@ class ModPathWell:
         else:
             self.nrow,self.delc,self.ymid,row_bounds = self._assign_cellboundaries(schematisation = schematisation,
                                                                                   dict_keys = dict_keys,
-                                                                    bound_min = self.bound_north, bound_max = self.bound_south,
+                                                                    bound_min = self.bound_north_key, bound_max = self.bound_south_key,
                                                                     n_refinement = "nrows", ascending = True)
 
         # Create empty model grid
@@ -577,24 +502,24 @@ class ModPathWell:
         iDict_sub = dict_subkey
 
         # coordinate values of boundaries [float]
-        left = schematisation[iDict][iDict_sub][self.bound_left]
-        right = schematisation[iDict][iDict_sub][self.bound_right]
+        left = schematisation[iDict][iDict_sub][self.bound_west_key]
+        right = schematisation[iDict][iDict_sub][self.bound_east_key]
         try:
-            top = schematisation[iDict][iDict_sub][self.bound_top]
+            top = schematisation[iDict][iDict_sub][self.bound_top_key]
         except KeyError:
             # print("set top of", iDict, iDict_sub, "to 0.")
             top = self.top
         # CHECK FOR ERRORS IF KEYWORD "bot" is not given
         try:
-            bot = schematisation[iDict][iDict_sub][self.bound_bot]
+            bot = schematisation[iDict][iDict_sub][self.bound_bot_key]
         except KeyError:
             # print("set bottom of", iDict, iDict_sub, "to model bottom.")
             bot = min(self.bot)
 
         if not self.model_type == "axisymmetric":
             try:
-                north = schematisation[iDict][iDict_sub][self.bound_north]
-                south = schematisation[iDict][iDict_sub][self.bound_south]
+                north = schematisation[iDict][iDict_sub][self.bound_north_key]
+                south = schematisation[iDict][iDict_sub][self.bound_south_key]
                 # Determine row indices
                 rowidx_min = int(np.argwhere((self.ymid < north) & (self.ymid >= south))[0])
                 rowidx_max = int(np.argwhere((self.ymid < north) & (self.ymid >= south))[-1]) + 1
@@ -918,7 +843,7 @@ class ModPathWell:
                         "temp_water": [["geo_parameters"],"float",self.schematisation.temp_water],
                         "grainsize": [["geo_parameters"],"float",0.00025]
                         }
-
+        # @ Steven_todo --> self.schematisation attributes toevoegen aan geo_parameters invoer (in HydroChemicalSchematisation)
 
         for iParm, dict_keys in self.geoparm_names.items():
             # Temporary value grid
@@ -1433,7 +1358,7 @@ class ModPathWell:
                                         # fraction_flux = None,
                                         localy=0.5, localx=0.5,
                                         timeoffset=0.0, drape=0,
-                                        trackingdirection = self.trackingdirection,
+                                        trackingdirection = self.tracking_direction,
                                         releasedata=0.0, gw_level_release = gw_level_release,
                                         gw_level = None)
 
@@ -1443,7 +1368,7 @@ class ModPathWell:
                                         localy = 0.5,
                                         localz = 0.5,
                                         timeoffset = 0.0, drape = 0,
-                                        trackingdirection = self.trackingdirection,  ## 'forward'
+                                        trackingdirection = self.tracking_direction,  ## 'forward'
                                         releasedata = 0.0)
 
         # Default flux interfaces
@@ -1939,7 +1864,7 @@ class ModPathWell:
                                                                 particledata=self.pd[iPG])
             ''' ParticleGroup class to create MODPATH 7 particle group data for
                 location input style 1.  '''
-            self.trackingdirection = trackingdirection
+            self.tracking_direction = trackingdirection
 
     # Here are functions to calculate the travel time through vadose zone, shared functions for
     # Analytical and Modflow models
@@ -2260,7 +2185,7 @@ class ModPathWell:
                                                                 particledata=self.pd[iPG])
             ''' ParticleGroup class to create MODPATH 7 particle group data for
                 location input style 1.  '''
-            self.trackingdirection = trackingdirection
+            self.tracking_direction = trackingdirection
 
 
 
@@ -2452,7 +2377,7 @@ class ModPathWell:
                                                                 particledata=self.pd[iPG])
             ''' ParticleGroup class to create MODPATH 7 particle group data for
                 location input style 1.  '''
-            self.trackingdirection = trackingdirection
+            self.tracking_direction = trackingdirection
             # Steven_todo: line can be left out?
 
     ####################################
@@ -2498,8 +2423,8 @@ class ModPathWell:
         if mp_model is not None:
             self.mp7 = mp_model
 
-        if self.trackingdirection is None:
-            self.trackingdirection = trackingdirection
+        if self.tracking_direction is None:
+            self.tracking_direction = trackingdirection
 
 
         # Zones are not read in detail
@@ -2512,7 +2437,7 @@ class ModPathWell:
                                          listingfilename=None, endpointfilename=None,
                                          pathlinefilename=None, timeseriesfilename=None,
                                          tracefilename=None, simulationtype = simulationtype,
-                                         trackingdirection = self.trackingdirection,
+                                         trackingdirection = self.tracking_direction,
                                          weaksinkoption='stop_at', weaksourceoption= 'stop_at', # 'pass_through',
                                          budgetoutputoption='summary', traceparticledata=None, #[0,0], #self.pid,
                                          budgetcellnumbers=None, referencetime=0.,
@@ -3222,7 +3147,7 @@ class ModPathWell:
 
         for fid in flowline_id:
             # Recharge flux from top to bottom
-            if self.trackingdirection == "forward":
+            if self.tracking_direction == "forward":
 
                 if df_flowline.loc[fid,"flowline_type"] in ["diffuse_source","point_source"]:
                     # Steven_todo: add 'flux_direction' as input to modPath_Well class to calc total flux accurately
@@ -3233,7 +3158,7 @@ class ModPathWell:
                 # elif df_flowline.loc[fid,"flowline_type"] in ["point_source",]:
                 #     flux_pathline[fid] = self.point_discharge[fid]
 
-            elif self.trackingdirection == "backward":
+            elif self.tracking_direction == "backward":
 
                 if df_flowline.loc[fid,"flowline_type"] in ["diffuse_source","point_source"]:
                     # endpoint is used to calculate flux of pathline   # 'East'
@@ -3346,12 +3271,12 @@ class ModPathWell:
             self.df_particle.loc[fid,"travel_time"] = np.array([0.] + list(self.df_particle.loc[fid,"total_travel_time"].values - self.df_particle.loc[fid,"total_travel_time"].shift(1).values)[1:])
 
         # df_particle file name
-        particle_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_particle.csv")
+        particle_fname = os.path.join(self.dst_root,self.schematisation_type + "_df_particle.csv")
         # Save df_particle
         self.df_particle.to_csv(particle_fname)
 
         # df_flowline file name
-        flowline_fname = os.path.join(self.dstroot,self.schematisation_type + "_df_flowline.csv")
+        flowline_fname = os.path.join(self.dst_root,self.schematisation_type + "_df_flowline.csv")
         # Save df_flowline
         self.df_flowline.to_csv(flowline_fname)
 
