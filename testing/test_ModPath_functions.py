@@ -1098,17 +1098,19 @@ def test_phreatic_scheme_withgravelpack_dictinput(organism_name = "MS2"):
         'bas_parameters' : phreatic_scheme.bas_parameters,
     }
 
-    fpath_research = os.path.abspath(os.path.join(path,os.pardir,"research"))
-    fpath_phreatic_dict_check2 = os.path.join(fpath_research,"phreatic_dict_withgravel_test.txt")
-    with open (fpath_phreatic_dict_check2, "w") as dict_file:
-        dict_file.write(str(phreatic_dict_2))
+    # Steven_todo: check schematisation input after changes to classes
+    # Add assert to check with ..\sutra2\research\phreatic_dict_withgravel_test_checkSR221101.txt
 
-    with open(fpath_phreatic_dict_check2,"r") as dict_file:
-        dict_raw = dict_file.read()
-        phreatic_dict_check2 = ast.literal_eval(dict_raw)  # ast --> abstract syntax trees
-        # pd.read_csv(fpath_phreatic_dict_check2, delimiter=" ", header = None)
+    # fpath_research = os.path.abspath(os.path.join(path,os.pardir,"research"))
+    # fpath_phreatic_dict_check2 = os.path.join(fpath_research,"phreatic_dict_withgravel_test.txt")
+    # with open (fpath_phreatic_dict_check2, "w") as dict_file:
+    #     dict_file.write(str(phreatic_dict_2))
 
-    assert phreatic_dict_2 == phreatic_dict_check2
+    # with open(fpath_phreatic_dict_check2,"r") as dict_file:
+    #     dict_raw = dict_file.read()
+    #     phreatic_dict_check2 = ast.literal_eval(dict_raw)  # ast --> abstract syntax trees
+
+    # assert phreatic_dict_2 == phreatic_dict_check2
 
 
 #%%
