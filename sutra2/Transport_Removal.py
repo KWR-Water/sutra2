@@ -459,7 +459,7 @@ class Transport():
         '''
         removal_parameters:
 
-        Initialization of the SubstanceTransport class. Checks for either user-defined OMP substance parameters (removal_function == 'omp')
+        Initialization of the Transport class. Checks for either user-defined OMP substance parameters (removal_function == 'omp')
         or user-defined microbial organism removal parameters (removal_function == 'mbo') and overrides the database values, if any.
 
         Parameters

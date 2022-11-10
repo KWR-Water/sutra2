@@ -45,7 +45,9 @@ from scipy.special import kn as besselk
 # MWK: Schematization needs to be in its own file, schematization.py Because now the import
 # is confusing (why wouold I need the schematization of the analytical well for my
 # modflow simulation)
-from sutra2.Analytical_Well import AnalyticalWell, HydroChemicalSchematisation
+## OLD - remove when 'create_schematisation_dictionary' is working
+from sutra2.Analytical_Well import AnalyticalWell # , HydroChemicalSchematisation
+from sutra2.HydroChemicalSchematisation import *
 
 # path of working directory
 # MWK: this does not seem to be used, correct?
@@ -66,14 +68,8 @@ except Exception as e:
 
 #%%
 
-
-
-
-
-
-
 class ModPathWell:
-    def __init__(self, schematisation: HydroChemicalSchematisation,
+    def __init__(self, schematisation_dict: dict,
                        workspace: str or None = None, modelname: str or None = None,
                        # @steven_todo bound.. en tracking direction naar hydroschematization dictionary
                        mf_exe = "mf2005.exe", mp_exe = "mpath7.exe",
@@ -132,12 +128,12 @@ class ModPathWell:
         # Create workspace(s)
         if not os.path.exists(self.dst_root):
             os.makedirs(self.dst_root)
-            
+
         # Source files
         self.model_hds = os.path.join(self.workspace, self.modelname + '.hds')
         self.model_cbc = os.path.join(self.workspace, self.modelname + '.cbc')
 
-        self.schematisation = schematisation
+        self.schematisation_dict = schematisation_dict
         # Required keys in schematisation dict
         self.required_keys = ["simulation_parameters","geo_parameters",
         "ibound_parameters","recharge_parameters",
@@ -146,9 +142,9 @@ class ModPathWell:
 
         # MWK waarom ondersteun je dit? Je wil mensen toch dwingen om een schematisatie class te gebruiken?
         # zo niet, dan kun je de schematisatie class uberhaupt beter een dict maken.
-        if type(self.schematisation) == dict:
-            self.schematisation_dict = self.schematisation
-        # else:
+        # if type(self.schematisation) == dict:
+        #     self.schematisation_dict = self.schematisation
+        # # else:
         #     #Make dictionaries
         #     # self.schematisation.make_dictionary()
         #     self.schematisation_dict = {}
@@ -162,18 +158,18 @@ class ModPathWell:
         # "well_parameters","point_parameters"]
         '''
         for iKey in required_keys:
-            if hasattr(self.schematisation,iKey):
-                self.schematisation_dict[iKey] = getattr(self.schematisation,iKey)
+            if hasattr(self.schematisation_dict,iKey):
+                self.schematisation_dict[iKey] = getattr(self.schematisation_dict,iKey)
 
     def _check_schematisation(self,required_keys):
         for req_key in required_keys:
-            if not hasattr(self.schematisation,req_key):
+            if not hasattr(self.schematisation_dict,req_key):
                 print(f'Error, required variable {req_key} is not defined in schematisation dict.')
 
     def _check_parameters(self,required_parameters):
         for req_var in required_parameters:
             value = getattr(self, req_var)
-            print(req_var,value)    
+            print(req_var,value)
             if value is None:
                 raise KeyError(f'Error, required variable {req_var} is not defined.')
 
@@ -836,11 +832,11 @@ class ModPathWell:
                         "vani": [["geo_parameters"],"float",999.],
                         "porosity": [["geo_parameters"],"float",0.35],
                         "solid_density": [["geo_parameters"],"float",2.65],
-                        "fraction_organic_carbon": [["geo_parameters"],"float",self.schematisation.fraction_organic_carbon_target_aquifer],
-                        "redox": [["geo_parameters"],"object",self.schematisation.redox_target_aquifer],
-                        "dissolved_organic_carbon": [["geo_parameters"],"float",self.schematisation.dissolved_organic_carbon_target_aquifer],
-                        "pH": [["geo_parameters"],"float",self.schematisation.pH_target_aquifer],
-                        "temp_water": [["geo_parameters"],"float",self.schematisation.temp_water],
+                        "fraction_organic_carbon": [["geo_parameters"],"float",self.schematisation_dict.fraction_organic_carbon_target_aquifer],
+                        "redox": [["geo_parameters"],"object",self.schematisation_dict.redox_target_aquifer],
+                        "dissolved_organic_carbon": [["geo_parameters"],"float",self.schematisation_dict.dissolved_organic_carbon_target_aquifer],
+                        "pH": [["geo_parameters"],"float",self.schematisation_dict.pH_target_aquifer],
+                        "temp_water": [["geo_parameters"],"float",self.schematisation_dict.temp_water],
                         "grainsize": [["geo_parameters"],"float",0.00025]
                         }
         # @ Steven_todo --> self.schematisation attributes toevoegen aan geo_parameters invoer (in HydroChemicalSchematisation)
@@ -994,12 +990,12 @@ class ModPathWell:
                 # (dry if head < bot cell); First layer is inactive
                 self.laytyp = np.ones((self.nlay), dtype = 'int')
                 # Make target aquifer confined
-                self.laytyp[self.bot < self.schematisation.bottom_shallow_aquifer] = 0
+                self.laytyp[self.bot < self.schematisation_dict.bottom_shallow_aquifer] = 0
 
                 # Wetting is active in upper layers (but the first one) (head in well is equal to top of well screen)
                 self.laywet = np.ones((self.nlay), dtype = 'int')
                 # No wetting in confined layers
-                self.laywet[self.bot < self.schematisation.bottom_shallow_aquifer] = 0
+                self.laywet[self.bot < self.schematisation_dict.bottom_shallow_aquifer] = 0
 
             # semiconfined --> axisymmetric, confined flow schematisation
             elif self.schematisation_type in ["semiconfined"]:
@@ -1316,7 +1312,8 @@ class ModPathWell:
         # Calculate the travel time distribution for the semiconfined schematisation
         # for each of the aquifer zones and creates df_flowline and df_particle dataframes for the analytical case.
         if self.schematisation_type in ["phreatic"]:
-            self.schematisation._calculate_travel_time_unsaturated_zone(distance=self.delr.cumsum(axis=0))
+            self.schematisation_dict._calculate_travel_time_unsaturated_zone(distance=self.delr.cumsum(axis=0))
+            # @Steven_todo: self.travel_time_unsaturated = ...
             '''
             # Assign attributes:
             - 'head' --> head distribution with distance to abstraction well [m]
@@ -1324,9 +1321,9 @@ class ModPathWell:
             - 'thickness_vadose_zone_drawdown' --> drawdown due to abstraction in pumping well [m]
             '''
             # self.strt = self.schematisation.head[0]
-            self.travel_time_unsaturated_analytical = self.schematisation.travel_time_unsaturated
-            self.thickness_vadose_zone_drawdown_analytical = self.schematisation.thickness_vadose_zone_drawdown
-            self.head_analytical = self.schematisation.head
+            self.travel_time_unsaturated_analytical = self.schematisation_dict.travel_time_unsaturated
+            self.thickness_vadose_zone_drawdown_analytical = self.schematisation_dict.thickness_vadose_zone_drawdown
+            self.head_analytical = self.schematisation_dict.head
         else:
             self.travel_time_unsaturated_analytical = None
             self.thickness_vadose_zone_drawdown_analytical = None
@@ -1478,25 +1475,25 @@ class ModPathWell:
         '''
 
         # Calculate thickness of vadose zone
-        self.thickness_vadose_zone_drawdown = self.schematisation.ground_surface - gw_level
+        self.thickness_vadose_zone_drawdown = self.schematisation_dict.ground_surface - gw_level
 
         # Calculate travel time
         travel_time_unsaturated = (((self.thickness_vadose_zone_drawdown
-                                    - self.schematisation.thickness_full_capillary_fringe)
-                                    * self.schematisation.moisture_content_vadose_zone
-                                    + self.schematisation.thickness_full_capillary_fringe
-                                    * self.schematisation.porosity_vadose_zone)
-                                / self.schematisation.recharge_rate)
+                                    - self.schematisation_dict.thickness_full_capillary_fringe)
+                                    * self.schematisation_dict.moisture_content_vadose_zone
+                                    + self.schematisation_dict.thickness_full_capillary_fringe
+                                    * self.schematisation_dict.porosity_vadose_zone)
+                                / self.schematisation_dict.recharge_rate)
 
         # raise warning if the thickness of the drawdown at the well is such that
         # it reaches the target aquifer
 
         #@MartinK -> how to raise this warning properly in the web interface? #AH_todo
-        self.drawdown_at_well = self.schematisation.ground_surface - self.thickness_vadose_zone_drawdown
-        if self.drawdown_at_well[0] < self.schematisation.bottom_target_aquifer:
+        self.drawdown_at_well = self.schematisation_dict.ground_surface - self.thickness_vadose_zone_drawdown
+        if self.drawdown_at_well[0] < self.schematisation_dict.bottom_target_aquifer:
             raise ValueError('The drawdown at the well is lower than the bottom of the target aquifer. Please select a different schematisation.')
 
-        elif self.drawdown_at_well[0] < self.schematisation.bottom_shallow_aquifer:
+        elif self.drawdown_at_well[0] < self.schematisation_dict.bottom_shallow_aquifer:
             warnings.warn('The drawdown at the well is lower than the bottom of the shallow aquifer')
 
         else:
@@ -1543,13 +1540,13 @@ class ModPathWell:
 
         elif self.schematisation_type == 'semiconfined':
             # Travel distance upper layer
-            travel_distance_unsaturated = self.schematisation.ground_surface - gw_level_particles.mean()
+            travel_distance_unsaturated = self.schematisation_dict.ground_surface - gw_level_particles.mean()
             # shallow layer travel time
             travel_time_unsaturated = (((travel_distance_unsaturated)
-                                        * self.schematisation.moisture_content_vadose_zone
-                                        + self.schematisation.thickness_full_capillary_fringe
-                                        * self.schematisation.porosity_vadose_zone)
-                                    / self.schematisation.recharge_rate)
+                                        * self.schematisation_dict.moisture_content_vadose_zone
+                                        + self.schematisation_dict.thickness_full_capillary_fringe
+                                        * self.schematisation_dict.porosity_vadose_zone)
+                                    / self.schematisation_dict.recharge_rate)
 
             if travel_distance_unsaturated < 0:
                 travel_time_unsaturated = 0
@@ -1900,7 +1897,7 @@ class ModPathWell:
         # self.radial_distance = radial_distance
 
         # particles released based on volume fraction
-        self.radial_distance = self.schematisation.model_radius * np.sqrt(self.fraction_flux)
+        self.radial_distance = self.schematisation_dict.model_radius * np.sqrt(self.fraction_flux)
 
 
 
@@ -3119,7 +3116,7 @@ class ModPathWell:
         endpoint_id = {}
 
         # Removal function
-        df_flowline.loc[:,"removal_function"] = self.schematisation.removal_function
+        df_flowline.loc[:,"removal_function"] = self.schematisation_dict.removal_function
 
         for fid in flowline_id:
             # X,Y,Z,time data per particle flowline
@@ -3471,9 +3468,9 @@ class ModPathWell:
 
         #MK: this is a complex if statement. please elaborate on what is happening in a comment
         if depth_point_contamination is None:
-            travel_distance_shallow_aquifer = self.schematisation.thickness_shallow_aquifer - (self.schematisation.groundwater_level - head)
+            travel_distance_shallow_aquifer = self.schematisation_dict.thickness_shallow_aquifer - (self.schematisation_dict.groundwater_level - head)
             travel_time_shallow_aquifer = ((travel_distance_shallow_aquifer)
-                            * self.schematisation.porosity_shallow_aquifer / self.schematisation.recharge_rate)
+                            * self.schematisation_dict.porosity_shallow_aquifer / self.schematisation_dict.recharge_rate)
 
             #@MartinvdS -> under the default conditions, the travel time in the shallow aquifer is negative
             # should we alter the default values or do we do below?
@@ -3482,16 +3479,16 @@ class ModPathWell:
         else:
             # travel_distance_shallow_aquifer =
             if depth_point_contamination <= head:
-                travel_distance_shallow_aquifer = depth_point_contamination - self.schematisation.bottom_shallow_aquifer
+                travel_distance_shallow_aquifer = depth_point_contamination - self.schematisation_dict.bottom_shallow_aquifer
                 if travel_distance_shallow_aquifer < 0:
                     travel_time_shallow_aquifer = np.array([0])
                 else:
                     travel_time_shallow_aquifer = np.array([(travel_distance_shallow_aquifer
-                            * self.schematisation.porosity_shallow_aquifer / self.schematisation.recharge_rate)])
+                            * self.schematisation_dict.porosity_shallow_aquifer / self.schematisation_dict.recharge_rate)])
             else:
-                travel_distance_shallow_aquifer = self.schematisation.thickness_shallow_aquifer - (self.schematisation.groundwater_level - head)
+                travel_distance_shallow_aquifer = self.schematisation_dict.thickness_shallow_aquifer - (self.schematisation_dict.groundwater_level - head)
                 travel_time_shallow_aquifer = ((travel_distance_shallow_aquifer)
-                            * self.schematisation.porosity_shallow_aquifer / self.schematisation.recharge_rate)
+                            * self.schematisation_dict.porosity_shallow_aquifer / self.schematisation_dict.recharge_rate)
 
         return travel_time_shallow_aquifer
 
@@ -3522,21 +3519,21 @@ class ModPathWell:
         '''
 
         if depth_point_contamination is None:
-            travel_distance_shallow_aquifer  = self.schematisation.thickness_shallow_aquifer
-        elif depth_point_contamination > self.schematisation.bottom_shallow_aquifer:
-            travel_distance_shallow_aquifer  = self.schematisation.thickness_shallow_aquifer
+            travel_distance_shallow_aquifer  = self.schematisation_dict.thickness_shallow_aquifer
+        elif depth_point_contamination > self.schematisation_dict.bottom_shallow_aquifer:
+            travel_distance_shallow_aquifer  = self.schematisation_dict.thickness_shallow_aquifer
 
         else:
-            travel_distance_shallow_aquifer  = depth_point_contamination - self.schematisation.bottom_shallow_aquifer
+            travel_distance_shallow_aquifer  = depth_point_contamination - self.schematisation_dict.bottom_shallow_aquifer
 
         # MWK this could be put in a method (that method is easier to unit test)
         # and makes it more readible
-        self.travel_time_shallow_aquifer = (self.schematisation.porosity_shallow_aquifer
-                                            * (2 * math.pi * self.schematisation.KD * self.schematisation.vertical_resistance_shallow_aquifer
-                                            / (abs(self.schematisation.well_discharge))
+        self.travel_time_shallow_aquifer = (self.schematisation_dict.porosity_shallow_aquifer
+                                            * (2 * math.pi * self.schematisation_dict.KD * self.schematisation_dict.vertical_resistance_shallow_aquifer
+                                            / (abs(self.schematisation_dict.well_discharge))
                                             * (travel_distance_shallow_aquifer
                                             / besselk(0, distance
-                                            / math.sqrt(self.schematisation.KD * self.schematisation.vertical_resistance_shallow_aquifer)))
+                                            / math.sqrt(self.schematisation_dict.KD * self.schematisation_dict.vertical_resistance_shallow_aquifer)))
                             ))
         if travel_distance_shallow_aquifer < 0:
             self.travel_time_shallow_aquifer =  np.array([0])
@@ -3734,7 +3731,7 @@ class ModPathWell:
                 # Correct for difference in gw_level AW en MPW classes
                 gw_level_distant = self.gw_level[0,-1]
                 # gw_level_analytical at vadose zone (boundary)
-                gw_level_vad_zone_bound_anal = self.schematisation.bottom_vadose_zone_at_boundary
+                gw_level_vad_zone_bound_anal = self.schematisation_dict.bottom_vadose_zone_at_boundary
 
                 if (gw_level_distant >= gw_level_vad_zone_bound_anal) | (gw_level_distant == self.top):
                     Warning("Chosen well discharge is too high: as a result the drawdown at the well will partly" + \
@@ -3782,23 +3779,3 @@ class ModPathWell:
 
 
 #%%
-# MWK unused function indention is wrong if its a method ()
-def _calculate_hydraulic_head_phreatic(self, distance):
-    ''' Calcualtes the hydraulic head distribution for the phreatic schematisation case
-
-    Parameters
-    ----------
-    distance: array
-        Array of distance(s) [m] from the well, for diffuse sources given as
-        the array radial_distance, for point sources given as the distance_point_contamination_from_well.
-
-    Returns
-    -------
-    head: array
-        Hydraulic head for each point in the given distance array, [mASL].
-    '''
-    ##@Alex: check if this function works properly if a negative well_discharge is given)
-    head = (self.groundwater_level + (self.well_discharge
-                / (2 * math.pi * self.KD))
-                * np.log(self.radial_distance_recharge / distance))
-    return head
