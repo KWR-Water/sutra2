@@ -232,7 +232,6 @@ def calculate_travel_time_unsaturated_zone(schematisation_type,
                                             groundwater_level,
                                             well_discharge,
                                             KD,
-                                            radial_distance_recharge,
                                             thickness_vadose_zone_at_boundary,
                                             thickness_full_capillary_fringe,
                                             moisture_content_vadose_zone,
@@ -290,6 +289,7 @@ def calculate_travel_time_unsaturated_zone(schematisation_type,
         distance = radial_distance
     else:
         distance = distance
+        fraction_flux = None
 
     '''Equation A.11 in TRANSATOMIC report '''
 
@@ -343,7 +343,7 @@ def calculate_travel_time_unsaturated_zone(schematisation_type,
         if not isinstance(distance, float):
             travel_time_unsaturated = [travel_time_unsaturated] * (len(distance))
 
-    return radial_distance, spreading_distance, travel_time_unsaturated, head, drawdown_at_well
+    return radial_distance, fraction_flux, spreading_distance, radial_distance_recharge, travel_time_unsaturated, head, drawdown_at_well
 
 
 def calculate_travel_time_aquitard_semiconfined(distance,
@@ -544,7 +544,6 @@ class HydroChemicalSchematisation:
     # initialize non-defaults to None to start.
     def __init__(self,
                 schematisation_type,
-
                 computation_method='analytical',
                 removal_function = 'omp',
                 name = None,  # substance or species name
@@ -1651,48 +1650,6 @@ class AnalyticalWell():
         self.diffuse_input_concentration = diffuse_input_concentration
         self.point_input_concentration = point_input_concentration
 
-        def check_date_format(check_date):
-            for var in check_date:
-                value = getattr(self, var)
-                if not type(value) is dt.datetime:
-                    raise TypeError(f"Error invalid date input, please enter a new {var} using the format dt.datetime.strptime('YYYY-MM-DD', '%Y-%m-%d')")
-
-        self.start_date_well = start_date_well
-
-        check_date_format(check_date=['start_date_well'])
-
-        # Contamination
-        if start_date_contamination is None:
-            self.start_date_contamination = self.start_date_well
-        else:
-            self.start_date_contamination = start_date_contamination
-            check_date_format(check_date=['start_date_contamination'])
-
-        if compute_contamination_for_date is None:
-            self.compute_contamination_for_date = self.start_date_well + timedelta(days=365.24*50)
-        else:
-            self.compute_contamination_for_date = compute_contamination_for_date
-            check_date_format(check_date=['compute_contamination_for_date'])
-
-        if end_date_contamination is None:
-            self.end_date_contamination = end_date_contamination
-        else:
-            self.end_date_contamination = end_date_contamination
-            check_date_format(check_date=['end_date_contamination'])
-
-            if self.end_date_contamination < self.start_date_contamination:
-                raise ValueError('Error, "end_date_contamination" is before "start_date_contamination". Please enter an new "end_date_contamination" or "start_date_contamination" ')
-
-
-        ''' Check logical things here for contamination'''
-        if self.compute_contamination_for_date < self.start_date_contamination:
-            raise ValueError('Error, "compute_contamination_for_date" is before "start_date_contamination". Please enter an new "compute_contamination_for_date" or "start_date_contamination" ')
-        if self.compute_contamination_for_date < self.start_date_well:
-            raise ValueError('Error, "compute_contamination_for_date" is before "start_date_well". Please enter an new "compute_contamination_for_date" or "start_date_well" ')
-        #AH_todo @MartinvdS -> if end_date_contamination < start_date_well what to do?
-
-
-
         if depth_point_contamination is None:
             self.depth_point_contamination = self.ground_surface
         elif depth_point_contamination > self.ground_surface:
@@ -1715,13 +1672,13 @@ class AnalyticalWell():
         self.relative_position_starting_points_in_basin = relative_position_starting_points_in_basin
         self.relative_position_starting_points_outside_basin = relative_position_starting_points_outside_basin
 
-        # Temperature
-        if self.temperature_vadose_zone is None:
-            self.temperature_vadose_zone = self.temp_water
-        if self.temperature_shallow_aquifer is None:
-            self.temperature_shallow_aquifer = self.temp_water
-        if self.temperature_target_aquifer is None:
-            self.temperature_target_aquifer = self.temp_water
+        # # Temperature
+        # if self.temperature_vadose_zone is None:
+        #     self.temperature_vadose_zone = self.temp_water
+        # if self.temperature_shallow_aquifer is None:
+        #     self.temperature_shallow_aquifer = self.temp_water
+        # if self.temperature_target_aquifer is None:
+        #     self.temperature_target_aquifer = self.temp_water
 
         #Modpath params
         if particle_release_day is None:
@@ -2483,17 +2440,17 @@ class AnalyticalWell():
         # because Modflow schematisation also needs the unsaturated zone travel times
 
         radial_distance,\
+            fraction_flux,\
             spreading_distance,\
+            radial_distance_recharge,\
             travel_time_unsaturated,\
             head,\
-            drawdown_at_well\
-                     = calculate_travel_time_unsaturated_zone(distance,
-                                                schematisation_type = self.schematisation_type,
+            self.drawdown_at_well\
+                     = calculate_travel_time_unsaturated_zone(schematisation_type = self.schematisation_type,
                                                 vertical_resistance_shallow_aquifer = self.vertical_resistance_shallow_aquifer,
                                                 groundwater_level = self.groundwater_level,
                                                 well_discharge = self.well_discharge,
                                                 KD = self.KD,
-                                                radial_distance_recharge = self.radial_distance_recharge,
                                                 thickness_vadose_zone_at_boundary = self.thickness_vadose_zone_at_boundary,
                                                 thickness_full_capillary_fringe = self.thickness_full_capillary_fringe,
                                                 moisture_content_vadose_zone = self.moisture_content_vadose_zone,
@@ -2502,15 +2459,18 @@ class AnalyticalWell():
                                                 ground_surface = self.ground_surface,
                                                 bottom_target_aquifer = self.bottom_target_aquifer,
                                                 bottom_shallow_aquifer = self.bottom_shallow_aquifer,
+                                                distance = distance,
                                                 depth_point_contamination = depth_point_contamination)
 
         if distance is None:
             self.radial_distance = radial_distance
-            fraction_flux=fraction_flux
+            self.fraction_flux=fraction_flux
         else:
             self.radial_distance = distance
-            fraction_flux=None
+            self.fraction_flux=None
 
+        # Add attributes
+        self.radial_distance_recharge = radial_distance_recharge
         self.travel_time_unsaturated = travel_time_unsaturated
         self.head = head
 
@@ -2551,7 +2511,8 @@ class AnalyticalWell():
                     travel_time_unsaturated = self.travel_time_unsaturated,
                     travel_time_shallow_aquifer=self.travel_time_shallow_aquifer,
                     travel_time_target_aquifer=self.travel_time_target_aquifer,
-                    discharge_point_contamination = self.discharge_point_contamination)
+                    # discharge_point_contamination = self.discharge_point_contamination
+                    )
 
     def _add_phreatic_point_sources(self,
                 distance=None,
@@ -2603,48 +2564,79 @@ class AnalyticalWell():
         # travel time unsaturated now calculated in the HydrochemicalSchematisation class
         # because Modflow schematisation also needs the unsaturated zone travel times
 
+        radial_distance,\
+            fraction_flux,\
+            spreading_distance,\
+            radial_distance_recharge,\
+            travel_time_unsaturated,\
+            head,\
+            self.drawdown_at_well\
+                     = calculate_travel_time_unsaturated_zone(schematisation_type = self.schematisation_type,
+                                                vertical_resistance_shallow_aquifer = self.vertical_resistance_shallow_aquifer,
+                                                groundwater_level = self.groundwater_level,
+                                                well_discharge = self.well_discharge,
+                                                KD = self.KD,
+                                                thickness_vadose_zone_at_boundary = self.thickness_vadose_zone_at_boundary,
+                                                thickness_full_capillary_fringe = self.thickness_full_capillary_fringe,
+                                                moisture_content_vadose_zone = self.moisture_content_vadose_zone,
+                                                porosity_vadose_zone = self.porosity_vadose_zone,
+                                                recharge_rate = self.recharge_rate,
+                                                ground_surface = self.ground_surface,
+                                                bottom_target_aquifer = self.bottom_target_aquifer,
+                                                bottom_shallow_aquifer = self.bottom_shallow_aquifer,
+                                                distance = distance,
+                                                depth_point_contamination = depth_point_contamination)
+
         if distance is None:
-            self.schematisation._calculate_travel_time_unsaturated_zone()
-            radial_distance = radial_distance
-            fraction_flux=fraction_flux
+            self.radial_distance = radial_distance
+            self.fraction_flux=fraction_flux
         else:
-            self.schematisation._calculate_travel_time_unsaturated_zone(distance=distance, depth_point_contamination=depth_point_contamination)
-            radial_distance = distance
-            fraction_flux=None
+            self.radial_distance = distance
+            self.fraction_flux=None
 
-        travel_time_unsaturated = travel_time_unsaturated
-        head = head
+        # if distance is None:
+        #     self.schematisation._calculate_travel_time_unsaturated_zone()
+        #     radial_distance = radial_distance
+        #     fraction_flux=fraction_flux
+        # else:
+        #     self.schematisation._calculate_travel_time_unsaturated_zone(distance=distance, depth_point_contamination=depth_point_contamination)
+        #     radial_distance = distance
+        #     fraction_flux=None
 
-        travel_time_shallow_aquifer = self._calculate_travel_time_shallow_aquifer_phreatic(head=head,
+        self.travel_time_unsaturated = travel_time_unsaturated
+        self.head = head
+
+        travel_time_shallow_aquifer = self._calculate_travel_time_shallow_aquifer_phreatic(head=self.head,
                                                                                         depth_point_contamination=depth_point_contamination)
 
-        travel_time_target_aquifer = self._calculate_travel_time_target_aquifer_phreatic(fraction_flux=fraction_flux,
+        travel_time_target_aquifer = self._calculate_travel_time_target_aquifer_phreatic(fraction_flux=self.fraction_flux,
                                                                                         distance=distance)
 
         total_travel_time = (travel_time_unsaturated + travel_time_shallow_aquifer
                             + travel_time_target_aquifer)
 
         if cumulative_fraction_abstracted_water is None:
-            cumulative_fraction_abstracted_water = fraction_flux
-        else:
-            cumulative_fraction_abstracted_water = cumulative_fraction_abstracted_water
+            cumulative_fraction_abstracted_water = self.fraction_flux
+        # else:
+        #     cumulative_fraction_abstracted_water = cumulative_fraction_abstracted_water
 
         df_output = self._create_output_dataframe(total_travel_time=total_travel_time,
                     travel_time_unsaturated = travel_time_unsaturated,
                     travel_time_shallow_aquifer=travel_time_shallow_aquifer,
                     travel_time_target_aquifer=travel_time_target_aquifer,
-                    distance=radial_distance,
-                    head=head,
+                    distance=self.radial_distance,
+                    head=self.head,
                     cumulative_fraction_abstracted_water = cumulative_fraction_abstracted_water,
                     )
 
         df_flowline, df_particle=self._export_to_df(df_output=df_output,
-                    distance=radial_distance,
+                    distance= self.radial_distance,
                     total_travel_time=total_travel_time,
                     travel_time_unsaturated = travel_time_unsaturated,
                     travel_time_shallow_aquifer=travel_time_shallow_aquifer,
                     travel_time_target_aquifer=travel_time_target_aquifer,
-                    discharge_point_contamination = self.discharge_point_contamination)   # @ MartinvdS / MartinK: add as attrib.? self.discharge_point_contamination
+                    # discharge_point_contamination = self.discharge_point_contamination
+                    )   # @ MartinvdS / MartinK: add as attrib.? self.discharge_point_contamination
 
         return df_flowline, df_particle
 
@@ -2710,39 +2702,41 @@ class AnalyticalWell():
         '''
         #AH @MartinK -> the above are all "returned" as attributed of the funciton.. so include or not?
 
-        if distance is None:
-            self.radial_distance,\
-                spreading_distance,\
-                self.travel_time_unsaturated,\
-                self.head,\
-                self.drawdown_at_well = calculate_travel_time_unsaturated_zone(
-                                            schematisation_type = self.schematisation_type,
-                                            vertical_resistance_shallow_aquifer = self.vertical_resistance_shallow_aquifer,
-                                            groundwater_level = self.groundwater_level,
-                                            well_discharge = self.well_discharge,
-                                            KD = self.KD,
-                                            radial_distance_recharge = self.radial_distance_recharge,
-                                            thickness_vadose_zone_at_boundary = self.thickness_vadose_zone_at_boundary,
-                                            thickness_full_capillary_fringe = self.thickness_full_capillary_fringe,
-                                            moisture_content_vadose_zone = self.moisture_content_vadose_zone,
-                                            porosity_vadose_zone = self.porosity_vadose_zone,
-                                            recharge_rate = self.recharge_rate,
-                                            ground_surface = self.ground_surface,
-                                            bottom_target_aquifer = self.bottom_target_aquifer,
-                                            bottom_shallow_aquifer = self.bottom_shallow_aquifer,
-                                            distance=distance,
-                                            depth_point_contamination = depth_point_contamination)
-        else:
-            self.radial_distance,\
-                spreading_distance,\
-                travel_time_unsaturated,\
-                self.head,\
-                self.drawdown_at_well = calculate_travel_time_unsaturated_zone(distance=distance,
-                                                                        depth_point_contamination = depth_point_contamination
-                                                                        )
+        # if distance is None:
+        self.radial_distance,\
+            spreading_distance,\
+            radial_distance_recharge,\
+            self.travel_time_unsaturated,\
+            self.head,\
+            self.drawdown_at_well = calculate_travel_time_unsaturated_zone(
+                                        schematisation_type = self.schematisation_type,
+                                        vertical_resistance_shallow_aquifer = self.vertical_resistance_shallow_aquifer,
+                                        groundwater_level = self.groundwater_level,
+                                        well_discharge = self.well_discharge,
+                                        KD = self.KD,
+                                        thickness_vadose_zone_at_boundary = self.thickness_vadose_zone_at_boundary,
+                                        thickness_full_capillary_fringe = self.thickness_full_capillary_fringe,
+                                        moisture_content_vadose_zone = self.moisture_content_vadose_zone,
+                                        porosity_vadose_zone = self.porosity_vadose_zone,
+                                        recharge_rate = self.recharge_rate,
+                                        ground_surface = self.ground_surface,
+                                        bottom_target_aquifer = self.bottom_target_aquifer,
+                                        bottom_shallow_aquifer = self.bottom_shallow_aquifer,
+                                        distance=distance,
+                                        depth_point_contamination = depth_point_contamination)
+        # else:
+        #     self.radial_distance,\
+        #         spreading_distance,\
+        #         radial_distance_recharge,\
+        #         travel_time_unsaturated,\
+        #         self.head,\
+        #         self.drawdown_at_well = calculate_travel_time_unsaturated_zone(distance=distance,
+        #                                                                 depth_point_contamination = depth_point_contamination
+        #                                                                 )
 
         self.travel_time_unsaturated = travel_time_unsaturated
         self.spreading_distance = spreading_distance
+        self.radial_distance_recharge = radial_distance_recharge
 
         # travel time in semiconfined is one value, make it array by repeating the value
         # self.travel_time_unsaturated = [self.travel_time_unsaturated] * (len(self.radial_distance))
@@ -2783,7 +2777,8 @@ class AnalyticalWell():
                     travel_time_unsaturated = self.travel_time_unsaturated,
                     travel_time_shallow_aquifer=self.travel_time_shallow_aquifer,
                     travel_time_target_aquifer=self.travel_time_target_aquifer,
-                    discharge_point_contamination = self.discharge_point_contamination) 
+                    # discharge_point_contamination = self.discharge_point_contamination
+                    ) 
 
     #AH_todo make this a hidden __add_semiconfined_point_sources function
     def _add_semiconfined_point_sources(self,
@@ -2879,7 +2874,8 @@ class AnalyticalWell():
                     travel_time_unsaturated = travel_time_unsaturated,
                     travel_time_shallow_aquifer=travel_time_shallow_aquifer,
                     travel_time_target_aquifer=travel_time_target_aquifer,
-                    discharge_point_contamination = self.discharge_point_contamination)
+                    # discharge_point_contamination = self.discharge_point_contamination
+                    )
 
         return df_flowline, df_particle
 

@@ -35,7 +35,7 @@ from pandas import read_csv
 from pandas import read_excel
 import math
 from scipy.special import kn as besselk
-import datetime
+import datetime as dt
 from datetime import timedelta
 
 # module_path = os.path.abspath(os.path.join("..","..","sutra2
@@ -374,8 +374,6 @@ class Transport():
     ----------
     well: object
         The AnalyticalWell object for the schematisation of the aquifer type.
-    omp_inialized: bool
-        Boolian indicating whether the Substance object has been initialized
     df_flowline: pandas.DataFrame
         Column 'flowline_id': int
         Column 'flowline_type': string
@@ -414,8 +412,9 @@ class Transport():
         Column 'retardation': float
         Column 'breakthrough_travel_time': float
 
+    pollutant: Class Substance or class MicrobialOrganism 
 
-    substance: object
+    Substance: object
         The Substance object with the OMP of interest.
 
     substance_dict: dictionary
@@ -423,7 +422,7 @@ class Transport():
 
         substance_name: String,
             substance_name of the substance (for now limited dictionary to 'benzene', 'AMPA', 'benzo(a)pyrene'
-        log Koc: float
+        log_Koc: float
             distribution coefficient of organic carbon and water [-]
         molar_mass: float
             molar mass of substance [g/mol]
@@ -453,6 +452,11 @@ class Transport():
     def __init__(self,
                 well: AnalyticalWell or ModPathWell,
                 pollutant: Substance or MicrobialOrganism,
+                start_date_well = dt.datetime.strptime('1950-01-01', "%Y-%m-%d"),
+                start_date_contamination=None,
+                end_date_contamination= None,
+                compute_contamination_for_date=None,
+
                 ):
 
 
@@ -466,10 +470,18 @@ class Transport():
         ----------
         well: object
             The AnalyticalWell object for the schematisation of the aquifer type.
-        substance: object
-            The Substance object with the OMP of interest.
-        organism: object
-            The Organism object with microbial organism (MBO) of interest
+        pollutant: object
+            Substance: object
+                The Substance object with the OMP of interest.
+            MicrobialOrganism: object
+                The Organism object with microbial organism (MBO) of interest
+        start_date_well: dt.datetime.strptime('YYYY-MM-DD', "%Y-%m-%d"),
+            Start date of the well.
+        start_date_contamination, end_date_contamination: dt.datetime.strptime('YYYY-MM-DD', "%Y-%m-%d"),
+            Start and end date for both the diffuse and point sources.
+            @MartinvdS, is this a problem to use the start/end date for both?
+        compute_contamination_for_date: dt.datetime.strptime('YYYY-MM-DD', "%Y-%m-%d"),
+            Date for which to compute the contamination in the well.
 
         removal_function (inherited from Substance ('omp') or MicrobialOrganism ('mbo')): str
             removal_function: ['omp' or 'mbo']
@@ -508,6 +520,48 @@ class Transport():
             self.pollutant_name = self.pollutant.organism_name
             self.removal_parameters = self.pollutant.organism_dict
 
+        # Inilitialize date information
+        def check_date_format(check_date):
+            for var in check_date:
+                value = getattr(self, var)
+                if not type(value) is dt.datetime:
+                    raise TypeError(f"Error invalid date input, please enter a new {var} using the format dt.datetime.strptime('YYYY-MM-DD', '%Y-%m-%d')")
+
+        self.start_date_well = start_date_well
+
+        check_date_format(check_date=['start_date_well'])
+
+        # Contamination
+        if start_date_contamination is None:
+            self.start_date_contamination = self.start_date_well
+        else:
+            self.start_date_contamination = start_date_contamination
+            check_date_format(check_date=['start_date_contamination'])
+
+        if compute_contamination_for_date is None:
+            self.compute_contamination_for_date = self.start_date_well + timedelta(days=365.24*50)
+        else:
+            self.compute_contamination_for_date = compute_contamination_for_date
+            check_date_format(check_date=['compute_contamination_for_date'])
+
+        if end_date_contamination is None:
+            self.end_date_contamination = end_date_contamination
+        else:
+            self.end_date_contamination = end_date_contamination
+            check_date_format(check_date=['end_date_contamination'])
+
+            if self.end_date_contamination < self.start_date_contamination:
+                raise ValueError('Error, "end_date_contamination" is before "start_date_contamination". Please enter an new "end_date_contamination" or "start_date_contamination" ')
+
+
+        ''' Check logical things here for contamination'''
+        if self.compute_contamination_for_date < self.start_date_contamination:
+            raise ValueError('Error, "compute_contamination_for_date" is before "start_date_contamination". Please enter an new "compute_contamination_for_date" or "start_date_contamination" ')
+        if self.compute_contamination_for_date < self.start_date_well:
+            raise ValueError('Error, "compute_contamination_for_date" is before "start_date_well". Please enter an new "compute_contamination_for_date" or "start_date_well" ')
+        #AH_todo @MartinvdS -> if end_date_contamination < start_date_well what to do?
+
+
         # Relative dates of well abstraction and pollutant contamination date
         self._contamination_date_vs_well_abstraction()
 
@@ -540,12 +594,15 @@ class Transport():
         self.micro_organism_initialized = True
 
     #@Steven_todo, @MartinK: include in a function (used for both omp_removal as well as mbo removal)
+    # @MartinK / MartinvdS: add as attributes to 'Transport' class:
+    #       compute_contamination_for_date,start_date_well,start_date_contamination,end_date_contamination
+
     def _contamination_date_vs_well_abstraction(self):
         # reduce the amount of text per line by extracting the following parameters
-        self.compute_contamination_for_date = self.well.schematisation.compute_contamination_for_date
-        start_date_well = self.well.schematisation.start_date_well
-        start_date_contamination = self.well.schematisation.start_date_contamination
-        self.end_date_contamination = self.well.schematisation.end_date_contamination
+        self.compute_contamination_for_date = self.compute_contamination_for_date
+        start_date_well = self.start_date_well
+        start_date_contamination = self.start_date_contamination
+        self.end_date_contamination = self.end_date_contamination
 
         if start_date_well > start_date_contamination:
             self.start_date = start_date_well
@@ -977,7 +1034,7 @@ class Transport():
 
             plt.xlabel('Date')
             if xlim is None:
-                plt.xlim([datetime.date((back_date_start.year-5), 1, 1), compute_contamination_for_date])
+                plt.xlim([dt.date((back_date_start.year-5), 1, 1), compute_contamination_for_date])
             else: plt.xlim(xlim)
 
         elif x_axis == 'Time':
