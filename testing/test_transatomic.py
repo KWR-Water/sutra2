@@ -501,7 +501,12 @@ def test_phreatic_diffuse_point_source():
     # substance object to retrieve removal parameters for
     substance = TR.Substance(substance_name = 'OMP-X')
 
-    phreatic_conc = TR.Transport(phreatic_well, pollutant = substance)
+    phreatic_conc = TR.Transport(phreatic_well, pollutant = substance,
+                                          start_date_well=dt.datetime.strptime('1968-01-01',"%Y-%m-%d"),
+                                        start_date_contamination= dt.datetime.strptime('1966-01-01',"%Y-%m-%d"),
+                                        compute_contamination_for_date=dt.datetime.strptime('2050-01-01',"%Y-%m-%d"),
+                                        end_date_contamination=dt.datetime.strptime('1990-01-01',"%Y-%m-%d"))
+
     phreatic_conc.compute_omp_removal()
     df_well_concentration = phreatic_conc.compute_concentration_in_well_at_date()
     df_well_concentration = df_well_concentration.astype({'time': 'int32', 'date': 'datetime64[ns]', 'total_concentration_in_well': 'float64'})
@@ -569,7 +574,12 @@ def test_phreatic_diffuse_only_source():
     # substance object to retrieve removal parameters for
     substance = TR.Substance(substance_name = 'OMP-X')
 
-    phreatic_conc = TR.Transport(phreatic_well, pollutant = substance)
+    phreatic_conc = TR.Transport(phreatic_well, pollutant = substance,
+                                              start_date_well=dt.datetime.strptime('1968-01-01',"%Y-%m-%d"),
+                                            start_date_contamination= dt.datetime.strptime('1966-01-01',"%Y-%m-%d"),
+                                            compute_contamination_for_date=dt.datetime.strptime('2050-01-01',"%Y-%m-%d"),
+                                            end_date_contamination=dt.datetime.strptime('1990-01-01',"%Y-%m-%d"))
+    
     phreatic_conc.compute_omp_removal()
     df_well_concentration = phreatic_conc.compute_concentration_in_well_at_date()
 
@@ -641,7 +651,11 @@ def test_phreatic_point_only_source():
     # substance object to retrieve removal parameters for
     substance = TR.Substance(substance_name='OMP-X')
 
-    phreatic_conc = TR.Transport(phreatic_well, pollutant = substance)
+    phreatic_conc = TR.Transport(phreatic_well, pollutant = substance,
+                                              start_date_well=dt.datetime.strptime('1968-01-01',"%Y-%m-%d"),
+                                            start_date_contamination= dt.datetime.strptime('1966-01-01',"%Y-%m-%d"),
+                                            compute_contamination_for_date=dt.datetime.strptime('2050-01-01',"%Y-%m-%d"),
+                                            end_date_contamination=dt.datetime.strptime('1990-01-01',"%Y-%m-%d"))
     phreatic_conc.compute_omp_removal()
     df_well_concentration = phreatic_conc.compute_concentration_in_well_at_date()
 

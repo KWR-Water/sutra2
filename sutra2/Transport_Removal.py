@@ -527,13 +527,16 @@ class Transport():
                 if not type(value) is dt.datetime:
                     raise TypeError(f"Error invalid date input, please enter a new {var} using the format dt.datetime.strptime('YYYY-MM-DD', '%Y-%m-%d')")
 
-        self.start_date_well = start_date_well
+        if start_date_well is None:
+            self.start_date_well = self.well.start_date_well
+        else:
+            self.start_date_well = start_date_well
 
         check_date_format(check_date=['start_date_well'])
 
         # Contamination
         if start_date_contamination is None:
-            self.start_date_contamination = self.start_date_well
+            self.start_date_contamination = self.well.start_date_contamination
         else:
             self.start_date_contamination = start_date_contamination
             check_date_format(check_date=['start_date_contamination'])
@@ -545,7 +548,7 @@ class Transport():
             check_date_format(check_date=['compute_contamination_for_date'])
 
         if end_date_contamination is None:
-            self.end_date_contamination = end_date_contamination
+            self.end_date_contamination = self.well.end_date_contamination
         else:
             self.end_date_contamination = end_date_contamination
             check_date_format(check_date=['end_date_contamination'])
