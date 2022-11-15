@@ -133,22 +133,25 @@ class ModPathWell:
         self.model_hds = os.path.join(self.workspace, self.modelname + '.hds')
         self.model_cbc = os.path.join(self.workspace, self.modelname + '.cbc')
 
+        ## Replace up to 'create_schematisation_dict' by
         self.schematisation_dict = schematisation_dict
-        # Required keys in schematisation dict
-        self.required_keys = ["simulation_parameters","geo_parameters",
-        "ibound_parameters","recharge_parameters",
-        "well_parameters","concentration_boundary_parameters","point_parameters", "mesh_refinement",
-        "endpoint_id"]
 
-        # MWK waarom ondersteun je dit? Je wil mensen toch dwingen om een schematisatie class te gebruiken?
-        # zo niet, dan kun je de schematisatie class uberhaupt beter een dict maken.
-        # if type(self.schematisation) == dict:
-        #     self.schematisation_dict = self.schematisation
-        # # else:
-        #     #Make dictionaries
-        #     # self.schematisation.make_dictionary()
-        #     self.schematisation_dict = {}
-        #     self._create_schematisation_dict(self.required_keys)
+        # self.schematisation = schematisation
+        # # Required keys in schematisation dict
+        # self.required_keys = ["simulation_parameters","geo_parameters",
+        # "ibound_parameters","recharge_parameters",
+        # "well_parameters","concentration_boundary_parameters","point_parameters", "mesh_refinement",
+        # "endpoint_id"]
+
+        # # MWK waarom ondersteun je dit? Je wil mensen toch dwingen om een schematisatie class te gebruiken?
+        # # zo niet, dan kun je de schematisatie class uberhaupt beter een dict maken.
+        # # if type(self.schematisation) == dict:
+        # #     self.schematisation_dict = self.schematisation
+        # # # else:
+        # #Make dictionaries
+        # self.schematisation.make_dictionary()
+        # self.schematisation_dict = {}
+        # self._create_schematisation_dict(self.required_keys)
 
     def _create_schematisation_dict(self,required_keys):
         '''
@@ -173,14 +176,14 @@ class ModPathWell:
             if value is None:
                 raise KeyError(f'Error, required variable {req_var} is not defined.')
 
-    def _check_packages(self, schematisation: dict,
-                            package_list: list = ["ibound"]):
-        ''' Determine whether required packages and corresponding dictionaries
-            occur in the schematisation dictionary 'schematisation'.'''
+    # def _check_packages(self, schematisation: dict,
+    #                         package_list: list = ["ibound"]):
+    #     ''' Determine whether required packages and corresponding dictionaries
+    #         occur in the schematisation dictionary 'schematisation'.'''
 
-        for package_i in package_list:
-            if schematisation.get(package_i + '_parameters', default=None) is None:
-                raise KeyError(f'Error, required package parameters for {package_i} are not defined.')
+    #     for package_i in package_list:
+    #         if schematisation.get(package_i + '_parameters', default=None) is None:
+    #             raise KeyError(f'Error, required package parameters for {package_i} are not defined.')
 
 
     ## Tijdelijk overslaan (*codeSteven_20211021.xlsx)

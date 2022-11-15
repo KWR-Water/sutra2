@@ -43,7 +43,7 @@ from datetime import timedelta
 # if module_path not in sys.path:
 #     sys.path.insert(0,module_path)
 
-from sutra2.Analytical_Well import AnalyticalWell
+from sutra2.Analytical_Well import *
 from sutra2.ModPath_Well import ModPathWell
 
 # from Analytical_Well import AnalyticalWell
@@ -637,7 +637,7 @@ class Transport():
         '''
         #0.2 -> fraction of binding sites supplied by DOC which bind the OMP
         #and prevent sortion to aquifer
-        if self.well.schematisation.biodegradation_sorbed_phase:
+        if self.well.biodegradation_sorbed_phase:
             self.df_particle['retardation'] = (1 + (1 / (1 + 10 ** (self.df_particle.pH - self.df_particle.pKa)) * self.df_particle.solid_density
                             * (1 - self.df_particle.porosity)
                             * self.df_particle.fraction_organic_carbon * self.df_particle.Koc_temperature_correction)
@@ -660,7 +660,7 @@ class Transport():
         df_particle: pandas.dataframe
             Column 'omp_half_life_temperature_corrected': float'''
 
-        if self.well.schematisation.temp_correction_halflife:
+        if self.well.temp_correction_halflife:
             self.df_particle['omp_half_life_temperature_corrected'] = self.df_particle['omp_half_life'] * 10 ** (-63000 / (2.303 * 8.314) * (1 / (20 + 273.15) - 1 / (self.df_particle.temp_water + 273.15)))
         else:
             self.df_particle['omp_half_life_temperature_corrected'] = self.df_particle['omp_half_life']
@@ -684,7 +684,7 @@ class Transport():
 
         # empty Koc_temperature_correction series to start with
         self.df_particle['Koc_temperature_correction'] = 0
-        if self.well.schematisation.temp_correction_Koc:
+        if self.well.temp_correction_Koc:
             self.df_particle.loc[self.df_particle.log_Koc != 0,'Koc_temperature_correction'] = 10 ** self.df_particle.loc[self.df_particle.log_Koc != 0,"log_Koc"] * \
                                                                         10 ** (1913 * (1 / (self.df_particle.loc[self.df_particle.log_Koc != 0,"temp_water"] + 273.15) - 1 / (20 + 273.15)))
         else:
@@ -708,8 +708,8 @@ class Transport():
         '''
 
         #check if there is degradation prior to infiltration
-        DOC_inf = self.well.schematisation.dissolved_organic_carbon_infiltration_water
-        TOC_inf = self.well.schematisation.total_organic_carbon_infiltration_water
+        DOC_inf = self.well.dissolved_organic_carbon_infiltration_water
+        TOC_inf = self.well.total_organic_carbon_infiltration_water
 
         if DOC_inf and TOC_inf > 0:
             DOC_TOC_ratio = DOC_inf / TOC_inf
@@ -819,7 +819,7 @@ class Transport():
             """
 
         # load (diffuse) input concentration
-        self.df_flowline.loc[:,'input_concentration'] = self.well.schematisation.diffuse_input_concentration
+        self.df_flowline.loc[:,'input_concentration'] = self.well.diffuse_input_concentration
         self.df_particle.loc[:,'input_concentration'] = None
         if 'steady_state_concentration' not in self.df_particle.columns:
             # Steady state concentration [-]
@@ -830,7 +830,7 @@ class Transport():
         self.df_particle.loc[self.df_particle.total_travel_time == 0.,"steady_state_concentration"] = self.df_flowline.loc[:,'input_concentration'].values
 
 
-        if self.well.schematisation.point_input_concentration:
+        if self.well.point_input_concentration:
             ''' point contamination '''
             # need to take into account the depth of the point contamination here....
             # need to change the df_particle and df_flowline to only be the flowlines for the point contamination flowline(s)
@@ -838,20 +838,25 @@ class Transport():
             # FIRST recalculate the travel times for the contamination, then initialize the class
 
             #only for a SINGLE point contamination
-            distance = self.well.schematisation.distance_point_contamination_from_well
-            depth = self.well.schematisation.depth_point_contamination
-            cumulative_fraction_abstracted_water = (math.pi * self.well.schematisation.recharge_rate
-                                                        * distance ** 2)/abs(self.well.schematisation.well_discharge)
+            distance = self.well.distance_point_contamination_from_well
+            depth = self.well.depth_point_contamination
+            cumulative_fraction_abstracted_water = (math.pi * self.well.recharge_rate
+                                                        * distance ** 2)/abs(self.well.well_discharge)
             ind = self.df_particle.flowline_id.iat[-1]
 
-            if self.well.schematisation.schematisation_type == 'phreatic':
-                head = self.well.schematisation._calculate_hydraulic_head_phreatic(distance=distance)
+            if self.well.schematisation_type == 'phreatic':
+                head = calculate_hydraulic_head_phreatic(distance = distance,
+                                             groundwater_level = self.well.groundwater_level,
+                                             well_discharge = self.well.well_discharge,
+                                             KD = self.well.KD,
+                                             radial_distance_recharge = self.well.radial_distance_recharge)
+
                 df_flowline_points, df_particle_points = self.well._add_phreatic_point_sources(distance=distance,
                                             depth_point_contamination=depth,
                                             cumulative_fraction_abstracted_water=cumulative_fraction_abstracted_water)
 
-            elif self.well.schematisation.schematisation_type == 'semiconfined':
-                bottom_vadose_zone = self.well.schematisation.bottom_vadose_zone_at_boundary
+            elif self.well.schematisation_type == 'semiconfined':
+                bottom_vadose_zone = self.well.bottom_vadose_zone_at_boundary
 
                 df_flowline_points, df_particle_points = self.well._add_semiconfined_point_sources(distance=distance,
                                         depth_point_contamination=depth,  )
@@ -863,7 +868,7 @@ class Transport():
             df_flowline_points.index = df_flowline_points.flowline_id
 
             # Add (input) concentration to point source df's
-            df_flowline_points.loc[:,'input_concentration'] = self.well.schematisation.point_input_concentration
+            df_flowline_points.loc[:,'input_concentration'] = self.well.point_input_concentration
             df_particle_points.loc[:,'input_concentration'] = None
             df_particle_points.loc[:,'steady_state_concentration'] = None
 
@@ -875,7 +880,7 @@ class Transport():
 
             # Add flow/discharge data to point particle df's
             df_flowline_points.loc[:,'flowline_type'] = "point_source"
-            df_flowline_points.loc[:,'flowline_discharge'] = abs(self.well.schematisation.discharge_point_contamination)
+            df_flowline_points.loc[:,'flowline_discharge'] = abs(self.well.discharge_point_contamination)
 
             #AH_todo, something here to loop through different point sources if more than one.
 
@@ -998,13 +1003,13 @@ class Transport():
 
 
         # reduce the amount of text per line by extracting the following parameters
-        point_input_concentration = self.well.schematisation.point_input_concentration
-        diffuse_input_concentration = self.well.schematisation.diffuse_input_concentration
-        schematisation_type = self.well.schematisation.schematisation_type
-        compute_contamination_for_date = self.well.schematisation.compute_contamination_for_date
-        start_date_well = self.well.schematisation.start_date_well
-        start_date_contamination = self.well.schematisation.start_date_contamination
-        end_date_contamination = self.well.schematisation.end_date_contamination
+        point_input_concentration = self.well.point_input_concentration
+        diffuse_input_concentration = self.well.diffuse_input_concentration
+        schematisation_type = self.well.schematisation_type
+        compute_contamination_for_date = self.compute_contamination_for_date
+        start_date_well = self.well.start_date_well
+        start_date_contamination = self.well.start_date_contamination
+        end_date_contamination = self.well.end_date_contamination
 
         start_date = max(start_date_well,start_date_contamination)
         back_date_start = min(start_date_well,start_date_contamination)

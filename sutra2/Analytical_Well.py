@@ -288,7 +288,7 @@ def calculate_travel_time_unsaturated_zone(schematisation_type,
                                                                 schematisation_type)
         distance = radial_distance
     else:
-        distance = distance
+        radial_distance = distance
         fraction_flux = None
 
     '''Equation A.11 in TRANSATOMIC report '''
@@ -1327,6 +1327,10 @@ class AnalyticalWell():
         removal_function = 'omp',
         name = None,  # substance or species name  @MartinvdS add?
         what_to_export = 'all',
+        temp_correction_Koc=True,
+        temp_correction_halflife=True,
+        biodegradation_sorbed_phase=True,
+        compute_thickness_vadose_zone=True,
         well_name='well1', # @Steven_todo: @MartinvdS: add to df output?
         ground_surface=0.0,
         thickness_vadose_zone_at_boundary=1,
@@ -1356,7 +1360,7 @@ class AnalyticalWell():
         dissolved_organic_carbon_shallow_aquifer=0.0,
         dissolved_organic_carbon_target_aquifer=0.0,
         dissolved_organic_carbon_infiltration_water=0.0,
-        # total_organic_carbon_infiltration_water=0.0,  # not used atm -- @MartinvdS: should be added to df_flowline ?
+        total_organic_carbon_infiltration_water=0.0,  # not used atm -- @MartinvdS: should be added to df_flowline ?
         pH_vadose_zone=7.0,
         pH_shallow_aquifer=7.0,
         pH_target_aquifer=7.0,
@@ -1434,6 +1438,13 @@ class AnalyticalWell():
         what_to_export: string
             Defines what paramters are exported, 'all' exports all paramters, 'omp' only those relevant to the OMP or
             'mbo' only exports parameters relevant for the microbial organisms (mbo)
+        temp_correction_Koc, temp_correction_halflife:: Bool
+            KOC and half-life values generally refer to a standard lab temperature (tREF = 20-25oC) and should
+            therefore be corrected when field temperature is different. Default is True
+        biodegradation_sorbed_phase: Bool
+            Include biodegradation in the sorbed phase or not. Default is True
+        compute_thickness_vadose_zone: Bool
+            Calculate the thickness of the vadose zone or not, Default is True
         well_name: string
             Name of the well in the simulaiton. Default is 'well1'
         ground_surface: float
@@ -1546,6 +1557,11 @@ class AnalyticalWell():
         check_parameter_choice(parameters_choice = ['removal_function'], options =['omp','mbo',])
         check_parameter_choice(parameters_choice = ['what_to_export'], options =['all','omp', 'mbo',])
 
+        self.temp_correction_Koc = temp_correction_Koc
+        self.temp_correction_halflife = temp_correction_halflife
+        self.biodegradation_sorbed_phase = biodegradation_sorbed_phase
+        self.compute_thickness_vadose_zone = compute_thickness_vadose_zone
+
         # Porous Medium
         self.ground_surface = ground_surface #as meters above sea level (m ASL)
         self.thickness_vadose_zone_at_boundary = abs(thickness_vadose_zone_at_boundary)
@@ -1591,6 +1607,7 @@ class AnalyticalWell():
         self.dissolved_organic_carbon_shallow_aquifer = dissolved_organic_carbon_shallow_aquifer
         self.dissolved_organic_carbon_target_aquifer = dissolved_organic_carbon_target_aquifer
         self.dissolved_organic_carbon_infiltration_water = dissolved_organic_carbon_infiltration_water
+        self.total_organic_carbon_infiltration_water = total_organic_carbon_infiltration_water
         self.pH_vadose_zone = pH_vadose_zone
         self.pH_shallow_aquifer = pH_shallow_aquifer
         self.pH_target_aquifer = pH_target_aquifer
@@ -1649,6 +1666,50 @@ class AnalyticalWell():
         # # Diffuse contamination override if point contamination specified
         self.diffuse_input_concentration = diffuse_input_concentration
         self.point_input_concentration = point_input_concentration
+
+        # Inilitialize date information
+        def check_date_format(check_date):
+            for var in check_date:
+                value = getattr(self, var)
+                if not type(value) is dt.datetime:
+                    raise TypeError(f"Error invalid date input, please enter a new {var} using the format dt.datetime.strptime('YYYY-MM-DD', '%Y-%m-%d')")
+
+        self.start_date_well = start_date_well
+
+        check_date_format(check_date=['start_date_well'])
+
+        # Contamination
+        if start_date_contamination is None:
+            self.start_date_contamination = self.start_date_well
+        else:
+            self.start_date_contamination = start_date_contamination
+            check_date_format(check_date=['start_date_contamination'])
+
+        if compute_contamination_for_date is None:
+            self.compute_contamination_for_date = self.start_date_well + timedelta(days=365.24*50)
+        else:
+            self.compute_contamination_for_date = compute_contamination_for_date
+            check_date_format(check_date=['compute_contamination_for_date'])
+
+        if end_date_contamination is None:
+            self.end_date_contamination = end_date_contamination
+        else:
+            self.end_date_contamination = end_date_contamination
+            check_date_format(check_date=['end_date_contamination'])
+
+            if self.end_date_contamination < self.start_date_contamination:
+                raise ValueError('Error, "end_date_contamination" is before "start_date_contamination". Please enter an new "end_date_contamination" or "start_date_contamination" ')
+
+
+        ''' Check logical things here for contamination'''
+        if self.compute_contamination_for_date < self.start_date_contamination:
+            raise ValueError('Error, "compute_contamination_for_date" is before "start_date_contamination". Please enter an new "compute_contamination_for_date" or "start_date_contamination" ')
+        if self.compute_contamination_for_date < self.start_date_well:
+            raise ValueError('Error, "compute_contamination_for_date" is before "start_date_well". Please enter an new "compute_contamination_for_date" or "start_date_well" ')
+        #AH_todo @MartinvdS -> if end_date_contamination < start_date_well what to do?
+
+
+
 
         if depth_point_contamination is None:
             self.depth_point_contamination = self.ground_surface
@@ -1820,51 +1881,51 @@ class AnalyticalWell():
         return travel_time_target_aquifer
 
 
-    # def _calculate_travel_time_aquitard_semiconfined(self,
-    #                                                 distance,
-    #                                                 depth_point_contamination):
-    #     # @Steven_todo: Make utility function out of this. Equal for Analytical_Well and ModPathWell                                            
-    #     '''
-    #     Calculates the travel time in the shallow aquifer (aquitard) for the semiconfined case
-    #     using the the Peters (1985) solution (eq. 8.8 in \cite{Peters1985}, Equation A.12 in
-    #     TRANSATOMIC report BUT now implemented with n' (fraction of aquitard contacted, to
-    #     account for gaps in aquitard [-], here the porosity of the shallow
-    #     aquifer (aquitard)).
+    def _calculate_travel_time_aquitard_semiconfined(self,
+                                                    distance,
+                                                    depth_point_contamination):
+        # @Steven_todo: Make utility function out of this. Equal for Analytical_Well and ModPathWell
+        '''
+        Calculates the travel time in the shallow aquifer (aquitard) for the semiconfined case
+        using the the Peters (1985) solution (eq. 8.8 in \cite{Peters1985}, Equation A.12 in
+        TRANSATOMIC report BUT now implemented with n' (fraction of aquitard contacted, to
+        account for gaps in aquitard [-], here the porosity of the shallow
+        aquifer (aquitard)).
 
-    #     Parameters
-    #     ----------
-    #     distance: array
-    #         Array of distance(s) [m] from the well.
-    #         For diffuse sources 'distance' is the 'radial_distance' array.
-    #         For point sources 'distance' is 'distance_point_contamination_from_well'.
-    #     depth_point_contamination: float
-    #         Depth [mASL] of the point source contamination, if only diffuse contamination None is passed.
+        Parameters
+        ----------
+        distance: array
+            Array of distance(s) [m] from the well.
+            For diffuse sources 'distance' is the 'radial_distance' array.
+            For point sources 'distance' is 'distance_point_contamination_from_well'.
+        depth_point_contamination: float
+            Depth [mASL] of the point source contamination, if only diffuse contamination None is passed.
 
-    #     Returns
-    #     -------
-    #     travel_time_shallow_aquifer: array
-    #         Travel time in the shallow aquifer for each point in the given distance array, [days].
-    #     '''
+        Returns
+        -------
+        travel_time_shallow_aquifer: array
+            Travel time in the shallow aquifer for each point in the given distance array, [days].
+        '''
 
-    #     if depth_point_contamination is None:
-    #         travel_distance_shallow_aquifer  = self.thickness_shallow_aquifer
-    #     elif depth_point_contamination > self.bottom_shallow_aquifer:
-    #         travel_distance_shallow_aquifer  = self.thickness_shallow_aquifer
+        if depth_point_contamination is None:
+            travel_distance_shallow_aquifer  = self.thickness_shallow_aquifer
+        elif depth_point_contamination > self.bottom_shallow_aquifer:
+            travel_distance_shallow_aquifer  = self.thickness_shallow_aquifer
 
-    #     else:
-    #         travel_distance_shallow_aquifer  = depth_point_contamination - self.bottom_shallow_aquifer
+        else:
+            travel_distance_shallow_aquifer  = depth_point_contamination - self.bottom_shallow_aquifer
 
-    #     travel_time_shallow_aquifer = (self.porosity_shallow_aquifer
-    #                                         * (2 * math.pi * self.KD * self.vertical_resistance_shallow_aquifer
-    #                                         / (abs(self.well_discharge))
-    #                                         * (travel_distance_shallow_aquifer
-    #                                         / besselk(0, distance
-    #                                         / math.sqrt(self.KD * self.vertical_resistance_shallow_aquifer)))
-    #                         ))
-    #     if travel_distance_shallow_aquifer < 0:
-    #         travel_time_shallow_aquifer =  np.array([0])
+        travel_time_shallow_aquifer = (self.porosity_shallow_aquifer
+                                            * (2 * math.pi * self.KD * self.vertical_resistance_shallow_aquifer
+                                            / (abs(self.well_discharge))
+                                            * (travel_distance_shallow_aquifer
+                                            / besselk(0, distance
+                                            / math.sqrt(self.KD * self.vertical_resistance_shallow_aquifer)))
+                            ))
+        if travel_distance_shallow_aquifer < 0:
+            travel_time_shallow_aquifer =  np.array([0])
 
-    #     return travel_time_shallow_aquifer
+        return travel_time_shallow_aquifer
 
 
     def _calculate_travel_time_target_aquifer_semiconfined(self,
@@ -1887,11 +1948,11 @@ class AnalyticalWell():
         '''
 
         # AH we keep this number for comparing to excel, but will change later to be the user defined porosities
-        porosity_target_aquifer=porosity_target_aquifer #0.32 #
-        thickness_target_aquifer=thickness_target_aquifer #95 #
+        # porosity_target_aquifer=porosity_target_aquifer #0.32 #
+        # thickness_target_aquifer=thickness_target_aquifer #95 #
 
         travel_time_target_aquifer = (2 * math.pi * self.spreading_distance ** 2 / (abs(self.well_discharge))
-                            * porosity_target_aquifer * thickness_target_aquifer
+                            * self.porosity_target_aquifer * self.thickness_target_aquifer
                             * (1.0872 * (distance / self.spreading_distance) ** 3
                                 - 1.7689 * (distance /
                                             self.spreading_distance) ** 2
@@ -2630,6 +2691,7 @@ class AnalyticalWell():
                     )
 
         df_flowline, df_particle=self._export_to_df(df_output=df_output,
+                    what_to_export = self.what_to_export,
                     distance= self.radial_distance,
                     total_travel_time=total_travel_time,
                     travel_time_unsaturated = travel_time_unsaturated,
@@ -2704,12 +2766,12 @@ class AnalyticalWell():
 
         # if distance is None:
         self.radial_distance,\
+            fraction_flux,\
             spreading_distance,\
             radial_distance_recharge,\
-            self.travel_time_unsaturated,\
+            travel_time_unsaturated,\
             self.head,\
-            self.drawdown_at_well = calculate_travel_time_unsaturated_zone(
-                                        schematisation_type = self.schematisation_type,
+            self.drawdown_at_well = calculate_travel_time_unsaturated_zone(schematisation_type = self.schematisation_type,
                                         vertical_resistance_shallow_aquifer = self.vertical_resistance_shallow_aquifer,
                                         groundwater_level = self.groundwater_level,
                                         well_discharge = self.well_discharge,
@@ -2772,13 +2834,14 @@ class AnalyticalWell():
                     )
 
         self.df_flowline, self.df_particle=self._export_to_df(df_output=self.df_output,
+                    what_to_export = self.what_to_export,
                     distance=self.radial_distance,
                     total_travel_time=self.total_travel_time,
                     travel_time_unsaturated = self.travel_time_unsaturated,
                     travel_time_shallow_aquifer=self.travel_time_shallow_aquifer,
                     travel_time_target_aquifer=self.travel_time_target_aquifer,
                     # discharge_point_contamination = self.discharge_point_contamination
-                    ) 
+                    )
 
     #AH_todo make this a hidden __add_semiconfined_point_sources function
     def _add_semiconfined_point_sources(self,
@@ -2869,6 +2932,7 @@ class AnalyticalWell():
                     )
 
         df_flowline, df_particle=self._export_to_df(df_output=df_output,
+                    what_to_export = self.what_to_export,
                     distance=radial_distance,
                     total_travel_time=total_travel_time,
                     travel_time_unsaturated = travel_time_unsaturated,

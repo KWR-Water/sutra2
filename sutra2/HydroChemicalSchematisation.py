@@ -137,13 +137,6 @@ def create_schematisation_dictionary():
         Name of the OMP of MBO to use in the model.
     diffuse_input_concentration: float
         Concentration of the diffuse source of the OMP in the groundwater recharge, [ug/L].
-    start_date_well: dt.datetime.strptime('YYYY-MM-DD', "%Y-%m-%d"),
-        Start date of the well.
-    start_date_contamination, end_date_contamination: dt.datetime.strptime('YYYY-MM-DD', "%Y-%m-%d"),
-        Start and end date for both the diffuse and point sources.
-        @MartinvdS, is this a problem to use the start/end date for both?
-    compute_contamination_for_date: dt.datetime.strptime('YYYY-MM-DD', "%Y-%m-%d"),
-        Date for which to compute the contamination in the well.
     point_input_concentration: float
         Concentration of the point source contamintation [ug/L].
     distance_point_contamination_from_well, depth_point_contamination, discharge_point_contamination: float
@@ -283,11 +276,6 @@ def create_schematisation_dictionary():
                 # substance=None,
 
                 diffuse_input_concentration=1,
-
-                start_date_well = dt.datetime.strptime('1950-01-01', "%Y-%m-%d"),
-                start_date_contamination=None,
-                end_date_contamination= None,
-                compute_contamination_for_date=None,
 
                 point_input_concentration=None,
                 distance_point_contamination_from_well=np.array([1]),
